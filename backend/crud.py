@@ -3290,6 +3290,60 @@ def create_category(db: Session, name: str, parent: Category | None) -> Category
     return category
 
 
+def seed_starter_categories(db: Session) -> dict[str, int]:
+    # Ajoute le jeu de catégories de départ (voir backend/starter_categories.py)
+    # sans jamais rien modifier ni dupliquer : une catégorie dont le nom existe
+    # déjà au même niveau (même parent) est laissée telle quelle, y compris son
+    # pilier. Idempotent : relancer l'action ne crée plus rien. Une seule
+    # transaction, contrairement à create_category qui valide à chaque ligne.
+    from backend.starter_categories import STARTER_CATEGORIES
+
+    def next_sort_order(parent_id: int | None) -> int:
+        return db.execute(
+            select(func.coalesce(func.max(Category.sort_order), -1) + 1).where(
+                Category.parent_id == parent_id
+            )
+        ).scalar_one()
+
+    created_parents = 0
+    created_children = 0
+    for starter in STARTER_CATEGORIES:
+        parent = db.execute(
+            select(Category).where(Category.name == starter.name, Category.parent_id.is_(None))
+        ).scalar_one_or_none()
+        if parent is None:
+            parent = Category(
+                name=starter.name,
+                parent_id=None,
+                sort_order=next_sort_order(None),
+                pillar=starter.pillar,
+                excluded_from_budget=starter.excluded_from_budget,
+            )
+            db.add(parent)
+            db.flush()
+            created_parents += 1
+
+        for child_name, child_pillar in starter.children:
+            exists = db.execute(
+                select(Category.id).where(Category.name == child_name, Category.parent_id == parent.id)
+            ).first()
+            if exists is not None:
+                continue
+            db.add(
+                Category(
+                    name=child_name,
+                    parent_id=parent.id,
+                    sort_order=next_sort_order(parent.id),
+                    pillar=child_pillar,
+                )
+            )
+            db.flush()
+            created_children += 1
+
+    db.commit()
+    return {"parents": created_parents, "children": created_children}
+
+
 def update_category_name(db: Session, category: Category, name: str) -> Category:
     category.name = name
     db.commit()

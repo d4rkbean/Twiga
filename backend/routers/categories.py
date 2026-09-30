@@ -40,6 +40,15 @@ def create_category(
     return templates.TemplateResponse("categories/_content.html", context)
 
 
+@router.post("/starter", response_class=HTMLResponse)
+def add_starter_categories(request: Request, db: Session = Depends(get_db)):
+    # Action explicite (bouton de la page vide) : jamais automatique, pour ne
+    # pas s'ajouter à des catégories importées ou à une restauration JSON.
+    crud.seed_starter_categories(db)
+    context = {"request": request, **_content_context(db)}
+    return templates.TemplateResponse("categories/_content.html", context)
+
+
 @router.get("/{category_id}/row", response_class=HTMLResponse)
 def category_row(
     request: Request, category_id: int, is_child: bool = False, db: Session = Depends(get_db)
