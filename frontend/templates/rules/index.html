@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Règles — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-primary">Règles de catégorisation</h1>
+    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Paramètres</a>
+  </div>
+
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
+    <h2 class="text-lg font-bold text-primary">Tester une règle</h2>
+    <form hx-post="/rules/test" hx-target="#rule-test-result" hx-swap="innerHTML" class="flex gap-2">
+      <input
+        type="text"
+        name="label"
+        placeholder="Libellé à tester (ex : CARREFOUR MARKET PARIS)"
+        required
+        class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      />
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold px-4">
+        Tester
+      </button>
+    </form>
+    <div id="rule-test-result">
+      <p class="text-sm text-secondary">Saisis un libellé pour voir quelle règle s'appliquerait.</p>
+    </div>
+  </div>
+
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
+    <h2 class="text-lg font-bold text-primary">Ajouter une règle</h2>
+    <form
+      hx-post="/rules/create"
+      hx-target="#rules-content"
+      hx-swap="outerHTML"
+      class="flex flex-col gap-3"
+    >
+      <input
+        type="text"
+        name="keyword"
+        placeholder="Mot-clé (ex : CARREFOUR)"
+        required
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      />
+      <select
+        name="parent_category_id"
+        required
+        hx-get="/transactions/subcategories?field_name=category_id&element_id=new-rule-subcategory&allow_empty=false"
+        hx-target="#new-rule-subcategory"
+        hx-swap="outerHTML"
+        hx-trigger="change"
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      >
+        <option value="" disabled selected>Choisir une catégorie...</option>
+        {% for category in parent_categories %}
+        <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
+        {% endfor %}
+      </select>
+      {% with parent = none, subcategories = [], selected_category_id = none, field_name = "category_id", element_id = "new-rule-subcategory", allow_empty = false %}
+      {% include "transactions/_subcategory_select.html" %}
+      {% endwith %}
+      <select
+        name="payment_method"
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      >
+        <option value="">Mode de paiement (optionnel)</option>
+        {% for code, meta in payment_methods.items() %}
+        <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
+        {% endfor %}
+      </select>
+      <div class="flex flex-col gap-1">
+        <select
+          name="receipt_family"
+          class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        >
+          <option value="">Rayon de ticket auto (optionnel)</option>
+          {% for code, icon, label in receipt_families %}
+          <option value="{{ code }}">{{ icon }} {{ label }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-secondary px-1">
+          Pour un commerce à famille de produit unique (boulangerie...) :
+          ajoute automatiquement une ligne de ticket couvrant tout le montant
+          — uniquement pris en compte si la catégorie choisie ci-dessus est
+          Courses.
+        </p>
+      </div>
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+        Ajouter la règle
+      </button>
+    </form>
+  </div>
+
+  <h2 class="text-lg font-bold text-primary">Règles existantes</h2>
+  {% include "rules/_content.html" %}
+</main>
+{% endblock %}

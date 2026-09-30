@@ -1,0 +1,33 @@
+{% set path = request.url.path %}
+{# Même système d'icônes au trait que la sidebar desktop (voir
+   _sidebar.html) plutôt que des émojis — cohérence entre les deux nav
+   principales de l'app. #}
+{% set savane_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>{% endset %}
+{% set panorama_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>{% endset %}
+{% set operations_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>{% endset %}
+{% set projets_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>{% endset %}
+{% set budgets_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>{% endset %}
+{# Mêmes cinq entrées que la barre latérale (_sidebar.html), dans le même
+   ordre. Auparavant quatre : Budgets, Le Cap et Rapports n'existaient pas
+   sur mobile et n'étaient atteignables que par des liens contextuels depuis
+   le Panorama — on changeait d'application en changeant d'écran. Cinq est
+   la limite haute d'une barre basse, pas un compromis. #}
+{% set nav_items = [
+  ("/transactions/inbox", savane_icon, "La Savane", path.startswith("/transactions/inbox"), "tour-nav-savane"),
+  ("/dashboard", panorama_icon, "Panorama", path.startswith("/dashboard"), "tour-nav-dashboard"),
+  ("/transactions/list", operations_icon, "Opérations", path.startswith("/transactions/list"), "tour-nav-transactions"),
+  ("/cap/mid", budgets_icon, "Mon mois", path.startswith("/cap") or path.startswith("/budgets"), none),
+  ("/projects", projets_icon, "Projets", path.startswith("/projects"), "tour-nav-projects"),
+] %}
+<nav class="print:hidden lg:hidden fixed bottom-0 inset-x-0 z-10 bg-container border-t border-border flex items-center">
+  {% for href, icon, label, active, tour_id in nav_items %}
+  <a
+    id="{{ tour_id }}"
+    href="{{ href }}"
+    class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs {{ 'text-accent font-semibold' if active else 'text-secondary' }}"
+  >
+    <span class="rounded-full px-3 py-0.5 flex items-center justify-center {{ 'bg-accent/10' if active else '' }}">{{ icon | safe }}</span>
+    <span>{{ label }}</span>
+  </a>
+  {% endfor %}
+</nav>

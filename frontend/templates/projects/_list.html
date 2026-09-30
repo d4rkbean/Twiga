@@ -1,0 +1,129 @@
+{% from "projects/_form_fields.html" import fields, movement_dialog %}
+
+<dialog id="new-project-dialog" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm">
+  <form
+    hx-post="/projects/create"
+    hx-target="#projects-list"
+    hx-swap="innerHTML"
+    class="flex flex-col gap-4 p-6"
+  >
+    <h2 class="text-xl font-bold text-primary">Nouveau projet</h2>
+    {{ fields() }}
+    <div class="flex flex-col gap-2">
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+        Créer
+      </button>
+      <button
+        type="button"
+        onclick="this.closest('dialog').close()"
+        class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</dialog>
+
+{% for item in items %}
+<div id="project-card-{{ item.project.id }}" class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-2 transition-shadow">
+  <div class="flex items-center justify-between">
+    <span class="text-primary font-bold">{{ item.project.name }}</span>
+    <button
+      type="button"
+      onclick="document.getElementById('edit-project-{{ item.project.id }}').showModal()"
+      class="text-secondary"
+    >
+      {{ icon('edit') }}
+    </button>
+  </div>
+  <p class="amount-blur text-sm text-secondary">
+    {{ item.project.target_amount | eur }} · {{ item.project.target_date | fr_date }}
+  </p>
+  <div class="w-full h-2 rounded-full bg-page overflow-hidden">
+    <div class="h-full bg-accent" style="width: {{ item.bar_width }}%"></div>
+  </div>
+  <p class="amount-blur text-sm text-secondary">
+    {{ item.project.current_amount | eur }} / {{ item.project.target_amount | eur }}
+    ({{ item.percentage_display }} %)
+  </p>
+  <p class="amount-blur text-sm font-medium text-primary">Effort : {{ item.monthly_effort | eur }} / mois</p>
+
+  <div class="flex gap-2">
+    <button
+      type="button"
+      onclick="document.getElementById('add-funds-{{ item.project.id }}').showModal()"
+      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-success font-medium"
+    >
+      {{ icon('plus', size=16) }} Ajouter
+    </button>
+    <button
+      type="button"
+      onclick="document.getElementById('spend-funds-{{ item.project.id }}').showModal()"
+      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-danger font-medium"
+    >
+      {{ icon('minus', size=16) }} Dépenser
+    </button>
+  </div>
+
+  {% if item.movements %}
+  <div class="flex flex-col gap-1 pt-2 border-t border-border">
+    <p class="text-xs text-secondary uppercase tracking-wide">Historique</p>
+    {% for movement in item.movements %}
+    <div class="flex items-center justify-between text-sm gap-2">
+      <span class="text-secondary truncate">
+        {{ movement.date | fr_date }}{% if movement.note %} · {{ movement.note }}{% endif %}
+      </span>
+      <span class="amount-blur {{ 'text-success' if movement.amount > 0 else 'text-danger' }} font-bold whitespace-nowrap">
+        {{ "+" if movement.amount > 0 else "" }}{{ movement.amount | eur }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{{ movement_dialog(item.project, "add", "{{ icon('plus', size=16) }} Ajouter", "Ajouter") }}
+{{ movement_dialog(item.project, "spend", "{{ icon('minus', size=16) }} Dépenser", "Dépenser") }}
+
+<dialog id="edit-project-{{ item.project.id }}" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm">
+  <form
+    hx-post="/projects/{{ item.project.id }}/update"
+    hx-target="#projects-list"
+    hx-swap="innerHTML"
+    class="flex flex-col gap-4 p-6"
+  >
+    <h2 class="text-xl font-bold text-primary">Modifier le projet</h2>
+    {{ fields(item.project) }}
+    <div class="flex flex-col gap-2">
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+        Enregistrer
+      </button>
+      <button
+        type="button"
+        onclick="this.closest('dialog').close()"
+        class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+  <form
+    hx-post="/projects/{{ item.project.id }}/delete"
+    hx-target="#projects-list"
+    hx-swap="innerHTML"
+    hx-confirm="Supprimer ce projet ?"
+    class="px-6 pb-6"
+  >
+    <button
+      type="submit"
+      class="min-h-[50px] rounded-xl text-danger font-medium w-full"
+    >
+      {{ icon('trash') }} Supprimer ce projet
+    </button>
+  </form>
+</dialog>
+{% else %}
+<div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
+  <p class="text-sm text-secondary text-center">Aucun projet pour l'instant.</p>
+</div>
+{% endfor %}

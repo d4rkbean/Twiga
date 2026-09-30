@@ -1,0 +1,80 @@
+<div
+  id="category-row-{{ category.id }}"
+  class="flex flex-col gap-2 {{ 'pl-6' if is_child else '' }}"
+>
+  <div class="flex items-center gap-1.5 min-w-0">
+    <span class="{{ 'text-lg font-bold' if not is_child else 'font-medium' }} text-primary truncate">
+      {{ icon('folder', size=16) if not is_child else '–' }} {{ category.icon or "" }} {{ category.name }}
+    </span>
+    {% if is_child and category.pillar and category.pillar != resolve_category_pillar(category.parent) %}
+    <span class="text-xs bg-accent/10 text-accent rounded px-1.5 py-0.5 flex-shrink-0" title="Diffère du pilier hérité du parent">
+      override
+    </span>
+    {% endif %}
+  </div>
+  <div class="flex gap-1.5 items-center">
+    <select
+      name="pillar"
+      hx-post="/categories/{{ category.id }}/update-pillar?is_child={{ 'true' if is_child else 'false' }}"
+      hx-trigger="change"
+      hx-target="#category-row-{{ category.id }}"
+      hx-swap="outerHTML"
+      aria-label="Pilier Le Cap"
+      class="flex-1 min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary text-sm px-2"
+    >
+      {% if is_child %}
+      <option value="" {{ 'selected' if not category.pillar else '' }}>{{ icon('corner-down-right', size=14) }} Hérite {{ get_pillar_icon(resolve_category_pillar(category.parent)) }}</option>
+      {% endif %}
+      {% for code in PILLAR_ORDER %}
+      <option value="{{ code }}" {{ 'selected' if category.pillar == code else '' }}>{{ PILLARS[code].icon }} {{ PILLARS[code].label }}</option>
+      {% endfor %}
+    </select>
+    {% if not is_child %}
+    <button
+      type="button"
+      @click="expanded = !expanded"
+      :aria-label="expanded ? 'Masquer les sous-catégories' : 'Afficher les sous-catégories'"
+      class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-bold text-lg flex items-center justify-center flex-shrink-0"
+    >
+      <span x-show="!expanded">+</span>
+      <span x-show="expanded" style="display: none;">−</span>
+    </button>
+    {% endif %}
+    <button
+      type="button"
+      hx-get="/categories/{{ category.id }}/edit?is_child={{ 'true' if is_child else 'false' }}"
+      hx-target="#category-row-{{ category.id }}"
+      hx-swap="outerHTML"
+      aria-label="Modifier"
+      class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
+    >
+      {{ icon('edit', size=16) }}
+    </button>
+    <button
+      type="button"
+      hx-get="/categories/{{ category.id }}/delete-confirm?is_child={{ 'true' if is_child else 'false' }}"
+      hx-target="#category-row-{{ category.id }}"
+      hx-swap="outerHTML"
+      aria-label="Supprimer"
+      class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-danger font-medium flex items-center justify-center flex-shrink-0"
+    >
+      {{ icon('trash', size=16) }}
+    </button>
+  </div>
+  {% if not is_child %}
+  <label class="flex items-center gap-2 text-xs text-secondary">
+    <input
+      type="checkbox"
+      name="excluded"
+      value="true"
+      {{ 'checked' if category.excluded_from_budget else '' }}
+      hx-post="/categories/{{ category.id }}/update-budget-exclusion"
+      hx-trigger="change"
+      hx-target="#category-row-{{ category.id }}"
+      hx-swap="outerHTML"
+      class="w-4 h-4 rounded border-border flex-shrink-0"
+    />
+    {{ icon('ban', size=14) }} Revenu, pas une dépense — exclure de l'écran Budgets
+  </label>
+  {% endif %}
+</div>

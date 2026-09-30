@@ -1,0 +1,87 @@
+{% set role_labels = {"admin": "Administrateur", "editor": "Éditeur", "viewer": "Lecture seule"} %}
+<div id="users-content" class="flex flex-col gap-3">
+
+  {% if error %}
+  <p class="text-sm text-danger py-2">{{ icon('shield-lock', size=16) }} {{ error }}</p>
+  {% endif %}
+  {% if success %}
+  <p class="text-sm text-success py-2">{{ icon('check', size=16) }} {{ success }}</p>
+  {% endif %}
+
+  {% set current = get_current_user(request) %}
+  {% for user in users %}
+  <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between gap-2">
+      <span class="font-medium text-primary truncate">
+        {{ user.username }}{% if current and current.id == user.id %} <span class="text-xs text-secondary">(vous)</span>{% endif %}
+      </span>
+      <span class="text-xs text-secondary whitespace-nowrap">
+        {% if user.last_login %}Connecté {{ user.last_login.strftime("%d/%m/%Y %H:%M") }}{% else %}Jamais connecté{% endif %}
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <select
+        name="role"
+        hx-post="/users/{{ user.id }}/role"
+        hx-target="#users-content"
+        hx-swap="outerHTML"
+        hx-trigger="change"
+        class="flex-1 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+      >
+        {% for role in ["admin", "editor", "viewer"] %}
+        <option value="{{ role }}" {% if role == user.role %}selected{% endif %}>{{ role_labels[role] }}</option>
+        {% endfor %}
+      </select>
+      <label class="flex items-center gap-2 flex-shrink-0 min-h-[46px]">
+        <input
+          type="checkbox"
+          name="is_active"
+          {% if user.is_active %}checked{% endif %}
+          hx-post="/users/{{ user.id }}/active"
+          hx-target="#users-content"
+          hx-swap="outerHTML"
+          hx-trigger="change"
+          class="w-5 h-5"
+        />
+        <span class="text-xs text-secondary whitespace-nowrap">Actif</span>
+      </label>
+    </div>
+
+    <form
+      hx-post="/users/{{ user.id }}/password"
+      hx-target="#users-content"
+      hx-swap="outerHTML"
+      class="flex gap-2"
+    >
+      {% with field_name = "new_password", field_id = "new_password-" ~ user.id, field_label = "Nouveau mot de passe pour " ~ user.username, field_placeholder = "Nouveau mot de passe", field_autocomplete = "new-password", field_minlength = 8, field_wrapper_class = "flex-1", field_height_class = "min-h-[46px] text-sm" %}
+      {% include "_password_field.html" %}
+      {% endwith %}
+      <button
+        type="submit"
+        class="min-h-[46px] px-3 rounded-xl bg-container border border-border text-primary text-sm font-medium whitespace-nowrap"
+      >
+        {{ icon('key', size=16) }} Réinitialiser
+      </button>
+    </form>
+
+    {% if not current or current.id != user.id %}
+    <button
+      type="button"
+      hx-post="/users/{{ user.id }}/delete"
+      hx-target="#users-content"
+      hx-swap="outerHTML"
+      hx-confirm="Supprimer l'utilisateur {{ user.username }} ? Cette action est irréversible."
+      class="min-h-[46px] rounded-xl bg-container border border-border text-danger text-sm font-medium"
+    >
+      {{ icon('trash', size=16) }} Supprimer
+    </button>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
+    <p class="text-sm text-secondary text-center">Aucun utilisateur.</p>
+  </div>
+  {% endfor %}
+
+</div>

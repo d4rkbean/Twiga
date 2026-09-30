@@ -1,0 +1,47 @@
+<div class="category-suggestion flex flex-col gap-3">
+  <button
+    type="button"
+    id="inbox-back-to-categories-btn"
+    class="flex items-center gap-1 text-sm text-secondary font-medium min-h-[50px] self-start"
+    hx-get="/transactions/{{ transaction.id }}/categories"
+    hx-target=".category-suggestion"
+    hx-swap="outerHTML"
+  >
+    {{ icon('arrow-narrow-left') }} Retour aux catégories
+  </button>
+  <p class="text-sm text-secondary">
+    Sous-catégorie de
+    <span class="text-primary font-medium">
+      {% if not category.parent_id %}{{ get_category_icon(category.name) }}{% endif %}
+      {{ category.name }}
+    </span> :
+  </p>
+  <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+    <button
+      type="button"
+      class="shortcut-category-btn min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2 px-3 text-center active:bg-page"
+      hx-post="/transactions/{{ transaction.id }}/categorize/{{ category.id }}"
+      hx-include="#simplified-label, #nav-history"
+      hx-target=".category-suggestion"
+      hx-swap="outerHTML"
+    >
+      <span class="hidden sm:flex items-center justify-center w-5 h-5 rounded-full bg-page text-secondary text-xs font-semibold flex-shrink-0">1</span>
+      <span>{{ category.name }} (général)</span>
+    </button>
+    {% for subcategory in subcategories %}
+    <button
+      type="button"
+      class="shortcut-category-btn min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2 px-3 text-center active:bg-page"
+      hx-post="/transactions/{{ transaction.id }}/categorize/{{ subcategory.id }}"
+      hx-include="#simplified-label, #nav-history"
+      hx-target=".category-suggestion"
+      hx-swap="outerHTML"
+    >
+      {% if loop.index + 1 <= 9 %}
+      <span class="hidden sm:flex items-center justify-center w-5 h-5 rounded-full bg-page text-secondary text-xs font-semibold flex-shrink-0">{{ loop.index + 1 }}</span>
+      {% endif %}
+      <span>{{ subcategory.name }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>

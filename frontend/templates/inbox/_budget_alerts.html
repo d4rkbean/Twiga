@@ -1,0 +1,118 @@
+{% if pending_count > 0 and budget_alerts %}
+<div id="budget-alerts" class="w-full max-w-sm flex flex-col gap-2"></div>
+<script>
+  (function () {
+    var alerts = {{ budget_alerts | tojson | safe }};
+    var month = {{ current_month_key | tojson | safe }};
+    var container = document.getElementById("budget-alerts");
+    if (!container) return;
+
+    var currencyFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+
+    function keyFor(categoryId) {
+      return "dismissed_budget_alert_" + categoryId + "_" + month;
+    }
+    function isDismissed(categoryId) {
+      return localStorage.getItem(keyFor(categoryId)) === "true";
+    }
+    function dismiss(categoryId) {
+      localStorage.setItem(keyFor(categoryId), "true");
+      render();
+    }
+
+    // Efface uniquement les clés du MOIS EN COURS (jamais celles d'un mois
+    // passé) : le "reset auto" au changement de mois vient déjà du fait que
+    // la clé embarque le mois — ce bouton ne fait qu'annuler manuellement,
+    // pour cette session, les masquages déjà faits ce mois-ci.
+    function revealAllForThisMonth() {
+      var suffix = "_" + month;
+      var toRemove = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf("dismissed_budget_alert_") === 0 && key.slice(-suffix.length) === suffix) {
+          toRemove.push(key);
+        }
+      }
+      toRemove.forEach(function (key) {
+        localStorage.removeItem(key);
+      });
+      render();
+    }
+
+    function render() {
+      var visible = alerts.filter(function (a) { return !isDismissed(a.category_id); });
+      var dismissedCount = alerts.length - visible.length;
+      container.innerHTML = "";
+
+      if (visible.length === 0) {
+        // Tout a été masqué ce mois-ci : pas de carte d'alerte, juste un
+        // lien discret pour tout faire réapparaître si besoin.
+        if (dismissedCount > 0) {
+          var reveal = document.createElement("button");
+          reveal.type = "button";
+          reveal.className = "text-xs text-secondary underline self-center min-h-[32px]";
+          reveal.textContent = "🔔 Voir les alertes budget masquées";
+          reveal.addEventListener("click", revealAllForThisMonth);
+          container.appendChild(reveal);
+        }
+        return;
+      }
+
+      var shown = visible.slice(0, 3);
+      var remaining = visible.length - shown.length;
+
+      shown.forEach(function (alert) {
+        var danger = alert.percentage >= 100;
+        var row = document.createElement("div");
+        row.className =
+          "bg-container rounded-xl shadow-sm p-3 flex items-center gap-2 border-l-4 " +
+          (danger ? "border-danger" : "border-warning");
+
+        var text = document.createElement("p");
+        text.className = "text-sm flex-1 " + (danger ? "text-danger" : "text-warning");
+        text.textContent = danger
+          ? "🚨 " + alert.category_name + " : dépassé ! (" +
+            currencyFormatter.format(alert.spent) + " / " + currencyFormatter.format(alert.budget) + ")"
+          : "⚠️ " + alert.category_name + " : " + Math.round(alert.percentage) + "% consommé (" +
+            currencyFormatter.format(alert.spent) + " / " + currencyFormatter.format(alert.budget) + ")";
+
+        var closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.setAttribute("aria-label", "Ignorer cette alerte");
+        closeBtn.className = "text-secondary text-lg leading-none flex-shrink-0 w-11 h-11 flex items-center justify-center";
+        closeBtn.textContent = "✕";
+        closeBtn.addEventListener("click", function () {
+          dismiss(alert.category_id);
+        });
+
+        row.appendChild(text);
+        row.appendChild(closeBtn);
+        container.appendChild(row);
+      });
+
+      if (remaining > 0) {
+        var more = document.createElement("p");
+        more.className = "text-xs text-secondary text-center";
+        more.innerHTML =
+          "... et " + remaining + " autre" + (remaining > 1 ? "s" : "") + " budget" +
+          (remaining > 1 ? "s" : "") + " à surveiller → <a href=\"/budgets\" class=\"text-accent font-medium\">Voir les budgets</a>";
+        container.appendChild(more);
+      }
+
+      var dismissAll = document.createElement("button");
+      dismissAll.type = "button";
+      dismissAll.className = "text-xs text-secondary underline self-center min-h-[32px]";
+      dismissAll.textContent = "Tout ignorer";
+      dismissAll.addEventListener("click", function () {
+        alerts.forEach(function (a) {
+          localStorage.setItem(keyFor(a.category_id), "true");
+        });
+        render();
+      });
+      container.appendChild(dismissAll);
+    }
+
+    render();
+  })();
+</script>
+{% endif %}

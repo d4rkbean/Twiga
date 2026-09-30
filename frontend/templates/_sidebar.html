@@ -1,0 +1,237 @@
+{% set path = request.url.path %}
+{# Icônes de la nav principale : un seul système au trait (stroke
+   currentColor, poids 2, coins arrondis, viewBox 24x24) plutôt que des
+   émojis — cohérent avec l'icône Rapports déjà dans ce style, qui entrait
+   en collision visuelle avec l'émoji 📊 du Panorama. Rendues via
+   {{ icon | safe }} ci-dessous. #}
+{% set savane_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>{% endset %}
+{% set panorama_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>{% endset %}
+{% set operations_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>{% endset %}
+{% set projets_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>{% endset %}
+{% set cap_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>{% endset %}
+{% set budgets_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>{% endset %}
+{% set reports_icon %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>{% endset %}
+{# Cinq entrées, identiques à la barre basse mobile (_nav.html) : on doit
+   retrouver la même carte mentale d'un écran à l'autre. Trois départs par
+   rapport à l'état précédent :
+
+   - « Mon mois » remplace Budgets ET Le Cap, qui posaient la même question
+     (combien je peux dépenser ce mois) avec deux modèles concurrents. Le
+     plan est désormais unique — budgets par catégorie, piliers calculés —
+     donc une seule entrée, active sur /cap comme sur /budgets.
+   - « Rapports » quitte le menu : le Panorama en est la version courte et
+     porte déjà un lien « Voir le rapport complet ».
+   - « Importer » n'est pas ici mais dans l'en-tête : c'est une ACTION, et
+     le début de chaque cycle mensuel — pas un lieu où l'on se rend. #}
+{% set sidebar_items = [
+  ("/transactions/inbox", savane_icon, "La Savane", path.startswith("/transactions/inbox"), "tour-sidebar-savane"),
+  ("/dashboard", panorama_icon, "Panorama", path.startswith("/dashboard"), "tour-sidebar-dashboard"),
+  ("/transactions/list", operations_icon, "Opérations", path.startswith("/transactions/list"), "tour-sidebar-transactions"),
+  ("/cap/mid", budgets_icon, "Mon mois", path.startswith("/cap") or path.startswith("/budgets"), none),
+  ("/projects", projets_icon, "Projets", path.startswith("/projects"), "tour-sidebar-projects"),
+] %}
+<!-- Bouton de réapparition : seul élément visible quand sidebarMode ==
+     'hidden' (l'aside ci-dessous est alors x-show="false", donc totalement
+     retiré du flux — rien d'autre ne peut plus la faire réapparaître).
+     Logo Twiga seul, sans flèche : une flèche isolée dans un coin ne veut
+     rien dire, le logo reste identifiable — le titre/aria-label suffit à
+     porter l'affordance "cliquer pour agrandir". display:none en dur par
+     défaut : évite qu'il clignote visible le temps qu'Alpine démarre,
+     sidebarMode par défaut valant 'pinned' (voir base.html) — même
+     convention que le menu utilisateur plus bas. -->
+<button
+  type="button"
+  x-show="sidebarMode === 'hidden'"
+  @click="sidebarMode = 'auto'"
+  style="display: none;"
+  title="Afficher le menu"
+  aria-label="Afficher le menu"
+  class="print:hidden hidden lg:flex fixed left-2 top-2 z-50 w-10 h-10 items-center justify-center rounded-xl bg-container border border-border shadow-sm"
+>
+  <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" style="height:28px; width:auto;" />
+</button>
+
+<!-- Desktop uniquement (lg:, >= 1024px) : la nav du bas + le header complet
+     restent le mode mobile inchangé (voir _nav.html, print:hidden pas
+     concerné ici). fixed + h-screen : occupe toute la hauteur, indépendante
+     du défilement du contenu principal, comme le header/nav mobiles le sont
+     déjà à leur échelle.
+
+     3 modes (sidebarMode, sur le x-data racine de <body>, voir base.html) :
+     "pinned" (par défaut) toujours à 240px ; "auto" se réduit à une piste de
+     64px (icônes seules) et ne s'étend en overlay à 240px que quand la
+     souris est dessus (x-data local "hovered") ; "hidden" la retire
+     entièrement (bouton ▶ ci-dessus pour la faire revenir). "expanded"
+     dérivé via x-effect plutôt que recalculé dans chaque attribut : évite de
+     répéter la même expression partout en dessous. -->
+<aside
+  x-data="{ hovered: false, expanded: true }"
+  x-effect="expanded = (sidebarMode === 'pinned' || (sidebarMode === 'auto' && hovered))"
+  @mouseenter="hovered = true"
+  @mouseleave="hovered = false"
+  x-show="sidebarMode !== 'hidden'"
+  :class="expanded ? 'w-[240px]' : 'w-[64px]'" class="print:hidden hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen bg-container border-r border-border z-50 transition-[width] duration-200 ease-in-out [contain:layout_style]"
+  {# z-50, PAS z-30 comme le reste des panneaux de page (voir _header.html,
+     z-40) : en mode "auto" au survol, la sidebar s'étend visuellement en
+     overlay par-dessus le contenu SANS que le header ne bouge (lui reste
+     calé sur la largeur réduite de 64px) — elle chevauche alors la zone du
+     header sur la portion 64-240px. Sans un z-index supérieur au header,
+     celui-ci (z-40, inclus APRÈS elle dans le DOM de base.html) intercepte
+     les clics sur ses propres boutons (épingler/masquer) dans cette zone,
+     constaté en testant réellement le clic sur "Masquer le menu". #}
+  
+>
+  {# h-14 et non h-16 : cette boîte porte un border-b, tout comme l'en-tête
+     fixe de _header.html qui fait h-14 (56px). En h-16 les deux traits
+     tombaient à 8px l'un de l'autre et le raccord entre la barre latérale et
+     la barre du haut était visiblement décalé. 56px est la référence de
+     toute la page — le pt-[64px] du body et les barres collantes en top-14
+     en dépendent aussi. #}
+  <div class="h-14 flex items-center justify-between px-3 flex-shrink-0 border-b border-border gap-1">
+    <a id="tour-sidebar-logo" href="/" class="flex items-center gap-2 min-w-0 flex-1" aria-label="Twiga — retour à l'accueil">
+      <img src="/static/icons/twiga-logo.svg" alt="" class="h-8 w-8 flex-shrink-0" style="height:32px; width:auto;" />
+      <span x-show="expanded" class="text-lg font-extrabold tracking-tight text-primary truncate">TWIGA</span>
+    </a>
+    <div x-show="expanded" class="flex items-center gap-1 flex-shrink-0">
+      <button
+        type="button"
+        @click="sidebarMode = sidebarMode === 'pinned' ? 'auto' : 'pinned'"
+        :class="sidebarMode === 'pinned' ? 'text-accent' : 'text-secondary hover:text-accent'" class="w-7 h-7 flex items-center justify-center rounded-lg text-sm flex-shrink-0"
+        title="Épingler le menu ouvert, ou le laisser se réduire au survol"
+        :aria-label="sidebarMode === 'pinned' ? 'Désépingler le menu' : 'Épingler le menu ouvert'"
+        
+      >{{ icon('pin', cls='flex-shrink-0') }}</button>
+      <button
+        type="button"
+        @click="sidebarMode = 'hidden'"
+        title="Masquer le menu"
+        aria-label="Masquer le menu"
+        class="w-7 h-7 flex items-center justify-center rounded-lg text-sm text-secondary hover:text-accent flex-shrink-0"
+      >{{ icon('x', cls='flex-shrink-0') }}</button>
+    </div>
+  </div>
+
+  <nav class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 p-3">
+    {% for href, icon, label, active, tour_id in sidebar_items %}
+    <a
+      {% if tour_id %}id="{{ tour_id }}"{% endif %}
+      href="{{ href }}"
+      title="{{ label }}"
+      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium {{ 'bg-accent/10 text-accent' if active else 'text-secondary hover:text-accent' }}"
+    >
+      <span class="text-lg flex items-center justify-center w-5 flex-shrink-0">{{ icon | safe }}</span>
+      <span x-show="expanded" class="truncate">{{ label }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+
+  {% set current = get_current_user(request) %}
+  <div class="flex-shrink-0 border-t border-border p-3 flex flex-col gap-2">
+    <div x-show="expanded" class="flex items-center justify-between px-3 py-1">
+      <span class="text-xs text-secondary">Solde total</span>
+      <span
+        id="sidebar-total-balance"
+        class="amount-blur text-sm font-bold text-primary"
+        hx-get="/dashboard/sidebar-balance"
+        hx-trigger="load"
+        hx-swap="innerHTML"
+      >
+        …
+      </span>
+    </div>
+
+    {% if current %}
+    <!-- Menu utilisateur : ouvre VERS LE HAUT (absolute bottom-full), le
+         trigger étant déjà tout en bas de la sidebar — pas de place en
+         dessous. z-[9000] : même valeur que l'ancien menu "⋯" du header
+         mobile, au-dessus de tout le reste de l'interface. Largeur fixe
+         (w-56) plutôt que left-0 right-0 collé à son déclencheur : reste
+         lisible même quand la sidebar est réduite à 64px (icônes seules),
+         en débordant volontairement par-dessus le contenu principal. -->
+    <div class="relative" x-data="{ userMenuOpen: false }" @keydown.escape.window="userMenuOpen = false">
+      <button
+        type="button"
+        @click="userMenuOpen = !userMenuOpen"
+        aria-label="Menu utilisateur"
+        :aria-expanded="userMenuOpen"
+        title="{{ user_display_name(current) }}"
+        :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] w-full flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
+      >
+        <span class="w-7 h-7 rounded-full bg-accent text-on-accent flex items-center justify-center text-xs font-bold flex-shrink-0">
+          {{ user_initials(current) }}
+        </span>
+        <span x-show="expanded" class="flex-1 min-w-0 truncate text-left text-primary">{{ user_display_name(current) }}</span>
+        <span x-show="expanded" x-text="userMenuOpen ? '▼' : '▲'" class="text-xs flex-shrink-0">▲</span>
+      </button>
+      <div
+        x-show="userMenuOpen"
+        @click.outside="userMenuOpen = false"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-2"
+        style="display: none;"
+        class="absolute bottom-full left-0 w-56 mb-2 z-[9000] bg-container border border-primary rounded-xl shadow-lg overflow-hidden flex flex-col"
+      >
+        {% with show_theme_row = false %}{% include "_user_menu_content.html" %}{% endwith %}
+      </div>
+    </div>
+
+    <button
+      id="tour-sidebar-privacy"
+      type="button"
+      aria-label="Basculer le mode confidentialité"
+      title="Basculer le mode confidentialité"
+      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
+      @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
+    >
+      <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
+      <span x-show="expanded" x-text="privacy ? 'Afficher les montants' : 'Masquer les montants'">Masquer les montants</span>
+    </button>
+    <button
+      type="button"
+      onclick="window.toggleTheme()"
+      aria-label="Basculer entre thème clair et sombre"
+      title="Basculer entre thème clair et sombre"
+      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
+    >
+      <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
+      <span x-show="expanded">Thème</span>
+    </button>
+    {% else %}
+    <!-- Authentification désactivée (pas d'utilisateur connecté) : pas de
+         profil à afficher, on garde l'ancien accès direct. -->
+    <button
+      id="tour-sidebar-privacy"
+      type="button"
+      aria-label="Basculer le mode confidentialité"
+      title="Basculer le mode confidentialité"
+      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
+      @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
+    >
+      <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
+      <span x-show="expanded" x-text="privacy ? 'Afficher les montants' : 'Masquer les montants'">Masquer les montants</span>
+    </button>
+    <button
+      type="button"
+      onclick="window.toggleTheme()"
+      aria-label="Basculer entre thème clair et sombre"
+      title="Basculer entre thème clair et sombre"
+      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
+    >
+      <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
+      <span x-show="expanded">Thème</span>
+    </button>
+    <a
+      href="/settings"
+      title="Paramètres"
+      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium {{ 'bg-accent/10 text-accent' if path.startswith('/settings') else 'text-secondary hover:text-accent' }}"
+    >
+      {{ icon('settings', cls='flex-shrink-0') }}
+      <span x-show="expanded">Paramètres</span>
+    </a>
+    {% endif %}
+  </div>
+</aside>

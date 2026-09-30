@@ -1,0 +1,229 @@
+<header
+  class="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-container border-b border-border flex items-center justify-between px-4"
+  :class="{
+    'lg:left-[240px]': sidebarMode === 'pinned',
+    'lg:left-[64px]': sidebarMode === 'auto',
+    'lg:left-0 lg:pl-12': sidebarMode === 'hidden',
+  }"
+  x-data="{ searchOpen: false }"
+  @keydown.window="
+    if (($event.ctrlKey || $event.metaKey) && $event.key.toLowerCase() === 'k') {
+      $event.preventDefault();
+      if (window.innerWidth >= 1024) {
+        $refs.desktopSearchInput.focus();
+      } else {
+        searchOpen = true;
+        $nextTick(() => $refs.searchInput.focus());
+      }
+    } else if ($event.key === 'Escape' && searchOpen) {
+      searchOpen = false;
+    }
+  "
+>
+  <a id="tour-logo" href="/" class="flex items-center gap-2 flex-shrink-0 lg:hidden" x-show="!searchOpen" aria-label="Twiga — retour à l'accueil">
+    <img src="/static/icons/twiga-logo.svg" alt="" class="h-8 w-8" style="height:32px; width:auto;" />
+    <span class="text-lg font-extrabold tracking-tight text-primary">TWIGA</span>
+  </a>
+
+  <div
+    class="lg:hidden flex-1 min-w-0 mx-2"
+    x-show="searchOpen"
+    style="display: none;"
+    @click.outside="searchOpen = false"
+  >
+    <div class="flex items-center gap-2">
+      <input
+        type="search"
+        name="q"
+        x-ref="searchInput"
+        placeholder="Rechercher..."
+        autocomplete="off"
+        hx-get="/search/quick"
+        hx-trigger="keyup[target.value.length >= 2] changed delay:300ms, search"
+        hx-target="#search-results"
+        hx-swap="innerHTML"
+        @input="if ($event.target.value.length < 2) document.getElementById('search-results').innerHTML = ''"
+        class="w-full min-h-[40px] rounded-xl border border-border bg-page text-primary px-3"
+      />
+      <button
+        type="button"
+        @click="searchOpen = false"
+        aria-label="Fermer la recherche"
+        class="text-secondary text-lg flex-shrink-0 w-11 h-11 flex items-center justify-center"
+      >
+        {{ icon('x') }}
+      </button>
+    </div>
+    <div id="search-results" class="fixed top-14 inset-x-0 z-20 px-4"></div>
+  </div>
+
+  <div class="flex items-center gap-1 flex-shrink-0">
+    <!-- Desktop (lg:) : champ de recherche toujours visible (pas de
+         bascule ouvert/fermé comme sur mobile), Ctrl+K le cible directement
+         (voir @keydown.window ci-dessus). Résultats dans leur propre
+         conteneur (#search-results-desktop, positionné en dropdown 300px
+         sous ce champ) plutôt que de réutiliser #search-results : celui-ci
+         reste imbriqué dans le panneau de recherche mobile (x-show=
+         "searchOpen"), qui doit rester inchangé. -->
+    <div id="tour-desktop-search" class="hidden lg:block relative" @click.outside="searchOpen = false">
+      <input
+        type="search"
+        name="q"
+        x-ref="desktopSearchInput"
+        placeholder="Rechercher... Ctrl+K"
+        autocomplete="off"
+        hx-get="/search/quick"
+        hx-trigger="keyup[target.value.length >= 2] changed delay:300ms, search"
+        hx-target="#search-results-desktop"
+        hx-swap="innerHTML"
+        @focus="searchOpen = true"
+        @input="if ($event.target.value.length < 2) document.getElementById('search-results-desktop').innerHTML = ''"
+        class="w-[300px] min-h-[40px] rounded-xl border border-border bg-page text-primary px-3 text-sm"
+      />
+      <div
+        id="search-results-desktop"
+        x-show="searchOpen"
+        style="display: none;"
+        class="absolute top-full right-0 mt-1 w-[300px] z-20"
+      ></div>
+    </div>
+    {# Importer est une ACTION, pas un lieu : elle vit donc dans l'en-tête et
+       non dans la navigation, alors qu'elle ouvre chaque cycle mensuel
+       (import → Savane → Panorama). Elle était jusqu'ici enfouie dans
+       Paramètres, deux niveaux sous la seule étape du flux qui n'avait
+       aucune entrée de premier niveau.
+
+       Présente sur mobile ET bureau : l'icône seule sur petit écran (44px,
+       même cible tactile que les autres boutons de cette barre), le libellé
+       à partir de lg. Fond ambre parce que c'est la seule action primaire
+       de l'en-tête — les autres boutons y sont des bascules. #}
+    <a
+      id="tour-import"
+      href="/imports/new"
+      aria-label="Importer des données"
+      class="inline-flex items-center justify-center gap-2 w-11 h-11 lg:w-auto lg:h-auto lg:min-h-[40px] lg:px-3 rounded-xl bg-accent text-on-accent text-sm font-semibold flex-shrink-0"
+    >
+      {{ icon('file-import', size=18) }}<span class="hidden lg:inline">Importer</span>
+    </a>
+    <button
+      id="tour-search-icon"
+      type="button"
+      aria-label="Recherche"
+      class="lg:hidden w-11 h-11 flex items-center justify-center text-lg text-secondary"
+      @click="searchOpen = !searchOpen; if (searchOpen) $nextTick(() => $refs.searchInput.focus())"
+    >
+      {{ icon('search') }}
+    </button>
+    <!-- Confidentialité : TOUJOURS visible sur mobile — pas une icône
+         secondaire à replier, on peut en avoir besoin d'un geste immédiat
+         (transports en commun...). Sur desktop (lg), confidentialité et
+         thème déménagent dans la sidebar (_sidebar.html) — le header n'y
+         garde plus que la recherche. -->
+    <button
+      id="tour-privacy-toggle"
+      type="button"
+      aria-label="Basculer le mode confidentialité"
+      class="flex w-11 h-11 items-center justify-center text-lg text-secondary lg:hidden"
+      @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
+    >
+      <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
+    </button>
+
+    {% set current = get_current_user(request) %}
+    {% if current %}
+    <!-- Avatar : remplace ⚙️ ET l'ancien menu "⋯" — un seul point d'entrée
+         (bottom sheet) au lieu de deux icônes + un sous-menu. Le bottom
+         sheet lui-même (overlay + panneau) est en dehors de ce <header>,
+         juste après (toujours dans base.html via ce même include), pour ne
+         pas être limité par sa hauteur h-14/overflow — mais <header> a son
+         PROPRE x-data="{ searchOpen }" : userSheetOpen n'existe pas dans ce
+         scope-ci, seulement dans celui (frère, pas parent) du bottom sheet.
+         $dispatch envoie un événement DOM qui remonte jusqu'à window, où le
+         bottom sheet l'écoute (@open-user-sheet.window) — pont entre deux
+         composants Alpine frères, sans les fusionner en un seul. -->
+    <button
+      type="button"
+      @click="$dispatch('open-user-sheet')"
+      aria-label="Menu utilisateur"
+      class="lg:hidden w-11 h-11 flex items-center justify-center flex-shrink-0"
+    >
+      <span class="w-8 h-8 rounded-full bg-accent text-on-accent flex items-center justify-center text-xs font-bold">
+        {{ user_initials(current) }}
+      </span>
+    </button>
+    {% else %}
+    <!-- Authentification désactivée : pas de profil à afficher, ancien
+         accès direct conservé (visible ≥640px, comme avant). -->
+    <a
+      href="/settings"
+      aria-label="Paramètres"
+      class="hidden sm:flex lg:hidden w-11 h-11 items-center justify-center text-lg text-secondary"
+    >
+      {{ icon('settings') }}
+    </a>
+    <button
+      type="button"
+      id="theme-toggle"
+      onclick="window.toggleTheme()"
+      aria-label="Basculer entre thème clair et sombre"
+      class="hidden sm:flex lg:hidden w-11 h-11 items-center justify-center text-lg text-secondary"
+    >
+      <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
+    </button>
+    {% endif %}
+  </div>
+</header>
+
+{% if current %}
+<!-- BOTTOM SHEET (mobile, lg:hidden) : x-data posé ici (pas sur <header>,
+     lui-même x-data="{ searchOpen }") pour que userSheetOpen survive
+     indépendamment de l'état recherche — deux composants Alpine frères,
+     jamais imbriqués. dragY suit le déplacement tactile vertical pendant le
+     swipe ; au relâchement, > 80px de déplacement vers le bas ferme le
+     sheet (sinon il reprend sa position, x-transition s'en charge). -->
+<div
+  class="lg:hidden"
+  x-data="{ userSheetOpen: false, dragY: 0, dragging: false, touchStartY: 0 }"
+  @open-user-sheet.window="userSheetOpen = true"
+  @keydown.escape.window="userSheetOpen = false"
+>
+  <div
+    x-show="userSheetOpen"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    style="display: none;"
+    class="fixed inset-0 z-[9000] bg-black/60"
+    @click="userSheetOpen = false"
+  ></div>
+  <div
+    x-show="userSheetOpen"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="translate-y-full"
+    x-transition:enter-end="translate-y-0"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="translate-y-0"
+    x-transition:leave-end="translate-y-full"
+    style="display: none;"
+    class="fixed bottom-0 inset-x-0 z-[9000] bg-container rounded-t-2xl shadow-lg flex flex-col"
+    :style="dragging ? ('transform: translateY(' + dragY + 'px)') : ''"
+    @touchstart="dragging = true; dragY = 0; touchStartY = $event.touches[0].clientY"
+    @touchmove="dragY = handleMenuSwipe($event, touchStartY)"
+    @touchend="
+      dragging = false;
+      if (dragY > 80) { userSheetOpen = false }
+      dragY = 0;
+    "
+  >
+    <div class="flex justify-center pt-2 pb-1 flex-shrink-0">
+      <span class="w-10 h-1.5 rounded-full bg-border"></span>
+    </div>
+    <div class="flex flex-col overflow-y-auto" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+      {% with show_theme_row = true %}{% include "_user_menu_content.html" %}{% endwith %}
+    </div>
+  </div>
+</div>
+{% endif %}

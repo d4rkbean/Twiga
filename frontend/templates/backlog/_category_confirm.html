@@ -1,0 +1,15 @@
+<form
+  hx-post="/backlog/{{ transaction_id }}/validate"
+  hx-include="#backlog-search-input, #backlog-suggestion-filter"
+  hx-target="#backlog-content"
+  hx-swap="outerHTML"
+>
+  <input type="hidden" name="category_id" value="{{ category.id }}" />
+  <input type="hidden" name="page" value="{{ page }}" />
+  <button
+    type="submit"
+    class="w-full min-h-[50px] rounded-xl bg-success text-on-accent font-semibold"
+  >
+    {{ icon('check') }} Confirmer {{ category.icon or "" }} {{ category.name }}
+  </button>
+</form>

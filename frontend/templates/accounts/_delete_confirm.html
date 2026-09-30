@@ -1,0 +1,41 @@
+<div id="account-row-{{ account.id }}" class="rounded-xl border-2 border-danger bg-container p-3 flex flex-col gap-3">
+  {% if transaction_count %}
+  <p class="text-sm text-danger">
+    "{{ account.name }}" a {{ transaction_count }} transaction{{ "s" if transaction_count != 1 else "" }}.
+    Supprime-les ou déplace-les vers un autre compte avant de supprimer ce compte.
+  </p>
+  <button
+    type="button"
+    hx-get="/accounts/{{ account.id }}/row"
+    hx-target="#account-row-{{ account.id }}"
+    hx-swap="outerHTML"
+    class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+  >
+    OK
+  </button>
+  {% else %}
+  <p class="text-sm text-secondary">
+    Supprimer "{{ account.name }}" ? Aucune transaction n'est rattachée à ce compte.
+  </p>
+  <form
+    hx-post="/accounts/{{ account.id }}/delete"
+    hx-target="#accounts-content"
+    hx-swap="outerHTML"
+    hx-confirm="Supprimer définitivement le compte « {{ account.name }} » ?"
+    class="flex gap-2"
+  >
+    <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-danger font-medium">
+      Supprimer
+    </button>
+    <button
+      type="button"
+      hx-get="/accounts/{{ account.id }}/row"
+      hx-target="#account-row-{{ account.id }}"
+      hx-swap="outerHTML"
+      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+    >
+      Annuler
+    </button>
+  </form>
+  {% endif %}
+</div>

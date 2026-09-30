@@ -1,0 +1,54 @@
+<div id="detect-transfers-content" class="flex flex-col gap-3">
+  {% if pairs %}
+  <form
+    hx-post="/accounts/detect-transfers/confirm-all"
+    hx-target="#detect-transfers-content"
+    hx-swap="outerHTML"
+    hx-confirm="Confirmer les {{ pairs | length }} virement(s) détecté(s) ?"
+  >
+    <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+      {{ icon('check') }} Tout confirmer ({{ pairs | length }})
+    </button>
+  </form>
+  {% endif %}
+
+  {% for pair in pairs %}
+  <div data-pair class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2">
+    <p class="text-sm font-semibold text-primary">
+      {{ icon('repeat') }} {{ pair.negative.account.name }} {{ icon('arrow-narrow-right', size=14) }} {{ pair.positive.account.name }}
+    </p>
+    <p class="text-sm text-secondary">
+      <span class="amount-blur text-danger font-medium">{{ pair.negative.amount | eur }}</span>
+      le {{ pair.negative.date | fr_date }}
+      {{ icon('arrows-left-right') }}
+      <span class="amount-blur text-success font-medium">+{{ pair.positive.amount | eur }}</span>
+      le {{ pair.positive.date | fr_date }}
+    </p>
+    <div class="flex gap-2">
+      <form
+        hx-post="/accounts/detect-transfers/confirm"
+        hx-target="#detect-transfers-content"
+        hx-swap="outerHTML"
+        class="flex-1"
+      >
+        <input type="hidden" name="tx_a_id" value="{{ pair.negative.id }}" />
+        <input type="hidden" name="tx_b_id" value="{{ pair.positive.id }}" />
+        <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+          {{ icon('check') }} Confirmer
+        </button>
+      </form>
+      <button
+        type="button"
+        @click="$el.closest('[data-pair]').remove()"
+        class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      >
+        {{ icon('x') }} Ignorer
+      </button>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-container rounded-xl shadow-sm p-6">
+    <p class="text-sm text-secondary text-center">{{ icon('confetti') }} Aucun virement interne non confirmé détecté.</p>
+  </div>
+  {% endfor %}
+</div>

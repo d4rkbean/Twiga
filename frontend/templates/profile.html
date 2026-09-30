@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Mon profil — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-primary">{{ icon('user', size=24) }} Mon profil</h1>
+    <a href="/dashboard" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Retour</a>
+  </div>
+
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex items-center gap-3">
+    <span class="w-14 h-14 rounded-full bg-accent text-on-accent flex items-center justify-center text-lg font-bold flex-shrink-0">
+      {{ user_initials(current) }}
+    </span>
+    <div class="flex flex-col min-w-0">
+      <span class="text-primary font-bold truncate">{{ current.display_name or current.username }}</span>
+      <span class="text-sm text-secondary">{{ user_role_label(current.role) }}</span>
+    </div>
+  </div>
+
+  <!-- Nom affiché / nom d'utilisateur : HTMX, résultat dans une petite zone
+       (même convention que le changement de mot de passe ci-dessous), pas
+       de reset du formulaire au succès (contrairement au mot de passe) —
+       les champs doivent garder les valeurs qui viennent d'être
+       enregistrées, pas revenir à un état "vide". -->
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
+    <h2 class="text-lg font-bold text-primary">Informations</h2>
+    <form
+      hx-post="/profile/update"
+      hx-target="#profile-update-result"
+      hx-swap="innerHTML"
+      class="flex flex-col gap-3"
+    >
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-secondary">Nom affiché (facultatif)</span>
+        <input
+          type="text"
+          name="display_name"
+          value="{{ current.display_name or '' }}"
+          placeholder="ex. Jean Dupont"
+          maxlength="100"
+          class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        />
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-secondary">Nom d'utilisateur</span>
+        <input
+          type="text"
+          name="username"
+          value="{{ current.username }}"
+          required
+          class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        />
+      </label>
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+        {{ icon('device-floppy', size=18) }} Enregistrer
+      </button>
+      <div id="profile-update-result"></div>
+    </form>
+  </div>
+
+  <!-- Changement de mot de passe : réutilise TEL QUEL /settings/change-password
+       (même endpoint que Paramètres > Sécurité — auto-service, n'importe
+       quel rôle peut changer le sien, voir backend/auth.py). -->
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
+    <h2 class="text-lg font-bold text-primary">Changer le mot de passe</h2>
+    <form
+      hx-post="/settings/change-password"
+      hx-target="#profile-password-result"
+      hx-swap="innerHTML"
+      hx-on:htmx:after-request="if(event.detail.successful) this.reset()"
+      class="flex flex-col gap-3"
+    >
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-secondary">Mot de passe actuel</span>
+        {% with field_name = "current_password", field_autocomplete = "current-password" %}
+        {% include "_password_field.html" %}
+        {% endwith %}
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-secondary">Nouveau mot de passe</span>
+        {% with field_name = "new_password", field_autocomplete = "new-password", field_minlength = 8 %}
+        {% include "_password_field.html" %}
+        {% endwith %}
+      </label>
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-secondary">Confirmer le nouveau mot de passe</span>
+        {% with field_name = "confirm_password", field_autocomplete = "new-password", field_minlength = 8 %}
+        {% include "_password_field.html" %}
+        {% endwith %}
+      </label>
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+        {{ icon('device-floppy', size=18) }} Enregistrer
+      </button>
+      <div id="profile-password-result"></div>
+    </form>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,75 @@
+<div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
+  <h2 class="text-xl font-bold text-primary">Étape 2 — Confirmer les colonnes</h2>
+  <p class="text-sm text-secondary">Séparateur détecté : « {{ preview.delimiter }} »</p>
+
+  <div class="overflow-x-auto rounded-xl border border-border">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-page">
+          {% for name in preview.header %}
+          <th class="text-left text-secondary font-medium px-3 py-2 whitespace-nowrap">{{ name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in preview.sample_rows %}
+        <tr class="border-t border-border">
+          {% for cell in row %}
+          <td class="text-primary px-3 py-2 whitespace-nowrap">{{ cell }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <form
+    hx-post="/imports/{{ import_id }}/confirm"
+    hx-target="#import-wizard"
+    hx-swap="innerHTML"
+    class="flex flex-col gap-4"
+  >
+    <input type="hidden" name="format" value="csv" />
+    <input type="hidden" name="account_id" value="{{ account.id }}" />
+
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Colonne Date</span>
+      <select name="date_column" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+        {% for name in preview.header %}
+        <option value="{{ loop.index0 }}" {% if loop.index0 == preview.guessed_mapping.date_column %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Colonne Libellé</span>
+      <select name="label_column" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+        {% for name in preview.header %}
+        <option value="{{ loop.index0 }}" {% if loop.index0 == preview.guessed_mapping.label_column %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Colonne Montant</span>
+      <select name="amount_column" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+        {% for name in preview.header %}
+        <option value="{{ loop.index0 }}" {% if loop.index0 == preview.guessed_mapping.amount_column %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Format de date</span>
+      <select name="date_format" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+        {% for fmt in date_format_choices %}
+        <option value="{{ fmt }}" {% if fmt == preview.detected_date_format %}selected{% endif %}>{{ fmt }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+      Continuer
+    </button>
+  </form>
+</div>

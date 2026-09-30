@@ -1,0 +1,131 @@
+{% include "cap/_progress_dots.html" %}
+
+<div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
+  <h2 class="text-lg font-bold text-primary flex items-center gap-2" >{{ icon('chart-bar') }}Bilan {{ previous_month_label }}</h2>
+
+  {# Les lignes Essentiel et Choix se déplient sur leurs catégories : « a
+     dépassé de 140 € » appelle immédiatement « dont quoi ? », et la réponse
+     ne doit pas obliger à quitter le bilan. Même donnée que « Mon mois »
+     (crud.get_month_detail_by_pillar) pour que les deux écrans racontent la
+     même chose. #}
+  <div class="overflow-x-auto -mx-1" x-data="{ ouverts: {} }">
+    <table class="w-full text-sm min-w-[360px]">
+      <thead>
+        <tr class="text-xs text-secondary uppercase tracking-wide">
+          <th class="text-left font-medium py-1 px-1"></th>
+          {% if has_previous_cap %}
+          <th class="text-right font-medium py-1 px-1">Prévu</th>
+          {% endif %}
+          <th class="text-right font-medium py-1 px-1">Réel</th>
+          {% if has_previous_cap %}
+          <th class="text-right font-medium py-1 px-1">Écart</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in bilan_lines %}
+        {% set colonnes = 4 if has_previous_cap else 2 %}
+        <tr class="border-t border-border">
+          <td class="py-2 px-1 text-primary font-medium whitespace-nowrap">
+            {% if line.detail and line.detail.categories %}
+            <button
+              type="button"
+              @click="ouverts['{{ line.code }}'] = !ouverts['{{ line.code }}']"
+              class="flex items-center gap-1 text-primary font-medium min-h-[36px]"
+              :aria-expanded="ouverts['{{ line.code }}'] ? 'true' : 'false'"
+            >
+              <span class="text-secondary w-3" x-text="ouverts['{{ line.code }}'] ? '▾' : '▸'">▸</span>
+              {{ line.icon }} {{ line.name }}
+            </button>
+            {% else %}
+            <span class="inline-block pl-4">{{ line.icon }} {{ line.name }}</span>
+            {% endif %}
+          </td>
+          {% if has_previous_cap %}
+          <td class="py-2 px-1 text-right text-secondary amount-blur">{{ line.planned | eur }}</td>
+          {% endif %}
+          <td class="py-2 px-1 text-right text-primary font-semibold amount-blur">{{ line.real | eur }}</td>
+          {% if has_previous_cap %}
+          <td class="py-2 px-1 text-right font-semibold amount-blur text-{{ line.écart_color }}">
+            {{ "+" if line.écart >= 0 else "" }}{{ line.écart | eur }}
+            {% if line.écart_color == "success" %}<span class="badge-dot" style="background-color:var(--color-success);display:inline-block"></span>{% elif line.écart_color == "warning" %}<span class="badge-dot" style="background-color:var(--color-warning);display:inline-block"></span>{% else %}<span class="badge-dot" style="background-color:var(--color-danger);display:inline-block"></span>{% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% if line.detail and line.detail.categories %}
+        {% for ligne in line.detail.categories %}
+        <tr x-show="ouverts['{{ line.code }}']" style="display: none;" class="border-t border-border/50">
+          <td class="py-1.5 px-1 pl-6 text-secondary truncate">{{ ligne.category.name | category_display }}</td>
+          {% if has_previous_cap %}
+          <td class="py-1.5 px-1 text-right text-secondary amount-blur">{{ ligne.budget | eur }}</td>
+          {% endif %}
+          <td class="py-1.5 px-1 text-right text-primary amount-blur">{{ ligne.spent | eur }}</td>
+          {% if has_previous_cap %}
+          {# Même unité et même convention de signe que la ligne de pilier
+             au-dessus : un écart = prévu - réel, positif quand on est resté
+             sous l'enveloppe. Un pourcentage ici ferait cohabiter deux
+             unités dans la colonne « Écart ». #}
+          {% set ecart_categorie = ligne.budget - ligne.spent %}
+          <td class="py-1.5 px-1 text-right amount-blur {{ 'text-success' if ecart_categorie >= 0 else 'text-danger' }}">
+            {{ "+" if ecart_categorie >= 0 else "" }}{{ ecart_categorie | eur }}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+        {% if line.detail.unbudgeted %}
+        <tr x-show="ouverts['{{ line.code }}']" style="display: none;" class="border-t border-border/50">
+          <td class="py-1.5 px-1 pl-6 text-secondary italic">Hors budget</td>
+          {% if has_previous_cap %}<td class="py-1.5 px-1 text-right text-secondary">—</td>{% endif %}
+          <td class="py-1.5 px-1 text-right text-primary amount-blur">{{ line.detail.unbudgeted | eur }}</td>
+          {% if has_previous_cap %}<td class="py-1.5 px-1 text-right text-secondary">—</td>{% endif %}
+        </tr>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if unexpected_transactions %}
+  <div class="flex flex-col gap-1">
+    <p class="text-sm font-semibold text-primary flex items-center gap-1" >{{ icon('urgent', size=16) }}Imprévus du mois :</p>
+    <div class="flex flex-col gap-0.5 text-sm">
+      {% for tx in unexpected_transactions %}
+      <p class="text-secondary flex justify-between gap-2">
+        <span class="truncate">{{ tx.date | fr_date }} {{ tx.label or "(sans libellé)" }}</span>
+        <span class="amount-blur text-danger font-medium whitespace-nowrap">{{ tx.amount | eur }}</span>
+      </p>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<form
+  hx-post="/cap/step2"
+  hx-target="#cap-wizard"
+  hx-swap="innerHTML"
+  class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3"
+>
+  <p class="text-sm font-semibold text-primary flex items-center gap-1" >{{ icon('writing', size=16) }}Un mot sur {{ previous_month_label }}</p>
+  <label class="flex flex-col gap-1">
+    <span class="text-xs text-secondary">Quels ont été nos imprévus ? Étaient-ils évitables ?</span>
+    <textarea name="reflection_unexpected" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
+  </label>
+  <label class="flex flex-col gap-1">
+    <span class="text-xs text-secondary">Y a-t-il une dépense dont vous n'êtes pas fiers ?</span>
+    <textarea name="reflection_regret" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
+  </label>
+  <label class="flex flex-col gap-1">
+    <span class="text-xs text-secondary">Y a-t-il une dépense dont vous êtes particulièrement contents ?</span>
+    <textarea name="reflection_proud" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
+  </label>
+  <label class="flex flex-col gap-1">
+    <span class="text-xs text-secondary">Qu'est-ce qui a bien fonctionné ce mois ?</span>
+    <textarea name="reflection_worked_well" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
+  </label>
+
+  <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold mt-2">
+    Suivant {{ icon('arrow-narrow-right') }}
+  </button>
+</form>

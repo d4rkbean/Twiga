@@ -1,0 +1,45 @@
+{#
+  Carte "Ce mois" (ROW 1 du Panorama) : partagée entre le rendu normal
+  (index.html, jamais en OOB) et le rafraîchissement HTMX déclenché par la
+  case "Décaler les recettes" (dashboard/_content.html, en OOB — voir
+  routers/dashboard.py, dashboard_content). row1_oob (bool) pilote l'ajout
+  de hx-swap-oob : présent uniquement dans ce second cas, sinon la carte
+  d'index.html se ferait remplacer par une copie identique à chaque
+  chargement complet de page (inoffensif, mais un id dupliqué serait
+  invalide en HTML si les deux versions étaient rendues sans distinction).
+#}
+<div
+  id="panorama-ce-mois"
+  {% if row1_oob %}hx-swap-oob="true"{% endif %}
+  class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5"
+>
+  <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('calendar-event', size=88) }}</span>
+  <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('calendar-event', size=14) }} Ce mois</p>
+
+  {# Bureau : le résultat du mois est LE chiffre de cette tuile, il passe donc
+     en tête et en grand ; recettes et dépenses le détaillent en dessous, sur
+     une seule ligne. Mobile : les trois lignes d'origine, à l'identique —
+     trois montants de même taille tiennent dans une tuile de 170 px, un
+     chiffre de 30 px non. #}
+  <p class="hidden lg:block amount-blur text-3xl font-extrabold tabular-nums {{ 'text-success' if row1_result >= 0 else 'text-danger' }}">
+    {{ "+" if row1_result > 0 else "" }}{{ row1_result | eur }}
+  </p>
+  <p class="hidden lg:block text-xs text-secondary">
+    <span class="amount-blur font-semibold text-success">+{{ row1_income | eur }}</span>
+    <span class="text-border"> / </span>
+    <span class="amount-blur font-semibold text-danger">-{{ row1_expense | eur }}</span>
+  </p>
+
+  <p class="text-xs text-secondary lg:hidden">
+    Recettes : <span class="amount-blur font-semibold text-success">+{{ row1_income | eur }}</span>
+  </p>
+  <p class="text-xs text-secondary lg:hidden">
+    Dépenses : <span class="amount-blur font-semibold text-danger">-{{ row1_expense | eur }}</span>
+  </p>
+  <p class="text-xs text-secondary lg:hidden">
+    Résultat :
+    <span class="amount-blur font-semibold {{ 'text-success' if row1_result >= 0 else 'text-danger' }}">
+      {{ "+" if row1_result > 0 else "" }}{{ row1_result | eur }}
+    </span>
+  </p>
+</div>

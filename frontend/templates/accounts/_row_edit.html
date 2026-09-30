@@ -1,0 +1,61 @@
+<form
+  id="account-row-{{ account.id }}"
+  hx-post="/accounts/{{ account.id }}/update"
+  hx-target="#accounts-content"
+  hx-swap="outerHTML"
+  class="rounded-xl border-2 border-accent bg-container p-3 flex flex-col gap-2"
+>
+  <input
+    type="text"
+    name="name"
+    value="{{ account.name }}"
+    required
+    autofocus
+    placeholder="Nom du compte"
+    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+  />
+  <select name="type" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+    {% for code, meta in account_types.items() %}
+    <option value="{{ code }}" {% if account.type == code %}selected{% endif %}>{{ meta.icon }} {{ meta.label }}</option>
+    {% endfor %}
+  </select>
+  <label class="flex flex-col gap-1">
+    <span class="text-xs text-secondary uppercase tracking-wide">Solde initial (avant la 1ère opération importée)</span>
+    <input
+      type="text"
+      inputmode="decimal"
+      name="initial_balance"
+      value="{{ account.balance }}"
+      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    />
+  </label>
+  <label class="flex items-center justify-between gap-2 min-h-[50px]">
+    <span class="text-sm text-primary">Couleur</span>
+    <input
+      type="color"
+      name="color"
+      value="{{ account.color or '#d4a96a' }}"
+      class="h-10 w-16 rounded-lg border border-border bg-container"
+    />
+  </label>
+  <textarea
+    name="notes"
+    rows="2"
+    placeholder="Notes (optionnel)"
+    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 py-2"
+  >{{ account.notes or "" }}</textarea>
+  <div class="flex gap-2">
+    <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+      Enregistrer
+    </button>
+    <button
+      type="button"
+      hx-get="/accounts/{{ account.id }}/row"
+      hx-target="#account-row-{{ account.id }}"
+      hx-swap="outerHTML"
+      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+    >
+      Annuler
+    </button>
+  </div>
+</form>

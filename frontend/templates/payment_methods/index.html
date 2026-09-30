@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Modes de paiement — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-primary">Modes de paiement</h1>
+    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Paramètres</a>
+  </div>
+
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
+    <h2 class="text-lg font-bold text-primary">Ajouter</h2>
+    <form method="post" action="/payment-methods/create" class="flex flex-col gap-2">
+      <div class="flex gap-2">
+        <input name="icon" placeholder="💳" maxlength="10" class="w-16 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 text-center" />
+        <input name="name" placeholder="Nom" required class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3" />
+      </div>
+      <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">Ajouter</button>
+    </form>
+  </div>
+
+  <div class="flex flex-col gap-2">
+    {% for pm in methods %}
+    <div x-data="{ mode: 'view' }" class="bg-container rounded-xl shadow-sm p-2">
+      <!-- Vue normale -->
+      <div x-show="mode === 'view'" class="flex items-center gap-2">
+        <span class="w-10 flex-shrink-0 text-center text-lg">{{ pm.icon }}</span>
+        <span class="flex-1 min-w-0 truncate text-primary font-medium">{{ pm.name }}</span>
+        <button
+          type="button"
+          @click="mode = 'edit'"
+          aria-label="Modifier"
+          class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-primary flex items-center justify-center"
+        >
+          {{ icon('edit', size=16) }}
+        </button>
+        <button
+          type="button"
+          @click="mode = 'confirm'"
+          aria-label="Supprimer"
+          class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-danger flex items-center justify-center"
+        >
+          {{ icon('trash', size=16) }}
+        </button>
+      </div>
+
+      <!-- Édition inline -->
+      <form
+        method="post"
+        action="/payment-methods/{{ pm.id }}/update"
+        x-show="mode === 'edit'"
+        style="display: none;"
+        class="flex items-center gap-2"
+      >
+        <input
+          name="icon"
+          value="{{ pm.icon }}"
+          maxlength="10"
+          class="w-12 flex-shrink-0 min-h-[50px] rounded-xl border border-border bg-container text-primary px-1 text-center"
+        />
+        <input
+          name="name"
+          value="{{ pm.name }}"
+          required
+          class="flex-1 min-w-0 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        />
+        <button type="submit" aria-label="Enregistrer" class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
+          {{ icon('check', size=16) }}
+        </button>
+        <button
+          type="button"
+          @click="mode = 'view'"
+          aria-label="Annuler"
+          class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-secondary flex items-center justify-center"
+        >
+          {{ icon('x', size=16) }}
+        </button>
+      </form>
+
+      <!-- Confirmation de suppression inline -->
+      <form
+        method="post"
+        action="/payment-methods/{{ pm.id }}/delete"
+        x-show="mode === 'confirm'"
+        style="display: none;"
+        class="flex items-center gap-2"
+      >
+        <span class="flex-1 min-w-0 truncate text-sm text-danger">Supprimer {{ pm.icon }} {{ pm.name }} ?</span>
+        <button type="submit" class="min-h-[50px] flex-shrink-0 rounded-xl bg-danger text-white font-medium px-4">
+          Oui
+        </button>
+        <button
+          type="button"
+          @click="mode = 'view'"
+          class="min-h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-primary font-medium px-4"
+        >
+          Non
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

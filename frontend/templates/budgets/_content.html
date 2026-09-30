@@ -1,0 +1,130 @@
+<div class="flex flex-col gap-4">
+
+  {# Le suivi du mois vit désormais sur « Mon mois » (cap/mid.html), qui le
+     montre par pilier ET par catégorie. Le répéter ici en faisait une
+     cinquième redite du même mois dans l'application, et brouillait le rôle
+     de cette page : ici on AJUSTE le plan, on ne le regarde pas. #}
+  <div class="flex justify-end">
+    <button
+      type="button"
+      hx-post="/budgets/copy-previous?month={{ month }}&year={{ year }}"
+      hx-target="#budgets-content"
+      hx-swap="innerHTML"
+      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4"
+    >
+      {{ icon('clipboard-copy') }} Copier le mois précédent
+    </button>
+  </div>
+
+  <form
+    hx-post="/budgets/save?month={{ month }}&year={{ year }}"
+    hx-target="#budgets-content"
+    hx-swap="innerHTML"
+    class="flex flex-col gap-3"
+    x-data="{
+      income: {{ month_resources }},
+      savingsWithdrawal: {{ '%.2f' % savings_withdrawal }},
+      amounts: {
+        {% for category in categories %}{{ category.id }}: {{ '%.2f' % (budgets.get(category.id) or 0) }}{% if not loop.last %},{% endif %}{% endfor %}
+      },
+      get available() { return this.income + (Number(this.savingsWithdrawal) || 0) },
+      pct(id) { return this.available ? (Number(this.amounts[id]) || 0) / this.available * 100 : 0 },
+      get total() {
+        return Object.values(this.amounts).reduce((sum, v) => sum + (Number(v) || 0), 0)
+      },
+      get totalPct() { return this.available ? this.total / this.available * 100 : 0 },
+      fmt(v) { return v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' },
+    }"
+  >
+    {# Affiché même quand la référence est inconnue : ce bloc porte aussi le
+       prélèvement sur épargne, qui n'a aucune raison de disparaître. Avec la
+       stratégie « virements », la proposition vaut 0 tant que le cap du mois
+       n'a pas été fixé — les virements se cochent dans le rituel. #}
+    <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2">
+      {# Même nombre que le rituel : cette page et Le Cap éditent le même
+         plan, elles ne peuvent pas proposer deux bases de répartition. #}
+      {% if month_resources %}
+      <p class="text-sm text-secondary">
+        {{ icon('currency-euro', size=16) }} Ressources de {{ period_label }} :
+        <span class="text-primary font-medium">{{ month_resources | eur }}</span>
+        {% if resources_from_cap %}
+        — le montant fixé dans Le Cap.
+        {% else %}
+        — proposé d'après votre réglage, tant que le cap du mois n'est pas fixé.
+        {% endif %}
+      </p>
+      {% else %}
+      <p class="text-sm text-secondary">
+        {{ icon('info-circle', size=16) }} Ressources de {{ period_label }} non définies.
+        <a href="/cap" class="text-accent font-medium">Fixer le cap du mois →</a>
+        pour les poser, ou répartissez librement ci-dessous.
+      </p>
+      {% endif %}
+      <label class="flex items-center justify-between gap-2">
+        <span class="text-sm text-secondary">{{ icon('pig-money', size=16) }} Prélèvement sur épargne prévu ce mois-ci</span>
+        <input
+          type="text"
+          inputmode="decimal"
+          name="savings_withdrawal"
+          x-model.number="savingsWithdrawal"
+          value="{% if savings_withdrawal %}{{ '%.2f' % savings_withdrawal }}{% endif %}"
+          placeholder="0,00"
+          class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-page text-primary px-3"
+        />
+      </label>
+      <p class="text-sm font-medium text-primary border-t border-border pt-2" x-show="available" style="display: none;">
+        = Disponible à répartir : <span x-text="fmt(available)"></span>
+      </p>
+    </div>
+
+    {% for category in categories %}
+    {% set existing = budgets.get(category.id) %}
+    <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex items-center justify-between gap-3">
+      <span class="text-primary font-medium">{{ category.icon or icon('tag', size=16) }} {{ category.name | category_display }}</span>
+      <div class="flex items-center gap-2">
+        <input
+          type="text"
+          inputmode="decimal"
+          name="amount_{{ category.id }}"
+          x-model.number="amounts[{{ category.id }}]"
+          value="{% if existing is not none %}{{ '%.2f' % existing }}{% endif %}"
+          placeholder="0,00"
+          class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        />
+        <span
+          class="text-xs text-secondary w-10 text-right flex-shrink-0"
+          x-show="available"
+          style="display: none;"
+          x-text="pct({{ category.id }}).toFixed(0) + ' %'"
+        ></span>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary text-center">Aucune catégorie disponible.</p>
+    {% endfor %}
+
+    {% if categories %}
+    <div class="bg-page rounded-xl p-4 flex flex-col gap-1 border border-border">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-medium text-primary">Total budgété</span>
+        <span
+          class="text-sm font-semibold"
+          :class="totalPct > 100 ? 'text-danger' : (totalPct > 90 ? 'text-warning' : 'text-success')"
+          x-text="available ? fmt(total) + ' (' + totalPct.toFixed(0) + ' %)' : fmt(total)"
+        ></span>
+      </div>
+      <p class="text-xs text-secondary" x-show="available" style="display: none;" x-text="'Reste à répartir : ' + fmt(available - total)"></p>
+      <p class="text-xs text-danger font-medium" x-show="total > available" style="display: none;">
+        {{ icon('alert-triangle', size=16) }} Le total dépasse les ressources de {{ period_label }}<span x-show="savingsWithdrawal" style="display: none;"> + le prélèvement sur épargne</span>.
+      </p>
+    </div>
+    {% endif %}
+
+    {% if categories %}
+    <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+      Enregistrer
+    </button>
+    {% endif %}
+  </form>
+
+</div>

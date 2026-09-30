@@ -1,0 +1,458 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: #f9f9f9;
+  --color-container: #ffffff;
+  --color-primary: #111827;
+  --color-secondary: #585e6a;  /* assombri : le motif de fond passe
+     derrière ce texte et lui mangeait du contraste (4,04:1 à 10 %
+     d'opacité, sous le seuil de 4,5). Tient 4,64:1 sur la plaque la plus
+     sombre du pelage à 22 %, et 6,51:1 sur les cartes blanches. */
+  --color-border: #e5e7eb;
+  /* Palette "girafe" : tan/ambre (couleur des taches) comme accent, brun
+     foncé comme couleur de texte/premier plan sur cet accent — le brun a
+     bien plus de contraste que du blanc sur un ambre aussi clair. Valeurs
+     identiques en clair et en sombre (un ton moyen comme #D4A96A se lit bien
+     sur les deux fonds), donc pas besoin de les redéfinir dans .dark
+     ci-dessous. */
+  --color-accent: #d4a96a;
+  --color-on-accent: #5c3d1e;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+}
+
+/* Mode sombre : bascule via la classe .dark posée sur <html> (gérée par le
+   script inline dans base.html — prefers-color-scheme au premier chargement,
+   puis préférence explicite persistée en localStorage).
+   Volontairement en dehors de tout @layer : Tailwind v4 génère les variables
+   de @theme ci-dessus à l'intérieur de @layer theme, et dans le système de
+   cascade layers natif du CSS, une règle SANS layer l'emporte toujours sur
+   une règle QUI EN A UNE — donc ce bloc écrase correctement les valeurs
+   claires dès que .dark est présent, sans jamais avoir besoin de dupliquer
+   les classes utilitaires (bg-page, text-primary, border-border...) avec un
+   variant dark: sur chaque template. */
+.dark {
+  /* Indispensable : sans color-scheme, Chrome Android considère que le site
+     ne gère pas le thème sombre et applique son « thème sombre automatique »
+     PAR-DESSUS — il recalcule toute la palette en gris neutres (la carte
+     devenant plus sombre que la page, l'inverse de ces tokens) et supprime
+     purement et simplement le motif de fond. Le déclarer désactive cette
+     réécriture et rend aussi les contrôles natifs, barres de défilement et
+     curseurs de saisie cohérents avec le thème. */
+  color-scheme: dark;
+  --color-page: #0f172a;
+  --color-container: #1e293b;
+  --color-primary: #f1f5f9;
+  --color-secondary: #94a3b8;
+  --color-border: #334155;
+  /* Légèrement éclaircies pour rester lisibles sur fond sombre (le vert/
+     orange/rouge du mode clair perdent en contraste sur un fond navy). */
+  --color-success: #22c55e;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+}
+
+@layer base {
+  /* Pendant clair de color-scheme (voir le bloc .dark ci-dessus, non layered
+     donc prioritaire quand la classe est présente). */
+  :root {
+    color-scheme: light;
+  }
+
+  /* Transition douce sur le changement de thème : sans ça, basculer
+     clair/sombre fait clignoter chaque couleur instantanément au lieu d'un
+     fondu. Volontairement limité aux propriétés de couleur (pas transform/
+     tous les "opacity" globaux) pour ne pas ralentir le retour tactile des
+     boutons ni le fade-in HTMX ci-dessous, qui ont leurs propres transitions
+     plus rapides et plus spécifiques (donc prioritaires en cascade). */
+  * {
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease,
+      opacity 200ms ease;
+  }
+
+  /* Le navigateur ne met PAS cursor:pointer sur <button> par défaut (seuls
+     les <a> l'ont) : sans cette règle, tous les boutons de l'app affichent
+     le curseur "default" au survol malgré leur apparence cliquable. */
+  button {
+    cursor: pointer;
+    transition: transform 100ms ease, opacity 100ms ease;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Survol (souris/trackpad uniquement — @media (hover: hover) évite l'état
+     :hover "collé" après un tap sur écran tactile, un défaut classique). */
+  @media (hover: hover) {
+    button:not(:disabled):hover {
+      filter: brightness(0.96);
+    }
+  }
+
+  /* Retour tactile immédiat au tap, avant même que la requête HTMX ne parte
+     ou ne réponde — sur mobile, le délai réseau peut sinon donner
+     l'impression qu'un tap n'a rien fait. */
+  button:not(:disabled):active {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+
+  /* Anneau de focus clavier, volontairement distinct du survol/tap
+     ci-dessus : sans règle explicite, l'app ne rendait que l'outline par
+     défaut du navigateur (variable selon navigateur/OS, parfois à peine
+     visible sur bg-container). :focus-visible (pas :focus) pour ne montrer
+     l'anneau qu'à la navigation clavier — jamais au clic/tap souris, qui
+     produirait un halo disgracieux à chaque tap sur mobile. outline-offset
+     positif pour ne jamais chevaucher le texte/l'icône du contrôle. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Pendant la requête HTMX déclenchée par l'élément (classe ajoutée
+     automatiquement par htmx tant que la réponse n'est pas arrivée) :
+     confirme visuellement qu'une action est en cours et évite les doubles
+     clics accidentels le temps de la réponse. */
+  .htmx-request {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* Fondu d'entrée sur le contenu nouvellement inséré par un swap HTMX.
+     htmx pose ces classes sur les éléments fraîchement ajoutés (added) et/ou
+     en cours d'installation (settling) puis les retire à la frame suivante ;
+     combiné à la transition d'opacité de la règle "*" ci-dessus, ça anime un
+     fade-in au lieu d'un pop-in instantané. Les deux classes sont couvertes
+     pour rester robuste aux différents chemins de swap d'htmx. */
+  .htmx-added,
+  .htmx-settling {
+    opacity: 0;
+  }
+
+  /* Mode confidentialité (case à cocher Paramètres + bouton 👁️ de
+     l'en-tête, purement client via Alpine + localStorage, jamais persisté
+     en base — voir <body x-data> dans base.html). .amount-blur est une
+     classe STATIQUE posée par Jinja sur chaque montant ; seule la classe
+     .privacy-mode sur <body> déclenche le flou. La cascade CSS s'applique
+     alors correctement à tout contenu, y compris injecté après coup (HTMX,
+     Chart.js), sans dépendre d'un re-scan JS au bon moment.
+     Volontairement AUCUNE règle :hover ni :active, ni aucun handler de tap
+     sur le montant lui-même : seul le bouton 👁️ peut lever le flou, pour ne
+     jamais démasquer un montant par accident au survol souris ou au tap. */
+  body.privacy-mode .amount-blur {
+    filter: blur(8px);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  /* Motif de taches de girafe : diagramme de Voronoï généré par script
+     (numpy/scipy/shapely, cellules pavées de façon périodique donc sans
+     couture visible en repeat), répété derrière tout le contenu via un
+     ::before plutôt que le background-image de <body> directement —
+     seule façon d'en réduire l'opacité sans en faire disparaître
+     l'application entière avec (un opacity CSS sur <body> lui-même
+     s'appliquerait à tout son contenu, pas juste au fond). position:
+     fixed + z-index négatif : reste sous tout le contenu réel de la
+     page, quelle que soit la hauteur réelle du document (contrairement
+     à un simple absolute qui ne couvrirait que la hauteur de <body> au
+     premier rendu). Deux fichiers séparés (au lieu d'un seul recoloré en
+     CSS) : ce sont des textures avec leur propre dégradé par cellule, pas
+     des aplats qu'une simple variable de couleur suffirait à retéinter. */
+  /* Le pelage ne couvre PLUS les écrans de travail.
+     Testé auprès d'utilisateurs : « trop fort, déconcentre de l'essentiel ».
+     La mesure le confirmait — écart perceptuel plaque/fond de ΔE 5,63 en
+     thème sombre (brun chaud sur bleu nuit : l'écart est chromatique, pas
+     lumineux) contre 2,38 en clair. Sur une application dont le travail est
+     de lire des chiffres, un aplat animalier plein cadre entre en
+     concurrence avec les données.
+     Le motif devient donc un ACCENT, réservé aux écrans sans donnée à lire :
+     `pelage` en pleine page (connexion), `pelage-zone` dans une carte
+     (états vides). Partout ailleurs, fond uni — l'identité tient sur
+     l'ambre, le logo et les icônes. */
+  body.pelage::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("/static/css/giraffe-pattern.svg");
+    background-repeat: repeat;
+    /* 560px, pas 320 : le SVG fait 1000 unités, donc une tuile de 320px
+       réduisait le motif d'un facteur 3 et ramenait chaque plaque à ~46px —
+       des petits polygones serrés qui lisaient comme une peau de serpent
+       plutôt que comme un pelage de girafe. À 560px la plaque fait ~140px,
+       la lecture « girafe réticulée ». Toute modification ici doit rester
+       cohérente avec la densité du SVG (grille 4x4, voir le générateur). */
+    background-size: 2240px 2240px;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+
+  .dark body.pelage::before {
+    background-image: url("/static/css/giraffe-pattern-dark.svg");
+    opacity: 0.35;
+  }
+
+  /* Pelage confiné à un bloc (états vides). Tuile deux fois plus petite que
+     la version pleine page : à 2240px, une carte de quelques centaines de
+     pixels n'afficherait qu'un fragment d'une seule plaque — une tache sans
+     lecture possible. À 1120px on voit plusieurs plaques, donc le motif. */
+  .pelage-zone {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pelage-zone::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("/static/css/giraffe-pattern.svg");
+    background-repeat: repeat;
+    background-size: 1120px 1120px;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+
+  .dark .pelage-zone::before {
+    background-image: url("/static/css/giraffe-pattern-dark.svg");
+    opacity: 0.35;
+  }
+
+  /* Le ::before est positionné : sans `relative` ici, les enfants non
+     positionnés se peindraient EN DESSOUS et le texte passerait sous le
+     motif. */
+  .pelage-zone > * {
+    position: relative;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMPOSANTS CANONIQUES — source de vérité unique.
+
+   Toute valeur vient des tokens sémantiques déclarés en haut de ce
+   fichier : aucune couleur en dur, pour que chaque composant bascule
+   seul en thème sombre.
+
+   Invariants issus de PRODUCT.md et DESIGN.md, non négociables ici :
+   - toute cible tactile fait au moins 50px de haut (workflow pouce de
+     La Savane) ;
+   - un seul rayon, 12px, sauf cercle géométrique ;
+   - deux niveaux d'ombre, pas trois.
+
+   En @layer components : les utilitaires Tailwind (@layer utilities)
+   l'emportent, donc une classe utilitaire posée sur un élément reste
+   prioritaire sur le composant — c'est voulu, ça permet les exceptions
+   ponctuelles sans casser le composant.
+   La page vivante qui rend tout ceci : /design-system.
+   ═══════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* ---------- BOUTONS ---------- */
+  .btn {
+    min-height: 50px;
+    border-radius: 12px;
+    padding-inline: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary {
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+    font-weight: 600;
+  }
+  .btn-secondary {
+    background-color: var(--color-container);
+    border-color: var(--color-border);
+    color: var(--color-primary);
+  }
+  /* Contour et non aplat : il n'existe pas de token de premier plan sur
+     danger, et du blanc sur le rouge clair du thème sombre (#f87171)
+     tomberait à 2,3:1. En contour, le rouge sur la surface tient 4,5:1
+     en clair et 5,9:1 en sombre. */
+  .btn-danger {
+    background-color: var(--color-container);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
+  .btn-ghost { background-color: transparent; color: var(--color-primary); }
+  @media (hover: hover) {
+    .btn-ghost:hover { background-color: var(--color-page); }
+  }
+
+  /* ---------- CHAMPS ---------- */
+  .input-base {
+    min-height: 50px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-container);
+    color: var(--color-primary);
+    padding-inline: 0.75rem;
+    font-size: 0.875rem;
+  }
+  .input-base::placeholder { color: var(--color-secondary); }
+  .input-error { border-color: var(--color-danger); }
+  .input-hint { font-size: 0.75rem; color: var(--color-secondary); }
+  .input-message { font-size: 0.75rem; color: var(--color-danger); }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.375rem; }
+  .form-label { font-size: 0.75rem; font-weight: 500; color: var(--color-secondary); }
+  .form-section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  /* ---------- CARTES ---------- */
+  .card {
+    background-color: var(--color-container);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+    padding: 1rem;
+  }
+  .card-compact { padding: 0.75rem; }
+  /* Fond ambré très dilué plutôt qu'un liseré latéral de 4px : le liseré
+     est l'anti-motif "side-tab", signalé par le détecteur du projet. */
+  .card-amber {
+    background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-container));
+  }
+
+  /* ---------- BADGES ---------- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-positive {
+    color: var(--color-success);
+    background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
+  }
+  .badge-negative {
+    color: var(--color-danger);
+    background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  }
+  .badge-warning {
+    color: var(--color-warning);
+    background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  }
+  .badge-neutral { color: var(--color-secondary); background-color: var(--color-page); }
+  .badge-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
+
+  /* ---------- ALERTES ---------- */
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-primary);
+  }
+  .alert-success {
+    border-color: var(--color-success);
+    background-color: color-mix(in srgb, var(--color-success) 10%, var(--color-container));
+  }
+  .alert-warning {
+    border-color: var(--color-warning);
+    background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-container));
+  }
+  .alert-danger {
+    border-color: var(--color-danger);
+    background-color: color-mix(in srgb, var(--color-danger) 10%, var(--color-container));
+  }
+  .alert-neutral { background-color: var(--color-page); }
+
+  /* ---------- TYPOGRAPHIE ---------- */
+  .text-page-title { font-size: 1.5rem; font-weight: 700; line-height: 1.25; color: var(--color-primary); }
+  .text-section-title { font-size: 1.125rem; font-weight: 600; line-height: 1.4; color: var(--color-primary); }
+  .text-card-title { font-size: 1rem; font-weight: 500; line-height: 1.4; color: var(--color-primary); }
+  .text-body { font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--color-primary); }
+  .text-small { font-size: 0.75rem; line-height: 1.4; color: var(--color-secondary); }
+  /* tabular-nums : les montants s'alignent verticalement colonne par
+     colonne, chiffre par chiffre. */
+  .text-amount-large { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .text-amount { font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .text-amount-small { font-size: 0.8125rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* ---------- BARRES DE PROGRESSION ---------- */
+  .progress-base {
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--color-page);
+    overflow: hidden;
+  }
+  .progress-fill { height: 100%; border-radius: 9999px; }
+  .progress-green { background-color: var(--color-success); }
+  .progress-orange { background-color: var(--color-warning); }
+  .progress-red { background-color: var(--color-danger); }
+  .progress-amber { background-color: var(--color-accent); }
+
+  /* ---------- TABLEAUX ---------- */
+  .table-base { width: 100%; border-collapse: collapse; }
+  .table-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-primary);
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .table-row { border-bottom: 1px solid var(--color-border); cursor: pointer; }
+  .table-row > td { padding: 0.625rem 0.75rem; font-size: 0.875rem; }
+  @media (hover: hover) {
+    .table-row:hover { background-color: var(--color-page); }
+  }
+  .table-row-selected {
+    background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+}
+
+/* Icônes Tabler rendues par `icon()` (backend/icons.py).
+
+   Le preflight Tailwind pose `img,svg,video,...{ display: block }`. Excellent
+   pour une image isolée, ruineux pour une icône de libellé : dans un parent
+   NON flex (un <button>, un <p>, un <label> ordinaire), un <svg> en bloc
+   occupe toute la ligne et renvoie le texte en dessous — l'icône se retrouve
+   AU-DESSUS du texte au lieu d'être à côté. C'est la cause unique des ~68
+   libellés mal alignés, pas le flex : dans un conteneur flex le rendu était
+   déjà correct.
+
+   `vertical-align: -0.125em` recale l'icône sur la ligne de base du texte
+   (le `middle` du preflight centre sur la hauteur d'x et fait flotter
+   l'icône trop haut sur les libellés de 13-14 px).
+
+   `flex-shrink: 0` évite qu'une icône soit écrasée par un libellé long dans
+   une ligne flex étroite (mobile), ce que plusieurs templates compensaient
+   jusqu'ici à la main.
+
+   Posé en @layer base, volontairement : les utilitaires Tailwind (`hidden`,
+   `block`, `w-4`...) restent prioritaires sur ces valeurs par défaut. */
+@layer base {
+  .twiga-icon {
+    display: inline-block;
+    vertical-align: -0.125em;
+    flex-shrink: 0;
+  }
+}
+
+/* Bascule d'icône selon le thème, pilotée par la classe .dark déjà posée sur
+   <html> par le script inline de base.html. Remplace l'ancien
+   updateToggleIcon() qui écrivait un emoji en textContent : impossible d'y
+   mettre un SVG, et l'icône était fausse jusqu'au premier tour de JS. Ici
+   la bonne icône est correcte dès le premier rendu. */
+.icon-theme-dark { display: none; }
+.dark .icon-theme-light { display: none; }
+.dark .icon-theme-dark { display: inline-block; }

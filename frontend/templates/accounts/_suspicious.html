@@ -1,0 +1,77 @@
+<div id="suspicious-content" class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="text-lg font-bold text-primary flex items-center gap-2" >{{ icon('search') }}Opérations suspectes</h2>
+    <button
+      type="button"
+      hx-get="/accounts/suspicious"
+      hx-target="#suspicious-content"
+      hx-swap="outerHTML"
+      class="text-sm text-accent font-medium"
+    >
+      {{ icon('refresh') }} Rafraîchir
+    </button>
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <p class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('repeat') }}Doublons potentiels ({{ suspicious.duplicates_total }})</p>
+    {% for group in suspicious.duplicates %}
+    <div class="rounded-xl border border-border p-3 flex flex-col gap-1">
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-sm text-primary font-medium truncate">{{ group.label or "(sans libellé)" }}</span>
+        <span class="amount-blur text-sm font-bold whitespace-nowrap {{ 'text-success' if group.amount > 0 else 'text-danger' }}">
+          {{ group.amount | eur }}
+        </span>
+      </div>
+      <span class="text-xs text-secondary">{{ group.date | fr_date }} · {{ group.count }} occurrences</span>
+      <div class="flex flex-col gap-0.5 pl-2 border-l-2 border-border">
+        {% for tx in group.transactions %}
+        <span class="text-xs text-secondary truncate">{{ icon('arrow-narrow-right') }} {{ tx.account.name }} (#{{ tx.id }})</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary">Aucun doublon détecté.</p>
+    {% endfor %}
+    {% if suspicious.duplicates_total > suspicious.duplicates | length %}
+    <p class="text-xs text-secondary text-center">
+      ... et {{ suspicious.duplicates_total - suspicious.duplicates | length }} autre{{ "s" if suspicious.duplicates_total - suspicious.duplicates | length != 1 else "" }} groupe{{ "s" if suspicious.duplicates_total - suspicious.duplicates | length != 1 else "" }}
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <p class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('chart-line') }}Montants hors norme (&gt; 3x la moyenne) ({{ suspicious.unusual_total }})</p>
+    {% for tx in suspicious.unusual %}
+    <div class="flex items-center justify-between gap-2 rounded-xl border border-border p-3">
+      <div class="flex flex-col min-w-0">
+        <span class="text-sm text-primary font-medium truncate">{{ tx.label or "(sans libellé)" }}</span>
+        <span class="text-xs text-secondary truncate">{{ tx.date | fr_date }} · {{ tx.account.name }}</span>
+      </div>
+      <span class="amount-blur font-bold whitespace-nowrap {{ 'text-success' if tx.amount > 0 else 'text-danger' }}">
+        {{ tx.amount | eur }}
+      </span>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary">Aucun montant hors norme détecté.</p>
+    {% endfor %}
+    {% if suspicious.unusual_total > suspicious.unusual | length %}
+    <p class="text-xs text-secondary text-center">
+      ... et {{ suspicious.unusual_total - suspicious.unusual | length }} autre{{ "s" if suspicious.unusual_total - suspicious.unusual | length != 1 else "" }}
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <p class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('help-circle') }}Opérations sans compte ({{ suspicious.no_account | length }})</p>
+    {% for tx in suspicious.no_account %}
+    <div class="flex items-center justify-between gap-2 rounded-xl border border-border p-3">
+      <span class="text-sm text-primary font-medium truncate">{{ tx.label or "(sans libellé)" }}</span>
+      <span class="amount-blur text-sm font-bold whitespace-nowrap {{ 'text-success' if tx.amount > 0 else 'text-danger' }}">
+        {{ tx.amount | eur }}
+      </span>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary">Aucune — le schéma l'empêche structurellement (account_id obligatoire).</p>
+    {% endfor %}
+  </div>
+</div>

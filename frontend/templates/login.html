@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion — Twiga 🦒{% endblock %}
+
+{% block sidebar %}{% endblock %}
+{% block header %}{% endblock %}
+{% block nav %}{% endblock %}
+{% block tour %}{% endblock %}
+
+{# Cette page ne rend ni en-tête, ni nav basse, ni barre latérale : les
+   dégagements que <body> réserve pour eux (pt-[64px], pb-[59px] et le
+   pl-[240px] piloté par sidebarMode) n'ont donc rien à compenser ici, et
+   décalaient le cadre de connexion vers le bas et vers la droite au lieu de
+   le centrer dans la fenêtre. #}
+{% block body_chrome %}{% endblock %}
+{% block body_offset %}{% endblock %}
+
+{# Seul écran de l'application à porter le pelage en pleine page : aucune
+   donnée à lire ici, donc rien avec quoi le motif puisse entrer en
+   concurrence. Voir design-system.css, `body.pelage`. #}
+{% block body_brand %}pelage{% endblock %}
+
+{% block content %}
+{# Pas de bg-page ici : <body> porte déjà ce fond, et un aplat opaque sur ce
+   <main> recouvrait entièrement le motif de pelage (body::before, z-index
+   -1) — il ne restait visible que dans les marges du body, d'où une large
+   zone grise au centre de l'écran de connexion. #}
+<main class="min-h-screen flex items-center justify-center p-4">
+  {# Cadre blanc posé sur le pelage : sans surface propre, les champs
+     flottaient directement sur le motif et le formulaire n'avait plus de
+     contenant. Bordure 1px en plus de l'ombre au repos — la carte se pose
+     ici sur un fond texturé, pas sur l'aplat de page habituel. #}
+  <div class="w-full max-w-sm bg-container border border-border rounded-xl shadow-sm p-6 flex flex-col items-center gap-2">
+    <img
+      src="/static/icons/twiga-logo.svg"
+      alt="Twiga"
+      class="w-32 h-32 mb-2"
+      style="width:128px; height:128px;"
+    />
+    <h1 class="text-3xl font-extrabold tracking-tight text-primary">TWIGA</h1>
+    <p class="text-sm text-secondary italic mb-4">Voir loin. Voir juste.</p>
+    <form hx-post="/login" hx-target="#login-error" hx-swap="innerHTML" class="w-full flex flex-col gap-3">
+      <label for="login-username" class="sr-only">Nom d'utilisateur</label>
+      <input
+        id="login-username"
+        type="text"
+        name="username"
+        placeholder="Nom d'utilisateur"
+        autocomplete="username"
+        required
+        autofocus
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 text-center"
+      />
+      {% with field_name = "password", field_label = "Mot de passe", field_placeholder = "Mot de passe", field_autocomplete = "current-password", field_input_class = "text-center" %}
+      {% include "_password_field.html" %}
+      {% endwith %}
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+        Se connecter
+      </button>
+      <div id="login-error"></div>
+    </form>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Importer un fichier — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="min-h-screen flex items-start justify-center p-4">
+  <h1 class="sr-only">Importer un fichier</h1>
+  <div id="import-wizard" class="w-full max-w-md mt-8">
+    {% include "imports/_step1_file.html" %}
+  </div>
+</main>
+{% endblock %}

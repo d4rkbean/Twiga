@@ -1,0 +1,20 @@
+{#
+  Libellé de la période sélectionnée. Vit sur la MÊME ligne que les filtres
+  (voir index.html) alors qu'il dépend du fragment #dashboard-content, d'où
+  le swap hors bande : rendu normalement par index.html au chargement complet
+  (row1_oob faux), et renvoyé avec hx-swap-oob par /dashboard/content à
+  chaque changement de filtre. Même mécanisme que _ce_mois_card.html.
+
+  Il était auparavant la première cellule de la grille du fragment, ce qui
+  laissait une large bande vide à droite des deux listes déroulantes.
+#}
+<div
+  id="panorama-period-label"
+  {% if row1_oob %}hx-swap-oob="true"{% endif %}
+  class="flex flex-col min-w-0"
+>
+  <p class="text-lg font-bold text-primary truncate">{{ period_label }}</p>
+  {% if shift_label %}
+  <p class="text-xs text-secondary truncate">{{ icon('adjustments', size=14) }} {{ shift_label }}</p>
+  {% endif %}
+</div>

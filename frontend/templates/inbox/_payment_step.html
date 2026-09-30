@@ -1,0 +1,49 @@
+<div class="category-suggestion flex flex-col gap-3">
+  <button
+    type="button"
+    id="inbox-back-to-categories-btn"
+    class="flex items-center gap-1 text-sm text-secondary font-medium min-h-[50px] self-start"
+    hx-get="/transactions/{{ transaction.id }}/categories"
+    hx-target=".category-suggestion"
+    hx-swap="outerHTML"
+  >
+    {{ icon('arrow-narrow-left') }} Retour aux catégories
+  </button>
+  {% set top_level = category.parent if category.parent else category %}
+  {% set subcategory_name = category.name if category.parent else none %}
+  <p class="text-sm text-secondary">
+    Catégorie :
+    <span class="text-primary font-medium">
+      {{ get_category_icon(top_level.name) }}
+      {{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}
+    </span>
+  </p>
+  <p class="text-xs text-secondary">Mode de paiement <span class="italic">(facultatif)</span></p>
+  <div class="grid grid-cols-3 gap-2">
+    {% for code, meta in payment_methods.items() %}
+    <button
+      type="button"
+      class="min-h-[50px] rounded-xl border {{ 'border-2 border-accent text-accent' if code == suggested_payment_method else 'border-border text-primary' }} bg-container font-medium flex flex-col items-center justify-center gap-0.5 px-1 text-center text-xs active:bg-page"
+      hx-post="/transactions/{{ transaction.id }}/finalize/{{ category.id }}"
+      hx-vals='{"payment_method": "{{ code }}"}'
+      hx-include="#simplified-label, #nav-history"
+      hx-target="#transaction-card"
+      hx-swap="outerHTML"
+    >
+      <span class="text-base">{{ meta.icon }}</span>
+      <span>{{ meta.label }}</span>
+    </button>
+    {% endfor %}
+    <button
+      type="button"
+      class="min-h-[50px] rounded-xl border border-border bg-container text-secondary font-medium flex flex-col items-center justify-center gap-0.5 px-1 text-center text-xs active:bg-page"
+      hx-post="/transactions/{{ transaction.id }}/finalize/{{ category.id }}"
+      hx-include="#simplified-label, #nav-history"
+      hx-target="#transaction-card"
+      hx-swap="outerHTML"
+    >
+      <span class="text-base">⏭️</span>
+      <span>Passer</span>
+    </button>
+  </div>
+</div>

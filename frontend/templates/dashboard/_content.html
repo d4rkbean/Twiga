@@ -1,0 +1,861 @@
+<script>
+  // "Décalage recettes" : même principe auto-correctif que la page Rapports
+  // (voir reports/_content.html) — le serveur ne connaît le réglage QUE via
+  // ?shift_income=1 (jamais le localStorage lui-même). Tourne au chargement
+  // complet ET à chaque swap HTMX de ce fragment. window.location.href
+  // pointe toujours sur /dashboard (l'URL visible dans la barre d'adresse),
+  // jamais sur /dashboard/content (juste la cible interne de la requête
+  // HTMX) : le rechargement recalcule alors TOUT correctement, ROW 1 (mois
+  // civil en cours) inclus.
+  (function () {
+    {% if is_calendar_month %}
+    var stored = localStorage.getItem("twiga_panorama_shift_income") === "1";
+    var current = {{ shift_income | tojson }};
+    if (stored !== current) {
+      var url = new URL(window.location.href);
+      if (stored) {
+        url.searchParams.set("shift_income", "1");
+      } else {
+        url.searchParams.delete("shift_income");
+      }
+      // Reporter la période sélectionnée dans l'URL avant de recharger.
+      // Elle a pu être choisie via HTMX, qui ne touche jamais à la barre
+      // d'adresse : sans ces paramètres, ce rechargement ramenait
+      // systématiquement au mois en cours et donnait l'impression que le
+      // sélecteur ne fonctionnait que pour "Mois en cours" / "Mois dernier".
+      url.searchParams.set("period", {{ period_key | tojson }});
+      {% if period_key == "perso" %}
+      url.searchParams.set("start", {{ period_start.isoformat() | tojson }});
+      url.searchParams.set("end", {{ period_end.isoformat() | tojson }});
+      {% endif %}
+      window.location.replace(url.toString());
+    }
+    {% else %}
+    // Hors mois civil, le décalage des recettes est volontairement désactivé
+    // côté serveur (voir _build_period_context) : l'écart avec le réglage
+    // mémorisé est donc ATTENDU, pas une désynchronisation à rattraper. Le
+    // réglage reste en localStorage et reprendra effet au retour sur un mois.
+    {% endif %}
+  })();
+</script>
+
+{# Mobile : colonne unique, ordre du DOM (libellé, chiffres de période,
+   camemberts, évolution, budgets, projets, flux) — inchangé.
+
+   Bureau : grille de 12 colonnes. L'ordre du DOM n'y est plus l'ordre visuel,
+   il est repris par `lg:order-*` pour hiérarchiser la lecture sans dupliquer
+   le balisage ni pénaliser le mobile :
+     1. libellé de période (12)
+     2. Évolution 12 mois (8)  ┐ même rangée : le graphique porteur occupe
+     3. chiffres de période (4)┘ les deux tiers, les chiffres s'alignent à côté
+     4. les deux camemberts (6 + 6)
+     5. budgets (6) et projets (6), côte à côte
+   Le chiffre qu'on vient chercher en premier — où on en est ce mois — est
+   ainsi en haut à gauche, pas enterré sous deux camemberts. #}
+{# Le libellé de période est rendu sur la ligne des filtres, hors de ce
+   fragment : renvoyé ici en swap hors bande pour rester synchronisé. #}
+{% if row1_oob %}{% include "dashboard/_period_label.html" %}{% endif %}
+
+<div class="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-5 lg:items-start">
+
+
+  <!-- RANGÉE "charts" (desktop) : Recettes par catégorie 50% | Dépenses par
+       catégorie 50%, côte à côte et même hauteur (lg:items-stretch + flex-1
+       sur chaque carte). Empilées en une seule colonne sur mobile.
+       Recettes à gauche : on lit ce qui est entré avant ce qui est sorti. -->
+  <div class="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-stretch flex flex-col gap-4 lg:col-span-12 lg:order-4">
+  <div class="flex flex-col gap-2">
+  <h2 class="text-lg font-bold text-primary">Recettes par catégorie — {{ period_label }}</h2>
+
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex-1">
+    {% if income_spending %}
+    {# Camembert agrandi, et liste des catégories placée À DROITE dès que
+       la carte est assez large (2xl). En dessous, la liste reste sous le
+       camembert : ces deux cartes occupent chacune une demi-largeur, et
+       les mettre côte à côte plus tôt écraserait les noms de catégorie. #}
+    <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:gap-6">
+      <div class="relative w-full max-w-64 lg:max-w-[300px] lg:w-[300px] 2xl:max-w-[320px] 2xl:w-[320px] mx-auto 2xl:mx-0 h-64 lg:h-[300px] 2xl:h-[320px] flex-shrink-0">
+        <canvas id="income-donut-chart"></canvas>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-4">
+          <span id="income-donut-label" class="text-xs text-secondary truncate max-w-full">Total recettes</span>
+          <span id="income-donut-total" class="amount-blur text-lg font-bold text-primary"></span>
+          <span id="income-donut-percent" class="text-xs text-secondary"></span>
+        </div>
+      </div>
+      <div id="income-list" class="flex flex-col rounded-xl overflow-hidden lg:max-h-[200px] lg:overflow-y-auto 2xl:flex-1 2xl:min-w-0 2xl:max-h-[320px]"></div>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary text-center py-8">Aucune recette sur cette période.</p>
+    {% endif %}
+  </div>
+  </div>
+
+  <div class="flex flex-col gap-2">
+  <h2 class="text-lg font-bold text-primary">Dépenses par catégorie — {{ period_label }}</h2>
+
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex-1">
+    {% if category_spending %}
+    {# Camembert agrandi, et liste des catégories placée À DROITE dès que
+       la carte est assez large (2xl). En dessous, la liste reste sous le
+       camembert : ces deux cartes occupent chacune une demi-largeur, et
+       les mettre côte à côte plus tôt écraserait les noms de catégorie. #}
+    <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:gap-6">
+      <div class="relative w-full max-w-64 lg:max-w-[300px] lg:w-[300px] 2xl:max-w-[320px] 2xl:w-[320px] mx-auto 2xl:mx-0 h-64 lg:h-[300px] 2xl:h-[320px] flex-shrink-0">
+        <canvas id="category-donut-chart"></canvas>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-4">
+          <span id="category-donut-label" class="text-xs text-secondary truncate max-w-full">Total dépenses</span>
+          <span id="category-donut-total" class="amount-blur text-lg font-bold text-primary"></span>
+          <span id="category-donut-percent" class="text-xs text-secondary"></span>
+        </div>
+      </div>
+      <!-- Défilement interne au-delà de 200px (desktop) plutôt que de
+           pousser le reste de la page : une liste de catégories longue ne
+           doit jamais casser l'équilibre de hauteur entre les deux
+           colonnes de cette rangée. -->
+      <div id="category-list" class="flex flex-col rounded-xl overflow-hidden lg:max-h-[200px] lg:overflow-y-auto 2xl:flex-1 2xl:min-w-0 2xl:max-h-[320px]"></div>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary text-center py-8">Aucune dépense sur cette période.</p>
+    {% endif %}
+  </div>
+  </div>
+  </div>
+
+  {# CARTE « Récapitulatif », bâtie sur le modèle du « Monthly Recap Report »
+     d'AdminLTE : un seul cadre qui réunit en-tête + graphique + objectifs +
+     totaux, au lieu de quatre blocs séparés qu'il fallait relier de l'œil.
+
+       en-tête : titre et sélecteur de série
+       corps   : courbe 12 mois (8/12) | objectifs du Cap (4/12)
+       pied    : recettes, dépenses, résultat, taux d'épargne, séparés
+
+     ATTENTION à une asymétrie assumée : la courbe et le pied suivent la
+     PÉRIODE filtrée, les objectifs du Cap suivent le MOIS CIVIL en cours (un
+     cap est un engagement mensuel). D'où le mois rappelé explicitement dans
+     le sous-titre de la colonne de droite — sans ça, juxtaposer les deux
+     dans un même cadre induirait en erreur. #}
+  <div class="bg-container rounded-xl shadow-sm overflow-hidden flex flex-col lg:col-span-12 lg:order-2">
+
+    <div class="flex flex-col gap-2 p-4 md:p-6 border-b border-border lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+      <h2 class="text-lg font-bold text-primary">Évolution — 12 mois jusqu'à {{ period_label }}</h2>
+      <!-- Sur mobile ces trois boutons sont des cibles tactiles (50 px
+           pleine largeur) ; sur bureau c'est un simple choix de série, et
+           trois barres de 50 px repoussaient le graphique sous la ligne de
+           flottaison. -->
+      <div class="flex gap-2 lg:flex-shrink-0">
+        <button
+          type="button"
+          id="trend-mode-expense"
+          class="flex-1 min-h-[50px] rounded-xl text-sm font-medium bg-accent text-on-accent lg:flex-none lg:min-h-0 lg:py-2 lg:px-4"
+        >
+          Dépenses
+        </button>
+        <button
+          type="button"
+          id="trend-mode-income"
+          class="flex-1 min-h-[50px] rounded-xl text-sm font-medium bg-page border border-border text-primary lg:flex-none lg:min-h-0 lg:py-2 lg:px-4"
+        >
+          Recettes
+        </button>
+        <button
+          type="button"
+          id="trend-mode-both"
+          class="flex-1 min-h-[50px] rounded-xl text-sm font-medium bg-page border border-border text-primary lg:flex-none lg:min-h-0 lg:py-2 lg:px-4"
+        >
+          Les deux
+        </button>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-6 p-4 md:p-6 lg:grid lg:grid-cols-12 lg:gap-8">
+      <div class="lg:col-span-8">
+        <div class="h-64 lg:h-[320px]">
+          <canvas id="trend-line-chart"></canvas>
+        </div>
+      </div>
+
+      {# Budgets à risque — l'équivalent du bloc « Goal Completion »
+           d'AdminLTE, mais sur la PÉRIODE sélectionnée comme le reste de
+           cette carte. Cette colonne montrait auparavant les objectifs du
+           Cap, qui portaient eux sur le mois civil en cours : il avait fallu
+           l'écrire en sous-titre pour que ce ne soit pas trompeur. Et c'était
+           la troisième fois que le même mois s'affichait sur cette page —
+           tuile Budgets, tuile Le Cap, et ici.
+           Le suivi complet du mois vit désormais sur « Mon mois » ; le
+           Panorama n'en garde que ce qui appelle une décision. #}
+      <div id="tour-budget-section" class="lg:col-span-4 flex flex-col gap-4 lg:border-l lg:border-border lg:pl-8">
+        <div class="flex flex-col">
+          <h3 class="text-base font-bold text-primary">{{ icon('target', size=16) }} Budgets à risque</h3>
+          <p class="text-xs text-secondary">{{ period_label }}</p>
+        </div>
+
+        {% if budgets_at_risk %}
+        {% for item in budgets_at_risk %}
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="text-sm font-medium text-primary min-w-0 truncate">
+              {{ item.category.icon or icon('tag', size=14) }} {{ item.category.name | category_display }}
+            </span>
+            <span class="amount-blur text-sm tabular-nums flex-shrink-0">
+              <span class="font-bold {{ 'text-danger' if item.percentage > 100 else 'text-warning' }}">{{ item.spent | eur }}</span><span class="text-secondary"> / {{ item.budget | eur }}</span>
+            </span>
+          </div>
+          <div class="h-2 rounded-full bg-page overflow-hidden">
+            <div
+              class="h-full rounded-full {{ 'bg-danger' if item.percentage > 90 else 'bg-warning' }}"
+              style="width: {{ item.bar_width }}%;"
+            ></div>
+          </div>
+        </div>
+        {% endfor %}
+        <a
+          href="/cap/mid"
+          class="mt-auto pt-2 text-sm font-medium border-t border-border flex items-baseline justify-between gap-2"
+        >
+          <span class="text-secondary">Voir tout le mois</span>
+          <span class="text-accent">{{ icon('arrow-narrow-right', size=16) }}</span>
+        </a>
+        {% else %}
+        <p class="text-sm text-secondary">Aucun budget au-delà de 75 % sur cette période.</p>
+        <a href="/cap/mid" class="text-sm text-accent font-medium">Voir tout le mois →</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Pied de carte : les quatre totaux de la période, séparés comme dans
+         le modèle. 2×2 sur mobile, 4 colonnes sur bureau. Le taux d'épargne,
+         jusqu'ici réservé au bureau, est désormais visible partout : il tient
+         sans peine dans une grille 2×2. -->
+    <div class="mt-auto grid grid-cols-2 lg:grid-cols-4 bg-page border-t border-border">
+      <div class="flex flex-col items-center gap-0.5 p-4 border-border lg:border-l lg:first:border-l-0">
+        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums text-success">+{{ income_total | eur }}</span>
+        <span class="text-xs text-secondary uppercase tracking-wide text-center">Recettes période</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 p-4 border-border lg:border-l">
+        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums text-danger">-{{ expense_total | eur }}</span>
+        <span class="text-xs text-secondary uppercase tracking-wide text-center">Dépenses période</span>
+      </div>
+      <div class="flex flex-col items-center gap-0.5 p-4 border-t border-border lg:border-t-0 lg:border-l">
+        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums {{ 'text-success' if result_total >= 0 else 'text-danger' }}">
+          {{ "+" if result_total > 0 else "" }}{{ result_total | eur }}
+        </span>
+        <span class="text-xs text-secondary uppercase tracking-wide text-center">Résultat période</span>
+      </div>
+      {# Taux d'épargne dérivé de income_total/result_total déjà en contexte :
+         aucune requête supplémentaire. #}
+      {% set savings_rate = (result_total / income_total * 100) | round | int if income_total else 0 %}
+      <div class="flex flex-col items-center gap-0.5 p-4 border-t border-border lg:border-t-0 lg:border-l">
+        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums {{ 'text-success' if savings_rate >= 0 else 'text-danger' }}">
+          {{ savings_rate }} %
+        </span>
+        <span class="text-xs text-secondary uppercase tracking-wide text-center">Taux d'épargne</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RANGÉE "budgets + projets" (desktop) : deux grilles compactes de
+       mini-cartes (3 colonnes desktop / 2 mobile) plutôt que des listes
+       empilées qui poussaient la page en hauteur dès quelques budgets ou
+       projets. budget_progress et project_summaries déjà tronqués à 6 côté
+       serveur (triés respectivement par % consommé décroissant et par
+       list_projects), lien "Voir tous" affiché seulement si le total
+       dépasse ce qui est montré ici. -->
+  {# La grille Budgets vivait ici, en doublon de la colonne « Budgets à
+     risque » de la carte Récapitulatif et de la tuile d'en-tête. Le détail
+     complet par catégorie est sur « Mon mois ». #}
+  <div class="flex flex-col gap-4 lg:col-span-12 lg:order-5">
+  <div class="flex flex-col gap-2">
+  <div class="flex items-center justify-between">
+    <h2 class="text-lg font-bold text-primary">Projets</h2>
+    {% if project_summaries_total > 6 %}
+    <a href="/projects" class="text-sm text-accent font-medium">Voir tous les projets →</a>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    {% for item in project_summaries %}
+    <div class="bg-container rounded-xl shadow-sm p-3 flex flex-col gap-1.5">
+      <span class="text-sm text-primary font-medium truncate">{{ icon('target', size=14) }} {{ item.project.name }}</span>
+      <span class="amount-blur text-xs text-secondary">
+        {{ item.project.current_amount | eur }} / {{ item.project.target_amount | eur }}
+      </span>
+      <div class="w-full h-1.5 rounded-full bg-page overflow-hidden">
+        <div class="h-full bg-accent" style="width: {{ item.bar_width }}%"></div>
+      </div>
+      <span class="amount-blur text-xs text-secondary">{{ item.monthly_effort | eur }} / mois</span>
+    </div>
+    {% else %}
+    <div class="col-span-2 lg:col-span-4 bg-container rounded-xl shadow-sm p-4 md:p-6">
+      <p class="text-sm text-secondary text-center">Aucun projet pour l'instant.</p>
+    </div>
+    {% endfor %}
+  </div>
+  </div>
+  </div>
+
+  <!-- Flux financier (Sankey) : masqué en desktop (lg:hidden), inchangé sur
+       mobile. -->
+  <div class="lg:hidden flex flex-col gap-2 lg:col-span-12 lg:order-6">
+  <h2 class="text-lg font-bold text-primary">Flux financier — {{ period_label }}</h2>
+
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
+    {% if category_spending and income_spending %}
+    <div class="h-80">
+      <canvas id="cashflow-sankey-chart"></canvas>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary text-center py-8">
+      Pas assez de données pour afficher le flux financier sur cette période.
+    </p>
+    {% endif %}
+  </div>
+  </div>
+
+</div>
+
+{% if row1_oob %}
+{% include "dashboard/_ce_mois_card.html" %}
+{% endif %}
+
+<dialog
+  id="category-transactions-dialog"
+  class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-lg"
+>
+  <div class="p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between gap-2">
+      <p id="category-transactions-title" class="text-lg font-bold text-primary truncate"></p>
+      <button
+        type="button"
+        onclick="document.getElementById('category-transactions-dialog').close()"
+        aria-label="Fermer"
+        class="text-secondary text-xl leading-none flex-shrink-0"
+      >
+        {{ icon('x', size=16) }}
+      </button>
+    </div>
+    <div id="category-transactions-content"></div>
+  </div>
+</dialog>
+
+<script>
+  (function () {
+    // QUAND construire les graphiques — le piège de la phase "settle" d'HTMX.
+    //
+    // Après un swap, HTMX « règle » (settle) les attributs de tout élément
+    // porteur d'un id présent des deux côtés de l'échange : il restaure sur
+    // le nouvel élément l'état d'attributs du HTML reçu. Nos <canvas> ont un
+    // id (trend-line-chart, category-donut-chart...) et le gabarit ne leur
+    // donne évidemment aucun width/height. HTMX RETIRE donc les attributs
+    // width/height que Chart.js vient juste de poser, et le canvas retombe à
+    // sa taille intrinsèque 300x150 pendant que le dessin visait ~974x320.
+    //
+    // Symptôme : graphique parfaitement VIDE après avoir changé de mois, de
+    // compte ou décoché "Décaler recettes" — sans la moindre erreur console,
+    // ce qui rend la panne particulièrement opaque. Au chargement complet de
+    // la page, aucun settle n'a lieu : tout fonctionnait, d'où l'impression
+    // que "ça marche parfois".
+    //
+    // On construit donc APRÈS le settle sur le chemin HTMX. `row1_oob` est
+    // exactement le drapeau "je suis rendu comme fragment par
+    // /dashboard/content" (voir routers/dashboard.py) : c'est lui qui
+    // distingue les deux chemins de façon fiable, plutôt qu'un test de timing
+    // approximatif côté client.
+    var construire = function () {
+    var categoryLabels = {{ category_labels | tojson | safe }};
+    var categoryValues = {{ category_values | tojson | safe }};
+    var categoryIds = {{ category_ids | tojson | safe }};
+    var incomeLabels = {{ income_labels | tojson | safe }};
+    var incomeValues = {{ income_values | tojson | safe }};
+    var incomeCategoryIds = {{ income_category_ids | tojson | safe }};
+    var trendLabels = {{ trend_labels | tojson | safe }};
+    var trendExpenseValues = {{ trend_expense_values | tojson | safe }};
+    var trendIncomeValues = {{ trend_income_values | tojson | safe }};
+    var trendIncomeLabel = {{ trend_income_label | tojson | safe }};
+
+    // L'intervalle affiché est transmis tel quel au détail par catégorie :
+    // depuis le sélecteur de période, ce n'est plus forcément un mois civil.
+    var periodStart = {{ period_start.isoformat() | tojson | safe }};
+    var periodEnd = {{ period_end.isoformat() | tojson | safe }};
+    var periodLabel = {{ period_label | tojson | safe }};
+    var periodAccountId = {{ account_id | tojson | safe }};
+
+    // Tableau flottant (dialog) listant les opérations exactes derrière un
+    // secteur du donut, ouvert au clic (segment OU ligne de la liste, même
+    // point d'entrée que la sélection visuelle — voir selectCategory).
+    var openCategoryTransactions = function (categoryId, label, type) {
+      var params = new URLSearchParams({
+        category_id: String(categoryId),
+        start: periodStart,
+        end: periodEnd,
+        label: periodLabel,
+        type: type,
+      });
+      if (periodAccountId) params.set("account_id", periodAccountId);
+
+      fetch("/dashboard/category-transactions?" + params.toString())
+        .then(function (response) {
+          return response.text();
+        })
+        .then(function (html) {
+          document.getElementById("category-transactions-title").textContent = label;
+          document.getElementById("category-transactions-content").innerHTML = html;
+          document.getElementById("category-transactions-dialog").showModal();
+        });
+    };
+
+    // Couleurs lues depuis les variables CSS du design system plutôt que
+    // dupliquées en dur ici : elles reflètent alors automatiquement le
+    // thème actif (clair/sombre) sans aucune branche isDark à maintenir en
+    // synchronisation avec design-system.css.
+    // Chart.js garde chaque instance dans un registre global (Chart.instances)
+    // et n'est jamais prévenu quand HTMX remplace #dashboard-content : les
+    // graphiques du rendu précédent survivent, rattachés à des canvas qui ne
+    // sont plus dans le document. On passait ainsi de 4 instances à 8 dès le
+    // premier changement de filtre, puis 12, 16...
+    //
+    // Conséquence observée : le nouveau canvas restait à sa taille intrinsèque
+    // par défaut (300x150) alors que Chart.js avait bien calculé 974x320 en
+    // interne — il dessinait donc hors du bitmap, et le graphique apparaissait
+    // VIDE après avoir décoché "Décaler recettes" (ou changé de mois/compte).
+    //
+    // D'où les précautions ci-dessous, à utiliser pour TOUT graphique de ce
+    // fragment : purge des instances orphelines, puis surveillance de la
+    // largeur du conteneur.
+    //
+    // On déconnecte aussi nos propres ResizeObserver (voir createChart) :
+    // sans ça, un par graphique et par swap s'accumulerait indéfiniment.
+    window.__twigaChartObservers = window.__twigaChartObservers || [];
+    window.__twigaChartObservers.forEach(function (observer) {
+      observer.disconnect();
+    });
+    window.__twigaChartObservers = [];
+
+    Object.keys(Chart.instances || {}).forEach(function (key) {
+      var instance = Chart.instances[key];
+      if (instance && (!instance.canvas || !document.contains(instance.canvas))) {
+        instance.destroy();
+      }
+    });
+    var createChart = function (canvas, config) {
+      var existing = Chart.getChart(canvas);
+      if (existing) {
+        existing.destroy();
+      }
+      // Repartir d'un canvas VIERGE, puis redimensionner explicitement.
+      //
+      // Mesuré sur le chemin HTMX : au moment de la construction, le canvas
+      // porte déjà des dimensions posées par une instance précédente
+      // (style="width: 974.7px; height: 320px" et attributs 974x320).
+      // Chart.js compare alors la taille voulue à celle déjà en place,
+      // conclut qu'il n'y a rien à faire, et n'écrit JAMAIS le bitmap : le
+      // canvas reste à sa taille intrinsèque 300x150 tandis que le dessin
+      // vise ~974x320. Résultat, un graphique parfaitement vide après un
+      // changement de mois, de compte ou de "Décaler recettes" — sans la
+      // moindre erreur en console.
+      //
+      // On efface donc les dimensions héritées avant de construire, puis on
+      // impose la taille réelle du conteneur. Les deux sont nécessaires : le
+      // nettoyage seul laisse Chart.js retomber sur ses comparaisons
+      // internes, le resize seul est ignoré quand il croit la taille déjà
+      // correcte.
+      canvas.removeAttribute("style");
+      canvas.removeAttribute("width");
+      canvas.removeAttribute("height");
+      var chart = new Chart(canvas, config);
+
+      // Chart.js pose bien son propre ResizeObserver, mais il ne réagit PAS
+      // au rétrécissement provoqué par la bascule de la barre latérale
+      // (épinglée / réduite / masquée), qui modifie le padding gauche du
+      // <body>. Mesuré : conteneur revenu à 1005 px alors que le canvas
+      // restait à 1164 — soit 160 px de graphique débordant sous la colonne
+      // colonne « Budgets à risque », courbe et libellés d'axe par-dessus.
+      //
+      // On surveille donc nous-mêmes le conteneur. Le test d'identité évite
+      // qu'un observateur survivant ne redimensionne un graphique déjà
+      // remplacé par une reconstruction ultérieure.
+      var conteneur = canvas.parentElement;
+      if (window.ResizeObserver && conteneur) {
+        var observer = new ResizeObserver(function () {
+          if (Chart.getChart(canvas) === chart) {
+            chart.resize();
+          }
+        });
+        observer.observe(conteneur);
+        window.__twigaChartObservers.push(observer);
+      }
+      return chart;
+    };
+
+    var rootStyles = getComputedStyle(document.documentElement);
+    var cssColor = function (name, fallback) {
+      var value = rootStyles.getPropertyValue(name).trim();
+      return value || fallback;
+    };
+    var colorSuccess = cssColor("--color-success", "#16a34a");
+    var colorDanger = cssColor("--color-danger", "#dc2626");
+    var colorSecondary = cssColor("--color-secondary", "#6b7280");
+    var colorBorder = cssColor("--color-border", "#e5e7eb");
+    var colorPrimary = cssColor("--color-primary", "#111827");
+    var colorAccent = cssColor("--color-accent", "#1e40af");
+
+    // Texte et grille des graphiques Chart.js harmonisés avec le thème
+    // actif : sans ça, le texte par défaut de Chart.js (gris foncé) devient
+    // illisible sur fond sombre. Grid/ticks fixés explicitement plutôt que
+    // de compter sur l'héritage interne de Chart.js depuis borderColor.
+    Chart.defaults.color = colorSecondary;
+    Chart.defaults.borderColor = colorBorder;
+    Chart.defaults.scale.grid.color = colorBorder;
+    Chart.defaults.scale.ticks.color = colorSecondary;
+
+    var palette = ["#1e40af", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
+    var greyedOutColor = colorBorder;
+    var colorsFor = function (labels) {
+      return labels.map(function (_, index) {
+        return palette[index % palette.length];
+      });
+    };
+
+    var currencyFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+
+    // Donut (segments colorés, trou central affichant le total) + liste de
+    // catégories triée par montant décroissant (déjà l'ordre fourni par le
+    // backend, jamais retrié ici pour rester en phase avec les couleurs par
+    // index). Cliquer un segment OU une ligne de la liste met l'un et
+    // l'autre en valeur ensemble (même état highlightedIndex partagé) ;
+    // recliquer le même élément désélectionne. Survoler un segment affiche
+    // temporairement son détail au centre, sans toucher à la sélection par
+    // clic ; dès qu'on ne survole plus rien, le centre revient au total.
+    // Liste construite via les API DOM (createElement/textContent), jamais
+    // innerHTML, pour ne jamais pouvoir interpréter un nom de catégorie
+    // comme du HTML.
+    var renderDonutAndList = function (donutId, listContainerId, totalLabelId, labelId, percentId, labels, values, ids, type) {
+      var colors = colorsFor(labels);
+      var total = values.reduce(function (sum, value) {
+        return sum + value;
+      }, 0);
+      var highlightedIndex = null;
+      var rowElements = [];
+
+      var labelSpan = document.getElementById(labelId);
+      var totalSpan = document.getElementById(totalLabelId);
+      var percentSpan = document.getElementById(percentId);
+      var defaultLabel = labelSpan ? labelSpan.textContent : "";
+
+      var showTotals = function () {
+        if (labelSpan) labelSpan.textContent = defaultLabel;
+        if (totalSpan) totalSpan.textContent = currencyFormatter.format(total);
+        if (percentSpan) percentSpan.textContent = "";
+      };
+      showTotals();
+
+      var showSegmentDetails = function (index) {
+        var percentage = total > 0 ? Math.round((values[index] / total) * 100) : 0;
+        if (labelSpan) labelSpan.textContent = labels[index];
+        if (totalSpan) totalSpan.textContent = currencyFormatter.format(values[index]);
+        if (percentSpan) percentSpan.textContent = percentage + " %";
+      };
+
+      var displayedColors = function () {
+        if (highlightedIndex === null) {
+          return colors;
+        }
+        return colors.map(function (color, index) {
+          return index === highlightedIndex ? color : greyedOutColor;
+        });
+      };
+
+      var chart = null;
+      var donutCanvas = document.getElementById(donutId);
+      if (donutCanvas) {
+        chart = createChart(donutCanvas, {
+          type: "doughnut",
+          data: {
+            labels: labels,
+            datasets: [{ data: values, backgroundColor: colors.slice() }],
+          },
+          options: {
+            maintainAspectRatio: false,
+            cutout: "70%",
+            // Le tooltip natif de Chart.js est désactivé : le survol doit
+            // mettre à jour le centre du donut (overlay HTML), pas ouvrir
+            // une bulle noire par-dessus le graphique.
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            onClick: function (event, elements) {
+              if (elements.length) {
+                selectCategory(elements[0].index);
+              }
+            },
+            onHover: function (event, elements) {
+              if (elements.length) {
+                showSegmentDetails(elements[0].index);
+              } else {
+                showTotals();
+              }
+            },
+          },
+        });
+        // onHover ne se déclenche que sur un mouvement de souris au-dessus
+        // d'un élément ; sans ce filet, quitter le canvas par les bords (ou
+        // via un clavier/tactile) sans passer par un dernier "elements: []"
+        // laisserait le détail du survol affiché indéfiniment.
+        donutCanvas.addEventListener("mouseleave", showTotals);
+      }
+
+      var refresh = function () {
+        if (chart) {
+          chart.data.datasets[0].backgroundColor = displayedColors();
+          chart.update();
+        }
+        rowElements.forEach(function (row, index) {
+          var selected = highlightedIndex === index;
+          var dimmed = highlightedIndex !== null && !selected;
+          row.classList.toggle("opacity-40", dimmed);
+          row.style.borderLeftColor = selected ? colors[index] : "transparent";
+        });
+      };
+
+      var selectCategory = function (index) {
+        highlightedIndex = highlightedIndex === index ? null : index;
+        refresh();
+        if (highlightedIndex !== null) {
+          openCategoryTransactions(ids[index], labels[index], type);
+        }
+      };
+
+      var listContainer = document.getElementById(listContainerId);
+      if (listContainer) {
+        listContainer.innerHTML = "";
+        labels.forEach(function (label, index) {
+          var value = values[index];
+          var percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+
+          var row = document.createElement("div");
+          row.className =
+            "flex items-center gap-3 px-3 py-2.5 cursor-pointer border-l-4 border-transparent transition " +
+            (index % 2 === 0 ? "bg-container" : "bg-page");
+
+          var dot = document.createElement("span");
+          dot.className = "w-2.5 h-2.5 rounded-full flex-shrink-0";
+          dot.style.backgroundColor = colors[index];
+
+          var name = document.createElement("span");
+          name.className = "flex-1 min-w-0 text-sm text-primary truncate";
+          name.textContent = label;
+
+          // Montant et pourcentage empilés dans une colonne étroite plutôt
+          // que côte à côte : ça libère beaucoup plus de largeur pour le nom
+          // de catégorie (avant, les deux se disputaient l'espace restant
+          // sur la même ligne et coupaient le nom à 3-4 caractères dès que
+          // le montant était un peu long).
+          var figures = document.createElement("div");
+          figures.className =
+            "flex flex-col items-end flex-shrink-0 leading-tight " +
+            "2xl:flex-row 2xl:items-baseline 2xl:gap-2";
+
+          var amount = document.createElement("span");
+          amount.className = "amount-blur text-sm font-bold text-primary whitespace-nowrap";
+          amount.textContent = currencyFormatter.format(value);
+
+          var percent = document.createElement("span");
+          percent.className = "text-xs text-secondary whitespace-nowrap";
+          percent.textContent = percentage + " %";
+
+          figures.appendChild(amount);
+          figures.appendChild(percent);
+
+          row.appendChild(dot);
+          row.appendChild(name);
+          row.appendChild(figures);
+          row.addEventListener("click", function () {
+            selectCategory(index);
+          });
+
+          listContainer.appendChild(row);
+          rowElements.push(row);
+        });
+      }
+    };
+
+    renderDonutAndList(
+      "category-donut-chart",
+      "category-list",
+      "category-donut-total",
+      "category-donut-label",
+      "category-donut-percent",
+      categoryLabels,
+      categoryValues,
+      categoryIds,
+      "expense"
+    );
+    renderDonutAndList(
+      "income-donut-chart",
+      "income-list",
+      "income-donut-total",
+      "income-donut-label",
+      "income-donut-percent",
+      incomeLabels,
+      incomeValues,
+      incomeCategoryIds,
+      "income"
+    );
+
+    // Flux financier : recettes (gauche) -> total (centre) -> dépenses
+    // (droite). Réutilise les mêmes libellés/couleurs que les donuts pour
+    // une identité visuelle cohérente. Clés internes préfixées ("in:"/
+    // "out:") pour éviter qu'une catégorie de recette et une catégorie de
+    // dépense portant le même nom (ex. "Autre") ne soient fusionnées en un
+    // seul nœud par la librairie (qui identifie les nœuds par leur clé) ;
+    // l'option "labels" ré-affiche le nom propre malgré le préfixe.
+    var sankeyCanvas = document.getElementById("cashflow-sankey-chart");
+    if (sankeyCanvas && categoryLabels.length && incomeLabels.length) {
+      var incomeColorsForSankey = colorsFor(incomeLabels);
+      var expenseColorsForSankey = colorsFor(categoryLabels);
+      var sankeyColorByKey = { total: colorAccent };
+      var sankeyLabelByKey = { total: "Total" };
+      var sankeyData = [];
+
+      incomeLabels.forEach(function (label, index) {
+        var key = "in:" + label;
+        sankeyLabelByKey[key] = label;
+        sankeyColorByKey[key] = incomeColorsForSankey[index];
+        sankeyData.push({ from: key, to: "total", flow: incomeValues[index] });
+      });
+
+      categoryLabels.forEach(function (label, index) {
+        var key = "out:" + label;
+        sankeyLabelByKey[key] = label;
+        sankeyColorByKey[key] = expenseColorsForSankey[index];
+        sankeyData.push({ from: "total", to: key, flow: categoryValues[index] });
+      });
+
+      createChart(sankeyCanvas, {
+        type: "sankey",
+        data: {
+          datasets: [
+            {
+              label: "Flux financier",
+              data: sankeyData,
+              labels: sankeyLabelByKey,
+              color: colorSecondary,
+              colorMode: "gradient",
+              colorFrom: function (ctx) {
+                return sankeyColorByKey[ctx.raw.from] || colorSecondary;
+              },
+              colorTo: function (ctx) {
+                return sankeyColorByKey[ctx.raw.to] || colorSecondary;
+              },
+              nodeLabels: { color: colorPrimary },
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title: function () {
+                  return "";
+                },
+                // Chaque ligne dit son sens. Survoler le nœud "Total"
+                // liste TOUS les flux qui le touchent, recettes et dépenses
+                // mélangées : sans ce préfixe, une recette y était
+                // indiscernable d'une dépense.
+                label: function (ctx) {
+                  var raw = ctx.raw._custom;
+                  var fromKey = raw.from.key;
+                  var toKey = raw.to.key;
+                  var versTotal = String(toKey) === "total";
+                  var nom = versTotal
+                    ? sankeyLabelByKey[fromKey] || fromKey
+                    : sankeyLabelByKey[toKey] || toKey;
+                  return (
+                    (versTotal ? "Recette · " : "Dépense · ") +
+                    nom +
+                    " : " +
+                    currencyFormatter.format(raw.flow)
+                  );
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    var trendCanvas = document.getElementById("trend-line-chart");
+    if (trendCanvas) {
+      var expenseDataset = {
+        label: "Dépenses",
+        data: trendExpenseValues,
+        borderColor: colorDanger,
+        backgroundColor: colorDanger + "1a",
+        fill: true,
+        tension: 0.3,
+      };
+      var incomeDataset = {
+        label: trendIncomeLabel,
+        data: trendIncomeValues,
+        borderColor: colorSuccess,
+        backgroundColor: colorSuccess + "1a",
+        fill: true,
+        tension: 0.3,
+      };
+
+      var trendChart = createChart(trendCanvas, {
+        type: "line",
+        data: { labels: trendLabels, datasets: [expenseDataset] },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } },
+        },
+      });
+
+      var trendModes = { expense: [expenseDataset], income: [incomeDataset], both: [expenseDataset, incomeDataset] };
+
+      var setTrendMode = function (mode) {
+        trendChart.data.datasets = trendModes[mode];
+        trendChart.options.plugins.legend.display = mode === "both";
+        trendChart.update();
+
+        Object.keys(trendModes).forEach(function (candidate) {
+          var button = document.getElementById("trend-mode-" + candidate);
+          if (!button) {
+            return;
+          }
+          var active = candidate === mode;
+          button.classList.toggle("bg-accent", active);
+          button.classList.toggle("text-on-accent", active);
+          // bg-page et non bg-container : ces boutons sont désormais DANS la
+          // carte Récapitulatif, donc sur un fond bg-container — un bouton
+          // inactif en bg-container y serait invisible.
+          button.classList.toggle("bg-page", !active);
+          button.classList.toggle("border", !active);
+          button.classList.toggle("border-border", !active);
+          button.classList.toggle("text-primary", !active);
+        });
+      };
+
+      Object.keys(trendModes).forEach(function (mode) {
+        var button = document.getElementById("trend-mode-" + mode);
+        if (button) {
+          button.addEventListener("click", function () {
+            setTrendMode(mode);
+          });
+        }
+      });
+
+      setTrendMode("expense");
+    }
+    };
+
+    {% if row1_oob %}
+    // Fragment servi à HTMX : attendre la fin du swap ET du settle.
+    document.body.addEventListener("htmx:afterSettle", construire, { once: true });
+    {% else %}
+    // Chargement complet : aucun settle à attendre, mais on laisse une frame
+    // pour que la mise en page soit calculée avant que Chart.js ne mesure.
+    requestAnimationFrame(construire);
+    {% endif %}
+  })();
+</script>

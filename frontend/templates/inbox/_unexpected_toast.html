@@ -1,0 +1,30 @@
+<!-- Toast auto-disparaissant "{{ icon('urgent') }} Marquer comme imprévu" ("Le Cap") : posé
+     APRÈS que la transaction ait déjà été enregistrée et que la carte
+     suivante soit affichée (voir _categorize_and_advance dans
+     routers/transactions.py, just_categorized_id) — zéro tap obligatoire,
+     ajoute zéro friction au flux catégorie → sous-catégorie → suivante.
+     Cible OOB toujours présente dans le DOM (incluse aussi dans
+     inbox/index.html) même sans transaction ciblée, sinon le swap OOB posé
+     par _render_next_card (voir _counter.html pour le même principe) n'a
+     rien à remplacer. -->
+<div id="inbox-unexpected-toast" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% if just_categorized_id %}
+  <div
+    x-data="{ show: true }"
+    x-init="setTimeout(() => show = false, 3000)"
+    x-show="show"
+    x-transition
+    style="position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 8000;"
+  >
+    <button
+      type="button"
+      hx-post="/transactions/{{ just_categorized_id }}/mark-unexpected"
+      hx-swap="none"
+      @click="show = false"
+      class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold shadow-lg px-4 flex items-center gap-2 whitespace-nowrap"
+    >
+      {{ icon('urgent') }} Marquer comme imprévu
+    </button>
+  </div>
+  {% endif %}
+</div>

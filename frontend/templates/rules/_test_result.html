@@ -1,0 +1,17 @@
+{% if not tested_label %}
+<p class="text-sm text-secondary">Saisis un libellé pour voir quelle règle s'appliquerait.</p>
+{% elif matched_rule %}
+{% set category = matched_rule.category %}
+{% set top_level = category.parent if category.parent else category %}
+{% set subcategory_name = category.name if category.parent else none %}
+<div class="rounded-xl bg-page p-3 flex flex-col gap-1">
+  <p class="text-sm text-success font-medium">{{ icon('circle-check', size=16) }} Règle correspondante : "{{ matched_rule.keyword }}"</p>
+  <p class="text-sm text-primary">
+    {{ icon('arrow-narrow-right') }} {{ top_level.icon or "" }} {{ top_level.name }}{% if subcategory_name %} › {{ subcategory_name }}{% endif %}
+  </p>
+</div>
+{% else %}
+<div class="rounded-xl bg-page p-3">
+  <p class="text-sm text-secondary">{{ icon('circle-x', size=16) }} Aucune règle ne correspond à ce libellé.</p>
+</div>
+{% endif %}

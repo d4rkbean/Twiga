@@ -1,0 +1,15 @@
+<p
+  id="inbox-counter"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+  class="text-sm text-secondary text-center w-full flex items-center justify-center gap-2"
+>
+  <span
+    aria-hidden="true"
+    style="display: inline-block; transform: scale({{ giraffe_scale }}); transition: transform 0.4s ease;"
+  ><img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:16px;width:auto;" /></span>
+  {% if pending_count > 0 %}
+    {{ pending_count }} transaction{{ "s" if pending_count != 1 else "" }} restante{{ "s" if pending_count != 1 else "" }}
+  {% else %}
+    La Savane vide
+  {% endif %}
+</p>

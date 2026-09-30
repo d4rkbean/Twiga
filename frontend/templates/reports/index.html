@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Rapport complet — Twiga 🦒{% endblock %}
+
+{% block extra_head %}
+<script src="{{ static_url('/static/vendor/chart.min.js') }}"></script>
+<script src="{{ static_url('/static/js/reports-courses.js') }}" defer></script>
+<link rel="stylesheet" href="{{ static_url('/static/css/reports-print.css') }}" media="print" />
+{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-3 px-4 pb-8 max-w-3xl mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+
+  <!-- Desktop (lg:) : fil d'Ariane, titre et bouton imprimer sur une seule
+       ligne. Mobile : icône imprimante seule (pas de texte), en ligne avec
+       le titre plutôt qu'un bouton flottant séparé — voir _content.html
+       pour le bouton CSV, déplacé au-dessus du tableau d'opérations qu'il
+       exporte (plus dans cet en-tête, ni ici ni sur desktop). -->
+  <div class="print:hidden flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+    <div class="flex items-center justify-between lg:contents">
+      <a href="/dashboard" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Retour au Panorama</a>
+    </div>
+    <div class="flex items-center justify-between gap-2 lg:contents">
+      <h1 class="text-2xl font-bold text-primary">{{ icon('chart-bar', size=24) }} Rapport complet</h1>
+      <button
+        type="button"
+        onclick="window.print()"
+        aria-label="Imprimer"
+        class="lg:hidden w-11 h-11 flex items-center justify-center text-secondary flex-shrink-0"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+      </button>
+    </div>
+    <div class="hidden lg:flex items-center gap-2 lg:ml-auto">
+      <button
+        type="button"
+        onclick="window.print()"
+        class="min-h-[40px] px-3 rounded-xl border border-border text-secondary text-sm font-medium"
+      >
+        {{ icon('printer', size=18) }} Imprimer
+      </button>
+    </div>
+  </div>
+
+  <!-- SÉLECTEUR DE PÉRIODE — onglets en navigation simple (rechargement de
+       page complet), volontairement pas en HTMX : ça garantit que l'état
+       affiché (onglet actif, flèches, sélecteurs) ne peut jamais se
+       désynchroniser du contenu, y compris juste après un clic sur une
+       flèche ← / →. Un rechargement de page a aussi l'avantage de relancer
+       naturellement l'animation des compteurs ("au chargement ET au
+       changement de période" : ici, changer de période EST un chargement). -->
+  <div class="print:hidden flex flex-col gap-2">
+    <div class="flex gap-1 overflow-x-auto pb-1" style="scrollbar-width: none;">
+      {% for type_code, type_label in [("mois", "Mois"), ("trimestre", "Trimestre"), ("semestre", "Semestre"), ("annee", "Année"), ("personnalise", "Personnalisé")] %}
+      <a
+        href="/reports?period_type={{ type_code }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
+        class="flex-shrink-0 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 {{ 'border-accent text-primary' if period.period_type == type_code else 'border-transparent text-secondary' }}"
+      >
+        {{ type_label }}
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="flex items-center justify-between gap-2 bg-container rounded-xl shadow-sm px-2 py-1">
+      <a
+        href="/reports?{{ period.prev_params | urlencode }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
+        aria-label="Période précédente"
+        class="min-h-[44px] min-w-[44px] flex items-center justify-center text-xl text-secondary"
+      >
+        {{ icon('arrow-narrow-left') }}
+      </a>
+      <span class="flex-1 min-w-0 truncate px-1 text-sm font-bold text-primary text-center">{{ period_bar_label }}</span>
+      <a
+        href="/reports?{{ period.next_params | urlencode }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
+        aria-label="Période suivante"
+        class="min-h-[44px] min-w-[44px] flex items-center justify-center text-xl text-secondary"
+      >
+        {{ icon('arrow-narrow-right') }}
+      </a>
+    </div>
+  </div>
+
+  <!-- FILTRE COMPTE + DÉCALAGE PÉRIODE — seul contrôle réellement en HTMX,
+       comme demandé : changer de compte (ou la case ci-dessous) ne doit pas
+       recharger toute la page, juste #reports-content. La case "Décaler les
+       recettes" est un enfant DIRECT de ce <form> (plus besoin de son
+       propre hx-get + hx-include comme avant son déplacement ici : le
+       hx-trigger="change" du <form> la capte déjà par la remontée normale
+       de l'événement DOM, exactement comme le <select> compte). -->
+  <form
+    id="reports-account-filter"
+    hx-get="/reports/content"
+    hx-trigger="change"
+    hx-target="#reports-content"
+    hx-swap="innerHTML"
+    class="print:hidden flex flex-wrap items-center gap-2"
+  >
+    <input type="hidden" name="period_type" value="{{ period.period_type }}" />
+    <input type="hidden" name="month" value="{{ period.month }}" />
+    <input type="hidden" name="quarter" value="{{ period.quarter }}" />
+    <input type="hidden" name="semester" value="{{ period.semester }}" />
+
+    <!-- Pas de <select> année ici : redondant avec les flèches ←/→ de la
+         barre de période (elles pilotent déjà l'année en vue Année) et
+         source de confusion (deux contrôles pour la même valeur, demandé
+         explicitement à retirer). L'année reste transmise en input caché
+         pour que les autres champs (compte, décalage) ne la perdent pas au
+         changement. -->
+    <input type="hidden" name="year" value="{{ period.year }}" />
+
+    {% if period.period_type == 'personnalise' %}
+    <input
+      type="date"
+      name="date_from"
+      value="{{ period.date_from }}"
+      aria-label="Du"
+      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+    />
+    <input
+      type="date"
+      name="date_to"
+      value="{{ period.date_to }}"
+      aria-label="Au"
+      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+    />
+    {% else %}
+    <input type="hidden" name="date_from" value="" />
+    <input type="hidden" name="date_to" value="" />
+    {% endif %}
+
+    <select
+      name="account_id"
+      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm flex-1 min-w-[160px]"
+    >
+      <option value="" {% if account_id is none %}selected{% endif %}>Tous les comptes</option>
+      {% for account in accounts %}
+      <option value="{{ account.id }}" {% if account.id == account_id %}selected{% endif %}>{{ account.name }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- DÉCALAGE PÉRIODE — recettes du mois M-1 en face des dépenses du
+         mois M (réalité budget familial : salaire de fin M-1 pour les
+         dépenses de M), actif sur DEUX vues avec des effets différents :
+         - Mois : décale TOUT (métriques héros, donut + liste Recettes,
+           libellé composite de la barre de période) sur le mois précédent
+           pour les recettes — voir reports.py, mois_shift_active =
+           shift_income AND period_type == "mois".
+         - Année : décale UNIQUEMENT le détail mensuel (tableau mois par
+           mois de l'onglet Balance) — voir monthly_shift_active =
+           shift_income AND period_type == "annee". Les métriques héros et
+           l'onglet Budget restent sur l'année entière même là.
+         Trimestre/Semestre/Personnalisé : volontairement PAS concernés,
+         décaler des totaux agrégés sur une période plus large n'a pas de
+         sens (ex. recettes du trimestre N-1 vs dépenses du trimestre N).
+         La case reste cochable hors Mois/Année (préférence globale
+         mémorisée en localStorage), mais reste alors sans effet visible. -->
+    <label class="flex items-center gap-2 min-h-[46px] cursor-pointer flex-shrink-0">
+      <input
+        type="checkbox"
+        name="shift_income"
+        value="1"
+        {% if shift_income %}checked{% endif %}
+        @change="localStorage.setItem('twiga_reports_shift_income', $event.target.checked ? '1' : '0')"
+        class="w-5 h-5 flex-shrink-0"
+      />
+      <span class="text-sm text-primary whitespace-nowrap">{{ icon('adjustments', size=16) }} Décaler les recettes</span>
+    </label>
+    <span
+      title="Le salaire reçu fin du mois précédent finance les dépenses du mois courant. Actif en vue Mois (tout le rapport) et en vue Année (détail mensuel uniquement)."
+      aria-label="Le salaire reçu fin du mois précédent finance les dépenses du mois courant. Actif en vue Mois (tout le rapport) et en vue Année (détail mensuel uniquement)."
+      class="text-sm text-secondary cursor-help flex-shrink-0"
+    >ℹ️</span>
+  </form>
+
+  <div id="reports-content">
+    {% include "reports/_content.html" %}
+  </div>
+
+  <!-- Boîte de dialogue "Évolution" d'une catégorie sur 12 mois, ouverte
+       depuis un clic sur l'icône dédiée d'une ligne de catégorie (voir
+       reports/_content.html) — même mécanisme HTMX + <dialog> natif que
+       transaction-detail-dialog (transactions/index.html) : le contenu est
+       vide au chargement de la page, rempli par htmx au clic, puis ouvert
+       via showModal() une fois le swap terminé. -->
+  <dialog
+    id="category-trend-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm"
+  >
+    <div
+      id="category-trend-content"
+      hx-on:htmx:after-swap="document.getElementById('category-trend-dialog').showModal()"
+    ></div>
+  </dialog>
+
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_url('/static/js/report-category-trend.js') }}" defer></script>
+{% endblock %}

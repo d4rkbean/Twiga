@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Mon mois — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pt-2 pb-8 max-w-lg mx-auto lg:max-w-3xl lg:px-8 lg:py-6">
+  {# Cette page est devenue une DESTINATION de la navigation (« Mon mois »,
+     voir _sidebar.html) et non plus une étape intermédiaire du rituel :
+     d'où le titre, et le pied qui mène au détail par catégorie et au
+     rituel, au lieu d'un simple bouton « Fermer ». #}
+  <h1 class="text-2xl font-bold text-primary">{{ icon('calendar-event', size=24) }} Mon mois — {{ current_month_label }}</h1>
+
+  {% if entry %}
+  {# Le plan et sa consommation, aux deux mêmes niveaux de zoom que l'écran
+     où on le décide (cap/_step2_fixer.html) : l'enveloppe du pilier, puis
+     ses catégories. Le détail vivait jusqu'ici sur une page séparée
+     (/budgets) atteignable par un lien — deux vues du même mois qu'il
+     fallait relier de tête. #}
+  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3" x-data="{ ouverts: {} }">
+    {% for pillar in pillars %}
+    <div class="flex flex-col gap-1">
+      {% if pillar.detail and pillar.detail.categories %}
+      <button
+        type="button"
+        @click="ouverts['{{ pillar.code }}'] = !ouverts['{{ pillar.code }}']"
+        class="flex items-center justify-between gap-2 text-sm w-full text-left min-h-[36px]"
+        :aria-expanded="ouverts['{{ pillar.code }}'] ? 'true' : 'false'"
+      >
+        <span class="text-primary font-medium flex items-center gap-1">
+          <span class="text-secondary w-3" x-text="ouverts['{{ pillar.code }}'] ? '▾' : '▸'">▸</span>
+          {{ pillar.icon }} {{ pillar.name }}
+        </span>
+        <span class="amount-blur text-secondary flex-shrink-0">
+          {{ pillar.actual | eur }}{% if pillar.planned %} / {{ pillar.planned | eur }}{% endif %} — {{ pillar.ratio }}%
+        </span>
+      </button>
+      {% else %}
+      <div class="flex items-center justify-between text-sm min-h-[36px]">
+        <span class="text-primary font-medium pl-4">{{ pillar.icon }} {{ pillar.name }}</span>
+        <span class="amount-blur text-secondary flex-shrink-0">
+          {{ pillar.actual | eur }}{% if pillar.planned %} / {{ pillar.planned | eur }}{% endif %} — {{ pillar.ratio }}%
+        </span>
+      </div>
+      {% endif %}
+      <div class="h-2 rounded-full bg-page overflow-hidden">
+        <div
+          class="h-full rounded-full {{ 'bg-danger' if pillar.ratio > 80 else 'bg-warning' if pillar.ratio > 60 else 'bg-success' }}"
+          style="width: {{ pillar.bar_width }}%;"
+        ></div>
+      </div>
+
+      {% if pillar.detail and pillar.detail.categories %}
+      <div x-show="ouverts['{{ pillar.code }}']" style="display: none;" class="flex flex-col gap-2 pl-4 pt-1">
+        {% for ligne in pillar.detail.categories %}
+        <div class="flex flex-col gap-0.5">
+          <div class="flex items-center justify-between gap-2 text-xs">
+            <span class="text-primary truncate">{{ ligne.category.name | category_display }}</span>
+            <span class="amount-blur text-secondary flex-shrink-0 tabular-nums">
+              {{ ligne.spent | eur }} / {{ ligne.budget | eur }} — {{ ligne.percentage_display }} %
+            </span>
+          </div>
+          <div class="h-1 rounded-full bg-page overflow-hidden">
+            <div
+              class="h-full rounded-full {{ 'bg-danger' if ligne.percentage > 100 else 'bg-warning' if ligne.percentage > 80 else 'bg-success' }}"
+              style="width: {{ ligne.bar_width }}%;"
+            ></div>
+          </div>
+        </div>
+        {% endfor %}
+        {% if pillar.detail.unbudgeted %}
+        {# Sans cette ligne, la somme des catégories serait inférieure à la
+           jauge du pilier, sans explication visible. #}
+        <div class="flex items-center justify-between gap-2 text-xs">
+          <span class="text-secondary italic">Hors budget</span>
+          <span class="amount-blur text-secondary flex-shrink-0 tabular-nums">{{ pillar.detail.unbudgeted | eur }}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="flex flex-col gap-0.5 pt-1">
+      <p class="text-sm font-semibold {{ 'text-success' if savings_so_far >= 0 else 'text-danger' }}">
+        {{ icon('pig-money', size=16) }} Épargne en cours : {{ "+" if savings_so_far >= 0 else "" }}{{ savings_so_far | eur }}
+      </p>
+      {# L'encaissé à côté de l'engagé : comparer à l'engagement rend la jauge
+         juste dès le 1er du mois, mais masquerait un mois où l'argent promis
+         n'arrive jamais. Les deux chiffres, et l'écart se voit. #}
+      {% if income_is_planned %}
+      <p class="text-xs text-secondary">
+        Sur {{ income_reference | eur }} prévus — {{ income_actual | eur }} encaissés à ce jour
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if entry.intention %}
+  <!-- impeccable-disable-next-line side-tab: bordure de citation sur un <blockquote> (convention typographique standard pour du texte cité), pas un accent décoratif de carte -->
+  <blockquote class="text-primary italic border-l-2 border-accent pl-3 bg-container rounded-xl shadow-sm p-4">
+    ❝ {{ entry.intention }} ❞
+  </blockquote>
+  {% endif %}
+
+  <div class="bg-container rounded-xl shadow-sm p-4 text-center">
+    <p class="text-sm font-semibold text-{{ status }}">{{ status_message }}</p>
+  </div>
+  {% else %}
+  <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-3 text-center">
+    <p class="text-sm text-secondary">Aucun cap fixé pour {{ current_month_label }}.</p>
+    <a href="/cap" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
+      {{ icon('arrow-narrow-right') }} Fixer le cap
+    </a>
+  </div>
+  {% endif %}
+
+  <a href="/budgets" class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2">
+    {{ icon('edit', size=18) }} Ajuster le plan du mois
+  </a>
+  {% if entry %}
+  <a href="/cap" class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2">
+    {{ icon('target', size=18) }} Revoir le cap du mois
+  </a>
+  {% endif %}
+</main>
+{% endblock %}

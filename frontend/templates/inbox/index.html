@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}La Savane — Twiga 🦒{% endblock %}
+
+{% block content %}
+<!-- min-h-[calc(100vh-123px)], pas min-h-screen : <body> réserve déjà
+     pt-[64px] (en-tête fixe 56px + 8px) + pb-[59px] (nav fixe ~51px + 8px),
+     soit 123px au total (voir base.html). Avec min-h-screen ici, ce <main>
+     demandait EN PLUS 100vh à l'intérieur de ce padding déjà réservé,
+     forçant systématiquement un défilement vertical même quand la carte est
+     courte (sans avertissement virement, sans bannière...). Plus de pt-2
+     propre à cette page : le dégagement de l'en-tête est maintenant
+     entièrement géré par <body>, un pt-2 ici doublerait la marge. -->
+<main class="min-h-[calc(100vh-123px)] flex flex-col items-center gap-4 px-4 pb-4">
+  <h1 class="sr-only">La Savane</h1>
+  {% include "inbox/_budget_alerts.html" %}
+  {% include "inbox/_counter.html" %}
+  {% include "inbox/_unexpected_toast.html" %}
+  {% include "inbox/_rule_suggestion_toast.html" %}
+  <a id="tour-bulk-link" href="/backlog" class="text-sm text-accent font-medium">{{ icon('folders') }}️ Traitement en masse {{ icon('arrow-narrow-right') }}</a>
+  {% include "inbox/_routine_banner.html" %}
+  {% include "inbox/_le_cap_midmonth_banner.html" %}
+  <div class="flex-1 flex items-center justify-center">
+    {% include "inbox/_card.html" %}
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_url('/static/js/inbox-shortcuts.js') }}" defer></script>
+{% endblock %}

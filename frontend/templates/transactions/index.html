@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Opérations — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col max-w-lg mx-auto overflow-x-clip lg:flex-row lg:items-start lg:max-w-none lg:mx-0 lg:gap-6 lg:px-8 lg:pb-6 lg:overflow-x-visible">
+  <!-- Pas de lg:pt- ici (contrairement à d'autres pages : lg:py-6) : le
+       titre "Opérations" doit démarrer juste sous le header, pas avec un
+       dégagement supplémentaire — body fournit déjà pt-[64px] (56px de
+       header + 8px, voir base.html), donc rien à rajouter ici en plus.
+       Desktop (lg:) : colonne de filtres fixe 280px, collée sous le header
+       et défilant indépendamment de la liste (sa propre scrollbar).
+       À DROITE de la liste (lg:order-2, la liste passant en lg:order-1
+       juste en dessous) — d'où la bordure/le padding de séparation côté
+       GAUCHE (lg:border-l/lg:pl-4) plutôt que côté droit comme quand cette
+       colonne était la première du flex-row.
+       Mobile : SEULE la barre de titre est sticky (top-14) — le formulaire
+       de filtres, potentiellement long (dates, montants, catégories,
+       critères avancés...), défile normalement avec la liste en dessous
+       plutôt que de rester épinglé en entier à l'écran. -->
+  <div class="flex flex-col gap-2 lg:static lg:order-2 lg:w-[340px] xl:w-[420px] lg:flex-shrink-0 lg:h-[calc(100vh-64px)] lg:overflow-y-auto lg:pl-4 lg:border-l lg:border-border lg:pb-4">
+    <div class="sticky top-14 z-20 bg-page px-4 pb-2 flex items-center justify-between gap-2 border-b border-border lg:static lg:z-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:border-b-0">
+      <h1 class="text-2xl font-bold text-primary">Opérations</h1>
+      <button
+        type="button"
+        hx-get="/transactions/new"
+        hx-target="#transaction-detail-content"
+        hx-swap="innerHTML"
+        class="text-sm text-accent font-medium"
+      >
+        + Nouvelle opération
+      </button>
+    </div>
+
+    <form
+      id="transactions-filters"
+      hx-get="/transactions/list/content"
+      hx-trigger="submit"
+      hx-target="#transactions-content"
+      hx-swap="innerHTML"
+      x-data="{ advancedOpen: false }"
+      class="bg-container rounded-xl shadow-sm p-3 flex flex-col gap-2 mx-4 lg:mx-0"
+    >
+      <div class="grid grid-cols-2 gap-2">
+        <input
+          type="date"
+          name="f_date_from"
+          value="{{ date_from }}"
+          aria-label="Du"
+          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+        />
+        <input
+          type="date"
+          name="f_date_to"
+          value="{{ date_to }}"
+          aria-label="Au"
+          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+        />
+      </div>
+
+      <input
+        type="search"
+        name="f_search"
+        value="{{ search }}"
+        placeholder="Rechercher un libellé..."
+        class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3"
+      />
+
+      <div class="grid grid-cols-2 gap-2">
+        <input
+          type="text"
+          inputmode="decimal"
+          name="f_amount_min"
+          value="{{ amount_min }}"
+          placeholder="Montant min"
+          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+        />
+        <input
+          type="text"
+          inputmode="decimal"
+          name="f_amount_max"
+          value="{{ amount_max }}"
+          placeholder="Montant max"
+          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+        />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <select
+          name="f_category"
+          hx-get="/transactions/subcategories?field_name=f_subcategory&element_id=f_subcategory-select&allow_empty=true"
+          hx-target="#f_subcategory-select"
+          hx-swap="outerHTML"
+          hx-trigger="change"
+          hx-on:change="document.getElementById('f_subcategory-select').value = ''"
+          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+        >
+          <option value="">Toutes les catégories</option>
+          <option value="uncategorized" {% if category_filter == "uncategorized" %}selected{% endif %}>
+            Non catégorisé
+          </option>
+          {% for category in categories %}
+          <option value="{{ category.id }}" {% if category.id|string == category_filter %}selected{% endif %}>
+            {{ category.icon or "" }} {{ category.name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% with parent = filter_parent, subcategories = filter_subcategories, selected_category_id = (subcategory_filter | int if subcategory_filter else none), field_name = "f_subcategory", element_id = "f_subcategory-select", allow_empty = true %}
+        {% include "transactions/_subcategory_select.html" %}
+        {% endwith %}
+      </div>
+
+      <button
+        type="button"
+        @click="advancedOpen = !advancedOpen"
+        class="text-sm text-accent font-medium text-left"
+      >
+        <span x-text="advancedOpen ? '− de critères' : '+ de critères'"></span>
+      </button>
+
+      <div x-show="advancedOpen" style="display: none;" class="flex flex-col gap-2">
+        <div class="grid grid-cols-2 gap-2">
+          <select
+            name="f_account"
+            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+          >
+            <option value="">Tous les comptes</option>
+            {% for account in accounts %}
+            <option value="{{ account.id }}" {% if account.id|string == account_filter %}selected{% endif %}>
+              {{ account.name }}
+            </option>
+            {% endfor %}
+          </select>
+          <select
+            name="f_payment_method"
+            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+          >
+            <option value="">Tout mode de paiement</option>
+            {% for code, meta in payment_methods.items() %}
+            <option value="{{ code }}" {% if payment_method_filter == code %}selected{% endif %}>
+              {{ meta.icon }} {{ meta.label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <select
+            name="f_type"
+            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+          >
+            <option value="">Tous types</option>
+            <option value="income" {% if type_filter == "income" %}selected{% endif %}>Recettes</option>
+            <option value="expense" {% if type_filter == "expense" %}selected{% endif %}>Dépenses</option>
+            <option value="transfer" {% if type_filter == "transfer" %}selected{% endif %}>Virements</option>
+          </select>
+          <select
+            name="f_sort"
+            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+          >
+            <option value="date_desc" {% if sort_filter == "date_desc" %}selected{% endif %}>Date (récent d'abord)</option>
+            <option value="date_asc" {% if sort_filter == "date_asc" %}selected{% endif %}>Date (ancien d'abord)</option>
+            <option value="amount_desc" {% if sort_filter == "amount_desc" %}selected{% endif %}>Montant décroissant</option>
+            <option value="amount_asc" {% if sort_filter == "amount_asc" %}selected{% endif %}>Montant croissant</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="min-h-[46px] rounded-xl bg-accent text-on-accent font-semibold">
+        Rechercher
+      </button>
+
+      <!-- Nombre de résultats par page : champ du même <form> que le reste
+           des filtres pour que sa valeur soit incluse dans TOUTE requête qui
+           référence déjà #transactions-filters (Rechercher, pagination),
+           sans câblage séparé. Préférence mémorisée en localStorage,
+           restaurée/réappliquée par transactions-selection.js. -->
+      <div class="flex items-center justify-end gap-2">
+        <label for="f_page_size" class="text-sm text-secondary">Afficher :</label>
+        <select
+          id="f_page_size"
+          name="f_page_size"
+          onchange="window.onPageSizeChange(this.value)"
+          class="min-h-[36px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+        >
+          {% for size in allowed_page_sizes %}
+          <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>{{ size }}</option>
+          {% endfor %}
+        </select>
+        <span class="text-sm text-secondary">par page</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Miroir hors-fragment de la sélection multi-pages (voir
+       transactions-selection.js) : reste intact à travers chaque swap de
+       #transactions-content, contrairement à un état Alpine local qui serait
+       recréé vide à chaque page/filtre/action groupée. -->
+  <div id="all-selected-ids-inputs" class="hidden"></div>
+
+  <div id="transactions-content" class="px-4 pb-4 lg:order-1 lg:flex-1 lg:min-w-0 lg:px-0">
+    {% include "transactions/_content.html" %}
+  </div>
+
+  <!-- Desktop (lg:) : même <dialog>/mécanisme HTMX qu'en mobile (aucun
+       changement de câblage), juste repositionné en panneau plein-hauteur
+       collé à droite plutôt que centré — la boîte de dialogue HTML native
+       accepte n'importe quel positionnement CSS une fois ouverte. -->
+  <dialog
+    id="transaction-detail-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm lg:fixed lg:inset-y-0 lg:right-0 lg:left-auto lg:top-0 lg:m-0 lg:h-screen lg:w-[380px] lg:max-w-none lg:rounded-none lg:rounded-l-xl"
+  >
+    <div
+      id="transaction-detail-content"
+      hx-on:htmx:after-swap="document.getElementById('transaction-detail-dialog').showModal()"
+    ></div>
+  </dialog>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_url('/static/js/transactions-selection.js') }}" defer></script>
+{% endblock %}

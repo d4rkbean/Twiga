@@ -1,0 +1,13 @@
+{
+  "name": "Twiga",
+  "short_name": "Twiga",
+  "description": "Voir loin. Voir juste.",
+  "display": "standalone",
+  "theme_color": "#d4a96a",
+  "background_color": "#faf3e0",
+  "start_url": "/",
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

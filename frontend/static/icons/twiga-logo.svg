@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Twiga, la girafe de l'application">
+  <!-- Ossicones (cornes) -->
+  <rect x="80" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" />
+  <circle cx="84.5" cy="10" r="7.5" fill="#8B6914" />
+  <rect x="111" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" />
+  <circle cx="115.5" cy="10" r="7.5" fill="#8B6914" />
+
+  <!-- Oreilles -->
+  <ellipse cx="54" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(-35 54 46)" />
+  <ellipse cx="146" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(35 146 46)" />
+
+  <!-- Cou -->
+  <rect x="74" y="92" width="52" height="112" rx="22" fill="#D4A96A" />
+
+  <!-- Taches sur le cou -->
+  <ellipse cx="88" cy="132" rx="10" ry="8" fill="#8B6914" />
+  <ellipse cx="116" cy="152" rx="9" ry="11" fill="#8B6914" />
+  <ellipse cx="86" cy="176" rx="8" ry="7" fill="#8B6914" />
+  <ellipse cx="114" cy="190" rx="7" ry="6" fill="#8B6914" />
+
+  <!-- Tête -->
+  <ellipse cx="100" cy="72" rx="46" ry="56" fill="#D4A96A" />
+
+  <!-- Museau plus clair -->
+  <ellipse cx="100" cy="102" rx="21" ry="16" fill="#E8CE9E" />
+
+  <!-- Lunettes rondes -->
+  <line x1="63" y1="61" x2="52" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+  <line x1="137" y1="61" x2="148" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+  <circle cx="78" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" />
+  <circle cx="122" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" />
+  <line x1="95" y1="66" x2="105" y2="66" stroke="#5C3D1E" stroke-width="5" />
+  <circle cx="78" cy="66" r="4.5" fill="#3D2B14" />
+  <circle cx="122" cy="66" r="4.5" fill="#3D2B14" />
+
+  <!-- Narines -->
+  <circle cx="91" cy="106" r="3" fill="#5C3D1E" />
+  <circle cx="109" cy="106" r="3" fill="#5C3D1E" />
+
+  <!-- Sourire -->
+  <path d="M91,116 Q100,122 109,116" stroke="#5C3D1E" stroke-width="3" fill="none" stroke-linecap="round" />
+</svg>

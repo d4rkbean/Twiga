@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#d4a96a" />
+  <!-- Annonce que la page gère elle-même clair ET sombre, avant même que le
+       CSS ne soit parsé. Sans ça, le « thème sombre automatique » de Chrome
+       Android réécrit toute la palette en gris neutres et supprime le motif
+       de fond. Le CSS le redéclare ensuite précisément selon la classe .dark
+       (voir design-system.css). -->
+  <meta name="color-scheme" content="light dark" />
+  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/static/icons/twiga-logo.svg" />
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>{% block title %}Twiga 🦒{% endblock %}</title>
+  <!-- Doit s'exécuter avant le CSS pour éviter un flash du mauvais thème :
+       priorité à la préférence explicite sauvegardée (toggle), sinon
+       prefers-color-scheme du système au tout premier chargement. -->
+  <script>
+    (function () {
+      var stored = localStorage.getItem("theme");
+      var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", dark);
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ static_url('/static/vendor/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/tour.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/rule-suggestion.css') }}" />
+  <script src="{{ static_url('/static/vendor/htmx.min.js') }}" defer></script>
+  <script src="{{ static_url('/static/js/htmx-config.js') }}" defer></script>
+  <script src="{{ static_url('/static/js/htmx-confirm.js') }}" defer></script>
+  <!-- tour.js AVANT alpine.min.js : Alpine planifie son démarrage via
+       queueMicrotask() en toute fin de bundle, et un microtask checkpoint
+       a lieu entre deux <script defer> qui s'exécutent l'un après l'autre.
+       Si tour.js chargeait après, Alpine ferait déjà son scan du DOM (donc
+       évaluerait x-data="twigaTour()") avant que window.twigaTour existe :
+       ReferenceError silencieux, composant jamais initialisé, tour qui ne
+       démarre jamais (ni auto, ni relance manuelle). -->
+  <script src="{{ static_url('/static/js/tour.js') }}" defer></script>
+  <script src="{{ static_url('/static/js/header.js') }}" defer></script>
+  <script src="{{ static_url('/static/vendor/alpine.min.js') }}" defer></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<!-- pt/pb calculés une seule fois ici (source de vérité globale) : hauteur
+     réelle de l'en-tête fixe (h-14 = 56px) + 8px de marge = 64px ; hauteur
+     réelle de la nav fixe (min-h-[50px] + 1px de bordure) + 8px = 59px.
+     Les pages ne doivent plus ajouter leur propre pt-2 de compensation sur
+     <main> (ça doublerait la marge) — seul un padding horizontal/de contenu
+     (px-4, pb-4, pb-8...) leur revient, sans rapport avec le dégagement des
+     éléments fixes qui est désormais entièrement centralisé ici. -->
+<body
+  {# Les dégagements sont dans un bloc pour que les pages sans chrome (la
+     connexion, qui vide les blocs sidebar/header/nav) puissent les annuler :
+     sinon elles réservent de la place pour des éléments qu'elles ne rendent
+     pas. #}
+  class="bg-page text-primary min-h-screen {% block body_chrome %}pt-[64px] pb-[59px] lg:pb-0{% endblock %} {% block body_brand %}{% endblock %}"
+  x-data="{
+    privacy: localStorage.getItem('privacy') === 'true',
+    sidebarMode: localStorage.getItem('sidebarMode') || 'pinned',
+  }"
+  x-effect="localStorage.setItem('sidebarMode', sidebarMode)"
+  :class="{
+    'privacy-mode': privacy,
+    {% block body_offset %}
+    'lg:pl-[240px]': sidebarMode === 'pinned',
+    'lg:pl-[64px]': sidebarMode === 'auto',
+    'lg:pl-0': sidebarMode === 'hidden',
+    {% endblock %}
+  }"
+>
+  {% block sidebar %}{% include "_sidebar.html" %}{% endblock %}
+  {% block header %}{% include "_header.html" %}{% endblock %}
+  {% block content %}{% endblock %}
+  {% block nav %}{% include "_nav.html" %}{% endblock %}
+  {% block tour %}{% include "_tour.html" %}{% endblock %}
+
+  <!-- Dialogue de confirmation "maison" (remplace window.confirm() sur
+       chaque hx-confirm="...", voir htmx-confirm.js) : la boîte native du
+       navigateur affiche un préfixe imposé ("La page à l'adresse ... indique
+       :"), jamais retirable côté page — seul un <dialog> stylé permet une
+       confirmation qui ressemble à une vraie application. -->
+  <dialog
+    id="twiga-confirm-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm"
+  >
+    <div class="flex flex-col gap-4 p-6">
+      <div class="flex items-center gap-2">
+        <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" />
+        <p class="text-base font-bold text-primary">Twiga</p>
+      </div>
+      <p id="twiga-confirm-message" class="text-sm text-primary"></p>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          id="twiga-confirm-cancel"
+          class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+        >
+          Annuler
+        </button>
+        <button
+          type="button"
+          id="twiga-confirm-ok"
+          class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
+        >
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Aide & raccourcis : accessible depuis le menu utilisateur (sidebar
+       desktop ET bottom sheet mobile, voir _user_menu_content.html), un
+       seul exemplaire ici plutôt que dupliqué dans chacun des deux menus.
+       Fermeture par le bouton ✕ (même convention que les autres <dialog>
+       de l'appli, ex. category-transactions-dialog — pas de fermeture au
+       clic sur le fond, non plus utilisée ailleurs) ou Échap (natif à
+       <dialog>, sans JS supplémentaire). -->
+  <dialog
+    id="twiga-help-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-md"
+  >
+    <div class="flex flex-col gap-4 p-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-primary flex items-center gap-2">{{ icon('help-circle') }}Aide &amp; raccourcis</h2>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-help-dialog').close()"
+          aria-label="Fermer"
+          class="text-secondary text-xl leading-none"
+        >
+          {{ icon('x') }}
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-semibold text-primary flex items-center gap-2">{{ icon('keyboard') }}Raccourcis clavier</p>
+        <!-- Raccourcis vérifiés dans le code réel (frontend/static/js/
+             inbox-shortcuts.js pour →/←/1-9/Entrée/Échap, _header.html pour
+             Ctrl+K) — pas une liste inventée, elle doit rester exacte. -->
+        {% set shortcuts = [
+          ("Ctrl+K", "Recherche globale"),
+          ("→ / Espace", "Transaction suivante"),
+          ("←", "Transaction précédente"),
+          ("1-9", "Sélectionner catégorie"),
+          ("Entrée", "Valider catégorie"),
+          ("Échap", "Annuler / Retour"),
+        ] %}
+        <div class="bg-page rounded-xl border border-border divide-y divide-border overflow-hidden">
+          {% for key, label in shortcuts %}
+          <div class="flex items-center justify-between gap-2 px-3 py-2">
+            <span class="text-xs font-mono font-semibold text-primary bg-container border border-border rounded px-2 py-0.5 flex-shrink-0">
+              {{ key }}
+            </span>
+            <span class="text-sm text-secondary text-right">{{ label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-semibold text-primary">Liens utiles</p>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-help-dialog').close(); window.startTwigaTour();"
+          class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center gap-2"
+        >
+          {{ icon('book') }}Revoir la visite guidée
+        </button>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-about-dialog').showModal()"
+          class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center gap-2"
+        >
+          {{ icon('info-circle') }}À propos de Twiga
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog
+    id="twiga-about-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm"
+  >
+    <div class="flex flex-col gap-4 p-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" />
+          <h2 class="text-base font-bold text-primary flex items-center gap-2">Twiga<img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:20px;width:auto;" /></h2>
+        </div>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-about-dialog').close()"
+          aria-label="Fermer"
+          class="text-secondary text-xl leading-none"
+        >
+          {{ icon('x') }}
+        </button>
+      </div>
+      <p class="text-sm text-secondary">
+        Tableau de bord financier personnel, 100&nbsp;% local — aucune connexion
+        bancaire automatique, aucun service tiers, aucune télémétrie.
+        Import manuel QIF/CSV/OFX, catégorisation rapide, budgets et projets.
+      </p>
+    </div>
+  </dialog>
+
+  {% block extra_scripts %}{% endblock %}
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/static/sw.js", { scope: "/" }).catch(function (error) {
+          console.error("Échec de l'enregistrement du service worker :", error);
+        });
+      });
+    }
+
+    (function () {
+      var THEME_COLORS = { light: "#d4a96a", dark: "#0f172a" };
+
+      function applyThemeColorMeta(isDark) {
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", isDark ? THEME_COLORS.dark : THEME_COLORS.light);
+      }
+
+      // Plus de synchronisation d'icône en JS : les trois bascules rendent
+      // les deux icônes (soleil et lune) et le CSS n'affiche que la bonne
+      // selon la classe .dark portée par <html> (voir design-system.css,
+      // .icon-theme-light / .icon-theme-dark). L'icône est donc correcte dès
+      // le premier rendu, sans attendre le premier tour de JS.
+
+      var initialDark = document.documentElement.classList.contains("dark");
+      applyThemeColorMeta(initialDark);
+
+      window.toggleTheme = function () {
+        var isDark = document.documentElement.classList.toggle("dark");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+        applyThemeColorMeta(isDark);
+        window.dispatchEvent(new CustomEvent("themechange", { detail: { dark: isDark } }));
+      };
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<div id="categories-content" class="flex flex-col gap-4">
+  {% for parent in categories %}
+  <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-3" x-data="{ expanded: false }">
+    {% with category = parent, is_child = false %}
+    {% include "categories/_row.html" %}
+    {% endwith %}
+
+    <div x-show="expanded" style="display: none;" class="flex flex-col gap-3 border-l-2 border-border ml-2">
+      {% for child in parent.children %}
+      {% with category = child, is_child = true %}
+      {% include "categories/_row.html" %}
+      {% endwith %}
+      {% endfor %}
+
+      {% include "categories/_add_subcategory_button.html" %}
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-container rounded-xl shadow-sm p-6">
+    <p class="text-sm text-secondary text-center">Aucune catégorie pour l'instant.</p>
+  </div>
+  {% endfor %}
+</div>

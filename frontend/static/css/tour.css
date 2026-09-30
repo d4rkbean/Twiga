@@ -1,0 +1,159 @@
+/* Visite guidée maison (Alpine.js), sans Shepherd.js.
+
+   La cible n'est PAS "promue" au-dessus du calque via z-index : header et
+   nav sont en position:fixed avec leur propre z-index (10, voir _header.html
+   / _nav.html), ce qui crée leur propre contexte d'empilement. Le z-index
+   d'un enfant n'est comparé qu'À L'INTÉRIEUR de ce contexte : aucun z-index
+   posé sur la cible ne peut donc jamais dépasser le calque (z-index 9998),
+   qui lui est comparé au niveau de <body> contre le header/nav ENTIER
+   (z-index 10 < 9998 → toujours recouvert, quoi qu'il y ait dedans).
+
+   À la place : un unique masque positionné exactement sur le rectangle de
+   la cible (voir .twiga-tour-spotlight), dont l'énorme box-shadow assombrit
+   tout LE RESTE de l'écran. Ça découpe un vrai "trou" dans l'assombrissement
+   sans dépendre de la structure d'empilement des ancêtres de la cible. */
+
+.twiga-tour-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 9998;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.twiga-tour-spotlight {
+  /* Revenu à top/left animés directement (pas transform) après un essai
+     transform: translate() qui cassait le suivi de la cible en pratique —
+     transform combiné à un box-shadow de 9999px de spread est une
+     combinaison connue pour mal se comporter selon les moteurs de rendu
+     (certains calculent l'étendue de l'ombre par rapport à la position
+     AVANT transform), désynchronisant le masque assombri de l'outline qui,
+     lui, suit correctement. Repassé sciemment sous la coche perf
+     "impeccable" (layout-transition) : correction du rendu prioritaire sur
+     l'optimisation ici — voir l'ignore inline ci-dessous. */
+  position: fixed;
+  z-index: 9998;
+  border-radius: 0.5rem;
+  outline: 3px solid #d4a96a;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+  pointer-events: none;
+  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease; /* impeccable-disable-line layout-transition: box-shadow-based spotlight mask on a fixed, out-of-flow element — transform:translate() was tried and reverted, it desynced the shadow mask from the outline in practice; see comment above */
+}
+
+.twiga-tour-bubble {
+  width: min(90vw, 360px);
+  background: #d4a96a;
+  color: #2b1d0e;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  padding: 1rem;
+  text-align: left;
+  transition: top 0.25s ease, left 0.25s ease;
+  z-index: 10000;
+  pointer-events: auto;
+}
+
+.twiga-tour-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2b1d0e;
+  opacity: 0.7;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.twiga-tour-close:hover {
+  opacity: 1;
+}
+
+.twiga-tour-progress {
+  font-size: 0.75rem;
+  color: #5c4423;
+  margin: 0 1.5rem 0.25rem 0;
+}
+
+.twiga-tour-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-wrap: balance;
+  margin: 0 1.5rem 0.5rem 0;
+}
+
+.twiga-tour-text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.twiga-tour-text p + p {
+  margin-top: 0.5rem;
+}
+
+.twiga-tour-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.twiga-tour-btn {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  background: #2b1d0e;
+  color: #f4e6cf;
+}
+
+.twiga-tour-btn:hover {
+  filter: brightness(1.15);
+}
+
+.twiga-tour-btn-secondary {
+  background: transparent;
+  border: 1px solid rgba(43, 29, 14, 0.4);
+  color: #2b1d0e;
+}
+
+.twiga-tour-btn-secondary:hover {
+  background: rgba(43, 29, 14, 0.08);
+}
+
+@media (max-width: 480px) {
+  .twiga-tour-bubble {
+    width: calc(100vw - 2rem);
+  }
+}
+
+.twiga-tour-title-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: #2b1d0e;
+}
+
+/* Étape sans cible (bienvenue) : carte centrée dans l'écran, donc texte et
+   titre centrés ; partout ailleurs la bulle pointe un élément et le texte
+   reste aligné à gauche. */
+.twiga-tour-bubble-centered {
+  text-align: center;
+}
+
+.twiga-tour-bubble-centered .twiga-tour-title {
+  flex-direction: column;
+  margin-right: 0;
+}
+
+.twiga-tour-bubble-centered .twiga-tour-progress {
+  margin-right: 0;
+}

@@ -1,0 +1,5 @@
+<div class="flex items-center justify-center gap-2" aria-hidden="true">
+  {% for step in [1, 2, 3] %}
+  <span class="w-2.5 h-2.5 rounded-full {{ 'bg-accent' if step <= current_step else 'bg-border' }}"></span>
+  {% endfor %}
+</div>

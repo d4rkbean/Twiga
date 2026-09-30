@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: finance
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-finance}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # The app only starts (and runs its migrations) once Postgres accepts
+    # connections, see the app's depends_on.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance -d finance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No "ports:" here on purpose: Postgres must only be reachable from the
+    # app container, on the internal Docker Compose network, never exposed
+    # on the host.
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - "${PORT:-8181}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://finance:${DB_PASSWORD:-finance}@db:5432/finance
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-changeme}
+      # Living style guide at /design-system. Off by default: the route
+      # returns 404 unless this variable is true.
+      SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}
+
+volumes:
+  pgdata:

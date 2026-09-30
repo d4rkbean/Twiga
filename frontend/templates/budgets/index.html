@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Budgets — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto">
+  <h1 class="text-2xl font-bold text-primary">Budgets</h1>
+
+  <form
+    id="budgets-filters"
+    hx-get="/budgets/content"
+    hx-trigger="change"
+    hx-target="#budgets-content"
+    hx-swap="innerHTML"
+    class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex gap-2"
+  >
+    <select
+      name="month"
+      class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    >
+      {% for index, name in month_options %}
+      <option value="{{ index }}" {% if index == month %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <select
+      name="year"
+      class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    >
+      {% for y in years %}
+      <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div id="budgets-content">
+    {% include "budgets/_content.html" %}
+  </div>
+</main>
+{% endblock %}

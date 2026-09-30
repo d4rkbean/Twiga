@@ -1,0 +1,119 @@
+<div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4" x-data="{ count: {{ unique_count }} }">
+  <h2 class="text-xl font-bold text-primary">Étape 3 — Vérifier</h2>
+
+  <div class="flex flex-col gap-1 text-sm">
+    <p class="text-primary">{{ total_count }} opération(s) détectée(s)</p>
+    <p class="text-secondary">{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s)</p>
+  </div>
+
+  <form hx-post="/imports/{{ import_id }}/execute" hx-target="#import-wizard" hx-swap="innerHTML" class="flex flex-col gap-4">
+    <input type="hidden" name="format" value="{{ format }}" />
+    <input type="hidden" name="account_id" value="{{ account.id }}" />
+    {% if format == "csv" %}
+    <input type="hidden" name="date_column" value="{{ date_column }}" />
+    <input type="hidden" name="label_column" value="{{ label_column }}" />
+    <input type="hidden" name="amount_column" value="{{ amount_column }}" />
+    <input type="hidden" name="date_format" value="{{ date_format }}" />
+    {% endif %}
+
+    {% if unique %}
+    <!-- Décochée par défaut : jamais, c'est le cas d'usage principal
+         (importer tout ce qui est nouveau). Décocher reste possible ligne
+         par ligne pour exclure une opération précise avant l'import, sans
+         devoir la supprimer après coup depuis Opérations. -->
+    <div class="overflow-y-auto max-h-80 rounded-xl border border-border">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-page">
+            <th class="w-10 px-3 py-2"></th>
+            <th class="text-left text-secondary font-medium px-3 py-2">Date</th>
+            <th class="text-left text-secondary font-medium px-3 py-2">Libellé</th>
+            <th class="text-right text-secondary font-medium px-3 py-2">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for idx, tx in unique %}
+          <tr class="border-t border-border">
+            <td class="px-3 py-2">
+              <input
+                type="checkbox"
+                name="include"
+                value="{{ idx }}"
+                checked
+                class="w-5 h-5 flex-shrink-0"
+                @change="count += $event.target.checked ? 1 : -1"
+              />
+            </td>
+            <td class="text-primary px-3 py-2 whitespace-nowrap">{{ tx.date | fr_date }}</td>
+            <td class="text-primary px-3 py-2">
+              {{ tx.label }}
+              {% if tx.transfer_account %}
+              <span class="block text-xs text-secondary">{{ icon('repeat', size=12) }} Virement détecté ↔ {{ tx.transfer_account }}</span>
+              {% endif %}
+            </td>
+            <td class="{{ 'text-success' if tx.amount > 0 else 'text-danger' }} font-medium px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if duplicates %}
+    <!-- Repliée par défaut (bruit pour l'usage courant), mais consultable :
+         la détection de doublon tolère les variantes de libellé (même
+         opération réexportée avec un format différent), un faux positif
+         reste possible et une opération légitime ne doit pas disparaître
+         silencieusement. -->
+    <details class="rounded-xl border border-border">
+      <summary class="cursor-pointer select-none px-3 py-2 text-sm text-secondary font-medium">
+        Doublons ignorés ({{ duplicate_count }})
+      </summary>
+      <div class="overflow-y-auto max-h-64 border-t border-border">
+        <table class="w-full text-sm">
+          <tbody>
+            {% for idx, tx in duplicates %}
+            <tr class="border-t border-border first:border-t-0 opacity-70">
+              <td class="px-3 py-2 align-top">
+                <input
+                  type="checkbox"
+                  name="force_include"
+                  value="{{ idx }}"
+                  class="w-5 h-5 flex-shrink-0"
+                  @change="count += $event.target.checked ? 1 : -1"
+                />
+              </td>
+              <td class="text-primary px-3 py-2 whitespace-nowrap align-top">{{ tx.date | fr_date }}</td>
+              <td class="text-primary px-3 py-2 align-top">
+                {{ tx.label }}
+                <span class="block text-xs text-secondary">Déjà présente en base</span>
+              </td>
+              <td class="{{ 'text-success' if tx.amount > 0 else 'text-danger' }} font-medium px-3 py-2 text-right whitespace-nowrap align-top">{{ tx.amount | eur }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% endif %}
+
+    <button
+      type="submit"
+      class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold w-full disabled:opacity-50"
+      :disabled="count === 0"
+    >
+      Importer <span x-text="count"></span> opération(s)
+    </button>
+    <p class="htmx-indicator text-sm text-secondary text-center pt-2"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga tend le cou...</p>
+  </form>
+
+  <!-- Filet de sécurité, surtout quand unique_count == 0 (le bouton
+       ci-dessus est alors désactivé, sans autre issue) : repartir sur un
+       autre fichier sans devoir retourner par Paramètres. -->
+  <a
+    href="/imports/new"
+    class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
+  >
+    {{ icon('file-import', size=18) }} Importer un autre fichier
+  </a>
+</div>

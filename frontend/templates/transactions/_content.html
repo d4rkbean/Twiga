@@ -1,0 +1,402 @@
+<div
+  class="flex flex-col"
+  x-data="{
+    selected: [],
+    pageIds: [{{ transactions | map(attribute='id') | join(',') }}],
+    amountCentsById: { {% for tx in transactions %}{{ tx.id }}: {{ (tx.amount * 100) | int }}{% if not loop.last %}, {% endif %}{% endfor %} },
+    globalCount: 0,
+    globalSumCents: 0,
+
+    // window.selectedTransactionAmounts (transactions-selection.js) survit à
+    // chaque swap de #transactions-content : ce init() restaure les cases à
+    // cocher de CETTE page si elles avaient déjà été sélectionnées avant un
+    // changement de page/filtre, puis synchronise les compteurs globaux
+    // affichés dans la barre. Alpine appelle automatiquement une méthode
+    // nommée init() définie dans x-data, pas besoin de x-init séparé.
+    init() {
+      var globalMap = window.selectedTransactionAmounts;
+      this.selected = this.pageIds.filter(function (id) { return globalMap.has(id); });
+      this.refreshGlobalCounts();
+      window.syncSelectedIdsInputs();
+    },
+
+    refreshGlobalCounts() {
+      this.globalCount = window.selectedTransactionAmounts.size;
+      var total = 0;
+      window.selectedTransactionAmounts.forEach(function (cents) { total += cents; });
+      this.globalSumCents = total;
+    },
+
+    toggleId(id) {
+      var idx = this.selected.indexOf(id);
+      if (idx === -1) {
+        this.selected.push(id);
+        window.selectedTransactionAmounts.set(id, this.amountCentsById[id] || 0);
+      } else {
+        this.selected.splice(idx, 1);
+        window.selectedTransactionAmounts.delete(id);
+      }
+      this.refreshGlobalCounts();
+      window.syncSelectedIdsInputs();
+    },
+
+    toggleAllOnPage(checked) {
+      var self = this;
+      this.pageIds.forEach(function (id) {
+        if (checked) {
+          window.selectedTransactionAmounts.set(id, self.amountCentsById[id] || 0);
+        } else {
+          window.selectedTransactionAmounts.delete(id);
+        }
+      });
+      this.selected = checked ? this.pageIds.slice() : [];
+      this.refreshGlobalCounts();
+      window.syncSelectedIdsInputs();
+    },
+
+    clearAll() {
+      window.selectedTransactionAmounts.clear();
+      this.selected = [];
+      this.refreshGlobalCounts();
+      window.syncSelectedIdsInputs();
+    },
+
+    globalCountLabel() {
+      // Ex. : 47 sélectionnées (dont 25 sur cette page) si une partie de la
+      // sélection vient d'autres pages, sinon juste 25 sélectionnée(s) —
+      // jamais de guillemet droit ici : ce caractère referme prématurément
+      // cet attribut HTML x-data (le parseur HTML ignore totalement la
+      // syntaxe des commentaires JS), exactement le bug qui affichait le
+      // code source en clair sur la page.
+      var onPage = this.selected.length;
+      var suffix = this.globalCount === 1 ? '' : 's';
+      if (this.globalCount === onPage) {
+        return this.globalCount + ' sélectionnée' + suffix;
+      }
+      return this.globalCount + ' sélectionnée' + suffix + ' (dont ' + onPage + ' sur cette page)';
+    },
+
+    selectedSumLabel() {
+      // Somme sur TOUTES les pages sélectionnées (globalSumCents), pas
+      // seulement celle-ci — toujours en centimes entiers (jamais de
+      // flottant JS pour de l'argent) : reproduit exactement le format de
+      // backend.formatting.format_amount (séparateur de milliers en espace
+      // fine insécable, virgule décimale, signe).
+      var totalCents = this.globalSumCents;
+      var sign = totalCents > 0 ? '+' : (totalCents < 0 ? '-' : '');
+      var absCents = Math.abs(totalCents);
+      var centsPart = String(absCents % 100).padStart(2, '0');
+      var euroStr = String(Math.floor(absCents / 100));
+      var groups = [];
+      while (euroStr.length > 3) {
+        groups.unshift(euroStr.slice(-3));
+        euroStr = euroStr.slice(0, -3);
+      }
+      groups.unshift(euroStr);
+      return sign + groups.join(' ') + ',' + centsPart + ' €';
+    },
+  }"
+  x-effect="document.getElementById('transactions-filters')?.classList.toggle('hidden', globalCount > 0)"
+>
+  <div class="flex items-center justify-between gap-2 px-1">
+    <p class="text-sm text-secondary min-w-0 truncate">
+      {# "Net" et non "Solde" : cette valeur est la SOMME des montants des
+         opérations listées (get_transactions_total_amount), pas un solde de
+         compte — elle ignore les soldes d'ouverture. Sans filtre elle vaut
+         donc le net de tout l'historique, négatif dès que les dépenses
+         cumulées dépassent les recettes, ce qui se lisait à tort comme un
+         compte à découvert. #}
+      {{ total }} opération{{ "s" if total != 1 else "" }}
+      | {{ "Net" if not type_filter else "Total" }} :
+      <span class="amount-blur">{{ "+" if total_amount > 0 else "" }}{{ total_amount | eur }}</span>
+    </p>
+  </div>
+
+  {% if success_message %}
+  <!-- Toast plutôt qu'un message inséré dans le flux normal : après une
+       action groupée depuis une liste longue, le message apparaissait en
+       haut du contenu FRAIS mais la page restait défilée à l'ancienne
+       position, le laissant hors champ. position:fixed + coordonnées
+       absolues garantissent qu'il est toujours visible, peu importe le
+       défilement. x-init lance l'auto-disparition après 3s (Alpine, pas de
+       <script> brut — ce fichier est un fragment swappé par htmx et un
+       inline JS ici a déjà causé un vrai bug d'échappement plus tôt dans ce
+       projet, réglé en bannissant systématiquement le JS embarqué dans les
+       fragments swappés). -->
+  <div
+    x-data="{ show: true }"
+    x-init="setTimeout(() => show = false, 3000)"
+    x-show="show"
+    x-transition
+    style="position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 8000;"
+    class="bg-accent text-on-accent font-semibold rounded-xl shadow-lg px-4 py-3 text-sm text-center whitespace-nowrap"
+  >
+    {{ success_message }}
+  </div>
+  {% endif %}
+
+  {% if transactions %}
+  <!-- Toute la barre (y compris "Tout sélectionner") n'apparaît qu'en mode
+       sélection (globalCount > 0, PAS selected.length : la sélection
+       survit au changement de page, donc la barre doit rester visible même
+       si la page actuelle n'a elle-même rien coché). Le point d'entrée est
+       la case à cocher TOUJOURS visible sur chaque ligne (mécanisme
+       backlog, voir plus bas), pas cette barre elle-même. x-effect sur la
+       racine masque en parallèle #transactions-filters (display:none) tant
+       qu'une sélection est active, pour laisser toute la largeur à cette
+       barre — comportement Gmail / Apple Mail / Bankin. 3 rangées de 3
+       (grid-cols-3 : chaque piste a une largeur mini bornée, contrairement
+       à un simple flex proportionnel qui ne borne rien). Placée APRÈS la
+       ligne de résumé, jamais avant : cette barre est en position sticky
+       (top-14) — la mettre avant la ligne de résumé dans le flux la faisait
+       recouvrir cette ligne dès qu'elle se fixait au défilement (elle reste
+       "collée" à son point d'ancrage, indifférente à ce qui suit dans le
+       flux). En la plaçant après, la ligne de résumé (non collante) défile
+       normalement et n'est donc jamais recouverte, quel que soit le mode. -->
+  <div
+    x-show="globalCount > 0"
+    x-transition
+    style="display: none;"
+    class="sticky top-14 z-30 bg-page px-1 pt-2 pb-2"
+  >
+    <div class="bg-container border border-border rounded-xl shadow-sm p-3 flex flex-col gap-2">
+      <div class="grid grid-cols-3 gap-2 items-center">
+        <label class="flex items-center gap-1.5 min-h-[36px]">
+          <input
+            type="checkbox"
+            class="w-5 h-5 flex-shrink-0"
+            @change="toggleAllOnPage($event.target.checked)"
+            :checked="pageIds.length > 0 && selected.length === pageIds.length"
+          />
+          <span class="text-xs text-secondary font-medium truncate">Tout sélectionner</span>
+        </label>
+        <p class="text-xs text-secondary text-center leading-tight">
+          <span x-text="globalCountLabel()"></span><br />
+          <span class="amount-blur font-semibold" x-text="selectedSumLabel()"></span>
+        </p>
+        <button
+          type="button"
+          @click="clearAll()"
+          class="min-h-[36px] rounded-xl text-xs text-secondary font-medium"
+        >
+          {{ icon('x') }} Annuler
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <select
+          id="bulk-category"
+          name="category_id"
+          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-1 text-xs"
+        >
+          <option value="" selected disabled>Catégorie...</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
+          {% for child in category.children %}
+          <option value="{{ child.id }}">— {{ child.icon or "" }} {{ child.name }}</option>
+          {% endfor %}
+          {% endfor %}
+        </select>
+        <select
+          id="bulk-payment-method"
+          name="payment_method"
+          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-1 text-xs"
+        >
+          <option value="">Paiement...</option>
+          {% for code, meta in payment_methods.items() %}
+          <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
+          {% endfor %}
+        </select>
+        <button
+          type="button"
+          hx-post="/transactions/bulk-apply?{{ filter_qs }}"
+          hx-include="#all-selected-ids-inputs, #bulk-category, #bulk-payment-method"
+          hx-target="#transactions-content"
+          hx-swap="innerHTML"
+          hx-confirm="Appliquer ces modifications aux opérations sélectionnées ?"
+          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+          class="w-full min-h-[46px] px-1 rounded-xl bg-accent text-on-accent text-xs font-semibold"
+        >
+          {{ icon('check') }} Appliquer
+        </button>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2">
+        <button
+          type="button"
+          hx-post="/transactions/bulk-mark-transfer?{{ filter_qs }}"
+          hx-include="#all-selected-ids-inputs"
+          hx-target="#transactions-content"
+          hx-swap="innerHTML"
+          hx-confirm="Marquer ces opérations comme virements internes ? Elles seront exclues de La Savane."
+          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+          class="w-full min-h-[46px] px-1 rounded-xl bg-container border border-border text-primary text-xs font-medium"
+        >
+          {{ icon('repeat') }} Virement
+        </button>
+        <button
+          type="button"
+          hx-post="/transactions/bulk-mark-unexpected?{{ filter_qs }}"
+          hx-include="#all-selected-ids-inputs"
+          hx-target="#transactions-content"
+          hx-swap="innerHTML"
+          hx-confirm="Marquer ces opérations comme imprévues (« Le Cap ») ?"
+          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+          class="w-full min-h-[46px] px-1 rounded-xl bg-container border border-border text-primary text-xs font-medium"
+        >
+          {{ icon('urgent') }} Imprévus
+        </button>
+        <button
+          type="button"
+          hx-post="/transactions/bulk-unvalidate?{{ filter_qs }}"
+          hx-include="#all-selected-ids-inputs"
+          hx-target="#transactions-content"
+          hx-swap="innerHTML"
+          hx-confirm="Remettre ces opérations dans La Savane pour les recatégoriser ?"
+          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+          class="w-full min-h-[46px] px-1 rounded-xl bg-container border border-border text-primary text-xs font-medium"
+        >
+          {{ icon('inbox') }} Savane
+        </button>
+        <button
+          type="button"
+          hx-post="/transactions/bulk-delete?{{ filter_qs }}"
+          hx-include="#all-selected-ids-inputs"
+          hx-target="#transactions-content"
+          hx-swap="innerHTML"
+          hx-confirm="Supprimer définitivement les opérations sélectionnées ? Cette action est irréversible."
+          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+          class="w-full min-h-[46px] px-1 rounded-xl border border-danger text-danger text-xs font-medium"
+        >
+          {{ icon('trash') }} Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Liste groupée par jour, lignes compactes (pas des cartes). Le clic sur
+       la ligne ouvre le détail via hx-get (déclenchement "click" implicite,
+       par défaut sur un <div> avec hx-get), SAUF si le clic vient de la
+       case à cocher elle-même : @click.stop dessus empêche l'événement de
+       remonter jusqu'au hx-get de la ligne — Alpine, déjà utilisé et
+       éprouvé sur cette page, pas un nouveau mécanisme. -->
+  <!-- En-tête de colonnes, desktop uniquement : les largeurs reprennent
+       exactement celles de la ligne ci-dessous (pastille w-9, compte 130px,
+       montant 120px, case 5) pour que les titres tombent au-dessus de leur
+       colonne. Sur mobile la ligne est empilée sur deux niveaux, un en-tête
+       n'y aurait rien à surmonter. -->
+  <div class="hidden lg:flex items-center gap-2 px-3 pt-3 pb-1 text-xs font-semibold text-primary uppercase tracking-wide border-b border-border">
+    <span class="w-9 flex-shrink-0" aria-hidden="true"></span>
+    <span class="flex-1 min-w-0">Libellé</span>
+    <span class="w-[130px] flex-shrink-0">Compte</span>
+    <span class="w-[120px] text-right flex-shrink-0">Montant</span>
+    <span class="w-5 flex-shrink-0" aria-hidden="true"></span>
+  </div>
+
+  <div class="flex flex-col">
+    {% for group in transaction_groups %}
+    <p class="text-xs font-semibold text-primary uppercase tracking-wide px-3 pt-3 pb-1">
+      {{ group.label }}
+    </p>
+    {% for tx in group.transactions %}
+    <div
+      {# Desktop : alternance de fond une ligne sur deux et survol. En thème
+         sombre les surfaces s'éclaircissent d'elles-mêmes et les lignes se
+         détachent ; en clair tout est blanc et il ne reste qu'un filet gris,
+         d'où des lignes qui se fondent entre elles. nth-of-type et non
+         nth-child : les en-têtes de jour sont des <p> frères des lignes et
+         décalaient le rythme à chaque groupe. L'alternance rend la
+         structure lisible dans les deux thèmes puisqu'elle utilise les
+         tokens. Mobile inchangé (pas de lg:). La classe de sélection est en
+         !important pour rester prioritaire sur l'alternance. #}
+      class="flex items-center gap-2 py-2.5 px-3 border-b border-border cursor-pointer active:opacity-80 transition lg:[&:nth-of-type(even)]:bg-page lg:hover:bg-accent/5"
+      :class="selected.includes({{ tx.id }}) ? '!bg-accent/10' : ''"
+      hx-get="/transactions/{{ tx.id }}/detail?{{ filter_qs }}"
+      hx-target="#transaction-detail-content"
+      hx-swap="innerHTML"
+    >
+      {# Pastille teintée de la couleur de la catégorie (identité), icône en
+         text-primary (contraste garanti dans les deux thèmes, contrairement
+         à la couleur de catégorie elle-même sur fond sombre). Non
+         catégorisé : pastille grise, icône estompée. #}
+      <span
+        class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 {{ 'text-primary' if tx.category else 'text-secondary' }}"
+        style="background-color: {{ tx.category_id | category_color }}33;"
+        aria-hidden="true"
+      >
+        {{ icon(get_category_icon_name(tx.category.name) if tx.category else 'tag', size=20) }}
+      </span>
+      <div class="flex-1 min-w-0 flex flex-col">
+        <span class="text-sm text-primary font-medium truncate flex items-center gap-1.5">
+          <span class="truncate">{{ tx.label or "(sans libellé)" }}</span>
+          {% if tx.payment_method %}
+          <span class="flex-shrink-0 text-secondary" title="{{ tx.payment_method }}">{{ icon(get_payment_method_icon_name(tx.payment_method), size=14) }}<span class="sr-only">{{ tx.payment_method }}</span></span>
+          {% endif %}
+        </span>
+        <span class="text-xs text-secondary truncate">
+          {{ tx.category.name | category_display if tx.category else "Non catégorisé" }}{% if tx.is_transfer %} · {{ icon('repeat', size=14) }} Virement{% endif %}{% if tx.is_unexpected %} · {{ icon('urgent', size=14) }} Imprévu{% endif %}{% if receipt_item_counts.get(tx.id) %} · {{ icon('receipt', size=14) }} {{ receipt_item_counts[tx.id] }} art.{% endif %}{% if tx.note %} · {{ tx.note }}{% endif %}<span class="lg:hidden"> · {{ tx.account.name }}</span>
+        </span>
+      </div>
+      <!-- Desktop (lg:) uniquement : nom du compte en colonne dédiée entre
+           le libellé/catégorie et le montant — sur mobile il est déjà repris
+           en fin de 2e ligne ci-dessus (lg:hidden), pas affiché deux fois. -->
+      <span class="hidden lg:block text-xs text-secondary truncate lg:w-[130px] flex-shrink-0">
+        {{ tx.account.name }}
+      </span>
+      {# lg:w-[120px] + text-right + tabular-nums : sur desktop la colonne
+         des montants est fixe et les chiffres à chasse constante, donc les
+         unités s'alignent verticalement d'une ligne à l'autre. Sans ça, le
+         montant flottait au bout d'un libellé de longueur variable — c'est
+         ce qui donnait l'impression d'un grand écart entre les colonnes. #}
+      <span class="amount-blur text-sm font-bold whitespace-nowrap lg:w-[120px] lg:text-right lg:tabular-nums flex-shrink-0 {{ 'text-success' if tx.amount > 0 else 'text-danger' }}">
+        {{ "+" if tx.amount > 0 else "" }}{{ tx.amount | eur }}
+      </span>
+      <input
+        type="checkbox"
+        value="{{ tx.id }}"
+        :checked="selected.includes({{ tx.id }})"
+        @change="toggleId({{ tx.id }})"
+        @click.stop
+        class="w-5 h-5 flex-shrink-0"
+      />
+    </div>
+    {% endfor %}
+    {% endfor %}
+    {% if not transactions %}
+    <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 mx-1">
+      <p class="text-sm text-secondary text-center">Aucune opération ne correspond à ces filtres.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if transactions %}
+  <div class="flex items-center justify-between gap-2 p-3">
+    <button
+      type="button"
+      hx-get="/transactions/list/content"
+      hx-include="#transactions-filters"
+      hx-vals='{"f_page": {{ page - 1 }}}'
+      hx-target="#transactions-content"
+      hx-swap="innerHTML"
+      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4 disabled:opacity-50"
+      {% if page <= 1 %}disabled{% endif %}
+    >
+      {{ icon('arrow-narrow-left') }} Précédent
+    </button>
+    <span class="text-sm text-secondary">Page {{ page }} / {{ total_pages }}</span>
+    <button
+      type="button"
+      hx-get="/transactions/list/content"
+      hx-include="#transactions-filters"
+      hx-vals='{"f_page": {{ page + 1 }}}'
+      hx-target="#transactions-content"
+      hx-swap="innerHTML"
+      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4 disabled:opacity-50"
+      {% if page >= total_pages %}disabled{% endif %}
+    >
+      Suivant {{ icon('arrow-narrow-right') }}
+    </button>
+  </div>
+  {% endif %}
+</div>

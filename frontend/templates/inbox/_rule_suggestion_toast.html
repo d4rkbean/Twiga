@@ -1,0 +1,45 @@
+<!-- Toast OOB "créer une règle ?" après une catégorisation en Savane, même
+     mécanisme et même style que le backlog (voir crud.maybe_rule_suggestion
+     et rule-suggestion.css) — posé APRÈS l'enregistrement, sur la carte
+     SUIVANTE déjà affichée, jamais un tap obligatoire de plus dans le
+     parcours catégorie → sous-catégorie → suivante. Cible OOB toujours
+     présente dans le DOM (incluse aussi dans inbox/index.html) même sans
+     suggestion, sinon le swap OOB posé par _render_next_card (voir
+     _unexpected_toast.html pour le même principe) n'a rien à remplacer. -->
+<div id="rule-suggestion-toast" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% if rule_suggestion %}
+  <div
+    x-data="{ visible: true }"
+    x-init="setTimeout(() => visible = false, 10000)"
+    x-show="visible"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="rule-suggestion-popup"
+  >
+    <div id="rule-suggestion-{{ rule_suggestion.transaction_id }}" class="rule-suggestion-item flex flex-col gap-2">
+      <p class="text-sm">
+        {{ icon('bulb') }} Créer une règle automatique : si le libellé contient
+        <span class="font-semibold">"{{ rule_suggestion.keyword }}"</span> {{ icon('arrow-narrow-right', size=16) }} {{ rule_suggestion.category_name }} ?
+      </p>
+      <form
+        hx-post="/backlog/create-rule"
+        hx-target="#rule-suggestion-{{ rule_suggestion.transaction_id }}"
+        hx-swap="outerHTML"
+        class="flex flex-col gap-2"
+      >
+        <input type="hidden" name="category_id" value="{{ rule_suggestion.category_id }}" />
+        <input type="text" name="keyword" value="{{ rule_suggestion.keyword }}" />
+        <div class="flex gap-2">
+          <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+            {{ icon('check') }} Créer la règle
+          </button>
+          <button type="button" @click="visible = false" class="rule-suggestion-btn-secondary">
+            {{ icon('x') }} Non merci
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>

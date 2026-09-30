@@ -1,0 +1,62 @@
+<div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
+  <h2 class="text-xl font-bold text-primary">Étape 1 — Choisir le fichier</h2>
+  <p class="text-sm text-secondary">
+    Importez d'abord un fichier <strong>QIF</strong> (HomeBank) : il crée vos comptes et catégories
+    automatiquement. Les imports <strong>CSV</strong>/<strong>OFX</strong> suivants viendront alimenter
+    un compte déjà existant.
+  </p>
+
+  <form
+    hx-post="/imports/preview"
+    hx-target="#import-wizard"
+    hx-swap="innerHTML"
+    hx-encoding="multipart/form-data"
+    class="flex flex-col gap-4"
+  >
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Fichier QIF, CSV ou OFX</span>
+      <input
+        id="import-file-input"
+        type="file"
+        name="file"
+        accept=".qif,.csv,.ofx,.qfx"
+        required
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 py-2"
+      />
+    </label>
+
+    {% if accounts %}
+    <div id="import-account-field" class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Compte concerné (CSV / OFX uniquement)</span>
+      <select
+        name="account_id"
+        required
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      >
+        {% for account in accounts %}
+        <option value="{{ account.id }}">{{ account.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% else %}
+    <p id="import-account-field" class="text-sm text-secondary">
+      Aucun compte pour l'instant : importez d'abord un fichier QIF, il en créera automatiquement.
+    </p>
+    {% endif %}
+
+    <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+      Continuer
+    </button>
+    <p class="htmx-indicator text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga tend le cou...</p>
+  </form>
+
+  <script>
+    document.getElementById("import-file-input").addEventListener("change", function (event) {
+      var isQif = /\.qif$/i.test(event.target.value || "");
+      var field = document.getElementById("import-account-field");
+      if (field) {
+        field.classList.toggle("hidden", isQif);
+      }
+    });
+  </script>
+</div>

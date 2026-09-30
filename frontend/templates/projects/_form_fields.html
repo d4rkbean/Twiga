@@ -1,0 +1,88 @@
+{% macro fields(project=None) %}
+<label class="flex flex-col gap-1">
+  <span class="text-sm text-secondary">Nom du projet</span>
+  <input
+    type="text"
+    name="name"
+    required
+    value="{{ project.name if project else '' }}"
+    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+  />
+</label>
+<label class="flex flex-col gap-1">
+  <span class="text-sm text-secondary">Montant cible</span>
+  <input
+    type="text"
+    inputmode="decimal"
+    name="target_amount"
+    required
+    value="{{ '%.2f' % project.target_amount if project else '' }}"
+    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+  />
+</label>
+<label class="flex flex-col gap-1">
+  <span class="text-sm text-secondary">Date cible</span>
+  <input
+    type="date"
+    name="target_date"
+    required
+    value="{{ project.target_date.isoformat() if project else '' }}"
+    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+  />
+</label>
+<label class="flex flex-col gap-1">
+  <span class="text-sm text-secondary">Montant déjà épargné</span>
+  <input
+    type="text"
+    inputmode="decimal"
+    name="current_amount"
+    value="{{ '%.2f' % project.current_amount if project else '0' }}"
+    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+  />
+</label>
+{% endmacro %}
+
+{% macro movement_dialog(project, action, title, button_label) %}
+<dialog id="{{ action }}-funds-{{ project.id }}" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm">
+  <form
+    hx-post="/projects/{{ project.id }}/{{ action }}"
+    hx-target="#projects-list"
+    hx-swap="innerHTML"
+    class="flex flex-col gap-4 p-6"
+  >
+    <h2 class="text-xl font-bold text-primary">{{ title }} — {{ project.name }}</h2>
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Montant</span>
+      <input
+        type="text"
+        inputmode="decimal"
+        name="amount"
+        required
+        placeholder="0,00"
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      />
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-secondary">Note (optionnel)</span>
+      <input
+        type="text"
+        name="note"
+        placeholder="Ex : Billets avion"
+        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      />
+    </label>
+    <div class="flex flex-col gap-2">
+      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+        {{ button_label }}
+      </button>
+      <button
+        type="button"
+        onclick="this.closest('dialog').close()"
+        class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</dialog>
+{% endmacro %}

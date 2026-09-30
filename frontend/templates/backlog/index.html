@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Catégorisation en masse — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-primary">Catégorisation en masse</h1>
+    <a href="/transactions/inbox" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} La Savane</a>
+  </div>
+  <p class="text-sm text-secondary">
+    Suggestions basées sur la similarité avec vos transactions déjà catégorisées, triées par confiance décroissante.
+  </p>
+
+  {% include "backlog/_content.html" %}
+</main>
+{% endblock %}

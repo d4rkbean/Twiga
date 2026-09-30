@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Panorama — Twiga 🦒{% endblock %}
+
+{% block extra_head %}
+<script src="{{ static_url('/static/vendor/chart.min.js') }}"></script>
+<script src="{{ static_url('/static/vendor/chartjs-chart-sankey.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+  <h1 class="sr-only">Panorama</h1>
+
+  <!-- ROW 1 — situation globale, toujours mois civil en cours / tous
+       comptes, indépendamment des filtres de la ROW 2 ci-dessous : un
+       aperçu, pas une vue filtrée. grid-cols-2 sur mobile (2x2), une seule
+       ligne à partir de lg: (même gabarit que les 4 cartes héros de
+       reports/_content.html, pour une identité visuelle cohérente). -->
+  {% include "dashboard/_le_cap_banner.html" %}
+
+  <div x-data="{ showAccounts: false }" class="flex flex-col gap-2">
+    {# Tuiles d'en-tête, inspirées des « small-box » d'AdminLTE : un chiffre
+       dominant, une icône en filigrane qui identifie la tuile sans la
+       surcharger, une action en pied. Le filigrane et l'agrandissement du
+       chiffre sont derrière `lg:` — sur mobile les tuiles sont en 2 colonnes
+       de ~170 px, une icône de 88 px y mangerait le texte. #}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">
+      <div class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5">
+        <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('wallet', size=88) }}</span>
+        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('currency-euro', size=14) }} Solde total</p>
+        <p class="amount-blur text-2xl font-extrabold lg:text-3xl lg:tabular-nums {{ 'text-success' if total_balance >= 0 else 'text-danger' }}">
+          {{ total_balance | eur }}
+        </p>
+        <button
+          type="button"
+          @click="showAccounts = !showAccounts"
+          class="text-xs text-accent font-medium text-left mt-auto pt-1 relative"
+        >
+          <span x-text="showAccounts ? '▲ masquer comptes' : '▼ voir comptes'">▼ voir comptes</span>
+        </button>
+      </div>
+
+      {% with row1_oob = false %}{% include "dashboard/_ce_mois_card.html" %}{% endwith %}
+
+      {# Une seule tuile pour le plan du mois. Il y en avait deux — Budgets
+         et Le Cap — qui racontaient le même mois à deux résolutions, plus
+         une troisième lecture dans la carte Récapitulatif juste en dessous.
+         Le suivi complet vit maintenant sur « Mon mois » ; cette tuile n'en
+         garde que le chiffre qui décide d'agir et y renvoie. #}
+      <div class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5">
+        <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('target', size=88) }}</span>
+        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('target', size=14) }} Mon mois</p>
+        {% if budget_danger_count %}
+        <p class="hidden lg:block text-3xl font-extrabold tabular-nums text-danger">{{ budget_danger_count }}</p>
+        <p class="hidden lg:block text-xs text-secondary">
+          budget{{ "s" if budget_danger_count > 1 else "" }} dépassé{{ "s" if budget_danger_count > 1 else "" }}
+        </p>
+        {% elif cap_savings_so_far is not none %}
+        <p class="amount-blur hidden lg:block text-3xl font-extrabold tabular-nums {{ 'text-success' if cap_savings_so_far >= 0 else 'text-danger' }}">
+          {{ "+" if cap_savings_so_far >= 0 else "" }}{{ cap_savings_so_far | eur }}
+        </p>
+        <p class="hidden lg:block text-xs text-secondary">épargnés à date</p>
+        {% elif budget_defined_count %}
+        <p class="hidden lg:block text-3xl font-extrabold tabular-nums text-success">{{ budget_ok_count }}</p>
+        <p class="hidden lg:block text-xs text-secondary">budget{{ "s" if budget_ok_count > 1 else "" }} sous contrôle</p>
+        {% else %}
+        <p class="text-sm text-secondary">Plan non fixé</p>
+        {% endif %}
+
+        {# Mobile : les trois jauges de piliers tiennent dans la tuile et
+           valent mieux qu'un chiffre isolé sur 170 px de large. #}
+        {% if cap_pillar_progress %}
+        <div class="flex flex-col gap-1 lg:hidden">
+          {% for pillar in cap_pillar_progress %}
+          <div class="h-1.5 rounded-full bg-page overflow-hidden">
+            <div
+              class="h-full rounded-full {{ 'bg-danger' if pillar.ratio >= 100 else 'bg-warning' if pillar.ratio > 80 else 'bg-success' }}"
+              style="width: {{ pillar.ratio }}%;"
+            ></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% elif budget_defined_count %}
+        <p class="text-sm font-semibold text-primary lg:hidden">
+          {{ budget_ok_count }} OK &nbsp; {{ budget_warning_count }} {{ icon('alert-triangle', size=13) }} &nbsp; {{ budget_danger_count }} {{ icon('circle-x', size=13) }}
+        </p>
+        {% endif %}
+
+        <a href="/cap/mid" class="text-xs text-accent font-medium mt-auto pt-1 relative">
+          {% if cap_entry %}Voir le détail →{% else %}Fixer le cap →{% endif %}
+        </a>
+      </div>
+
+      <div class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5">
+        <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('bell', size=88) }}</span>
+        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('bell', size=14) }} Alertes</p>
+        {% if pending_count %}
+        <p class="hidden lg:block text-3xl font-extrabold tabular-nums text-warning">{{ pending_count }}</p>
+        <p class="hidden lg:block text-xs text-secondary">
+          opération{{ "s" if pending_count > 1 else "" }} en attente
+        </p>
+        <p class="text-sm font-semibold text-primary lg:hidden">
+          {{ pending_count }} transaction{{ "s" if pending_count > 1 else "" }}<br />en attente
+        </p>
+        <a href="/transactions/inbox" class="text-xs text-accent font-medium mt-auto pt-1 relative">Traiter →</a>
+        {% else %}
+        <p class="text-sm text-secondary">Aucune alerte</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+
+    <!-- Détail par compte, replié par défaut (repliage demandé : la liste
+         complète prenait trop de place en permanence). -->
+    <div x-show="showAccounts" x-transition class="flex flex-col gap-2">
+      {% for item in account_balances %}
+      <div class="bg-container rounded-xl shadow-sm p-4 flex items-center gap-3">
+        <span
+          class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+          style="background-color: {{ item.account | account_color }}"
+        ></span>
+        <div class="flex flex-col min-w-0 flex-1">
+          <span class="text-primary font-medium truncate">
+            {{ get_account_type_icon(item.account.type) }} {{ item.account.name }}
+          </span>
+          <span class="text-xs text-secondary truncate">{{ get_account_type_label(item.account.type) }}</span>
+        </div>
+        <div class="flex flex-col items-end flex-shrink-0">
+          <span class="amount-blur font-bold {{ 'text-success' if item.balance >= 0 else 'text-danger' }}">
+            {{ item.balance | eur }}
+          </span>
+          <span class="amount-blur text-xs {{ 'text-success' if item.monthly_evolution >= 0 else 'text-danger' }}">
+            {{ "+" if item.monthly_evolution > 0 else "" }}{{ item.monthly_evolution | eur }} ce mois-ci
+          </span>
+        </div>
+      </div>
+      {% else %}
+      <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
+        <p class="text-sm text-secondary text-center">Aucun compte pour l'instant.</p>
+      </div>
+      {% endfor %}
+      <a
+        href="/transactions/list"
+        class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
+      >
+        {{ icon('list-details', size=18) }} Voir toutes les opérations
+      </a>
+    </div>
+  </div>
+
+  <!-- ROW 2 — période et filtres sur une SEULE ligne : le libellé à gauche,
+       les contrôles à droite. Le libellé vient de #dashboard-content et
+       arrive par swap hors bande (voir _period_label.html) ; il était avant
+       sur sa propre ligne sous les filtres, ce qui laissait une large bande
+       vide à droite des listes déroulantes. -->
+  <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+  {% with row1_oob = false %}{% include "dashboard/_period_label.html" %}{% endwith %}
+  <form
+    id="dashboard-filters"
+    hx-get="/dashboard/content"
+    hx-trigger="change"
+    hx-target="#dashboard-content"
+    hx-swap="innerHTML"
+    {# Sur bureau les contrôles se dimensionnent à leur contenu (lg:w-auto
+       sur chaque select) au lieu de s'étirer : deux listes étirées sur
+       toute la largeur laissaient une longue bande vide à droite de chaque
+       libellé. Sur mobile ils gardent flex-1 pour occuper la ligne. #}
+    class="flex flex-wrap items-center gap-2 lg:gap-3 lg:flex-shrink-0"
+    x-data="{ periode: '{{ period_key }}' }"
+  >
+    {# Sélecteur de période : raccourcis + « Personnalisé ». Remplace le
+       couple mois/année, qui obligeait à deux manipulations pour une
+       question aussi simple que « les 30 derniers jours ». Les deux champs
+       de dates n'apparaissent qu'en mode personnalisé (Alpine), mais restent
+       dans le formulaire : le serveur les ignore pour les autres périodes. #}
+    <select
+      name="period"
+      x-model="periode"
+      class="flex-1 min-w-[150px] lg:flex-none lg:w-auto lg:min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+    >
+      {% for key, label in period_choices %}
+      <option value="{{ key }}" {% if key == period_key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <input
+      type="date"
+      name="start"
+      value="{{ period_start.isoformat() }}"
+      x-show="periode === 'perso'"
+      style="display: none;"
+      aria-label="Date de début"
+      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+    />
+    <input
+      type="date"
+      name="end"
+      value="{{ period_end.isoformat() }}"
+      x-show="periode === 'perso'"
+      style="display: none;"
+      aria-label="Date de fin"
+      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+    />
+    <select
+      name="account_id"
+      class="flex-1 min-w-[140px] lg:flex-none lg:w-auto lg:min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+    >
+      <option value="" {% if account_id is none %}selected{% endif %}>Tous les comptes</option>
+      {% for account in accounts %}
+      <option value="{{ account.id }}" {% if account.id == account_id %}selected{% endif %}>
+        {{ account.name }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <!-- DÉCALAGE RECETTES — même principe que la page Rapports (salaire
+         perçu fin du mois précédent finance les dépenses du mois courant),
+         restreint au mois (le Panorama ne connaît que cette granularité,
+         pas de trimestre/année ici). Fait partie du même <form> que
+         mois/année/compte : un seul hx-get="change" les couvre tous. La
+         carte "Ce mois" (ROW 1) est hors de #dashboard-content — mise à
+         jour séparément via un swap "hors bande", voir
+         routers/dashboard.py (dashboard_content, row1_oob) et
+         dashboard/_ce_mois_card.html. -->
+    {# Désactivé hors d'un mois civil : « les recettes de M-1 financent les
+       dépenses de M » n'est pas définissable sur « 90 derniers jours ».
+       Plutôt que de laisser un réglage actif produire un total inexplicable,
+       la case se grise et le serveur ignore le paramètre (voir
+       _build_period_context). Le test client porte sur les deux seules
+       périodes garanties mensuelles ; « Personnalisé » qui tomberait pile
+       sur un mois est traité côté serveur. #}
+    <label
+      class="flex items-center gap-2 min-h-[46px] cursor-pointer flex-shrink-0"
+      :class="mensuel ? '' : 'opacity-50 cursor-not-allowed'"
+      :title="mensuel ? '' : 'Disponible seulement sur « Mois en cours » ou « Mois dernier »'"
+      x-data="{ get mensuel() { return ['mois', 'mois-dernier'].includes(periode) } }"
+    >
+      <input
+        type="checkbox"
+        name="shift_income"
+        value="1"
+        {% if shift_income %}checked{% endif %}
+        :disabled="!mensuel"
+        @change="localStorage.setItem('twiga_panorama_shift_income', $event.target.checked ? '1' : '0')"
+        class="w-5 h-5 flex-shrink-0"
+      />
+      <span class="text-sm text-primary whitespace-nowrap">{{ icon('adjustments', size=14) }} Décaler recettes</span>
+    </label>
+  </form>
+  </div>
+
+  <div id="dashboard-content">
+    {% include "dashboard/_content.html" %}
+  </div>
+
+  <a
+    href="/reports"
+    class="min-h-[50px] rounded-xl border-2 border-accent text-accent font-semibold flex items-center justify-center gap-1"
+  >
+    {{ icon('chart-bar', size=18) }} Voir le rapport complet {{ icon('arrow-narrow-right') }}
+  </a>
+
+</main>
+{% endblock %}

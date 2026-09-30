@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Design System — Twiga 🦒{% endblock %}
+
+{#
+  Guide de style VIVANT : chaque bloc ci-dessous est du vrai HTML utilisant
+  les classes canoniques de design-system.css, jamais une capture. Si un
+  composant change dans le CSS, cette page change avec lui — c'est ce qui en
+  fait une source de vérité plutôt qu'une documentation qui dérive.
+
+  Accessible uniquement si SHOW_DESIGN_SYSTEM=true (voir backend/main.py).
+#}
+
+{% set sections = [
+  ("couleurs", "Couleurs"),
+  ("typographie", "Typographie"),
+  ("boutons", "Boutons"),
+  ("champs", "Champs & Formulaires"),
+  ("cartes", "Cartes"),
+  ("badges", "Badges & Pilules"),
+  ("alertes", "Alertes"),
+  ("tableaux", "Tableaux"),
+  ("progression", "Barres de progression"),
+  ("navigation", "Navigation"),
+  ("modales", "Modales"),
+  ("graphiques", "Graphiques"),
+  ("girafe", "Thème Girafe"),
+] %}
+
+{% set tokens = [
+  ("--color-page", "#f9f9f9", "#0f172a", "Fond de page"),
+  ("--color-container", "#ffffff", "#1e293b", "Fond des cartes et surfaces"),
+  ("--color-primary", "#111827", "#f1f5f9", "Texte principal, montants"),
+  ("--color-secondary", "#585e6a", "#94a3b8", "Métadonnées, libellés discrets"),
+  ("--color-border", "#e5e7eb", "#334155", "Toutes les bordures, 1px"),
+  ("--color-accent", "#d4a96a", "#d4a96a", "Ambre girafe — action principale et état actif"),
+  ("--color-on-accent", "#5c3d1e", "#5c3d1e", "Premier plan sur l'ambre"),
+  ("--color-success", "#16a34a", "#22c55e", "Montant positif, seuil sain"),
+  ("--color-warning", "#f59e0b", "#fbbf24", "Seuil de vigilance"),
+  ("--color-danger", "#dc2626", "#f87171", "Montant négatif, seuil dépassé, suppression"),
+] %}
+
+{% block content %}
+<main class="px-4 lg:px-8 pb-16">
+  <div class="flex items-center justify-between gap-3 py-4">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-page-title">Design System</h1>
+      <p class="text-small">Source de vérité unique — 51 classes canoniques dans design-system.css</p>
+    </div>
+    <button type="button" onclick="window.toggleTheme()" class="btn btn-secondary flex-shrink-0">
+      Basculer le thème
+    </button>
+  </div>
+
+  <div class="lg:flex lg:gap-10 lg:items-start">
+    <nav class="hidden lg:flex lg:flex-col lg:gap-1 lg:sticky lg:top-20 lg:w-[210px] lg:flex-shrink-0">
+      {% for anchor, label in sections %}
+      <a href="#{{ anchor }}" class="text-body py-1.5 px-3 rounded-xl hover:bg-page">{{ label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="flex-1 min-w-0 flex flex-col gap-12">
+
+      {# ─────────── COULEURS ─────────── #}
+      <section id="couleurs" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Couleurs</h2>
+        <p class="text-small">
+          Dix tokens sémantiques. Aucune couleur en dur dans les gabarits : les
+          pastilles ci-dessous utilisent la variable, donc elles changent avec le
+          thème. Les deux valeurs sont indiquées à titre de référence.
+        </p>
+        <div class="flex flex-col gap-2">
+          {% for name, light, dark, role in tokens %}
+          <div class="card card-compact flex items-center gap-3">
+            <span class="w-12 h-12 rounded-xl border border-border flex-shrink-0"
+                  style="background-color: var({{ name }});"></span>
+            <div class="flex flex-col min-w-0">
+              <code class="text-body font-medium">var({{ name }})</code>
+              <span class="text-small">
+                clair {{ light }} · sombre {{ dark }} — {{ role }}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# ─────────── TYPOGRAPHIE ─────────── #}
+      <section id="typographie" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Typographie</h2>
+        <p class="text-small">
+          Aucune police n'est chargée : pile système, par choix (aucun CDN,
+          rendu instantané). La hiérarchie tient donc à la taille et à la graisse.
+        </p>
+        <div class="card flex flex-col gap-4">
+          <div><p class="text-page-title">Panorama</p><span class="text-small">.text-page-title — 24px / 700</span></div>
+          <div><p class="text-section-title">Dépenses par catégorie</p><span class="text-small">.text-section-title — 18px / 600</span></div>
+          <div><p class="text-card-title">Alimentation</p><span class="text-small">.text-card-title — 16px / 500</span></div>
+          <div><p class="text-body">Les transactions apparaissent ici une fois importées.</p><span class="text-small">.text-body — 14px / 400 — taille de référence de l'app</span></div>
+          <div><p class="text-small">04/08/2026 · Crédit Agricole</p><span class="text-small">.text-small — 12px / secondaire</span></div>
+          <div><p class="text-amount-large" style="color: var(--color-primary);">12 540,00 €</p><span class="text-small">.text-amount-large — 28px / 700 / tabular-nums</span></div>
+          <div><p class="text-amount" style="color: var(--color-danger);">−45,00 €</p><span class="text-small">.text-amount — 16px / 600 / tabular-nums</span></div>
+          <div><p class="text-amount-small" style="color: var(--color-success);">+1 204,50 €</p><span class="text-small">.text-amount-small — 13px / 500 / tabular-nums</span></div>
+        </div>
+      </section>
+
+      {# ─────────── BOUTONS ─────────── #}
+      <section id="boutons" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Boutons</h2>
+        <p class="text-small">
+          Quatre variantes canoniques. Toutes à 50px de haut minimum — contrainte
+          produit liée au workflow pouce de La Savane, pas une préférence.
+        </p>
+        <div class="card flex flex-col gap-4">
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary">Valider</button>
+            <button type="button" class="btn btn-secondary">Annuler</button>
+            <button type="button" class="btn btn-danger">Supprimer</button>
+            <button type="button" class="btn btn-ghost">Ignorer</button>
+          </div>
+          <span class="text-small">.btn-primary · .btn-secondary · .btn-danger · .btn-ghost</span>
+
+          <div class="flex flex-wrap gap-2 items-center">
+            <button type="button" class="btn btn-primary">{{ icon('device-floppy', size=16) }} Avec icône</button>
+            <button type="button" class="btn btn-secondary" style="width: 50px; padding-inline: 0;" aria-label="Épingler">{{ icon('pin', size=16) }}</button>
+            <button type="button" class="btn btn-primary" disabled>Désactivé</button>
+          </div>
+          <span class="text-small">Avec icône · icône seule (50×50) · état désactivé (opacity .5)</span>
+
+          <p class="text-small">
+            Le bouton danger est en contour et non en aplat : il n'existe pas de
+            token de premier plan sur danger, et du blanc sur le rouge clair du
+            thème sombre tomberait à 2,3:1.
+          </p>
+        </div>
+      </section>
+
+      {# ─────────── CHAMPS ─────────── #}
+      <section id="champs" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Champs &amp; Formulaires</h2>
+        <div class="card flex flex-col gap-4">
+          <div class="form-group">
+            <label class="form-label" for="ds-1">Libellé</label>
+            <input id="ds-1" class="input-base" type="text" placeholder="Carrefour Market" />
+            <span class="input-hint">Texte d'aide facultatif sous le champ.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ds-2">Montant</label>
+            <input id="ds-2" class="input-base input-error" type="text" value="abc" />
+            <span class="input-message">Montant invalide.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ds-3">Catégorie</label>
+            <select id="ds-3" class="input-base">
+              <option>Alimentation</option>
+              <option>Transport</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ds-4">Date</label>
+            <input id="ds-4" class="input-base" type="date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ds-5">Note</label>
+            <textarea id="ds-5" class="input-base" rows="3" style="padding-block: 0.5rem;"></textarea>
+          </div>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" class="w-5 h-5" checked />
+            <span class="text-body">Case à cocher</span>
+          </label>
+          <input class="input-base" type="text" disabled value="Champ désactivé" style="opacity: .5;" />
+          <span class="text-small">.input-base · .input-error · .input-hint · .input-message · .form-group · .form-label</span>
+        </div>
+      </section>
+
+      {# ─────────── CARTES ─────────── #}
+      <section id="cartes" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Cartes</h2>
+        <div class="flex flex-col lg:flex-row gap-3">
+          <div class="card flex-1"><p class="text-card-title">.card</p><p class="text-small">padding 16px — le conteneur par défaut</p></div>
+          <div class="card card-compact flex-1"><p class="text-card-title">.card-compact</p><p class="text-small">padding 12px — listes denses</p></div>
+          <div class="card card-amber flex-1"><p class="text-card-title">.card-amber</p><p class="text-small">fond ambré à 8 % — mise en avant</p></div>
+        </div>
+        <p class="text-small">
+          Pas de liseré latéral ambré : c'est l'anti-motif « side-tab » que le
+          détecteur du projet signale. L'emphase passe par le fond.
+        </p>
+        <div class="card flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style="background-color: color-mix(in srgb, var(--color-success) 15%, transparent);">{{ icon('receipt', size=16) }}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-body font-medium">Carrefour Market</p>
+            <p class="text-small">Alimentation · Crédit Agricole</p>
+          </div>
+          <span class="text-amount" style="color: var(--color-danger);">−48,73 €</span>
+        </div>
+        <span class="text-small">Exemple : ligne d'opération</span>
+      </section>
+
+      {# ─────────── BADGES ─────────── #}
+      <section id="badges" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Badges &amp; Pilules</h2>
+        <p class="text-small">
+          Nouveaux composants : ils n'existaient pas. Les marqueurs « Virement »
+          et « Imprévu » étaient jusqu'ici du texte séparé par des points médians.
+        </p>
+        <div class="card flex flex-wrap items-center gap-2">
+          <span class="badge badge-neutral"><span class="badge-dot" style="background-color: var(--color-success);"></span>Alimentation</span>
+          <span class="badge badge-positive">+45,00 €</span>
+          <span class="badge badge-negative">−120,00 €</span>
+          <span class="badge badge-warning">{{ icon('urgent', size=14) }} Imprévu</span>
+          <span class="badge badge-neutral">{{ icon('repeat', size=14) }} Virement</span>
+        </div>
+        <span class="text-small">.badge + .badge-positive / .badge-negative / .badge-warning / .badge-neutral / .badge-dot</span>
+      </section>
+
+      {# ─────────── ALERTES ─────────── #}
+      <section id="alertes" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Alertes</h2>
+        <div class="flex flex-col gap-2">
+          <div class="alert alert-neutral"><span class="flex-1">{{ icon('info-circle', size=16) }} Aucune opération à catégoriser.</span><button type="button" class="text-small" aria-label="Fermer">✕</button></div>
+          <div class="alert alert-success"><span class="flex-1">{{ icon('circle-check', size=16) }} 12 opérations importées.</span><button type="button" class="text-small" aria-label="Fermer">✕</button></div>
+          <div class="alert alert-warning"><span class="flex-1">{{ icon('alert-triangle', size=16) }} Budget Alimentation à 82 %.</span><button type="button" class="text-small" aria-label="Fermer">✕</button></div>
+          <div class="alert alert-danger"><span class="flex-1">{{ icon('circle-x', size=16) }} Budget Loisirs dépassé de 45 €.</span><button type="button" class="text-small" aria-label="Fermer">✕</button></div>
+        </div>
+        <span class="text-small">.alert + .alert-neutral / .alert-success / .alert-warning / .alert-danger</span>
+      </section>
+
+      {# ─────────── TABLEAUX ─────────── #}
+      <section id="tableaux" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Tableaux</h2>
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <table class="table-base">
+            <thead>
+              <tr>
+                <th class="table-header">Libellé</th>
+                <th class="table-header">Compte</th>
+                <th class="table-header" style="text-align: right;">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-row">
+                <td>Carrefour Market</td><td class="text-small">Crédit Agricole</td>
+                <td class="text-amount-small" style="text-align: right; color: var(--color-danger);">−48,73 €</td>
+              </tr>
+              <tr class="table-row table-row-selected">
+                <td>Salaire</td><td class="text-small">Crédit Agricole</td>
+                <td class="text-amount-small" style="text-align: right; color: var(--color-success);">+2 845,96 €</td>
+              </tr>
+              <tr class="table-row">
+                <td>Bouygues Telecom</td><td class="text-small">Boursorama</td>
+                <td class="text-amount-small" style="text-align: right; color: var(--color-danger);">−19,99 €</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <span class="text-small">.table-base · .table-header · .table-row · .table-row-selected (ligne 2)</span>
+      </section>
+
+      {# ─────────── PROGRESSION ─────────── #}
+      <section id="progression" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Barres de progression</h2>
+        <div class="card flex flex-col gap-3">
+          {% for label, pct, cls in [("Alimentation — 45 %", 45, "progress-green"), ("Transport — 78 %", 78, "progress-orange"), ("Loisirs — 95 %", 95, "progress-red"), ("Le Cap, pilier Essentiel — 60 %", 60, "progress-amber")] %}
+          <div class="flex flex-col gap-1">
+            <span class="text-small">{{ label }}</span>
+            <div class="progress-base"><div class="progress-fill {{ cls }}" style="width: {{ pct }}%;"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+        <span class="text-small">
+          Seuils : vert sous 75 %, orange de 75 à 90 %, rouge au-delà. L'ambre est
+          réservé aux piliers du Cap. Hauteur unique de 8px.
+        </span>
+      </section>
+
+      {# ─────────── NAVIGATION ─────────── #}
+      <section id="navigation" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Navigation</h2>
+        <div class="card flex flex-col gap-4">
+          <div>
+            <p class="text-small mb-2">Barre latérale (desktop) — actif / inactif</p>
+            <div class="flex flex-col gap-1" style="max-width: 240px;">
+              <span class="min-h-[44px] flex items-center gap-3 rounded-xl px-3 text-sm font-medium"
+                    style="background-color: color-mix(in srgb, var(--color-accent) 10%, transparent); color: var(--color-accent);">◎ Projets</span>
+              <span class="min-h-[44px] flex items-center gap-3 rounded-xl px-3 text-sm font-medium" style="color: var(--color-secondary);">{{ icon('list-details', size=18) }} Opérations</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-small mb-2">Navigation basse (mobile)</p>
+            <div class="flex items-center border-t border-border" style="max-width: 360px;">
+              <span class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs font-semibold" style="color: var(--color-accent);">
+                <span class="rounded-full px-3" style="background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);">{{ icon('inbox', size=18) }}</span>La Savane
+              </span>
+              <span class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs" style="color: var(--color-secondary);"><span class="px-3">{{ icon('chart-bar', size=18) }}</span>Panorama</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {# ─────────── MODALES ─────────── #}
+      <section id="modales" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Modales</h2>
+        <p class="text-small">
+          Élément <code>&lt;dialog&gt;</code> natif, ouvert et fermé par swap HTMX.
+          Fond <code>backdrop:bg-black/50</code>, ombre de surimpression.
+        </p>
+        <div class="card" style="max-width: 24rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1); padding: 0;">
+          <div class="p-4"><p class="text-card-title">Supprimer cette opération ?</p><p class="text-small mt-1">Cette action est définitive.</p></div>
+          <div class="flex gap-2 p-3 border-t border-border">
+            <button type="button" class="btn btn-secondary flex-1">Annuler</button>
+            <button type="button" class="btn btn-danger flex-1">Supprimer</button>
+          </div>
+        </div>
+      </section>
+
+      {# ─────────── GRAPHIQUES ─────────── #}
+      <section id="graphiques" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Graphiques</h2>
+        <p class="text-small">
+          Chart.js et chartjs-chart-sankey, vendorisés localement. Les couleurs
+          de série sont lues depuis les tokens au moment du rendu, jamais codées
+          en dur, pour suivre le thème.
+        </p>
+        <div class="card flex flex-col gap-2">
+          <p class="text-card-title">Conteneur de graphique</p>
+          <div class="rounded-xl border border-border flex items-center justify-center text-small"
+               style="height: 180px; background-color: var(--color-page);">
+            zone de tracé — hauteur fixe, le canvas s'y ajuste
+          </div>
+        </div>
+      </section>
+
+      {# ─────────── GIRAFE ─────────── #}
+      <section id="girafe" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Thème Girafe</h2>
+        <div class="card flex flex-col gap-4">
+          <div class="flex items-center gap-4">
+            <img src="/static/icons/twiga-logo.svg" alt="" style="height: 64px;" />
+            <img src="/static/icons/twiga-logo.svg" alt="" style="height: 32px;" />
+            <img src="/static/icons/twiga-logo.svg" alt="" style="height: 20px;" />
+          </div>
+          <div>
+            <p class="text-small mb-2">Motif de fond — Voronoï périodique, 307 plaques, tuile 2240px</p>
+            <div class="rounded-xl border border-border"
+                 style="height: 140px; background-image: url('/static/css/giraffe-pattern.svg'); background-size: 560px 560px;"></div>
+            <p class="text-small mt-1">Rendu ici à 560px pour la démonstration ; 2240px en production, à 22 % d'opacité.</p>
+          </div>
+          <div class="flex flex-col gap-1">
+            <p class="text-small">Voix de l'app</p>
+            <p class="text-body"><img src="/static/icons/twiga-logo.svg" alt="" style="height:18px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga a tout brouté ! — La savane est propre.</p>
+            <p class="text-body">Voir loin. Voir juste.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+{% endblock %}

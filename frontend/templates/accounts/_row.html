@@ -1,0 +1,85 @@
+<div
+  id="account-row-{{ item.account.id }}"
+  class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2"
+  x-data="{ expanded: false }"
+>
+  <div class="flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <span
+        class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+        style="background-color: {{ item.account | account_color }}"
+      ></span>
+      <span class="text-primary font-bold truncate">
+        {{ get_account_type_icon(item.account.type) }} {{ item.account.name }}
+      </span>
+    </div>
+    <div class="flex gap-1.5 flex-shrink-0">
+      <button
+        type="button"
+        @click="expanded = !expanded"
+        :aria-label="expanded ? 'Masquer le diagnostic' : 'Voir le diagnostic de solde'"
+        class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
+      >
+        {{ icon('zoom-in') }}
+      </button>
+      <button
+        type="button"
+        hx-get="/accounts/{{ item.account.id }}/edit"
+        hx-target="#account-row-{{ item.account.id }}"
+        hx-swap="outerHTML"
+        aria-label="Modifier"
+        class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
+      >
+        {{ icon('edit') }}
+      </button>
+      <button
+        type="button"
+        hx-get="/accounts/{{ item.account.id }}/delete-confirm"
+        hx-target="#account-row-{{ item.account.id }}"
+        hx-swap="outerHTML"
+        aria-label="Supprimer"
+        class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-danger font-medium flex items-center justify-center flex-shrink-0"
+      >
+        {{ icon('trash') }}
+      </button>
+    </div>
+  </div>
+  <div class="flex items-center justify-between gap-2">
+    <span class="text-sm text-secondary truncate">
+      {{ get_account_type_label(item.account.type) }}
+      · {{ item.transaction_count }} opération{{ "s" if item.transaction_count != 1 else "" }}
+    </span>
+    <span class="amount-blur font-bold whitespace-nowrap {{ 'text-success' if item.balance >= 0 else 'text-danger' }}">
+      {{ item.balance | eur }}
+    </span>
+  </div>
+
+  <div x-show="expanded" style="display: none;" class="flex flex-col gap-1.5 border-t border-border pt-2 mt-1 text-sm">
+    <div class="flex items-center justify-between">
+      <span class="text-secondary">Solde initial (manuel)</span>
+      <span class="amount-blur text-primary font-medium">{{ item.initial_balance | eur }}</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-secondary">Somme des opérations importées</span>
+      <span class="amount-blur text-primary font-medium">{{ item.transactions_sum | eur }}</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-secondary">Nombre d'opérations importées</span>
+      <span class="text-primary font-medium">{{ item.transaction_count }}</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-secondary">Dont virements (is_transfer = true)</span>
+      <span class="text-primary font-medium">{{ item.transfer_count }}</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-secondary">Somme des virements</span>
+      <span class="amount-blur text-primary font-medium">{{ item.transfer_sum | eur }}</span>
+    </div>
+    <div class="flex items-center justify-between pt-1 border-t border-border">
+      <span class="text-primary font-semibold">Solde calculé (initial + opérations)</span>
+      <span class="amount-blur font-bold {{ 'text-success' if item.balance >= 0 else 'text-danger' }}">
+        {{ item.balance | eur }}
+      </span>
+    </div>
+  </div>
+</div>

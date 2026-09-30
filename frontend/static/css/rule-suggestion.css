@@ -1,0 +1,72 @@
+/* Popup flottant de suggestion de règle (catégorisation en masse / La
+   Savane). Avant ce fichier, la suggestion s'affichait en haut de
+   _content.html : invisible sans remonter tout en haut de la page quand on
+   traite des éléments plus bas dans la liste. Couleurs volontairement
+   fixes (pas les tokens sémantiques du thème) : c'est une notification
+   ponctuelle qui doit se détacher du reste de la page, dans les deux
+   thèmes, comme la bulle de la visite guidée. */
+
+@keyframes rule-suggestion-slide-up {
+  from {
+    transform: translate(-50%, 24px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.rule-suggestion-popup {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(90vw, 420px);
+  background: #1e1e2e;
+  color: #f4e6cf;
+  border: 2px solid #d4a96a;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: rule-suggestion-slide-up 0.25s ease-out;
+}
+
+.rule-suggestion-item + .rule-suggestion-item {
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid rgba(244, 230, 207, 0.2);
+}
+
+.rule-suggestion-popup input[type="text"] {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(244, 230, 207, 0.3);
+  color: #f4e6cf;
+  border-radius: 0.75rem;
+  padding: 0 0.75rem;
+  min-height: 50px;
+}
+
+.rule-suggestion-btn-secondary {
+  flex: 1;
+  min-height: 50px;
+  background: transparent;
+  border: 1px solid rgba(244, 230, 207, 0.3);
+  color: #f4e6cf;
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+.rule-suggestion-btn-secondary:hover {
+  background: rgba(244, 230, 207, 0.1);
+}
+
+@media (max-width: 480px) {
+  .rule-suggestion-popup {
+    width: calc(100vw - 2rem);
+  }
+}

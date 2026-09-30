@@ -1,0 +1,50 @@
+<div class="bg-container border border-border rounded-xl shadow-lg divide-y divide-border max-w-lg mx-auto max-h-[70vh] overflow-y-auto">
+  {% if transactions %}
+  <div class="p-2">
+    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('list-details', size=13) }} Opérations</p>
+    {% for tx in transactions %}
+    <a
+      href="/transactions/list?f_search={{ tx.label | urlencode }}"
+      class="flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-page min-h-[44px]"
+    >
+      <span class="text-sm text-primary truncate">{{ tx.label }}</span>
+      <span class="text-xs text-secondary whitespace-nowrap flex-shrink-0">
+        {{ tx.amount | eur }} · {{ tx.date | fr_date }}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if categories %}
+  <div class="p-2">
+    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('folder', size=13) }} Catégories</p>
+    {% for category in categories %}
+    <a
+      href="/transactions/list?f_category={{ category.id }}"
+      class="block px-2 py-2 rounded-lg hover:bg-page min-h-[44px] flex items-center text-sm text-primary truncate"
+    >
+      {{ category.icon or "" }} {{ category.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if projects %}
+  <div class="p-2">
+    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('target', size=13) }} Projets</p>
+    {% for project in projects %}
+    <a
+      href="/projects#project-card-{{ project.id }}"
+      class="block px-2 py-2 rounded-lg hover:bg-page min-h-[44px] flex items-center text-sm text-primary truncate"
+    >
+      {{ project.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not transactions and not categories and not projects %}
+  <p class="text-sm text-secondary text-center p-4">Aucun résultat pour « {{ query }} ».</p>
+  {% endif %}
+</div>

@@ -1,0 +1,237 @@
+{% if transaction is none %}
+<div id="transaction-card" class="w-full max-w-sm lg:max-w-[600px] flex flex-col gap-3">
+  <div class="pelage-zone bg-container rounded-xl shadow-sm p-8 flex flex-col items-center gap-3 text-center">
+    <input type="hidden" id="nav-history" value="{{ history }}" />
+    <h2 class="text-2xl font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:28px;width:auto;" /> Twiga a tout brouté !</h2>
+    <p class="text-secondary">La savane est propre.</p>
+  </div>
+  {% if history %}
+  <div class="flex flex-col sm:flex-row gap-2">
+    <button
+      type="button"
+      id="inbox-previous-btn"
+      class="w-full sm:w-auto min-h-[50px] px-6 rounded-xl bg-container border border-border text-primary font-medium"
+      hx-post="/transactions/undo"
+      hx-vals='{"history": "{{ history }}"}'
+      hx-target="#transaction-card"
+      hx-swap="outerHTML"
+    >
+      {{ icon('arrow-narrow-left') }} Précédente
+    </button>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+{% set confidence = suggestion_confidence | default(none) %}
+{% set card_border_class = 'border-border' %}
+{% if confidence is not none %}
+  {% if confidence >= 85 %}
+    {% set card_border_class = 'border-success' %}
+  {% elif confidence >= 70 %}
+    {% set card_border_class = 'border-warning' %}
+  {% else %}
+    {% set card_border_class = 'border-danger' %}
+  {% endif %}
+{% endif %}
+<!-- #transaction-card est maintenant le conteneur EXTÉRIEUR (carte visuelle
+     + rangée de boutons en dessous), pas la carte elle-même : ça permet aux
+     boutons Précédente/Passer de vivre hors de la carte (voir plus bas) sans
+     rien changer aux hx-target="#transaction-card" existants ailleurs dans
+     ce fichier (mark-transfer, undo, finalize du mode de paiement...) — un
+     swap outerHTML sur cet id remplace tout le bloc, boutons compris. Le
+     geste de swipe (x-data, touch handlers) reste sur la carte visuelle
+     UNIQUEMENT : les boutons en dessous ne doivent pas s'envoler avec elle. -->
+<div id="transaction-card" class="w-full max-w-sm lg:max-w-[600px] flex flex-col gap-3">
+  <div
+    class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-6 border-2 {{ card_border_class }}"
+    x-data="{
+      dragX: 0,
+      dragging: false,
+      startX: 0,
+      onStart(e) { this.dragging = true; this.startX = e.touches[0].clientX; },
+      onMove(e) {
+        if (!this.dragging) return;
+        this.dragX = e.touches[0].clientX - this.startX;
+      },
+      onEnd() {
+        this.dragging = false;
+        var THRESHOLD = 100;
+        if (this.dragX > THRESHOLD) {
+          var validateBtn = document.getElementById('inbox-swipe-validate-btn');
+          if (validateBtn) { this.flyAway(1); validateBtn.click(); return; }
+        } else if (this.dragX < -THRESHOLD) {
+          this.flyAway(-1);
+          document.getElementById('inbox-skip-btn').click();
+          return;
+        }
+        this.dragX = 0;
+      },
+      flyAway(direction) { this.dragX = direction * 600; },
+    }"
+    @touchstart="onStart($event)"
+    @touchmove="onMove($event)"
+    @touchend="onEnd()"
+    :style="'transform: translateX(' + dragX + 'px) rotate(' + (dragX / 20) + 'deg); transition: ' + (dragging ? 'none' : 'transform 0.3s ease') + ';'"
+  >
+    <input type="hidden" id="nav-history" value="{{ history }}" />
+    <div class="flex flex-col gap-1">
+      <input
+        type="text"
+        id="simplified-label"
+        name="label"
+        value="{{ transaction.label or transaction.raw_label }}"
+        required
+        class="text-2xl font-bold text-primary bg-transparent border-0 border-b border-border focus:outline-none focus:border-accent px-0 py-1 w-full"
+      />
+      {% if transaction.label and transaction.raw_label and transaction.label != transaction.raw_label %}
+      <p class="text-xs text-secondary break-words">Libellé brut : {{ transaction.raw_label }}</p>
+      {% endif %}
+      <p class="amount-blur text-3xl font-extrabold {{ 'text-success' if transaction.amount > 0 else ('text-danger' if transaction.amount < 0 else 'text-primary') }}">
+        {{ "+" if transaction.amount > 0 else "" }}{{ transaction.amount | eur }}
+      </p>
+      <p class="text-sm text-secondary">{{ transaction.date | fr_date }} · {{ transaction.account.name }}</p>
+    </div>
+
+    <div x-data="{ transferDismissed: {{ 'false' if possible_transfer else 'true' }} }">
+      {% if possible_transfer %}
+      <div x-show="!transferDismissed" class="flex flex-col gap-3 rounded-xl border-2 border-warning bg-container p-3">
+        <p class="text-sm text-warning font-medium">
+          {{ icon('alert-triangle') }} Possible virement interne — compte destinataire pas encore importé ?
+        </p>
+        <div class="flex flex-col gap-2">
+          <button
+            type="button"
+            class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
+            hx-post="/transactions/{{ transaction.id }}/mark-transfer"
+            hx-include="#simplified-label, #nav-history"
+            hx-target="#transaction-card"
+            hx-swap="outerHTML"
+          >
+            {{ icon('repeat') }} Marquer comme virement
+          </button>
+          <button
+            type="button"
+            @click="transferDismissed = true"
+            class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+          >
+            {{ icon('inbox') }} Traiter normalement
+          </button>
+        </div>
+      </div>
+      {% endif %}
+
+      <div x-show="transferDismissed">
+        {% if suggested_category %}
+        {% set top_level = suggested_category.parent if suggested_category.parent else suggested_category %}
+        {% set subcategory_name = suggested_category.name if suggested_category.parent else none %}
+        <div class="category-suggestion flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <p class="text-sm text-secondary">Catégorie proposée :</p>
+            <span class="flex items-center gap-1 text-sm flex-wrap">
+              <span
+                class="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style="background-color: {{ suggested_category.id | category_color }}"
+              ></span>
+              <span class="text-primary font-medium">
+                {{ get_category_icon(top_level.name) }}
+                {{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}
+              </span>
+              {% if confidence is not none %}
+              <span
+                class="{{ 'text-success' if confidence >= 85 else ('text-warning' if confidence >= 70 else 'text-danger') }} font-semibold"
+              >
+                {{ confidence }}%
+                {{ icon('circle-check', size=16) if confidence >= 85 else icon('alert-triangle', size=16) }}
+              </span>
+              {% endif %}
+            </span>
+            {% if suggestion_based_on %}
+            <p class="text-xs text-secondary">Basé sur : "{{ suggestion_based_on }}"</p>
+            {% endif %}
+          </div>
+          <button
+            type="button"
+            id="inbox-validate-btn"
+            class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
+            hx-post="/transactions/{{ transaction.id }}/select-category/{{ suggested_category.id }}"
+            hx-include="#simplified-label, #nav-history"
+            hx-target=".category-suggestion"
+            hx-swap="outerHTML"
+          >
+            {{ icon('circle-check') }} Valider
+          </button>
+          <!-- Bouton dédié au swipe droite, cible directement /finalize plutôt
+               que /select-category : ce dernier n'avance jamais la carte lui-
+               même (il ouvre l'étape mode de paiement ou sous-catégorie À
+               L'INTÉRIEUR de la carte), donc cliquer dessus au swipe laissait
+               la carte "envolée" visuellement sans jamais être remplacée tant
+               qu'un second geste ne finalisait pas la catégorisation.
+               /finalize accepte n'importe quelle catégorie (parente ou non,
+               c'est déjà ce que fait le choix "(général)" de la grille de
+               sous-catégories) et remplace #transaction-card directement :
+               swipe = validation immédiate avec la suggestion, sans mode de
+               paiement ni sous-catégorie — le tap sur "{{ icon('circle-check') }} Valider" garde lui
+               le parcours détaillé complet. -->
+          <button
+            type="button"
+            id="inbox-swipe-validate-btn"
+            class="hidden"
+            hx-post="/transactions/{{ transaction.id }}/finalize/{{ suggested_category.id }}"
+            hx-include="#simplified-label, #nav-history"
+            hx-target="#transaction-card"
+            hx-swap="outerHTML"
+          >
+            {{ icon('circle-check') }} Valider (swipe)
+          </button>
+          <button
+            type="button"
+            id="inbox-back-to-categories-btn"
+            class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+            hx-get="/transactions/{{ transaction.id }}/categories"
+            hx-target=".category-suggestion"
+            hx-swap="outerHTML"
+          >
+            {{ icon('edit') }} Changer
+          </button>
+        </div>
+        {% else %}
+          {% include "inbox/_categories_grid.html" %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Boutons hors de la carte, comme demandé : Précédente (contour) et
+       Passer (accent — le ton doré/ambre de cette app, voir --color-accent)
+       pleine largeur empilés sur mobile, côte à côte largeur automatique à
+       partir de sm (640px). "Passer" reste ciblé par le swipe gauche
+       (onEnd() ci-dessus clique sur ce même id), maintenant visible en plus
+       du geste plutôt que caché derrière lui. -->
+  <div class="flex flex-col sm:flex-row gap-2">
+    {% if history %}
+    <button
+      type="button"
+      id="inbox-previous-btn"
+      class="w-full sm:w-auto min-h-[50px] px-6 rounded-xl bg-container border border-border text-primary font-medium"
+      hx-post="/transactions/undo"
+      hx-vals='{"history": "{{ history }}"}'
+      hx-target="#transaction-card"
+      hx-swap="outerHTML"
+    >
+      {{ icon('arrow-narrow-left') }} Précédente
+    </button>
+    {% endif %}
+    <button
+      type="button"
+      id="inbox-skip-btn"
+      class="w-full sm:w-auto min-h-[50px] px-6 rounded-xl bg-accent text-on-accent font-semibold"
+      hx-post="/transactions/{{ transaction.id }}/skip"
+      hx-include="#simplified-label, #nav-history"
+      hx-target="#transaction-card"
+      hx-swap="outerHTML"
+    >
+      ⏭️ Passer
+    </button>
+  </div>
+</div>
+{% endif %}

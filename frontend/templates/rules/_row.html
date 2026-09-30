@@ -1,0 +1,48 @@
+<div id="rule-row-{{ rule.id }}" class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2">
+  {% set category = rule.category %}
+  {% set top_level = category.parent if category.parent else category %}
+  {% set subcategory_name = category.name if category.parent else none %}
+  <div class="flex items-start justify-between gap-2">
+    <div class="flex flex-col min-w-0">
+      <span class="text-primary font-medium truncate">{{ rule.keyword }}</span>
+      <span class="flex items-center gap-1 text-xs text-secondary truncate">
+        <span
+          class="inline-block w-2 h-2 rounded-full flex-shrink-0"
+          style="background-color: {{ category.id | category_color }}"
+        ></span>
+        {{ top_level.icon or "" }} {{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}
+        {% if rule.payment_method and rule.payment_method in payment_methods %}
+        · {{ payment_methods[rule.payment_method].icon }} {{ payment_methods[rule.payment_method].label }}
+        {% endif %}
+        {% if rule.receipt_family %}
+        · {{ icon('receipt', size=14) }} {{ rule.receipt_family | receipt_family_display }}
+        {% endif %}
+      </span>
+    </div>
+    <span class="text-xs text-secondary whitespace-nowrap flex-shrink-0">
+      {{ usage_count }} transaction{{ "s" if usage_count != 1 else "" }}
+    </span>
+  </div>
+  <div class="flex gap-2">
+    <button
+      type="button"
+      hx-get="/rules/{{ rule.id }}/edit"
+      hx-target="#rule-row-{{ rule.id }}"
+      hx-swap="outerHTML"
+      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+    >
+      {{ icon('edit', size=16) }} Modifier
+    </button>
+    <form
+      hx-post="/rules/{{ rule.id }}/delete"
+      hx-target="#rules-content"
+      hx-swap="outerHTML"
+      hx-confirm="Supprimer cette règle ?"
+      class="flex-1"
+    >
+      <button type="submit" class="w-full min-h-[50px] rounded-xl text-danger font-medium">
+        {{ icon('trash', size=16) }} Supprimer
+      </button>
+    </form>
+  </div>
+</div>

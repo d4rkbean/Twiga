@@ -1,0 +1,26 @@
+{% if show_le_cap_midmonth_banner %}
+<div id="le-cap-midmonth-banner" class="w-full max-w-sm flex items-center justify-between gap-3 bg-container rounded-xl shadow-sm p-4 border border-border">
+  <p class="text-sm text-primary flex-1">{{ icon('calendar-event') }} Mi-mois — Le cap tient-il ?</p>
+  <a href="/cap/mid" class="min-h-[44px] px-3 rounded-xl bg-container border border-border text-primary text-sm font-medium flex items-center flex-shrink-0">
+    Vérifier {{ icon('arrow-narrow-right') }}
+  </a>
+  <button type="button" id="le-cap-midmonth-banner-close" aria-label="Fermer" class="text-secondary text-lg leading-none flex-shrink-0 w-11 h-11 flex items-center justify-center">
+    {{ icon('x') }}
+  </button>
+</div>
+<script>
+  (function () {
+    var key = "dismissed_le_cap_midmonth_banner_" + {{ current_month_key | tojson | safe }};
+    var banner = document.getElementById("le-cap-midmonth-banner");
+    if (!banner) return;
+    if (localStorage.getItem(key) === "true") {
+      banner.remove();
+      return;
+    }
+    document.getElementById("le-cap-midmonth-banner-close").addEventListener("click", function () {
+      localStorage.setItem(key, "true");
+      banner.remove();
+    });
+  })();
+</script>
+{% endif %}

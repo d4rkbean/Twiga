@@ -1,0 +1,44 @@
+<div class="p-4 flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-2">
+    <h3 class="text-base font-bold text-primary flex items-center gap-2 min-w-0">
+      {{ icon('chart-line', size=18) }} <span class="truncate">{{ category_name }}</span>
+    </h3>
+    <button
+      type="button"
+      onclick="this.closest('dialog').close()"
+      aria-label="Fermer"
+      class="w-11 h-11 flex items-center justify-center text-secondary flex-shrink-0"
+    >
+      {{ icon('x', size=20) }}
+    </button>
+  </div>
+
+  {% if trend %}
+  <div class="flex flex-col gap-1 text-center">
+    <span class="amount-blur text-2xl font-extrabold text-primary">{{ current_amount | eur }}</span>
+    <span class="text-xs text-secondary">{{ trend[-1].label }}</span>
+  </div>
+
+  <div class="h-56">
+    <canvas
+      id="category-trend-chart"
+      data-labels='{{ trend | map(attribute="label") | list | tojson }}'
+      data-amounts='{{ trend | map(attribute="amount") | list | tojson }}'
+    ></canvas>
+  </div>
+
+  <div class="bg-page rounded-xl p-3 text-sm text-center">
+    <span class="text-secondary">vs {{ year_ago_label }} : </span>
+    <span class="amount-blur font-semibold text-primary">{{ year_ago_amount | eur }}</span>
+    {% if yoy_change is not none %}
+    <span class="font-medium {{ ('text-danger' if yoy_change >= 0 else 'text-success') if type != 'income' else ('text-success' if yoy_change >= 0 else 'text-danger') }}">
+      · {{ '▲' if yoy_change >= 0 else '▼' }} {{ '+' if yoy_change >= 0 else '' }}{{ yoy_change }} %
+    </span>
+    {% else %}
+    <span class="text-secondary">· pas de référence l'an dernier</span>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="text-sm text-secondary text-center py-8">Aucune donnée sur les 12 derniers mois.</p>
+  {% endif %}
+</div>

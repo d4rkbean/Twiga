@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Abonnements récurrents — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-primary">{{ icon('repeat', size=24) }} Abonnements récurrents</h1>
+    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Paramètres</a>
+  </div>
+
+  <div id="recurring-content">
+    {% include "recurring/_content.html" %}
+  </div>
+</main>
+{% endblock %}

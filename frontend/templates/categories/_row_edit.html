@@ -1,0 +1,30 @@
+<form
+  id="category-row-{{ category.id }}"
+  hx-post="/categories/{{ category.id }}/update"
+  hx-target="#categories-content"
+  hx-swap="outerHTML"
+  class="rounded-xl border-2 border-accent p-3 flex flex-col gap-2 {{ 'pl-6' if is_child else '' }}"
+>
+  <input
+    type="text"
+    name="name"
+    value="{{ category.name }}"
+    required
+    autofocus
+    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+  />
+  <div class="flex gap-2">
+    <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+      Enregistrer
+    </button>
+    <button
+      type="button"
+      hx-get="/categories/{{ category.id }}/row?is_child={{ 'true' if is_child else 'false' }}"
+      hx-target="#category-row-{{ category.id }}"
+      hx-swap="outerHTML"
+      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+    >
+      Annuler
+    </button>
+  </div>
+</form>

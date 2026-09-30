@@ -1,0 +1,49 @@
+{% set tour = tour_context(request) %}
+<div
+  x-data="twigaTour()"
+  data-tracked="{{ 'true' if tour.tracked else 'false' }}"
+  data-pending="{{ 'true' if tour.pending else 'false' }}"
+  data-skip-import="{{ 'true' if tour.skip_import else 'false' }}"
+>
+  <div id="tour-icons" hidden>
+    {% for name in ['compass', 'file-import', 'inbox', 'chart-bar', 'search'] %}
+    <span data-icon="{{ name }}">{{ icon(name, size=20) }}</span>
+    {% endfor %}
+  </div>
+  <div x-show="visible && !hasTarget" x-transition.opacity class="twiga-tour-overlay"></div>
+  <div x-show="visible && hasTarget" x-transition.opacity class="twiga-tour-spotlight" :style="spotlightStyle"></div>
+
+  <div
+    x-show="visible"
+    x-transition
+    x-ref="bubble"
+    role="dialog"
+    aria-live="polite"
+    :aria-label="step ? step.title : 'Visite guidée'"
+    class="fixed twiga-tour-bubble"
+    :class="{ 'twiga-tour-bubble-centered': !hasTarget }"
+    :style="bubbleStyle"
+    @keydown.window.escape="visible && complete()"
+  >
+    <button
+      type="button"
+      class="twiga-tour-close"
+      @click="complete()"
+      aria-label="Passer la visite guidée"
+    >
+      {{ icon('x') }}
+    </button>
+
+    <p class="twiga-tour-progress" :aria-label="progressLabel()" x-text="progressDots()"></p>
+    <p class="twiga-tour-title"><span class="twiga-tour-title-icon" x-html="stepIcon()"></span><span x-text="step ? step.title : ''"></span></p>
+    <div class="twiga-tour-text" x-html="step ? step.text : ''"></div>
+    <div class="twiga-tour-buttons">
+      <button type="button" x-show="isFirst()" @click="complete()" class="twiga-tour-btn twiga-tour-btn-secondary">Passer</button>
+      <button type="button" x-show="!isFirst()" @click="prev()" class="twiga-tour-btn twiga-tour-btn-secondary">
+        {{ icon('arrow-narrow-left') }} Précédent
+      </button>
+      <button type="button" x-show="!isLast()" @click="next()" class="twiga-tour-btn">Suivant →</button>
+      <button type="button" x-show="isLast()" @click="complete()" class="twiga-tour-btn">Terminer</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Projets — Twiga 🦒{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-primary">{{ icon('target', size=24) }} Projets</h1>
+    <button
+      type="button"
+      onclick="document.getElementById('new-project-dialog').showModal()"
+      class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold px-4"
+    >
+      + Nouveau
+    </button>
+  </div>
+
+  <div id="projects-list" class="flex flex-col gap-3">
+    {% include "projects/_list.html" %}
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Arrivée depuis la recherche globale (/projects#project-card-N) : fait
+  // défiler jusqu'à la carte visée et la met brièvement en évidence.
+  (function () {
+    if (!location.hash) return;
+    var target = document.querySelector(location.hash);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.add("ring-2", "ring-accent");
+    setTimeout(function () {
+      target.classList.remove("ring-2", "ring-accent");
+    }, 2500);
+  })();
+</script>
+{% endblock %}

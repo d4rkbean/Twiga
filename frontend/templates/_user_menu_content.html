@@ -1,0 +1,67 @@
+{#
+  Contenu partagé du menu utilisateur : popup desktop (_sidebar.html, ouvre
+  vers le haut) et bottom sheet mobile (_header.html) — même structure dans
+  les deux cas ("Content identical to desktop popup", demandé).
+
+  Paramètres attendus (via {% with %} + include) :
+    current          utilisateur connecté (obligatoire, jamais None ici —
+                       les deux sites d'inclusion sont déjà repliés sur
+                       l'ancien menu ⚙️ simple quand personne n'est connecté)
+    show_theme_row   (optionnel, défaut false) ajoute une ligne "Thème" —
+                       seul le bottom sheet mobile en a besoin : desktop
+                       garde son propre bouton Thème persistant dans la
+                       sidebar (hors de ce popup, voir mockup fourni), mais
+                       le mobile n'a plus AUCUNE icône thème directement
+                       visible dans l'en-tête une fois ⚙️/⋯ retirés — sans
+                       cette ligne, changer de thème deviendrait impossible
+                       sur mobile.
+
+  Couleur avatar : tokens sémantiques bg-accent/text-on-accent (jamais de
+  couleur brute) plutôt que "fond ambre, initiales blanches"
+  demandé littéralement — design-system.css documente déjà POURQUOI (le
+  brun texte-sur-accent a bien plus de contraste que du blanc sur cet ambre
+  précis), cohérent avec tous les autres usages de bg-accent dans l'appli.
+#}
+<div class="flex items-center gap-3 px-4 py-3">
+  <span class="w-10 h-10 rounded-full bg-accent text-on-accent flex items-center justify-center text-sm font-bold flex-shrink-0">
+    {{ user_initials(current) }}
+  </span>
+  <div class="flex flex-col min-w-0">
+    <span class="text-sm font-bold text-primary truncate">{{ user_display_name(current) }}</span>
+    <span class="text-xs text-secondary">{{ user_role_label(current.role) }}</span>
+  </div>
+</div>
+<div class="border-t border-border"></div>
+<a href="/profile" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-page">
+  {{ icon('user', cls='flex-shrink-0') }}
+  <span>Mon profil</span>
+</a>
+<a href="/settings" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-page">
+  {{ icon('settings', cls='flex-shrink-0') }}
+  <span>Paramètres</span>
+</a>
+<button
+  type="button"
+  onclick="document.getElementById('twiga-help-dialog').showModal()"
+  class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-page text-left"
+>
+  {{ icon('help-circle', cls='flex-shrink-0') }}
+  <span>Aide &amp; raccourcis</span>
+</button>
+{% if show_theme_row %}
+<button
+  type="button"
+  onclick="window.toggleTheme()"
+  class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-page text-left"
+>
+  <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
+  <span>Thème</span>
+</button>
+{% endif %}
+<div class="border-t border-border"></div>
+<form hx-post="/logout" class="contents">
+  <button type="submit" class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-danger hover:bg-page text-left">
+    {{ icon('logout', cls='flex-shrink-0') }}
+    <span>Se déconnecter</span>
+  </button>
+</form>

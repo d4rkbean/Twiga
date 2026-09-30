@@ -1,0 +1,169 @@
+/* Chargée uniquement via <link media="print"> (reports/index.html) : pas
+   besoin de wrapper @media print ici, tout le fichier ne s'applique déjà
+   qu'à l'impression. print:hidden / print:block (Tailwind, posés
+   directement dans les templates) gèrent déjà la nav, les boutons, les
+   onglets de période, le filtre compte et le fil d'Ariane — y compris la
+   sidebar desktop (_sidebar.html), l'en-tête (_header.html) et la barre du
+   bas (_nav.html), qui n'avaient PAS ce garde avant et pouvaient
+   s'imprimer si le moteur d'impression du navigateur évalue les media
+   queries de largeur (lg:) comme si la page était large. Ce fichier ne
+   couvre que ce que ces utilitaires ne couvrent pas : mise en page pleine
+   largeur (plus de sidebar à compenser), lisibilité noir & blanc, tableaux,
+   barre de score, sauts de page, et démasquage des montants (un rapport
+   imprimé est un export volontaire, jamais flouté même en mode
+   confidentialité).
+*/
+
+body {
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #000000 !important;
+  /* La sidebar/l'en-tête/la nav du bas sont masqués (print:hidden) : plus
+     besoin de leur réserver de la place (lg:pl-[240px], pt-[64px],
+     pb-[59px] côté base.html), sinon la page imprimée garde une grande
+     marge vide à gauche et en haut/bas. */
+  padding: 0 !important;
+}
+
+body.privacy-mode .amount-blur {
+  filter: none !important;
+  user-select: text !important;
+}
+
+/* Le <main> de reports/index.html se limite à max-w-3xl (centré) tant que
+   la largeur "lg:" n'est pas active : à l'impression, comme pour la
+   sidebar ci-dessus, rien ne garantit que le moteur d'impression du
+   navigateur évalue "lg:" comme actif. Forcé en pleine largeur sans marge
+   ni padding propre, indépendamment de ce que "lg:" fait ou non ici. */
+main {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.bg-container,
+.bg-page {
+  background: #ffffff !important;
+  box-shadow: none !important;
+  border: 1px solid #cccccc !important;
+}
+
+.text-primary,
+.text-secondary {
+  color: #000000 !important;
+}
+
+/* Montants et indicateurs de statut toujours en noir pur à l'impression
+   (pas de vert/rouge) : un rapport pensé pour une imprimante N&B, où ces
+   deux couleurs peuvent se convertir en gris trop proches pour rester
+   distinguables. Aucune perte d'information dans cette appli : chaque
+   usage de .text-success/.text-danger est déjà doublé d'un signe non
+   dépendant de la couleur (le "-" natif de format_amount pour les
+   montants négatifs, les flèches ▲/▼ des évolutions, les puces 🟢/🔴 des
+   messages de statut). */
+.text-success,
+.text-danger {
+  color: #000000 !important;
+}
+
+/* Un graphique/section ne doit jamais se couper au milieu entre deux pages. */
+.bg-container {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Les 5 onglets de détail (masqués à l'écran via x-show tant qu'inactifs,
+   Alpine pose display:none en style inline) doivent tous s'imprimer à la
+   suite, pas seulement celui actif à l'écran — un rapport imprimé est
+   complet. Ciblé précisément sur .report-tab-panel (pas [x-show] en
+   général) : les panneaux de drill-down catégorie/sous-catégorie
+   (expenseCategory/incomeCategory) doivent eux rester tels qu'affichés à
+   l'écran au moment de l'impression, pas tous forcés ouverts en même temps
+   (résultat illisible, listes dupliquées). */
+.report-tab-panel {
+  display: flex !important;
+}
+
+/* Saut de page avant le premier onglet de détail (Dépenses) : sépare
+   proprement le résumé (métriques héros, score, cashflow) des 5 onglets
+   détaillés qui suivent, plutôt qu'un forçage entre CHAQUE carte (gâcherait
+   du papier pour un rapport qui tient déjà sur peu de pages). */
+.report-tab-panel:first-of-type {
+  page-break-before: always;
+  break-before: page;
+}
+
+/* En-tête d'impression (reports/_content.html, "EN-TÊTE D'IMPRESSION") :
+   le contenu ("🦒 TWIGA — Rapport ...", déjà le bon libellé de période —
+   décalé le cas échéant, voir period_bar_label côté serveur) existe déjà en
+   HTML, pas besoin d'un ::before + attr(data-period) pour ça. Seule la mise
+   en forme (soulignement ambre, espacement) manquait. */
+.print-report-header {
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #d4a96a;
+}
+
+/* Les graphiques Chart.js (canvas) doivent rester lisibles et ne jamais se
+   couper au milieu entre deux pages, en plus de break-inside déjà posé sur
+   leur carte englobante (.bg-container) juste au-dessus. */
+canvas {
+  max-width: 100% !important;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Tableaux (liste d'opérations paginée de chaque onglet Dépenses/Recettes,
+   reports/_transactions_list.html) : bordures et taille de police adaptées
+   au papier, pas le padding généreux prévu pour le tactile à l'écran. */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border: 1px solid #cccccc !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+}
+
+th {
+  background: #f0f0f0 !important;
+}
+
+/* Colonnes Catégorie/Compte masquées sur mobile (hidden md:table-cell,
+   voir reports/_transactions_list.html) : un rapport imprimé doit toutes
+   les montrer, indépendamment de la largeur "md:" évaluée ou non par le
+   moteur d'impression du navigateur (même incertitude que "lg:" plus haut
+   dans ce fichier). */
+th.hidden,
+td.hidden {
+  display: table-cell !important;
+}
+
+/* Barre du score Twiga (id unique, pas de classe .score-bar/.score-bar-fill
+   dans le HTML réel) : piste en gris clair bordée, remplissage en gris
+   moyen — même logique N&B que le reste de cette feuille de style, sans
+   toucher .bg-page ailleurs sur la page (utilisé aussi comme piste des
+   barres de budget, hors périmètre de cette demande). */
+.print-score-track {
+  background: #dddddd !important;
+  border: 1px solid #000000 !important;
+}
+
+#twiga-score-bar {
+  background: #888888 !important;
+}
+
+/* Marges de page. Note : les "marges de page" façon @bottom-right avec
+   content: counter(page) (numérotation automatique) ne sont PAS
+   implémentées par les moteurs d'impression de Chrome/Firefox/Safari (seuls
+   des moteurs de mise en page paginée dédiés type Prince/WeasyPrint les
+   supportent) — inutile de les déclarer ici, elles resteraient sans effet.
+   La numérotation de page reste disponible nativement via l'option
+   "En-têtes et pieds de page" de la boîte de dialogue d'impression du
+   navigateur, activable par l'utilisateur au moment d'imprimer. */
+@page {
+  margin: 1.5cm;
+}

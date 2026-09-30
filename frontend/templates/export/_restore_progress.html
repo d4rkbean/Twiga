@@ -1,0 +1,31 @@
+<div
+  id="restore-progress"
+  {% if status == "running" %}
+  hx-get="/export/restore/progress"
+  hx-trigger="every 1s"
+  hx-target="#restore-progress"
+  hx-swap="outerHTML"
+  {% endif %}
+  class="flex flex-col gap-2"
+>
+  {% if status == "running" %}
+  <p class="text-sm text-secondary">
+    Import en cours{% if total %} : {{ processed }} / {{ total }}{% else %}...{% endif %}
+  </p>
+  <div class="w-full h-2 rounded-full bg-page overflow-hidden">
+    <div
+      class="h-full bg-accent transition-all"
+      style="width: {{ ((processed / total * 100) if total else 0) }}%"
+    ></div>
+  </div>
+  {% elif status == "done" %}
+  <p class="text-sm text-success py-2">
+    {{ icon('check', size=16) }} Import terminé : {{ summary.accounts }} compte(s), {{ summary.categories }} catégorie(s),
+    {{ summary.transactions }} transaction(s), {{ summary.budgets }} budget(s),
+    {{ summary.projects }} projet(s){% if summary.project_movements %} (+ {{ summary.project_movements }} mouvement(s)){% endif %},
+    {{ summary.rules }} règle(s).
+  </p>
+  {% elif status == "error" %}
+  <p class="text-sm text-danger py-2">{{ icon('circle-x', size=16) }} Erreur pendant l'import : {{ error }}</p>
+  {% endif %}
+</div>

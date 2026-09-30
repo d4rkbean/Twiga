@@ -1,0 +1,22 @@
+<div id="tour-category-buttons" class="category-suggestion grid grid-cols-2 lg:grid-cols-3 gap-3">
+  {% for category in categories %}
+  <button
+    type="button"
+    class="shortcut-category-btn min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2 px-3 text-center active:bg-page"
+    hx-post="/transactions/{{ transaction.id }}/select-category/{{ category.id }}"
+    hx-include="#simplified-label, #nav-history"
+    hx-target=".category-suggestion"
+    hx-swap="outerHTML"
+  >
+    {% if loop.index <= 9 %}
+    <span class="hidden sm:flex items-center justify-center w-5 h-5 rounded-full bg-page text-secondary text-xs font-semibold flex-shrink-0">{{ loop.index }}</span>
+    {% endif %}
+    <span>{{ get_category_icon(category.name) }}</span>
+    <span>{{ category.name }}</span>
+  </button>
+  {% else %}
+  <p class="col-span-2 text-sm text-secondary text-center">
+    Aucune catégorie disponible. Importez des données ou créez-en depuis les Paramètres.
+  </p>
+  {% endfor %}
+</div>
