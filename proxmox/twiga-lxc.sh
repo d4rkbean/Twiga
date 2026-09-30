@@ -139,6 +139,9 @@ cat > "$WORK/install.sh" <<'INNER'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 export DEBIAN_FRONTEND=noninteractive
+# The host's LANG (e.g. en_US.UTF-8) is forwarded by pct exec but is not
+# generated in a fresh container: use a locale that always exists.
+export LC_ALL=C.UTF-8 LANG=C.UTF-8
 # shellcheck disable=SC1091
 source /root/twiga-install.env
 
