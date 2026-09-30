@@ -5,12 +5,12 @@ the same installation step by step, plus the restore and backup procedures.
 
 ## Requirements
 
-- Proxmox VE 7+
+- Proxmox VE 8 or 9, up to date (`apt update && apt full-upgrade`), whose template list includes `debian-13-standard`. Check with `pveam update && pveam available --section system | grep debian-13`.
 - Access to the Proxmox web interface
 
 ## Step 1 — Create the LXC container
 
-- Template: Debian 12
+- Template: Debian 13
 - RAM: 1024 MB (2048 recommended)
 - CPU: 2 cores
 - Disk: 20 GB

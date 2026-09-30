@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Twiga — creates a Debian 12 LXC container on Proxmox VE with Docker and
+# Twiga — creates a Debian 13 LXC container on Proxmox VE with Docker and
 # Twiga installed and running.
 #
 # Run it as root on the Proxmox HOST (not inside a container):
@@ -80,11 +80,11 @@ if [[ -t 0 ]]; then
   [[ "${answer:-Y}" =~ ^[Yy]$ ]] || fail "Cancelled."
 fi
 
-# --- Debian 12 template ------------------------------------------------------
-msg "Looking for the Debian 12 template..."
+# --- Debian 13 template ------------------------------------------------------
+msg "Looking for the Debian 13 template..."
 pveam update >/dev/null
-TEMPLATE="$(pveam available --section system | awk '/debian-12-standard/ {print $2}' | sort -V | tail -1)"
-[[ -n "$TEMPLATE" ]] || fail "debian-12-standard template not found."
+TEMPLATE="$(pveam available --section system | awk '/debian-13-standard/ {print $2}' | sort -V | tail -1)"
+[[ -n "$TEMPLATE" ]] || fail "debian-13-standard template not found: run apt full-upgrade on the Proxmox host, then pveam update, and retry."
 if ! pveam list "$TPL_STORAGE" | grep -q "$TEMPLATE"; then
   msg "Downloading $TEMPLATE..."
   pveam download "$TPL_STORAGE" "$TEMPLATE" >/dev/null

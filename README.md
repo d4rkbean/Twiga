@@ -19,7 +19,7 @@ On the Proxmox VE host, as root:
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/d4rkbean/Twiga/main/proxmox/twiga-lxc.sh)"
 ```
 
-The script creates a Debian 12 LXC container, installs Docker and Twiga in it,
+The script creates a Debian 13 LXC container, installs Docker and Twiga in it,
 generates the passwords, schedules a daily backup, and prints the address and
 the admin password. Settings (container ID, static IP, resources...) are
 passed as environment variables, see the header of the script. Read it before
