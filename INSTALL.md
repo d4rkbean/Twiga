@@ -71,8 +71,8 @@ Default login: **admin** / the value of `AUTH_PASSWORD` in `.env`.
 **Important**: `AUTH_PASSWORD` is only read when the database is first
 initialized (creation of the admin account). Changing it in `.env` afterwards
 and running `docker compose up -d` again has NO effect on the existing
-password. **Change your password on first login**, in "Paramètres" (Settings)
-> "Profil" (Profile).
+password. **Change your password on first login**, in *Settings → Security →
+Change the password*.
 
 Both services (`app` and `db`) use `restart: always` in `docker-compose.yml`:
 they restart automatically after a reboot of the LXC or a crash. The
@@ -81,18 +81,18 @@ network; only the `app` container can reach it.
 
 ## Step 5 — Restore your data (optional)
 
-To migrate from another instance, export from it ("Paramètres" > "Données", or
-`GET /export/json`), then on the new one:
+To migrate from another instance, export from it (*Settings → Data → Full JSON
+export*, or `GET /export/json`), then on the new one:
 
 - Log in as `admin` and change the password.
-- "Paramètres" > "Données" > "Restaurer depuis une sauvegarde JSON".
+- *Settings → Data → Restore from a JSON backup*.
 - Upload the `twiga-export-YYYY-MM-DD.json` file and wait for the confirmation.
 
 Things to know after a JSON restore:
 
 - **User accounts are not exported** (on purpose: no password hashes in a
-  file). Only `admin` exists; recreate the others in "Paramètres" >
-  "Utilisateurs" (Users).
+  file). Only `admin` exists; recreate the others in *Settings → Security →
+  Users*.
 - The JSON restore never deletes: rows already present are updated, new ones
   are added.
 

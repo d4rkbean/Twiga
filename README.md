@@ -10,7 +10,9 @@ outgoing network call, no telemetry.
 > **Language:** the interface is available in **French** (default) and **English**
 > (beta). Switch in *Settings → Preferences*, where you can also pick the number and
 > date format (French, International or United States). The documentation and scripts
-> are in English; menu names are quoted in French with a translation.
+> are in English and use the English menu names. In the French interface they read:
+> Settings = Paramètres, Data = Données, Preferences = Préférences, Security =
+> Sécurité, Users = Utilisateurs, My profile = Mon profil.
 
 ## One-command install on Proxmox
 
@@ -57,9 +59,9 @@ did not change it in `.env.example`).
 
 **Important**: `AUTH_PASSWORD` is only read on that first initialization. Once
 the admin account exists, editing `AUTH_PASSWORD` in `.env` and restarting has
-no effect: change the password from the app ("Paramètres" (Settings) >
-"Profil" (Profile) once logged in, or "Paramètres" > "Utilisateurs" (Users) to
-reset another account's password).
+no effect: change the password from the app (*Settings → Security → Change the password*
+once logged in; as an admin, *Settings → Security → Users* resets another
+account's password).
 
 **Change this password on your first login**, especially before exposing the
 app beyond your local network (`AUTH_ENABLED=true`, the default, protects
@@ -69,7 +71,7 @@ every page with a signed session cookie valid for 30 days).
 
 Two complementary options:
 
-- **From the app**: "Paramètres" > "Données" (Data) > "Export JSON complet"
+- **From the app**: *Settings → Data → Full JSON export*
   downloads a `twiga-export-YYYY-MM-DD.json` file with all your data
   (accounts, categories, transactions, budgets, projects, rules, pending
   checks, etc. — user accounts excluded).
@@ -82,14 +84,14 @@ Two complementary options:
 
 ## Restoring from a JSON backup
 
-"Paramètres" > "Données" > "Restaurer depuis une sauvegarde JSON" (admin role
+*Settings → Data → Restore from a JSON backup* (admin role
 only): pick the exported file and confirm. The restore updates rows that
 already exist (same id) and adds new ones; it never deletes anything. A
 progress bar is shown during the import (it can take several minutes on a
 large database).
 
-User accounts are not part of the JSON export: recreate them in "Paramètres" >
-"Utilisateurs" after a restore.
+User accounts are not part of the JSON export: recreate them in *Settings → Security → Users*
+after a restore.
 
 To restore a PostgreSQL dump instead, see `INSTALL.md`.
 
