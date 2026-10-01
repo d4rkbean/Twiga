@@ -7,8 +7,8 @@
       {{ icon('folder', size=16) if not is_child else '–' }} {{ category.icon or "" }} {{ category.name }}
     </span>
     {% if is_child and category.pillar and category.pillar != resolve_category_pillar(category.parent) %}
-    <span class="text-xs bg-accent/10 text-accent rounded px-1.5 py-0.5 flex-shrink-0" title="Diffère du pilier hérité du parent">
-      override
+    <span class="text-xs bg-accent/10 text-accent rounded px-1.5 py-0.5 flex-shrink-0" title="{{ _("Diffère du pilier hérité du parent") }}">
+      {{ _("override") }}
     </span>
     {% endif %}
   </div>
@@ -19,11 +19,11 @@
       hx-trigger="change"
       hx-target="#category-row-{{ category.id }}"
       hx-swap="outerHTML"
-      aria-label="Pilier Le Cap"
+      aria-label="{{ _("Pilier Le Cap") }}"
       class="flex-1 min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary text-sm px-2"
     >
       {% if is_child %}
-      <option value="" {{ 'selected' if not category.pillar else '' }}>{{ icon('corner-down-right', size=14) }} Hérite {{ get_pillar_icon(resolve_category_pillar(category.parent)) }}</option>
+      <option value="" {{ 'selected' if not category.pillar else '' }}>{{ icon('corner-down-right', size=14) }} {% trans parent=get_pillar_icon(resolve_category_pillar(category.parent)) %}Hérite {{ parent }}{% endtrans %}</option>
       {% endif %}
       {% for code in PILLAR_ORDER %}
       <option value="{{ code }}" {{ 'selected' if category.pillar == code else '' }}>{{ PILLARS[code].icon }} {{ PILLARS[code].label }}</option>
@@ -33,7 +33,7 @@
     <button
       type="button"
       @click="expanded = !expanded"
-      :aria-label="expanded ? 'Masquer les sous-catégories' : 'Afficher les sous-catégories'"
+      :aria-label="expanded ? '{{ _("Masquer les sous-catégories") | jsq }}' : '{{ _("Afficher les sous-catégories") | jsq }}'"
       class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-bold text-lg flex items-center justify-center flex-shrink-0"
     >
       <span x-show="!expanded">+</span>
@@ -45,7 +45,7 @@
       hx-get="/categories/{{ category.id }}/edit?is_child={{ 'true' if is_child else 'false' }}"
       hx-target="#category-row-{{ category.id }}"
       hx-swap="outerHTML"
-      aria-label="Modifier"
+      aria-label="{{ _("Modifier") }}"
       class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
     >
       {{ icon('edit', size=16) }}
@@ -55,7 +55,7 @@
       hx-get="/categories/{{ category.id }}/delete-confirm?is_child={{ 'true' if is_child else 'false' }}"
       hx-target="#category-row-{{ category.id }}"
       hx-swap="outerHTML"
-      aria-label="Supprimer"
+      aria-label="{{ _("Supprimer") }}"
       class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-danger font-medium flex items-center justify-center flex-shrink-0"
     >
       {{ icon('trash', size=16) }}
@@ -74,7 +74,7 @@
       hx-swap="outerHTML"
       class="w-4 h-4 rounded border-border flex-shrink-0"
     />
-    {{ icon('ban', size=14) }} Revenu, pas une dépense — exclure de l'écran Budgets
+    {{ icon('ban', size=14) }} {{ _("Revenu, pas une dépense — exclure de l'écran Budgets") }}
   </label>
   {% endif %}
 </div>

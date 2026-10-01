@@ -1,14 +1,14 @@
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
-  <h2 class="text-xl font-bold text-primary">Étape 2 — Aperçu des opérations</h2>
-  <p class="text-sm text-secondary">{{ total_count }} opération(s) détectée(s) dans le fichier OFX.</p>
+  <h2 class="text-xl font-bold text-primary">{{ _("Étape 2 — Aperçu des opérations") }}</h2>
+  <p class="text-sm text-secondary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s) dans le fichier OFX.{% endtrans %}</p>
 
   <div class="overflow-x-auto overflow-y-auto max-h-64 rounded-xl border border-border">
     <table class="w-full text-sm">
       <thead>
         <tr class="bg-page">
-          <th class="text-left text-secondary font-medium px-3 py-2">Date</th>
-          <th class="text-left text-secondary font-medium px-3 py-2">Libellé</th>
-          <th class="text-right text-secondary font-medium px-3 py-2">Montant</th>
+          <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Date") }}</th>
+          <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Libellé") }}</th>
+          <th class="text-right text-secondary font-medium px-3 py-2">{{ _("Montant") }}</th>
         </tr>
       </thead>
       <tbody>
@@ -27,7 +27,7 @@
     <input type="hidden" name="format" value="ofx" />
     <input type="hidden" name="account_id" value="{{ account.id }}" />
     <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold w-full">
-      Continuer
+      {{ _("Continuer") }}
     </button>
   </form>
 </div>

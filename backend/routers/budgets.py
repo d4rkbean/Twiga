@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend import crud
 from backend.database import get_db
-from backend.dates import MONTH_NAMES_FR, month_label, month_range
+from backend.dates import month_label, month_names, month_range
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
 
@@ -89,7 +89,7 @@ def budgets_page(
     context = {
         "request": request,
         "years": years,
-        "month_options": list(enumerate(MONTH_NAMES_FR, start=1)),
+        "month_options": list(enumerate(month_names(), start=1)),
         **_build_context(db, month, year),
     }
     return templates.TemplateResponse("budgets/index.html", context)

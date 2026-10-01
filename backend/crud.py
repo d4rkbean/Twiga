@@ -12,7 +12,7 @@ import bcrypt
 from sqlalchemy import and_, case, delete, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
-from backend.dates import format_date_long_fr, month_range, months_between, shift_month
+from backend.dates import format_date_long, month_range, months_between, shift_month
 from backend.models import (
     Account,
     AppState,
@@ -37,6 +37,8 @@ from backend.pillars import PILLAR_ORDER
 from backend.receipt_families import RECEIPT_FAMILIES, guess_receipt_family
 from imports.common import DuplicateKey, ParsedTransaction, build_duplicate_key, split_duplicates
 from imports.qif_parser import QifImportResult
+from backend.i18n import gettext as _t, lazy_gettext
+from backend.payment_methods import get_payment_method_label
 
 
 def get_next_pending_transaction(db: Session) -> Transaction | None:
@@ -255,7 +257,7 @@ def get_payment_methods_dict(db: Session) -> dict[str, dict[str, str]]:
     # dans Transaction.payment_method / Rule.payment_method, il n'y a pas de
     # colonne "code" séparée.
     methods = db.execute(select(PaymentMethod).order_by(PaymentMethod.display_order)).scalars().all()
-    return {m.name: {"icon": m.icon, "label": m.name} for m in methods}
+    return {m.name: {"icon": m.icon, "label": get_payment_method_label(m.name)} for m in methods}
 
 
 def get_existing_account_names(db: Session) -> set[str]:
@@ -950,12 +952,12 @@ def _resolve_top_level_category(db: Session) -> Callable[[int | None], tuple[int
 
     def resolve(category_id: int | None) -> tuple[int | None, str]:
         if category_id is None:
-            return None, "Non catégorisé"
+            return None, _t("Non catégorisé")
         category = categories.get(category_id)
         while category is not None and category.parent_id is not None:
             category = categories.get(category.parent_id)
         if category is None:
-            return None, "Non catégorisé"
+            return None, _t("Non catégorisé")
         return category.id, category.name
 
     return resolve
@@ -1556,20 +1558,20 @@ def resolve_budget_pillar(category: Category, enfants: list[Category]) -> str:
 INCOME_SOURCES: list[tuple[str, str, str]] = [
     (
         "recettes_precedent",
-        "Les recettes du mois précédent",
-        "Le salaire tombe en fin de mois et finance le mois suivant.",
+        lazy_gettext("Les recettes du mois précédent"),
+        lazy_gettext("Le salaire tombe en fin de mois et finance le mois suivant."),
     ),
     (
         "recettes_courant",
-        "Les recettes du mois en cours",
-        "Le salaire arrive pendant le mois qu'il finance.",
+        lazy_gettext("Les recettes du mois en cours"),
+        lazy_gettext("Le salaire arrive pendant le mois qu'il finance."),
     ),
     (
         "virements",
-        "Les virements reçus sur un compte",
-        "Un pot commun alimenté par virement — vous cochez ceux qui financent ce mois.",
+        lazy_gettext("Les virements reçus sur un compte"),
+        lazy_gettext("Un pot commun alimenté par virement — vous cochez ceux qui financent ce mois."),
     ),
-    ("fixe", "Un montant fixe", "Enveloppe décidée à l'avance, revenu irrégulier."),
+    ("fixe", lazy_gettext("Un montant fixe"), lazy_gettext("Enveloppe décidée à l'avance, revenu irrégulier.")),
 ]
 INCOME_SOURCE_CODES = {code for code, _, _ in INCOME_SOURCES}
 
@@ -1952,7 +1954,7 @@ def get_subcategory_breakdown(
         magnitude = amount if positive else -amount
         child = children_by_id.get(category_id)
         key = category_id if child is not None else -1  # -1 = directement sur le parent
-        name = child.name if child is not None else "Non détaillé"
+        name = child.name if child is not None else _t("Non détaillé")
         # child.icon peut être None (colonne nullable) même quand la
         # sous-catégorie existe bien : le ternaire précédent ne couvrait que
         # le cas "aucune sous-catégorie trouvée", pas "trouvée mais sans
@@ -2166,13 +2168,13 @@ def compute_twiga_score(db: Session, start: date, end: date, account_id: int | N
     total_score = budget_points + result_points + categorized_points + project_points
 
     if total_score >= 90:
-        message = "🦒 La girafe est fière de toi !"
+        message = _t("🦒 La girafe est fière de toi !")
     elif total_score >= 70:
-        message = "🦒 Tu tiens le bon bout !"
+        message = _t("🦒 Tu tiens le bon bout !")
     elif total_score >= 50:
-        message = "🦒 Twiga tend le cou pour voir mieux..."
+        message = _t("🦒 Twiga tend le cou pour voir mieux...")
     else:
-        message = "🦒 Aïe, trop de feuilles mangées ce mois-ci !"
+        message = _t("🦒 Aïe, trop de feuilles mangées ce mois-ci !")
 
     return {
         "score": total_score,
@@ -2477,7 +2479,7 @@ def group_transactions_by_date(transactions: list[Transaction]) -> list[dict]:
     for transaction in transactions:
         groups.setdefault(transaction.date, []).append(transaction)
     return [
-        {"date": day, "label": format_date_long_fr(day), "transactions": txs}
+        {"date": day, "label": format_date_long(day), "transactions": txs}
         for day, txs in groups.items()
     ]
 
@@ -2691,13 +2693,13 @@ def update_user_profile(
     # les routes qui appellent cette fonction pour construire leur réponse.
     user = get_user(db, user_id)
     if user is None:
-        return "Utilisateur introuvable."
+        return _t("Utilisateur introuvable.")
     username = username.strip()
     if not username:
-        return "Le nom d'utilisateur est obligatoire."
+        return _t("Le nom d'utilisateur est obligatoire.")
     existing = get_user_by_username(db, username)
     if existing is not None and existing.id != user_id:
-        return f'Un utilisateur "{username}" existe déjà.'
+        return _t('Un utilisateur "%(username)s" existe déjà.') % {"username": username}
     user.username = username
     user.display_name = display_name.strip() or None
     db.commit()
@@ -3309,11 +3311,11 @@ def seed_starter_categories(db: Session) -> dict[str, int]:
     created_children = 0
     for starter in STARTER_CATEGORIES:
         parent = db.execute(
-            select(Category).where(Category.name == starter.name, Category.parent_id.is_(None))
+            select(Category).where(Category.name == str(starter.name), Category.parent_id.is_(None))
         ).scalar_one_or_none()
         if parent is None:
             parent = Category(
-                name=starter.name,
+                name=str(starter.name),
                 parent_id=None,
                 sort_order=next_sort_order(None),
                 pillar=starter.pillar,
@@ -3325,13 +3327,13 @@ def seed_starter_categories(db: Session) -> dict[str, int]:
 
         for child_name, child_pillar in starter.children:
             exists = db.execute(
-                select(Category.id).where(Category.name == child_name, Category.parent_id == parent.id)
+                select(Category.id).where(Category.name == str(child_name), Category.parent_id == parent.id)
             ).first()
             if exists is not None:
                 continue
             db.add(
                 Category(
-                    name=child_name,
+                    name=str(child_name),
                     parent_id=parent.id,
                     sort_order=next_sort_order(parent.id),
                     pillar=child_pillar,
@@ -3567,7 +3569,7 @@ def get_receipt_family_months(db: Session, months: list[tuple[date, date, str]])
         family_rows.append({"code": code, "icon": "🏷️", "label": code, "monthly": totals.pop(code)})
     if None in totals:
         family_rows.append(
-            {"code": None, "icon": "🏷️", "label": "Sans rayon", "monthly": totals.pop(None)}
+            {"code": None, "icon": "🏷️", "label": _t("Sans rayon"), "monthly": totals.pop(None)}
         )
 
     active_months = sum(1 for total in monthly_totals if total > 0) or 1
@@ -3693,11 +3695,11 @@ _RECURRING_FREQUENCY_CANONICAL_DAYS: dict[str, int] = {
     "quarterly": 90,
     "yearly": 365,
 }
-_RECURRING_FREQUENCY_LABELS_FR: dict[str, str] = {
-    "weekly": "Hebdomadaire",
-    "monthly": "Mensuel",
-    "quarterly": "Trimestriel",
-    "yearly": "Annuel",
+_RECURRING_FREQUENCY_LABELS_FR: dict[str, object] = {
+    "weekly": lazy_gettext("Hebdomadaire"),
+    "monthly": lazy_gettext("Mensuel"),
+    "quarterly": lazy_gettext("Trimestriel"),
+    "yearly": lazy_gettext("Annuel"),
 }
 
 

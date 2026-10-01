@@ -20,7 +20,7 @@
       </span>
     </div>
     <span class="text-xs text-secondary whitespace-nowrap flex-shrink-0">
-      {{ usage_count }} transaction{{ "s" if usage_count != 1 else "" }}
+      {% trans usage_count=usage_count, v="s" if usage_count != 1 else "" %}{{ usage_count }} transaction{{ v }}{% endtrans %}
     </span>
   </div>
   <div class="flex gap-2">
@@ -31,17 +31,17 @@
       hx-swap="outerHTML"
       class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
     >
-      {{ icon('edit', size=16) }} Modifier
+      {{ icon('edit', size=16) }} {{ _("Modifier") }}
     </button>
     <form
       hx-post="/rules/{{ rule.id }}/delete"
       hx-target="#rules-content"
       hx-swap="outerHTML"
-      hx-confirm="Supprimer cette règle ?"
+      hx-confirm="{{ _("Supprimer cette règle ?") }}"
       class="flex-1"
     >
       <button type="submit" class="w-full min-h-[50px] rounded-xl text-danger font-medium">
-        {{ icon('trash', size=16) }} Supprimer
+        {{ icon('trash', size=16) }} {{ _("Supprimer") }}
       </button>
     </form>
   </div>

@@ -1,6 +1,32 @@
 {% set tour = tour_context(request) %}
+{# Textes de la visite, dans la langue de l'utilisateur. Le français est la
+   langue source ; l'anglais explique en plus les noms propres (La Savane,
+   Panorama, Le Cap) et la méthode japonaise dont Le Cap s'inspire. #}
+{% set tour_texts = {
+  "welcome": {
+    "title": _("Bienvenue dans Twiga"),
+    "text": "<p>"|safe ~ _("Trois temps : importer ses opérations, les catégoriser, puis suivre ses comptes.") ~ "</p><p>"|safe ~ _("Les données restent sur ce serveur. Rien n'est envoyé sur Internet.") ~ "</p>"|safe,
+  },
+  "import": {
+    "title": _("Importer"),
+    "text": "<p>"|safe ~ _("Tout commence par un relevé bancaire : QIF, CSV ou OFX.") ~ "</p><p>"|safe ~ _("Les doublons sont détectés et ignorés.") ~ "</p>"|safe,
+  },
+  "nav-savane": {
+    "title": _("La Savane"),
+    "text": "<p>"|safe ~ _("Chaque nouvelle opération y attend une catégorie, une carte à la fois.") ~ "</p><p>"|safe ~ _("Les choix répétés sont mémorisés et proposés ensuite.") ~ "</p>"|safe,
+  },
+  "nav-dashboard": {
+    "title": _("Panorama et Mon mois"),
+    "text": "<p>"|safe ~ _("Le Panorama montre où va l'argent. Mon mois fixe ce qu'on se donne le droit de dépenser.") ~ "</p>"|safe,
+  },
+  "search-icon": {
+    "title": _("Raccourcis"),
+    "text": "<p>"|safe ~ _("Ctrl+K cherche une opération, une catégorie ou un projet.") ~ "</p><p>"|safe ~ _("L'icône en forme d'œil masque les montants.") ~ "</p>"|safe,
+  },
+} %}
 <div
   x-data="twigaTour()"
+  data-texts="{{ tour_texts | tojson | forceescape }}"
   data-tracked="{{ 'true' if tour.tracked else 'false' }}"
   data-pending="{{ 'true' if tour.pending else 'false' }}"
   data-skip-import="{{ 'true' if tour.skip_import else 'false' }}"
@@ -19,7 +45,7 @@
     x-ref="bubble"
     role="dialog"
     aria-live="polite"
-    :aria-label="step ? step.title : 'Visite guidée'"
+    :aria-label="step ? step.title : '{{ _("Visite guidée") | jsq }}'"
     class="fixed twiga-tour-bubble"
     :class="{ 'twiga-tour-bubble-centered': !hasTarget }"
     :style="bubbleStyle"
@@ -29,7 +55,7 @@
       type="button"
       class="twiga-tour-close"
       @click="complete()"
-      aria-label="Passer la visite guidée"
+      aria-label="{{ _("Passer la visite guidée") }}"
     >
       {{ icon('x') }}
     </button>
@@ -38,12 +64,12 @@
     <p class="twiga-tour-title"><span class="twiga-tour-title-icon" x-html="stepIcon()"></span><span x-text="step ? step.title : ''"></span></p>
     <div class="twiga-tour-text" x-html="step ? step.text : ''"></div>
     <div class="twiga-tour-buttons">
-      <button type="button" x-show="isFirst()" @click="complete()" class="twiga-tour-btn twiga-tour-btn-secondary">Passer</button>
+      <button type="button" x-show="isFirst()" @click="complete()" class="twiga-tour-btn twiga-tour-btn-secondary">{{ _("Passer") }}</button>
       <button type="button" x-show="!isFirst()" @click="prev()" class="twiga-tour-btn twiga-tour-btn-secondary">
-        {{ icon('arrow-narrow-left') }} Précédent
+        {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
       </button>
-      <button type="button" x-show="!isLast()" @click="next()" class="twiga-tour-btn">Suivant →</button>
-      <button type="button" x-show="isLast()" @click="complete()" class="twiga-tour-btn">Terminer</button>
+      <button type="button" x-show="!isLast()" @click="next()" class="twiga-tour-btn">{{ _("Suivant →") }}</button>
+      <button type="button" x-show="isLast()" @click="complete()" class="twiga-tour-btn">{{ _("Terminer") }}</button>
     </div>
   </div>
 </div>

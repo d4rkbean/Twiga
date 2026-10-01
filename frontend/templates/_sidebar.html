@@ -24,11 +24,11 @@
    - « Importer » n'est pas ici mais dans l'en-tête : c'est une ACTION, et
      le début de chaque cycle mensuel — pas un lieu où l'on se rend. #}
 {% set sidebar_items = [
-  ("/transactions/inbox", savane_icon, "La Savane", path.startswith("/transactions/inbox"), "tour-sidebar-savane"),
-  ("/dashboard", panorama_icon, "Panorama", path.startswith("/dashboard"), "tour-sidebar-dashboard"),
-  ("/transactions/list", operations_icon, "Opérations", path.startswith("/transactions/list"), "tour-sidebar-transactions"),
-  ("/cap/mid", budgets_icon, "Mon mois", path.startswith("/cap") or path.startswith("/budgets"), none),
-  ("/projects", projets_icon, "Projets", path.startswith("/projects"), "tour-sidebar-projects"),
+  ("/transactions/inbox", savane_icon, _("La Savane"), path.startswith("/transactions/inbox"), "tour-sidebar-savane"),
+  ("/dashboard", panorama_icon, _("Panorama"), path.startswith("/dashboard"), "tour-sidebar-dashboard"),
+  ("/transactions/list", operations_icon, _("Opérations"), path.startswith("/transactions/list"), "tour-sidebar-transactions"),
+  ("/cap/mid", budgets_icon, _("Mon mois"), path.startswith("/cap") or path.startswith("/budgets"), none),
+  ("/projects", projets_icon, _("Projets"), path.startswith("/projects"), "tour-sidebar-projects"),
 ] %}
 <!-- Bouton de réapparition : seul élément visible quand sidebarMode ==
      'hidden' (l'aside ci-dessous est alors x-show="false", donc totalement
@@ -44,8 +44,8 @@
   x-show="sidebarMode === 'hidden'"
   @click="sidebarMode = 'auto'"
   style="display: none;"
-  title="Afficher le menu"
-  aria-label="Afficher le menu"
+  title="{{ _("Afficher le menu") }}"
+  aria-label="{{ _("Afficher le menu") }}"
   class="print:hidden hidden lg:flex fixed left-2 top-2 z-50 w-10 h-10 items-center justify-center rounded-xl bg-container border border-border shadow-sm"
 >
   <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" style="height:28px; width:auto;" />
@@ -88,24 +88,24 @@
      toute la page — le pt-[64px] du body et les barres collantes en top-14
      en dépendent aussi. #}
   <div class="h-14 flex items-center justify-between px-3 flex-shrink-0 border-b border-border gap-1">
-    <a id="tour-sidebar-logo" href="/" class="flex items-center gap-2 min-w-0 flex-1" aria-label="Twiga — retour à l'accueil">
+    <a id="tour-sidebar-logo" href="/" class="flex items-center gap-2 min-w-0 flex-1" aria-label="{{ _("Twiga — retour à l'accueil") }}">
       <img src="/static/icons/twiga-logo.svg" alt="" class="h-8 w-8 flex-shrink-0" style="height:32px; width:auto;" />
-      <span x-show="expanded" class="text-lg font-extrabold tracking-tight text-primary truncate">TWIGA</span>
+      <span x-show="expanded" class="text-lg font-extrabold tracking-tight text-primary truncate">{{ _("TWIGA") }}</span>
     </a>
     <div x-show="expanded" class="flex items-center gap-1 flex-shrink-0">
       <button
         type="button"
         @click="sidebarMode = sidebarMode === 'pinned' ? 'auto' : 'pinned'"
         :class="sidebarMode === 'pinned' ? 'text-accent' : 'text-secondary hover:text-accent'" class="w-7 h-7 flex items-center justify-center rounded-lg text-sm flex-shrink-0"
-        title="Épingler le menu ouvert, ou le laisser se réduire au survol"
-        :aria-label="sidebarMode === 'pinned' ? 'Désépingler le menu' : 'Épingler le menu ouvert'"
+        title="{{ _("Épingler le menu ouvert, ou le laisser se réduire au survol") }}"
+        :aria-label="sidebarMode === 'pinned' ? '{{ _("Désépingler le menu") | jsq }}' : '{{ _("Épingler le menu ouvert") | jsq }}'"
         
       >{{ icon('pin', cls='flex-shrink-0') }}</button>
       <button
         type="button"
         @click="sidebarMode = 'hidden'"
-        title="Masquer le menu"
-        aria-label="Masquer le menu"
+        title="{{ _("Masquer le menu") }}"
+        aria-label="{{ _("Masquer le menu") }}"
         class="w-7 h-7 flex items-center justify-center rounded-lg text-sm text-secondary hover:text-accent flex-shrink-0"
       >{{ icon('x', cls='flex-shrink-0') }}</button>
     </div>
@@ -128,7 +128,7 @@
   {% set current = get_current_user(request) %}
   <div class="flex-shrink-0 border-t border-border p-3 flex flex-col gap-2">
     <div x-show="expanded" class="flex items-center justify-between px-3 py-1">
-      <span class="text-xs text-secondary">Solde total</span>
+      <span class="text-xs text-secondary">{{ _("Solde total") }}</span>
       <span
         id="sidebar-total-balance"
         class="amount-blur text-sm font-bold text-primary"
@@ -152,7 +152,7 @@
       <button
         type="button"
         @click="userMenuOpen = !userMenuOpen"
-        aria-label="Menu utilisateur"
+        aria-label="{{ _("Menu utilisateur") }}"
         :aria-expanded="userMenuOpen"
         title="{{ user_display_name(current) }}"
         :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] w-full flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
@@ -182,23 +182,23 @@
     <button
       id="tour-sidebar-privacy"
       type="button"
-      aria-label="Basculer le mode confidentialité"
-      title="Basculer le mode confidentialité"
+      aria-label="{{ _("Basculer le mode confidentialité") }}"
+      title="{{ _("Basculer le mode confidentialité") }}"
       :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
       @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
     >
       <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
-      <span x-show="expanded" x-text="privacy ? 'Afficher les montants' : 'Masquer les montants'">Masquer les montants</span>
+      <span x-show="expanded" x-text="privacy ? '{{ _("Afficher les montants") | jsq }}' : '{{ _("Masquer les montants") | jsq }}'">{{ _("Masquer les montants") }}</span>
     </button>
     <button
       type="button"
       onclick="window.toggleTheme()"
-      aria-label="Basculer entre thème clair et sombre"
-      title="Basculer entre thème clair et sombre"
+      aria-label="{{ _("Basculer entre thème clair et sombre") }}"
+      title="{{ _("Basculer entre thème clair et sombre") }}"
       :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
     >
       <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
-      <span x-show="expanded">Thème</span>
+      <span x-show="expanded">{{ _("Thème") }}</span>
     </button>
     {% else %}
     <!-- Authentification désactivée (pas d'utilisateur connecté) : pas de
@@ -206,31 +206,31 @@
     <button
       id="tour-sidebar-privacy"
       type="button"
-      aria-label="Basculer le mode confidentialité"
-      title="Basculer le mode confidentialité"
+      aria-label="{{ _("Basculer le mode confidentialité") }}"
+      title="{{ _("Basculer le mode confidentialité") }}"
       :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
       @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
     >
       <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
-      <span x-show="expanded" x-text="privacy ? 'Afficher les montants' : 'Masquer les montants'">Masquer les montants</span>
+      <span x-show="expanded" x-text="privacy ? '{{ _("Afficher les montants") | jsq }}' : '{{ _("Masquer les montants") | jsq }}'">{{ _("Masquer les montants") }}</span>
     </button>
     <button
       type="button"
       onclick="window.toggleTheme()"
-      aria-label="Basculer entre thème clair et sombre"
-      title="Basculer entre thème clair et sombre"
+      aria-label="{{ _("Basculer entre thème clair et sombre") }}"
+      title="{{ _("Basculer entre thème clair et sombre") }}"
       :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium text-secondary hover:text-accent"
     >
       <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
-      <span x-show="expanded">Thème</span>
+      <span x-show="expanded">{{ _("Thème") }}</span>
     </button>
     <a
       href="/settings"
-      title="Paramètres"
+      title="{{ _("Paramètres") }}"
       :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[44px] flex items-center gap-3 rounded-xl text-sm font-medium {{ 'bg-accent/10 text-accent' if path.startswith('/settings') else 'text-secondary hover:text-accent' }}"
     >
       {{ icon('settings', cls='flex-shrink-0') }}
-      <span x-show="expanded">Paramètres</span>
+      <span x-show="expanded">{{ _("Paramètres") }}</span>
     </a>
     {% endif %}
   </div>

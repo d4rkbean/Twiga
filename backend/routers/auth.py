@@ -7,12 +7,13 @@ from sqlalchemy.orm import Session
 from backend import auth, crud
 from backend.database import get_db
 from backend.templating import templates
+from backend.i18n import gettext as _t
 
 router = APIRouter(tags=["auth"])
 
 # Anti brute-force minimal : état en mémoire du process, comme
 # routers/export.py (_restore_progress) — appli mono-utilisateur, un seul
-# worker uvicorn, donc pas besoin d'un stockage partagé
+# worker uvicorn (voir CLAUDE.md), donc pas besoin d'un stockage partagé
 # (Redis...) pour que ça tienne. Verrouille par IP ET par identifiant
 # tenté : verrouiller seulement par IP bloquerait toute la maisonnée
 # derrière une même box internet dès qu'un seul membre se trompe trop de
@@ -64,7 +65,7 @@ def login_submit(
     key = (_client_ip(request), username.strip().lower())
     if _is_locked_out(key):
         return HTMLResponse(
-            '<p class="text-sm text-danger">Trop de tentatives. Réessaie dans quelques minutes.</p>',
+            _t('<p class="text-sm text-danger">Trop de tentatives. Réessaie dans quelques minutes.</p>'),
             status_code=429,
         )
 
@@ -72,7 +73,7 @@ def login_submit(
     if user is None:
         _record_failed_attempt(key)
         return HTMLResponse(
-            '<p class="text-sm text-danger">Nom d\'utilisateur ou mot de passe incorrect.</p>',
+            _t('<p class="text-sm text-danger">Nom d\'utilisateur ou mot de passe incorrect.</p>'),
             status_code=401,
         )
     _clear_failed_attempts(key)

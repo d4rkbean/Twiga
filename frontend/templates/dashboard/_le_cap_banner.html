@@ -1,10 +1,10 @@
 {% if show_le_cap_banner %}
 <div id="le-cap-banner" class="w-full flex items-center justify-between gap-3 bg-container rounded-xl shadow-sm p-4 border-2 border-accent">
-  <p class="text-sm text-primary flex-1"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Un nouveau mois commence — Fixez le cap ensemble !</p>
+  <p class="text-sm text-primary flex-1"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Un nouveau mois commence — Fixez le cap ensemble !") }}</p>
   <a href="/cap" class="min-h-[44px] px-3 rounded-xl bg-accent text-on-accent text-sm font-semibold flex items-center flex-shrink-0">
-    {{ icon('arrow-narrow-right') }} Le Cap
+    {{ icon('arrow-narrow-right') }} {{ _("Le Cap") }}
   </a>
-  <button type="button" id="le-cap-banner-close" aria-label="Fermer" class="text-secondary text-lg leading-none flex-shrink-0 w-11 h-11 flex items-center justify-center">
+  <button type="button" id="le-cap-banner-close" aria-label="{{ _("Fermer") }}" class="text-secondary text-lg leading-none flex-shrink-0 w-11 h-11 flex items-center justify-center">
     {{ icon('x') }}
   </button>
 </div>

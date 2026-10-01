@@ -1,4 +1,4 @@
-{% set role_labels = {"admin": "Administrateur", "editor": "Éditeur", "viewer": "Lecture seule"} %}
+{% set role_labels = {"admin": _("Administrateur"), "editor": _("Éditeur"), "viewer": _("Lecture seule")} %}
 <div id="users-content" class="flex flex-col gap-3">
 
   {% if error %}
@@ -13,10 +13,10 @@
   <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-3">
     <div class="flex items-center justify-between gap-2">
       <span class="font-medium text-primary truncate">
-        {{ user.username }}{% if current and current.id == user.id %} <span class="text-xs text-secondary">(vous)</span>{% endif %}
+        {{ user.username }}{% if current and current.id == user.id %} <span class="text-xs text-secondary">{{ _("(vous)") }}</span>{% endif %}
       </span>
       <span class="text-xs text-secondary whitespace-nowrap">
-        {% if user.last_login %}Connecté {{ user.last_login.strftime("%d/%m/%Y %H:%M") }}{% else %}Jamais connecté{% endif %}
+        {% if user.last_login %}{% trans M=user.last_login.strftime("%d/%m/%Y %H:%M") %}Connecté {{ M }}{% endtrans %}{% else %}{{ _("Jamais connecté") }}{% endif %}
       </span>
     </div>
 
@@ -44,7 +44,7 @@
           hx-trigger="change"
           class="w-5 h-5"
         />
-        <span class="text-xs text-secondary whitespace-nowrap">Actif</span>
+        <span class="text-xs text-secondary whitespace-nowrap">{{ _("Actif") }}</span>
       </label>
     </div>
 
@@ -54,14 +54,14 @@
       hx-swap="outerHTML"
       class="flex gap-2"
     >
-      {% with field_name = "new_password", field_id = "new_password-" ~ user.id, field_label = "Nouveau mot de passe pour " ~ user.username, field_placeholder = "Nouveau mot de passe", field_autocomplete = "new-password", field_minlength = 8, field_wrapper_class = "flex-1", field_height_class = "min-h-[46px] text-sm" %}
+      {% with field_name = "new_password", field_id = "new_password-" ~ user.id, field_label = _("Nouveau mot de passe pour %(username)s", username=user.username), field_placeholder = _("Nouveau mot de passe"), field_autocomplete = "new-password", field_minlength = 8, field_wrapper_class = "flex-1", field_height_class = "min-h-[46px] text-sm" %}
       {% include "_password_field.html" %}
       {% endwith %}
       <button
         type="submit"
         class="min-h-[46px] px-3 rounded-xl bg-container border border-border text-primary text-sm font-medium whitespace-nowrap"
       >
-        {{ icon('key', size=16) }} Réinitialiser
+        {{ icon('key', size=16) }} {{ _("Réinitialiser") }}
       </button>
     </form>
 
@@ -74,13 +74,13 @@
       hx-confirm="Supprimer l'utilisateur {{ user.username }} ? Cette action est irréversible."
       class="min-h-[46px] rounded-xl bg-container border border-border text-danger text-sm font-medium"
     >
-      {{ icon('trash', size=16) }} Supprimer
+      {{ icon('trash', size=16) }} {{ _("Supprimer") }}
     </button>
     {% endif %}
   </div>
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
-    <p class="text-sm text-secondary text-center">Aucun utilisateur.</p>
+    <p class="text-sm text-secondary text-center">{{ _("Aucun utilisateur.") }}</p>
   </div>
   {% endfor %}
 

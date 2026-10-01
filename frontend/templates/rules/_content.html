@@ -11,7 +11,7 @@
   <div class="bg-container rounded-xl shadow-sm overflow-hidden">
     <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
       <span class="text-primary font-semibold flex items-center gap-2">
-        {{ icon('bulb', size=18) }} En attente de validation
+        {{ icon('bulb', size=18) }} {{ _("En attente de validation") }}
       </span>
       <span class="badge badge-warning">{{ pending_suggestions | length }}</span>
     </div>
@@ -19,12 +19,12 @@
       {% for suggestion in pending_suggestions %}
       <div class="flex flex-col gap-2 p-4 lg:flex-row lg:items-center lg:gap-4">
         <p class="text-sm text-primary min-w-0 flex-1">
-          Si le libellé contient
+          {{ _("Si le libellé contient") }}
           <span class="font-semibold">« {{ suggestion.keyword }} »</span>
           {{ icon('arrow-narrow-right', size=16) }}
           <span class="font-semibold">{{ suggestion.category.name | category_display }}</span>
           {% if suggestion.occurrences > 1 %}
-          <span class="text-xs text-secondary">— proposée {{ suggestion.occurrences }} fois</span>
+          <span class="text-xs text-secondary">{% trans occurrences=suggestion.occurrences %}— proposée {{ occurrences }} fois{% endtrans %}</span>
           {% endif %}
         </p>
         <div class="flex gap-2 flex-shrink-0">
@@ -32,7 +32,7 @@
             <input type="hidden" name="keyword" value="{{ suggestion.keyword }}" />
             <input type="hidden" name="category_id" value="{{ suggestion.category_id }}" />
             <button type="submit" class="min-h-[50px] px-4 rounded-xl bg-accent text-on-accent font-semibold flex items-center gap-2">
-              {{ icon('check', size=16) }} Créer
+              {{ icon('check', size=16) }} {{ _("Créer") }}
             </button>
           </form>
           <button
@@ -42,7 +42,7 @@
             hx-swap="outerHTML"
             class="min-h-[50px] px-4 rounded-xl bg-page border border-border text-primary font-medium flex items-center gap-2"
           >
-            {{ icon('x', size=16) }} Ignorer
+            {{ icon('x', size=16) }} {{ _("Ignorer") }}
           </button>
         </div>
       </div>
@@ -58,8 +58,7 @@
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-6">
     <p class="text-sm text-secondary text-center">
-      Aucune règle pour l'instant. Ajoutes-en une ci-dessus, ou valide des transactions dans
-      La Savane pour qu'une règle te soit proposée automatiquement.
+      {{ _("Aucune règle pour l'instant. Ajoutes-en une ci-dessus, ou valide des transactions dans La Savane pour qu'une règle te soit proposée automatiquement.") }}
     </p>
   </div>
   {% endfor %}

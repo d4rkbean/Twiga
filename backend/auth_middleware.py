@@ -6,6 +6,7 @@ from starlette.responses import RedirectResponse, Response
 
 from backend import auth
 from backend.database import SessionLocal
+from backend.i18n import gettext as _t
 
 _PUBLIC_PATHS = {"/login", "/health"}
 _PUBLIC_PREFIXES = ("/static/",)
@@ -62,7 +63,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def _forbidden_response(request: Request) -> Response:
-        message = "Action réservée à un rôle supérieur."
+        message = _t("Action réservée à un rôle supérieur.")
         if request.headers.get("HX-Request") == "true":
             return Response(
                 content=f'<p class="text-sm text-danger py-2">🔒 {message}</p>',

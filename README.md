@@ -7,9 +7,10 @@ your money (import → categorize → follow your budget), not accounting
 software. 100% local and self-hosted: no automatic bank connection, no
 outgoing network call, no telemetry.
 
-> **Language:** the user interface is currently in French. The documentation
-> and scripts are in English. Menu names are quoted in French, with a
-> translation the first time they appear.
+> **Language:** the interface is available in **French** (default) and **English**
+> (beta). Switch in *Settings → Preferences*, where you can also pick the number and
+> date format (French, International or United States). The documentation and scripts
+> are in English; menu names are quoted in French with a translation.
 
 ## One-command install on Proxmox
 

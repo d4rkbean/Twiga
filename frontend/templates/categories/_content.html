@@ -17,10 +17,9 @@
   </div>
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col items-center gap-4">
-    <p class="text-sm text-secondary text-center">Aucune catégorie pour l'instant.</p>
+    <p class="text-sm text-secondary text-center">{{ _("Aucune catégorie pour l'instant.") }}</p>
     <p class="text-sm text-secondary text-center">
-      Partez d'un jeu courant (logement, alimentation, transport, santé...) avec ses
-      sous-catégories et leurs piliers du Cap, puis renommez ou supprimez ce qui ne vous sert pas.
+      {{ _("Partez d'un jeu courant (logement, alimentation, transport, santé...) avec ses sous-catégories et leurs piliers du Cap, puis renommez ou supprimez ce qui ne vous sert pas.") }}
     </p>
     <button
       type="button"
@@ -29,7 +28,7 @@
       hx-swap="outerHTML"
       class="min-h-[50px] px-4 rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center gap-2"
     >
-      {{ icon('plus', size=18) }} Ajouter des catégories de base
+      {{ icon('plus', size=18) }} {{ _("Ajouter des catégories de base") }}
     </button>
   </div>
   {% endfor %}

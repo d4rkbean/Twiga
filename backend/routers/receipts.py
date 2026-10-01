@@ -9,6 +9,7 @@ from backend.database import get_db
 from backend.models import ReceiptItem, Transaction
 from backend.receipt_families import RECEIPT_FAMILIES, group_items_by_family
 from backend.templating import templates
+from backend.i18n import gettext as _t
 
 # Préfixe /transactions/receipts (pas /receipts) : reste sous le préfixe déjà
 # whitelisté "écriture éditeur" dans backend.auth._EDITOR_WRITE_PREFIXES,
@@ -31,7 +32,7 @@ def _parse_amount(raw: str | None) -> Decimal:
 def _get_transaction_or_404(db: Session, transaction_id: int) -> Transaction:
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
     return transaction
 
 
@@ -109,7 +110,7 @@ def add_receipt_item_route(
     crud.add_receipt_item(
         db,
         transaction_id,
-        label=label.strip() or "Article",
+        label=label.strip() or _t("Article"),
         amount=_parse_amount(amount),
         family=family or None,
     )
@@ -127,11 +128,11 @@ def update_receipt_item_route(
 ):
     item = db.get(ReceiptItem, item_id)
     if item is None:
-        raise HTTPException(status_code=404, detail="Ligne introuvable")
+        raise HTTPException(status_code=404, detail=_t("Ligne introuvable"))
     crud.update_receipt_item(
         db,
         item,
-        label=label.strip() or "Article",
+        label=label.strip() or _t("Article"),
         amount=_parse_amount(amount),
         family=family or None,
     )
@@ -142,7 +143,7 @@ def update_receipt_item_route(
 def delete_receipt_item_route(request: Request, item_id: int, db: Session = Depends(get_db)):
     item = db.get(ReceiptItem, item_id)
     if item is None:
-        raise HTTPException(status_code=404, detail="Ligne introuvable")
+        raise HTTPException(status_code=404, detail=_t("Ligne introuvable"))
     transaction = item.transaction
     crud.delete_receipt_item(db, item)
     return _render_section(request, db, transaction)

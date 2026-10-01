@@ -4,7 +4,7 @@
   // Graphique de la boîte de dialogue "Évolution" d'une catégorie (Rapports
   // → onglets Dépenses/Recettes). Fichier statique dédié (données lues en
   // data-* sur le <canvas>) plutôt qu'un <script> inline de plus — voir
-  // convention du projet, même approche que reports-courses.js.
+  // CLAUDE.md §6, même approche que reports-courses.js.
   //
   // Le contenu de la boîte de dialogue est rechargé par htmx à chaque
   // catégorie ouverte : on réinstancie donc le graphique à chaque
@@ -60,7 +60,7 @@
           y: {
             ticks: {
               callback: function (value) {
-                return value.toLocaleString("fr-FR") + " €";
+                return new Intl.NumberFormat((document.documentElement.dataset.numberLocale || 'fr-FR'), { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
               },
             },
           },
@@ -72,10 +72,7 @@
               label: function (context) {
                 var amount = context.parsed.y || 0;
                 return (
-                  amount.toLocaleString("fr-FR", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }) + " €"
+                  new Intl.NumberFormat((document.documentElement.dataset.numberLocale || 'fr-FR'), { style: "currency", currency: "EUR" }).format(amount)
                 );
               },
             },

@@ -17,7 +17,7 @@
                        sur mobile.
 
   Couleur avatar : tokens sémantiques bg-accent/text-on-accent (jamais de
-  couleur brute) plutôt que "fond ambre, initiales blanches"
+  couleur brute, voir CLAUDE.md) plutôt que "fond ambre, initiales blanches"
   demandé littéralement — design-system.css documente déjà POURQUOI (le
   brun texte-sur-accent a bien plus de contraste que du blanc sur cet ambre
   précis), cohérent avec tous les autres usages de bg-accent dans l'appli.
@@ -34,11 +34,11 @@
 <div class="border-t border-border"></div>
 <a href="/profile" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-page">
   {{ icon('user', cls='flex-shrink-0') }}
-  <span>Mon profil</span>
+  <span>{{ _("Mon profil") }}</span>
 </a>
 <a href="/settings" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-page">
   {{ icon('settings', cls='flex-shrink-0') }}
-  <span>Paramètres</span>
+  <span>{{ _("Paramètres") }}</span>
 </a>
 <button
   type="button"
@@ -46,7 +46,7 @@
   class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-page text-left"
 >
   {{ icon('help-circle', cls='flex-shrink-0') }}
-  <span>Aide &amp; raccourcis</span>
+  <span>{{ _("Aide &amp; raccourcis") }}</span>
 </button>
 {% if show_theme_row %}
 <button
@@ -55,13 +55,13 @@
   class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-page text-left"
 >
   <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
-  <span>Thème</span>
+  <span>{{ _("Thème") }}</span>
 </button>
 {% endif %}
 <div class="border-t border-border"></div>
 <form hx-post="/logout" class="contents">
   <button type="submit" class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-danger hover:bg-page text-left">
     {{ icon('logout', cls='flex-shrink-0') }}
-    <span>Se déconnecter</span>
+    <span>{{ _("Se déconnecter") }}</span>
   </button>
 </form>

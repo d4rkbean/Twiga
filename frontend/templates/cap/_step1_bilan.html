@@ -1,7 +1,7 @@
 {% include "cap/_progress_dots.html" %}
 
 <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
-  <h2 class="text-lg font-bold text-primary flex items-center gap-2" >{{ icon('chart-bar') }}Bilan {{ previous_month_label }}</h2>
+  <h2 class="text-lg font-bold text-primary flex items-center gap-2" >{{ icon('chart-bar') }}{% trans previous_month_label=previous_month_label %}Bilan {{ previous_month_label }}{% endtrans %}</h2>
 
   {# Les lignes Essentiel et Choix se déplient sur leurs catégories : « a
      dépassé de 140 € » appelle immédiatement « dont quoi ? », et la réponse
@@ -14,11 +14,11 @@
         <tr class="text-xs text-secondary uppercase tracking-wide">
           <th class="text-left font-medium py-1 px-1"></th>
           {% if has_previous_cap %}
-          <th class="text-right font-medium py-1 px-1">Prévu</th>
+          <th class="text-right font-medium py-1 px-1">{{ _("Prévu") }}</th>
           {% endif %}
-          <th class="text-right font-medium py-1 px-1">Réel</th>
+          <th class="text-right font-medium py-1 px-1">{{ _("Réel") }}</th>
           {% if has_previous_cap %}
-          <th class="text-right font-medium py-1 px-1">Écart</th>
+          <th class="text-right font-medium py-1 px-1">{{ _("Écart") }}</th>
           {% endif %}
         </tr>
       </thead>
@@ -74,7 +74,7 @@
         {% endfor %}
         {% if line.detail.unbudgeted %}
         <tr x-show="ouverts['{{ line.code }}']" style="display: none;" class="border-t border-border/50">
-          <td class="py-1.5 px-1 pl-6 text-secondary italic">Hors budget</td>
+          <td class="py-1.5 px-1 pl-6 text-secondary italic">{{ _("Hors budget") }}</td>
           {% if has_previous_cap %}<td class="py-1.5 px-1 text-right text-secondary">—</td>{% endif %}
           <td class="py-1.5 px-1 text-right text-primary amount-blur">{{ line.detail.unbudgeted | eur }}</td>
           {% if has_previous_cap %}<td class="py-1.5 px-1 text-right text-secondary">—</td>{% endif %}
@@ -88,11 +88,11 @@
 
   {% if unexpected_transactions %}
   <div class="flex flex-col gap-1">
-    <p class="text-sm font-semibold text-primary flex items-center gap-1" >{{ icon('urgent', size=16) }}Imprévus du mois :</p>
+    <p class="text-sm font-semibold text-primary flex items-center gap-1" >{{ icon('urgent', size=16) }}{{ _("Imprévus du mois :") }}</p>
     <div class="flex flex-col gap-0.5 text-sm">
       {% for tx in unexpected_transactions %}
       <p class="text-secondary flex justify-between gap-2">
-        <span class="truncate">{{ tx.date | fr_date }} {{ tx.label or "(sans libellé)" }}</span>
+        <span class="truncate">{{ tx.date | fr_date }} {{ tx.label or _("(sans libellé)") }}</span>
         <span class="amount-blur text-danger font-medium whitespace-nowrap">{{ tx.amount | eur }}</span>
       </p>
       {% endfor %}
@@ -107,25 +107,25 @@
   hx-swap="innerHTML"
   class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3"
 >
-  <p class="text-sm font-semibold text-primary flex items-center gap-1" >{{ icon('writing', size=16) }}Un mot sur {{ previous_month_label }}</p>
+  <p class="text-sm font-semibold text-primary flex items-center gap-1" >{{ icon('writing', size=16) }}{% trans previous_month_label=previous_month_label %}Un mot sur {{ previous_month_label }}{% endtrans %}</p>
   <label class="flex flex-col gap-1">
-    <span class="text-xs text-secondary">Quels ont été nos imprévus ? Étaient-ils évitables ?</span>
+    <span class="text-xs text-secondary">{{ _("Quels ont été nos imprévus ? Étaient-ils évitables ?") }}</span>
     <textarea name="reflection_unexpected" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
   </label>
   <label class="flex flex-col gap-1">
-    <span class="text-xs text-secondary">Y a-t-il une dépense dont vous n'êtes pas fiers ?</span>
+    <span class="text-xs text-secondary">{{ _("Y a-t-il une dépense dont vous n'êtes pas fiers ?") }}</span>
     <textarea name="reflection_regret" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
   </label>
   <label class="flex flex-col gap-1">
-    <span class="text-xs text-secondary">Y a-t-il une dépense dont vous êtes particulièrement contents ?</span>
+    <span class="text-xs text-secondary">{{ _("Y a-t-il une dépense dont vous êtes particulièrement contents ?") }}</span>
     <textarea name="reflection_proud" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
   </label>
   <label class="flex flex-col gap-1">
-    <span class="text-xs text-secondary">Qu'est-ce qui a bien fonctionné ce mois ?</span>
+    <span class="text-xs text-secondary">{{ _("Qu'est-ce qui a bien fonctionné ce mois ?") }}</span>
     <textarea name="reflection_worked_well" rows="2" class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"></textarea>
   </label>
 
   <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold mt-2">
-    Suivant {{ icon('arrow-narrow-right') }}
+    {{ _("Suivant") }} {{ icon('arrow-narrow-right') }}
   </button>
 </form>

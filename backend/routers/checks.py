@@ -9,6 +9,7 @@ from backend.database import get_db
 from backend.models import Account, Category, PendingCheck
 from backend.templating import templates
 from imports.common import parse_decimal_amount
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/checks", tags=["checks"])
 
@@ -54,10 +55,10 @@ def create_check(
 ):
     category = db.get(Category, int(category_id)) if category_id else None
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     account = db.get(Account, int(account_id)) if account_id else None
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
 
     # Une ancre de rapprochement est obligatoire (voir crud.match_pending_checks) :
     # soit un numéro de chèque, soit un moyen de paiement valide (Wero,
@@ -83,7 +84,7 @@ def create_check(
 def delete_check(request: Request, check_id: int, db: Session = Depends(get_db)):
     pending_check = db.get(PendingCheck, check_id)
     if pending_check is None:
-        raise HTTPException(status_code=404, detail="Chèque introuvable")
+        raise HTTPException(status_code=404, detail=_t("Chèque introuvable"))
     crud.delete_pending_check(db, pending_check)
     context = {"request": request, **_list_context(db), **_form_context(db)}
     return templates.TemplateResponse("checks/_content.html", context)

@@ -6,7 +6,7 @@
     <button
       type="button"
       onclick="this.closest('dialog').close()"
-      aria-label="Fermer"
+      aria-label="{{ _("Fermer") }}"
       class="w-11 h-11 flex items-center justify-center text-secondary flex-shrink-0"
     >
       {{ icon('x', size=20) }}
@@ -28,17 +28,17 @@
   </div>
 
   <div class="bg-page rounded-xl p-3 text-sm text-center">
-    <span class="text-secondary">vs {{ year_ago_label }} : </span>
+    <span class="text-secondary">{% trans year_ago_label=year_ago_label %}vs {{ year_ago_label }} :{% endtrans %} </span>
     <span class="amount-blur font-semibold text-primary">{{ year_ago_amount | eur }}</span>
     {% if yoy_change is not none %}
     <span class="font-medium {{ ('text-danger' if yoy_change >= 0 else 'text-success') if type != 'income' else ('text-success' if yoy_change >= 0 else 'text-danger') }}">
       · {{ '▲' if yoy_change >= 0 else '▼' }} {{ '+' if yoy_change >= 0 else '' }}{{ yoy_change }} %
     </span>
     {% else %}
-    <span class="text-secondary">· pas de référence l'an dernier</span>
+    <span class="text-secondary">{{ _("· pas de référence l'an dernier") }}</span>
     {% endif %}
   </div>
   {% else %}
-  <p class="text-sm text-secondary text-center py-8">Aucune donnée sur les 12 derniers mois.</p>
+  <p class="text-sm text-secondary text-center py-8">{{ _("Aucune donnée sur les 12 derniers mois.") }}</p>
   {% endif %}
 </div>

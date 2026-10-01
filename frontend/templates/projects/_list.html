@@ -7,18 +7,18 @@
     hx-swap="innerHTML"
     class="flex flex-col gap-4 p-6"
   >
-    <h2 class="text-xl font-bold text-primary">Nouveau projet</h2>
+    <h2 class="text-xl font-bold text-primary">{{ _("Nouveau projet") }}</h2>
     {{ fields() }}
     <div class="flex flex-col gap-2">
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        Créer
+        {{ _("Créer") }}
       </button>
       <button
         type="button"
         onclick="this.closest('dialog').close()"
         class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
       >
-        Annuler
+        {{ _("Annuler") }}
       </button>
     </div>
   </form>
@@ -46,7 +46,7 @@
     {{ item.project.current_amount | eur }} / {{ item.project.target_amount | eur }}
     ({{ item.percentage_display }} %)
   </p>
-  <p class="amount-blur text-sm font-medium text-primary">Effort : {{ item.monthly_effort | eur }} / mois</p>
+  <p class="amount-blur text-sm font-medium text-primary">{% trans monthly_effort=item.monthly_effort | eur %}Effort : {{ monthly_effort }} / mois{% endtrans %}</p>
 
   <div class="flex gap-2">
     <button
@@ -54,20 +54,20 @@
       onclick="document.getElementById('add-funds-{{ item.project.id }}').showModal()"
       class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-success font-medium"
     >
-      {{ icon('plus', size=16) }} Ajouter
+      {{ icon('plus', size=16) }} {{ _("Ajouter") }}
     </button>
     <button
       type="button"
       onclick="document.getElementById('spend-funds-{{ item.project.id }}').showModal()"
       class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-danger font-medium"
     >
-      {{ icon('minus', size=16) }} Dépenser
+      {{ icon('minus', size=16) }} {{ _("Dépenser") }}
     </button>
   </div>
 
   {% if item.movements %}
   <div class="flex flex-col gap-1 pt-2 border-t border-border">
-    <p class="text-xs text-secondary uppercase tracking-wide">Historique</p>
+    <p class="text-xs text-secondary uppercase tracking-wide">{{ _("Historique") }}</p>
     {% for movement in item.movements %}
     <div class="flex items-center justify-between text-sm gap-2">
       <span class="text-secondary truncate">
@@ -82,9 +82,8 @@
   {% endif %}
 </div>
 
-{{ movement_dialog(item.project, "add", "{{ icon('plus', size=16) }} Ajouter", "Ajouter") }}
-{{ movement_dialog(item.project, "spend", "{{ icon('minus', size=16) }} Dépenser", "Dépenser") }}
-
+{{ movement_dialog(item.project, "add", _("Ajouter"), _("Ajouter")) }}
+{{ movement_dialog(item.project, "spend", _("Dépenser"), _("Dépenser")) }}
 <dialog id="edit-project-{{ item.project.id }}" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm">
   <form
     hx-post="/projects/{{ item.project.id }}/update"
@@ -92,18 +91,18 @@
     hx-swap="innerHTML"
     class="flex flex-col gap-4 p-6"
   >
-    <h2 class="text-xl font-bold text-primary">Modifier le projet</h2>
+    <h2 class="text-xl font-bold text-primary">{{ _("Modifier le projet") }}</h2>
     {{ fields(item.project) }}
     <div class="flex flex-col gap-2">
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        Enregistrer
+        {{ _("Enregistrer") }}
       </button>
       <button
         type="button"
         onclick="this.closest('dialog').close()"
         class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
       >
-        Annuler
+        {{ _("Annuler") }}
       </button>
     </div>
   </form>
@@ -111,19 +110,19 @@
     hx-post="/projects/{{ item.project.id }}/delete"
     hx-target="#projects-list"
     hx-swap="innerHTML"
-    hx-confirm="Supprimer ce projet ?"
+    hx-confirm="{{ _("Supprimer ce projet ?") }}"
     class="px-6 pb-6"
   >
     <button
       type="submit"
       class="min-h-[50px] rounded-xl text-danger font-medium w-full"
     >
-      {{ icon('trash') }} Supprimer ce projet
+      {{ icon('trash') }} {{ _("Supprimer ce projet") }}
     </button>
   </form>
 </dialog>
 {% else %}
 <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
-  <p class="text-sm text-secondary text-center">Aucun projet pour l'instant.</p>
+  <p class="text-sm text-secondary text-center">{{ _("Aucun projet pour l'instant.") }}</p>
 </div>
 {% endfor %}

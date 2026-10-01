@@ -4,6 +4,8 @@
   var COMPLETED_KEY = "twiga_tour_completed";
   var STEP_KEY = "twiga_tour_step";
 
+  // Les textes (titre, contenu) ne sont PAS ici : ils viennent du serveur, déjà
+  // traduits, via data-texts sur la racine de _tour.html (clé = id de l'étape).
   // Cinq étapes, sans changement de page : la visite raconte la boucle
   // importer → catégoriser → piloter, puis les raccourcis. Les cibles
   // (en-tête, navigation) existent sur toutes les pages. skipImport :
@@ -17,10 +19,6 @@
       icon: "compass",
       target: null,
       position: "center",
-      title: "Bienvenue dans Twiga",
-      text:
-        "<p>Trois temps : importer ses opérations, les catégoriser, puis suivre ses comptes.</p>" +
-        "<p>Les données restent sur ce serveur. Rien n'est envoyé sur Internet.</p>",
     },
     {
       id: "import",
@@ -28,10 +26,6 @@
       skipImport: true,
       target: "#tour-import",
       position: "bottom",
-      title: "Importer",
-      text:
-        "<p>Tout commence par un relevé bancaire : QIF, CSV ou OFX.</p>" +
-        "<p>Les doublons sont détectés et ignorés.</p>",
     },
     {
       id: "nav-savane",
@@ -40,10 +34,6 @@
       altTarget: "#tour-sidebar-savane",
       position: "top",
       altPosition: "right",
-      title: "La Savane",
-      text:
-        "<p>Chaque nouvelle opération y attend une catégorie, une carte à la fois.</p>" +
-        "<p>Les choix répétés sont mémorisés et proposés ensuite.</p>",
     },
     {
       id: "nav-dashboard",
@@ -52,10 +42,6 @@
       altTarget: "#tour-sidebar-dashboard",
       position: "top",
       altPosition: "right",
-      title: "Panorama et Mon mois",
-      text:
-        "<p>Le Panorama montre où va l'argent. Mon mois fixe ce qu'on se donne " +
-        "le droit de dépenser.</p>",
     },
     {
       id: "search-icon",
@@ -63,10 +49,6 @@
       target: "#tour-search-icon",
       altTarget: "#tour-desktop-search",
       position: "bottom",
-      title: "Raccourcis",
-      text:
-        "<p>Ctrl+K cherche une opération, une catégorie ou un projet.</p>" +
-        "<p>L'icône en forme d'œil masque les montants.</p>",
     },
   ];
 
@@ -209,8 +191,16 @@
         var dataset = this.$el.dataset;
         this.tracked = dataset.tracked === "true";
         var skipImport = dataset.skipImport === "true";
+        var texts = {};
+        try {
+          texts = JSON.parse(dataset.texts || "{}");
+        } catch (error) {
+          texts = {};
+        }
         this.steps = STEPS.filter(function (step) {
           return !(step.skipImport && skipImport);
+        }).map(function (step) {
+          return Object.assign({}, step, texts[step.id] || { title: "", text: "" });
         });
 
         // Délai de sécurité : laisse le temps au DOM (et à d'éventuels

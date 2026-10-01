@@ -8,6 +8,8 @@ from pathlib import Path
 
 from imports.common import ImportParseError, ParsedTransaction, parse_decimal_amount
 
+from backend.i18n import gettext as _t
+
 __all__ = [
     "CsvColumnMapping",
     "CsvPreview",
@@ -134,14 +136,14 @@ def parse_date_with_format(raw: str, date_format: str) -> date:
     try:
         return datetime.strptime(raw.strip(), date_format).date()
     except ValueError as exc:
-        raise CsvParseError(f"Date invalide : {raw!r} (format attendu {date_format})") from exc
+        raise CsvParseError(_t("Date invalide : %(raw)r (format attendu %(format)s)") % {"raw": raw, "format": date_format}) from exc
 
 
 def preview_csv(content: str, sample_size: int = 5) -> CsvPreview:
     delimiter = detect_delimiter(content)
     rows = _read_rows(content, delimiter)
     if not rows:
-        raise CsvParseError("Fichier CSV vide.")
+        raise CsvParseError(_t("Fichier CSV vide."))
 
     header, *data_rows = rows
     sample_rows = data_rows[:sample_size]
@@ -177,13 +179,13 @@ def parse_csv_transactions(
 
     for row_no, row in enumerate(data_rows, start=2):
         if len(row) <= max_col:
-            raise CsvParseError(f"Ligne {row_no} : colonnes manquantes.")
+            raise CsvParseError(_t("Ligne %(row)s : colonnes manquantes.") % {"row": row_no})
 
         try:
             tx_date = parse_date_with_format(row[mapping.date_column], date_format)
             amount = parse_decimal_amount(row[mapping.amount_column])
         except ImportParseError as exc:
-            raise CsvParseError(f"Ligne {row_no} : {exc}") from exc
+            raise CsvParseError(_t("Ligne %(row)s : %(error)s") % {"row": row_no, "error": exc}) from exc
 
         transactions.append(
             ParsedTransaction(

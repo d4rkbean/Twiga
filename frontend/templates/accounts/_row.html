@@ -17,7 +17,7 @@
       <button
         type="button"
         @click="expanded = !expanded"
-        :aria-label="expanded ? 'Masquer le diagnostic' : 'Voir le diagnostic de solde'"
+        :aria-label="expanded ? '{{ _("Masquer le diagnostic") | jsq }}' : '{{ _("Voir le diagnostic de solde") | jsq }}'"
         class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
       >
         {{ icon('zoom-in') }}
@@ -27,7 +27,7 @@
         hx-get="/accounts/{{ item.account.id }}/edit"
         hx-target="#account-row-{{ item.account.id }}"
         hx-swap="outerHTML"
-        aria-label="Modifier"
+        aria-label="{{ _("Modifier") }}"
         class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
       >
         {{ icon('edit') }}
@@ -37,7 +37,7 @@
         hx-get="/accounts/{{ item.account.id }}/delete-confirm"
         hx-target="#account-row-{{ item.account.id }}"
         hx-swap="outerHTML"
-        aria-label="Supprimer"
+        aria-label="{{ _("Supprimer") }}"
         class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-danger font-medium flex items-center justify-center flex-shrink-0"
       >
         {{ icon('trash') }}
@@ -46,8 +46,7 @@
   </div>
   <div class="flex items-center justify-between gap-2">
     <span class="text-sm text-secondary truncate">
-      {{ get_account_type_label(item.account.type) }}
-      · {{ item.transaction_count }} opération{{ "s" if item.transaction_count != 1 else "" }}
+      {% trans type=get_account_type_label(item.account.type), transaction_count=item.transaction_count, v="s" if item.transaction_count != 1 else "" %}{{ type }} · {{ transaction_count }} opération{{ v }}{% endtrans %}
     </span>
     <span class="amount-blur font-bold whitespace-nowrap {{ 'text-success' if item.balance >= 0 else 'text-danger' }}">
       {{ item.balance | eur }}
@@ -56,27 +55,27 @@
 
   <div x-show="expanded" style="display: none;" class="flex flex-col gap-1.5 border-t border-border pt-2 mt-1 text-sm">
     <div class="flex items-center justify-between">
-      <span class="text-secondary">Solde initial (manuel)</span>
+      <span class="text-secondary">{{ _("Solde initial (manuel)") }}</span>
       <span class="amount-blur text-primary font-medium">{{ item.initial_balance | eur }}</span>
     </div>
     <div class="flex items-center justify-between">
-      <span class="text-secondary">Somme des opérations importées</span>
+      <span class="text-secondary">{{ _("Somme des opérations importées") }}</span>
       <span class="amount-blur text-primary font-medium">{{ item.transactions_sum | eur }}</span>
     </div>
     <div class="flex items-center justify-between">
-      <span class="text-secondary">Nombre d'opérations importées</span>
+      <span class="text-secondary">{{ _("Nombre d'opérations importées") }}</span>
       <span class="text-primary font-medium">{{ item.transaction_count }}</span>
     </div>
     <div class="flex items-center justify-between">
-      <span class="text-secondary">Dont virements (is_transfer = true)</span>
+      <span class="text-secondary">{{ _("Dont virements (is_transfer = true)") }}</span>
       <span class="text-primary font-medium">{{ item.transfer_count }}</span>
     </div>
     <div class="flex items-center justify-between">
-      <span class="text-secondary">Somme des virements</span>
+      <span class="text-secondary">{{ _("Somme des virements") }}</span>
       <span class="amount-blur text-primary font-medium">{{ item.transfer_sum | eur }}</span>
     </div>
     <div class="flex items-center justify-between pt-1 border-t border-border">
-      <span class="text-primary font-semibold">Solde calculé (initial + opérations)</span>
+      <span class="text-primary font-semibold">{{ _("Solde calculé (initial + opérations)") }}</span>
       <span class="amount-blur font-bold {{ 'text-success' if item.balance >= 0 else 'text-danger' }}">
         {{ item.balance | eur }}
       </span>

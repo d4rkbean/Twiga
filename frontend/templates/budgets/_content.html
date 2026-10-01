@@ -12,7 +12,7 @@
       hx-swap="innerHTML"
       class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4"
     >
-      {{ icon('clipboard-copy') }} Copier le mois précédent
+      {{ icon('clipboard-copy') }} {{ _("Copier le mois précédent") }}
     </button>
   </div>
 
@@ -33,7 +33,7 @@
         return Object.values(this.amounts).reduce((sum, v) => sum + (Number(v) || 0), 0)
       },
       get totalPct() { return this.available ? this.total / this.available * 100 : 0 },
-      fmt(v) { return v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' },
+      fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' },
     }"
   >
     {# Affiché même quand la référence est inconnue : ce bloc porte aussi le
@@ -45,35 +45,35 @@
          plan, elles ne peuvent pas proposer deux bases de répartition. #}
       {% if month_resources %}
       <p class="text-sm text-secondary">
-        {{ icon('currency-euro', size=16) }} Ressources de {{ period_label }} :
+        {{ icon('currency-euro', size=16) }} {% trans period_label=period_label %}Ressources de {{ period_label }} :{% endtrans %}
         <span class="text-primary font-medium">{{ month_resources | eur }}</span>
         {% if resources_from_cap %}
-        — le montant fixé dans Le Cap.
+        {{ _("— le montant fixé dans Le Cap.") }}
         {% else %}
-        — proposé d'après votre réglage, tant que le cap du mois n'est pas fixé.
+        {{ _("— proposé d'après votre réglage, tant que le cap du mois n'est pas fixé.") }}
         {% endif %}
       </p>
       {% else %}
       <p class="text-sm text-secondary">
-        {{ icon('info-circle', size=16) }} Ressources de {{ period_label }} non définies.
-        <a href="/cap" class="text-accent font-medium">Fixer le cap du mois →</a>
-        pour les poser, ou répartissez librement ci-dessous.
+        {{ icon('info-circle', size=16) }} {% trans period_label=period_label %}Ressources de {{ period_label }} non définies.{% endtrans %}
+        <a href="/cap" class="text-accent font-medium">{{ _("Fixer le cap du mois →") }}</a>
+        {{ _("pour les poser, ou répartissez librement ci-dessous.") }}
       </p>
       {% endif %}
       <label class="flex items-center justify-between gap-2">
-        <span class="text-sm text-secondary">{{ icon('pig-money', size=16) }} Prélèvement sur épargne prévu ce mois-ci</span>
+        <span class="text-sm text-secondary">{{ icon('pig-money', size=16) }} {{ _("Prélèvement sur épargne prévu ce mois-ci") }}</span>
         <input
           type="text"
           inputmode="decimal"
           name="savings_withdrawal"
           x-model.number="savingsWithdrawal"
           value="{% if savings_withdrawal %}{{ '%.2f' % savings_withdrawal }}{% endif %}"
-          placeholder="0,00"
+          placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
           class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-page text-primary px-3"
         />
       </label>
       <p class="text-sm font-medium text-primary border-t border-border pt-2" x-show="available" style="display: none;">
-        = Disponible à répartir : <span x-text="fmt(available)"></span>
+        {{ _("= Disponible à répartir :") }} <span x-text="fmt(available)"></span>
       </p>
     </div>
 
@@ -88,7 +88,7 @@
           name="amount_{{ category.id }}"
           x-model.number="amounts[{{ category.id }}]"
           value="{% if existing is not none %}{{ '%.2f' % existing }}{% endif %}"
-          placeholder="0,00"
+          placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
           class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
         />
         <span
@@ -100,29 +100,29 @@
       </div>
     </div>
     {% else %}
-    <p class="text-sm text-secondary text-center">Aucune catégorie disponible.</p>
+    <p class="text-sm text-secondary text-center">{{ _("Aucune catégorie disponible.") }}</p>
     {% endfor %}
 
     {% if categories %}
     <div class="bg-page rounded-xl p-4 flex flex-col gap-1 border border-border">
       <div class="flex items-center justify-between">
-        <span class="text-sm font-medium text-primary">Total budgété</span>
+        <span class="text-sm font-medium text-primary">{{ _("Total budgété") }}</span>
         <span
           class="text-sm font-semibold"
           :class="totalPct > 100 ? 'text-danger' : (totalPct > 90 ? 'text-warning' : 'text-success')"
           x-text="available ? fmt(total) + ' (' + totalPct.toFixed(0) + ' %)' : fmt(total)"
         ></span>
       </div>
-      <p class="text-xs text-secondary" x-show="available" style="display: none;" x-text="'Reste à répartir : ' + fmt(available - total)"></p>
+      <p class="text-xs text-secondary" x-show="available" style="display: none;" x-text="'{{ _("Reste à répartir : ") | jsq }}' + fmt(available - total)"></p>
       <p class="text-xs text-danger font-medium" x-show="total > available" style="display: none;">
-        {{ icon('alert-triangle', size=16) }} Le total dépasse les ressources de {{ period_label }}<span x-show="savingsWithdrawal" style="display: none;"> + le prélèvement sur épargne</span>.
+        {{ icon('alert-triangle', size=16) }} {% trans period_label=period_label %}Le total dépasse les ressources de {{ period_label }}{% endtrans %}<span x-show="savingsWithdrawal" style="display: none;"> {{ _("+ le prélèvement sur épargne") }}</span>.
       </p>
     </div>
     {% endif %}
 
     {% if categories %}
     <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      Enregistrer
+      {{ _("Enregistrer") }}
     </button>
     {% endif %}
   </form>

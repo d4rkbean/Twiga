@@ -21,7 +21,7 @@
     hx-trigger="change"
     class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
   >
-    <option value="" disabled>Choisir une catégorie...</option>
+    <option value="" disabled>{{ _("Choisir une catégorie...") }}</option>
     {% for category in parent_categories %}
     <option value="{{ category.id }}" {% if category.id == current_parent_id %}selected{% endif %}>
       {{ category.icon or "" }} {{ category.name }}
@@ -35,7 +35,7 @@
     name="payment_method"
     class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
   >
-    <option value="" {% if not rule.payment_method %}selected{% endif %}>Mode de paiement (optionnel)</option>
+    <option value="" {% if not rule.payment_method %}selected{% endif %}>{{ _("Mode de paiement (optionnel)") }}</option>
     {% for code, meta in payment_methods.items() %}
     <option value="{{ code }}" {% if rule.payment_method == code %}selected{% endif %}>{{ meta.icon }} {{ meta.label }}</option>
     {% endfor %}
@@ -45,21 +45,18 @@
       name="receipt_family"
       class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
     >
-      <option value="" {% if not rule.receipt_family %}selected{% endif %}>Rayon de ticket auto (optionnel)</option>
+      <option value="" {% if not rule.receipt_family %}selected{% endif %}>{{ _("Rayon de ticket auto (optionnel)") }}</option>
       {% for code, icon, label in receipt_families %}
       <option value="{{ code }}" {% if rule.receipt_family == code %}selected{% endif %}>{{ icon }} {{ label }}</option>
       {% endfor %}
     </select>
     <p class="text-xs text-secondary px-1">
-      Pour un commerce à famille de produit unique (boulangerie...) : ajoute
-      automatiquement une ligne de ticket couvrant tout le montant —
-      uniquement pris en compte si la catégorie choisie ci-dessus est
-      Courses.
+      {{ _("Pour un commerce à famille de produit unique (boulangerie...) : ajoute automatiquement une ligne de ticket couvrant tout le montant — uniquement pris en compte si la catégorie choisie ci-dessus est Courses.") }}
     </p>
   </div>
   <div class="flex gap-2">
     <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      Enregistrer
+      {{ _("Enregistrer") }}
     </button>
     <button
       type="button"
@@ -68,7 +65,7 @@
       hx-swap="outerHTML"
       class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
     >
-      Annuler
+      {{ _("Annuler") }}
     </button>
   </div>
 </form>

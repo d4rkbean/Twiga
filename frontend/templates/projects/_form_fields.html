@@ -1,6 +1,6 @@
 {% macro fields(project=None) %}
 <label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">Nom du projet</span>
+  <span class="text-sm text-secondary">{{ _("Nom du projet") }}</span>
   <input
     type="text"
     name="name"
@@ -10,7 +10,7 @@
   />
 </label>
 <label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">Montant cible</span>
+  <span class="text-sm text-secondary">{{ _("Montant cible") }}</span>
   <input
     type="text"
     inputmode="decimal"
@@ -21,7 +21,7 @@
   />
 </label>
 <label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">Date cible</span>
+  <span class="text-sm text-secondary">{{ _("Date cible") }}</span>
   <input
     type="date"
     name="target_date"
@@ -31,7 +31,7 @@
   />
 </label>
 <label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">Montant déjà épargné</span>
+  <span class="text-sm text-secondary">{{ _("Montant déjà épargné") }}</span>
   <input
     type="text"
     inputmode="decimal"
@@ -52,22 +52,22 @@
   >
     <h2 class="text-xl font-bold text-primary">{{ title }} — {{ project.name }}</h2>
     <label class="flex flex-col gap-1">
-      <span class="text-sm text-secondary">Montant</span>
+      <span class="text-sm text-secondary">{{ _("Montant") }}</span>
       <input
         type="text"
         inputmode="decimal"
         name="amount"
         required
-        placeholder="0,00"
+        placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
     </label>
     <label class="flex flex-col gap-1">
-      <span class="text-sm text-secondary">Note (optionnel)</span>
+      <span class="text-sm text-secondary">{{ _("Note (optionnel)") }}</span>
       <input
         type="text"
         name="note"
-        placeholder="Ex : Billets avion"
+        placeholder="{{ _("Ex : Billets avion") }}"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
     </label>
@@ -80,7 +80,7 @@
         onclick="this.closest('dialog').close()"
         class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
       >
-        Annuler
+        {{ _("Annuler") }}
       </button>
     </div>
   </form>

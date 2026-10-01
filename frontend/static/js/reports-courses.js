@@ -4,7 +4,7 @@
   // Graphique de l'onglet "Courses" du rapport : barres empilées, un rayon
   // par série, sur la fenêtre glissante de 12 mois. Fichier statique dédié
   // (données lues en data-* sur le <canvas>) plutôt qu'un <script> inline
-  // de plus dans reports/_content.html.
+  // de plus dans reports/_content.html — voir CLAUDE.md §6.
   //
   // Le contenu du rapport est rechargé par htmx au changement de période :
   // on réinstancie donc le graphique à chaque htmx:afterSwap, en détruisant
@@ -67,7 +67,7 @@
             stacked: true,
             ticks: {
               callback: function (value) {
-                return value.toLocaleString("fr-FR") + " €";
+                return new Intl.NumberFormat((document.documentElement.dataset.numberLocale || 'fr-FR'), { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
               },
             },
           },
@@ -81,11 +81,7 @@
                 return (
                   context.dataset.label +
                   " : " +
-                  amount.toLocaleString("fr-FR", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }) +
-                  " €"
+                  new Intl.NumberFormat((document.documentElement.dataset.numberLocale || 'fr-FR'), { style: "currency", currency: "EUR" }).format(amount)
                 );
               },
             },

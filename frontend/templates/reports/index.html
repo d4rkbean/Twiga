@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Rapport complet — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Rapport complet — Twiga 🦒") }}{% endblock %}
 
 {% block extra_head %}
 <script src="{{ static_url('/static/vendor/chart.min.js') }}"></script>
@@ -18,14 +18,14 @@
        exporte (plus dans cet en-tête, ni ici ni sur desktop). -->
   <div class="print:hidden flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
     <div class="flex items-center justify-between lg:contents">
-      <a href="/dashboard" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Retour au Panorama</a>
+      <a href="/dashboard" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Retour au Panorama") }}</a>
     </div>
     <div class="flex items-center justify-between gap-2 lg:contents">
-      <h1 class="text-2xl font-bold text-primary">{{ icon('chart-bar', size=24) }} Rapport complet</h1>
+      <h1 class="text-2xl font-bold text-primary">{{ icon('chart-bar', size=24) }} {{ _("Rapport complet") }}</h1>
       <button
         type="button"
         onclick="window.print()"
-        aria-label="Imprimer"
+        aria-label="{{ _("Imprimer") }}"
         class="lg:hidden w-11 h-11 flex items-center justify-center text-secondary flex-shrink-0"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -41,7 +41,7 @@
         onclick="window.print()"
         class="min-h-[40px] px-3 rounded-xl border border-border text-secondary text-sm font-medium"
       >
-        {{ icon('printer', size=18) }} Imprimer
+        {{ icon('printer', size=18) }} {{ _("Imprimer") }}
       </button>
     </div>
   </div>
@@ -55,7 +55,7 @@
        changement de période" : ici, changer de période EST un chargement). -->
   <div class="print:hidden flex flex-col gap-2">
     <div class="flex gap-1 overflow-x-auto pb-1" style="scrollbar-width: none;">
-      {% for type_code, type_label in [("mois", "Mois"), ("trimestre", "Trimestre"), ("semestre", "Semestre"), ("annee", "Année"), ("personnalise", "Personnalisé")] %}
+      {% for type_code, type_label in [("mois", _("Mois")), ("trimestre", _("Trimestre")), ("semestre", _("Semestre")), ("annee", _("Année")), ("personnalise", _("Personnalisé"))] %}
       <a
         href="/reports?period_type={{ type_code }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
         class="flex-shrink-0 px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 {{ 'border-accent text-primary' if period.period_type == type_code else 'border-transparent text-secondary' }}"
@@ -68,7 +68,7 @@
     <div class="flex items-center justify-between gap-2 bg-container rounded-xl shadow-sm px-2 py-1">
       <a
         href="/reports?{{ period.prev_params | urlencode }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
-        aria-label="Période précédente"
+        aria-label="{{ _("Période précédente") }}"
         class="min-h-[44px] min-w-[44px] flex items-center justify-center text-xl text-secondary"
       >
         {{ icon('arrow-narrow-left') }}
@@ -76,7 +76,7 @@
       <span class="flex-1 min-w-0 truncate px-1 text-sm font-bold text-primary text-center">{{ period_bar_label }}</span>
       <a
         href="/reports?{{ period.next_params | urlencode }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
-        aria-label="Période suivante"
+        aria-label="{{ _("Période suivante") }}"
         class="min-h-[44px] min-w-[44px] flex items-center justify-center text-xl text-secondary"
       >
         {{ icon('arrow-narrow-right') }}
@@ -117,14 +117,14 @@
       type="date"
       name="date_from"
       value="{{ period.date_from }}"
-      aria-label="Du"
+      aria-label="{{ _("Du") }}"
       class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
     />
     <input
       type="date"
       name="date_to"
       value="{{ period.date_to }}"
-      aria-label="Au"
+      aria-label="{{ _("Au") }}"
       class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
     />
     {% else %}
@@ -136,7 +136,7 @@
       name="account_id"
       class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm flex-1 min-w-[160px]"
     >
-      <option value="" {% if account_id is none %}selected{% endif %}>Tous les comptes</option>
+      <option value="" {% if account_id is none %}selected{% endif %}>{{ _("Tous les comptes") }}</option>
       {% for account in accounts %}
       <option value="{{ account.id }}" {% if account.id == account_id %}selected{% endif %}>{{ account.name }}</option>
       {% endfor %}
@@ -167,11 +167,11 @@
         @change="localStorage.setItem('twiga_reports_shift_income', $event.target.checked ? '1' : '0')"
         class="w-5 h-5 flex-shrink-0"
       />
-      <span class="text-sm text-primary whitespace-nowrap">{{ icon('adjustments', size=16) }} Décaler les recettes</span>
+      <span class="text-sm text-primary whitespace-nowrap">{{ icon('adjustments', size=16) }} {{ _("Décaler les recettes") }}</span>
     </label>
     <span
-      title="Le salaire reçu fin du mois précédent finance les dépenses du mois courant. Actif en vue Mois (tout le rapport) et en vue Année (détail mensuel uniquement)."
-      aria-label="Le salaire reçu fin du mois précédent finance les dépenses du mois courant. Actif en vue Mois (tout le rapport) et en vue Année (détail mensuel uniquement)."
+      title="{{ _("Le salaire reçu fin du mois précédent finance les dépenses du mois courant. Actif en vue Mois (tout le rapport) et en vue Année (détail mensuel uniquement).") }}"
+      aria-label="{{ _("Le salaire reçu fin du mois précédent finance les dépenses du mois courant. Actif en vue Mois (tout le rapport) et en vue Année (détail mensuel uniquement).") }}"
       class="text-sm text-secondary cursor-help flex-shrink-0"
     >ℹ️</span>
   </form>

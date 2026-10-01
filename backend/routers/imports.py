@@ -11,6 +11,7 @@ from backend.models import Account
 from backend.templating import templates
 from imports import csv_parser, ofx_parser, qif_parser
 from imports.common import ImportParseError, ParsedTransaction, split_duplicates
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -26,7 +27,7 @@ def _detect_format(filename: str) -> str:
     fmt = _SUPPORTED_FORMATS.get(suffix)
     if fmt is None:
         raise HTTPException(
-            status_code=400, detail="Format de fichier non reconnu (.qif, .csv ou .ofx attendu)."
+            status_code=400, detail=_t("Format de fichier non reconnu (.qif, .csv ou .ofx attendu).")
         )
     return fmt
 
@@ -50,7 +51,7 @@ def _validate_import_ref(import_id: str, format: str) -> None:
 def _get_account(db: Session, account_id: int) -> Account:
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
     return account
 
 
@@ -138,7 +139,7 @@ async def preview(
             import_storage.delete_upload(import_id, f".{fmt}")
             return _error(
                 request,
-                "Choisissez un compte existant, ou importez d'abord un fichier QIF pour en créer un.",
+                _t("Choisissez un compte existant, ou importez d'abord un fichier QIF pour en créer un."),
             )
 
         account = _get_account(db, account_id)
@@ -208,7 +209,7 @@ def confirm(
 
     account = _get_account(db, account_id) if account_id is not None else None
     if account is None:
-        return _error(request, "Compte manquant pour cet import.")
+        return _error(request, _t("Compte manquant pour cet import."))
 
     try:
         transactions = _parse_transactions(
@@ -267,7 +268,7 @@ async def execute(
 
     account = _get_account(db, account_id) if account_id is not None else None
     if account is None:
-        return _error(request, "Compte manquant pour cet import.")
+        return _error(request, _t("Compte manquant pour cet import."))
 
     try:
         transactions = _parse_transactions(

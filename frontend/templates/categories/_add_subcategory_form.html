@@ -9,14 +9,14 @@
   <input
     type="text"
     name="name"
-    placeholder="Nom de la sous-catégorie"
+    placeholder="{{ _("Nom de la sous-catégorie") }}"
     required
     autofocus
     class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
   />
   <div class="flex gap-2">
     <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      Ajouter
+      {{ _("Ajouter") }}
     </button>
     <button
       type="button"
@@ -25,7 +25,7 @@
       hx-swap="outerHTML"
       class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
     >
-      Annuler
+      {{ _("Annuler") }}
     </button>
   </div>
 </form>

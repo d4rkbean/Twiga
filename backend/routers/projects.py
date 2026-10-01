@@ -10,6 +10,7 @@ from backend.database import get_db
 from backend.models import Project
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -86,7 +87,7 @@ def update_project(
 ):
     project = db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status_code=404, detail="Projet introuvable")
+        raise HTTPException(status_code=404, detail=_t("Projet introuvable"))
 
     crud.update_project(
         db,
@@ -110,7 +111,7 @@ def add_funds(
 ):
     project = db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status_code=404, detail="Projet introuvable")
+        raise HTTPException(status_code=404, detail=_t("Projet introuvable"))
 
     crud.add_project_funds(db, project, _parse_positive_amount(amount), note.strip() or None)
     context = {"request": request, **_build_context(db)}
@@ -127,7 +128,7 @@ def spend_funds(
 ):
     project = db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status_code=404, detail="Projet introuvable")
+        raise HTTPException(status_code=404, detail=_t("Projet introuvable"))
 
     crud.spend_project_funds(db, project, _parse_positive_amount(amount), note.strip() or None)
     context = {"request": request, **_build_context(db)}
@@ -138,7 +139,7 @@ def spend_funds(
 def delete_project(request: Request, project_id: int, db: Session = Depends(get_db)):
     project = db.get(Project, project_id)
     if project is None:
-        raise HTTPException(status_code=404, detail="Projet introuvable")
+        raise HTTPException(status_code=404, detail=_t("Projet introuvable"))
 
     crud.delete_project(db, project)
     context = {"request": request, **_build_context(db)}

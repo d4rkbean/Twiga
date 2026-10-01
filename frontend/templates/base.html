@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="{{ current_language() }}" data-number-locale="{{ number_locale() }}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -15,7 +15,7 @@
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>{% block title %}Twiga 🦒{% endblock %}</title>
+  <title>{% block title %}{{ _("Twiga 🦒") }}{% endblock %}</title>
   <!-- Doit s'exécuter avant le CSS pour éviter un flash du mauvais thème :
        priorité à la préférence explicite sauvegardée (toggle), sinon
        prefers-color-scheme du système au tout premier chargement. -->
@@ -89,7 +89,7 @@
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center gap-2">
         <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" />
-        <p class="text-base font-bold text-primary">Twiga</p>
+        <p class="text-base font-bold text-primary">{{ _("Twiga") }}</p>
       </div>
       <p id="twiga-confirm-message" class="text-sm text-primary"></p>
       <div class="flex gap-2">
@@ -98,14 +98,14 @@
           id="twiga-confirm-cancel"
           class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
         >
-          Annuler
+          {{ _("Annuler") }}
         </button>
         <button
           type="button"
           id="twiga-confirm-ok"
           class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
         >
-          Confirmer
+          {{ _("Confirmer") }}
         </button>
       </div>
     </div>
@@ -124,11 +124,11 @@
   >
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold text-primary flex items-center gap-2">{{ icon('help-circle') }}Aide &amp; raccourcis</h2>
+        <h2 class="text-lg font-bold text-primary flex items-center gap-2">{{ icon('help-circle') }}{{ _("Aide &amp; raccourcis") }}</h2>
         <button
           type="button"
           onclick="document.getElementById('twiga-help-dialog').close()"
-          aria-label="Fermer"
+          aria-label="{{ _("Fermer") }}"
           class="text-secondary text-xl leading-none"
         >
           {{ icon('x') }}
@@ -136,17 +136,17 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <p class="text-sm font-semibold text-primary flex items-center gap-2">{{ icon('keyboard') }}Raccourcis clavier</p>
+        <p class="text-sm font-semibold text-primary flex items-center gap-2">{{ icon('keyboard') }}{{ _("Raccourcis clavier") }}</p>
         <!-- Raccourcis vérifiés dans le code réel (frontend/static/js/
              inbox-shortcuts.js pour →/←/1-9/Entrée/Échap, _header.html pour
              Ctrl+K) — pas une liste inventée, elle doit rester exacte. -->
         {% set shortcuts = [
-          ("Ctrl+K", "Recherche globale"),
-          ("→ / Espace", "Transaction suivante"),
-          ("←", "Transaction précédente"),
-          ("1-9", "Sélectionner catégorie"),
-          ("Entrée", "Valider catégorie"),
-          ("Échap", "Annuler / Retour"),
+          ("Ctrl+K", _("Recherche globale")),
+          (_("→ / Espace"), _("Transaction suivante")),
+          ("←", _("Transaction précédente")),
+          ("1-9", _("Sélectionner catégorie")),
+          (_("Entrée"), _("Valider catégorie")),
+          (_("Échap"), _("Annuler / Retour")),
         ] %}
         <div class="bg-page rounded-xl border border-border divide-y divide-border overflow-hidden">
           {% for key, label in shortcuts %}
@@ -161,20 +161,20 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <p class="text-sm font-semibold text-primary">Liens utiles</p>
+        <p class="text-sm font-semibold text-primary">{{ _("Liens utiles") }}</p>
         <button
           type="button"
           onclick="document.getElementById('twiga-help-dialog').close(); window.startTwigaTour();"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center gap-2"
         >
-          {{ icon('book') }}Revoir la visite guidée
+          {{ icon('book') }}{{ _("Revoir la visite guidée") }}
         </button>
         <button
           type="button"
           onclick="document.getElementById('twiga-about-dialog').showModal()"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center gap-2"
         >
-          {{ icon('info-circle') }}À propos de Twiga
+          {{ icon('info-circle') }}{{ _("À propos de Twiga") }}
         </button>
       </div>
     </div>
@@ -188,21 +188,19 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" />
-          <h2 class="text-base font-bold text-primary flex items-center gap-2">Twiga<img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:20px;width:auto;" /></h2>
+          <h2 class="text-base font-bold text-primary flex items-center gap-2">{{ _("Twiga") }}<img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:20px;width:auto;" /></h2>
         </div>
         <button
           type="button"
           onclick="document.getElementById('twiga-about-dialog').close()"
-          aria-label="Fermer"
+          aria-label="{{ _("Fermer") }}"
           class="text-secondary text-xl leading-none"
         >
           {{ icon('x') }}
         </button>
       </div>
       <p class="text-sm text-secondary">
-        Tableau de bord financier personnel, 100&nbsp;% local — aucune connexion
-        bancaire automatique, aucun service tiers, aucune télémétrie.
-        Import manuel QIF/CSV/OFX, catégorisation rapide, budgets et projets.
+        {{ _("Tableau de bord financier personnel, 100&nbsp;%% local — aucune connexion bancaire automatique, aucun service tiers, aucune télémétrie. Import manuel QIF/CSV/OFX, catégorisation rapide, budgets et projets.") }}
       </p>
     </div>
   </dialog>

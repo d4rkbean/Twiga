@@ -1,9 +1,7 @@
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
-  <h2 class="text-xl font-bold text-primary">Étape 1 — Choisir le fichier</h2>
+  <h2 class="text-xl font-bold text-primary">{{ _("Étape 1 — Choisir le fichier") }}</h2>
   <p class="text-sm text-secondary">
-    Importez d'abord un fichier <strong>QIF</strong> (HomeBank) : il crée vos comptes et catégories
-    automatiquement. Les imports <strong>CSV</strong>/<strong>OFX</strong> suivants viendront alimenter
-    un compte déjà existant.
+    {{ _("Importez d'abord un fichier") }} <strong>{{ _("QIF") }}</strong> {{ _("(HomeBank) : il crée vos comptes et catégories automatiquement. Les imports") }} <strong>{{ _("CSV") }}</strong>/<strong>{{ _("OFX") }}</strong> {{ _("suivants viendront alimenter un compte déjà existant.") }}
   </p>
 
   <form
@@ -14,7 +12,7 @@
     class="flex flex-col gap-4"
   >
     <label class="flex flex-col gap-1">
-      <span class="text-sm text-secondary">Fichier QIF, CSV ou OFX</span>
+      <span class="text-sm text-secondary">{{ _("Fichier QIF, CSV ou OFX") }}</span>
       <input
         id="import-file-input"
         type="file"
@@ -27,7 +25,7 @@
 
     {% if accounts %}
     <div id="import-account-field" class="flex flex-col gap-1">
-      <span class="text-sm text-secondary">Compte concerné (CSV / OFX uniquement)</span>
+      <span class="text-sm text-secondary">{{ _("Compte concerné (CSV / OFX uniquement)") }}</span>
       <select
         name="account_id"
         required
@@ -40,14 +38,14 @@
     </div>
     {% else %}
     <p id="import-account-field" class="text-sm text-secondary">
-      Aucun compte pour l'instant : importez d'abord un fichier QIF, il en créera automatiquement.
+      {{ _("Aucun compte pour l'instant : importez d'abord un fichier QIF, il en créera automatiquement.") }}
     </p>
     {% endif %}
 
     <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      Continuer
+      {{ _("Continuer") }}
     </button>
-    <p class="htmx-indicator text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga tend le cou...</p>
+    <p class="htmx-indicator text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga tend le cou...") }}</p>
   </form>
 
   <script>

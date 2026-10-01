@@ -6,9 +6,9 @@
 >
   <div class="flex items-center justify-between gap-2">
     <p class="text-sm text-secondary">
-      {{ total }} transaction{{ "s" if total != 1 else "" }} à catégoriser
+      {% trans total=total, v="s" if total != 1 else "" %}{{ total }} transaction{{ v }} à catégoriser{% endtrans %}
     </p>
-    <p class="text-sm text-secondary">Page {{ page }} / {{ total_pages }}</p>
+    <p class="text-sm text-secondary">{% trans page=page, total_pages=total_pages %}Page {{ page }} / {{ total_pages }}{% endtrans %}</p>
   </div>
 
   <div class="flex flex-col gap-2">
@@ -17,7 +17,7 @@
       id="backlog-search-input"
       name="search"
       value="{{ search }}"
-      placeholder="Rechercher par libellé (ex : ORANGE)..."
+      placeholder="{{ _("Rechercher par libellé (ex : ORANGE)...") }}"
       hx-get="/backlog/content"
       hx-trigger="input changed delay:400ms, search"
       hx-include="#backlog-suggestion-filter"
@@ -37,9 +37,9 @@
       hx-swap="outerHTML"
       class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
     >
-      <option value="all" {% if suggestion_filter == "all" %}selected{% endif %}>Tous</option>
-      <option value="none" {% if suggestion_filter == "none" %}selected{% endif %}>Sans suggestion</option>
-      <option value="high" {% if suggestion_filter == "high" %}selected{% endif %}>Avec suggestion &gt; 90%</option>
+      <option value="all" {% if suggestion_filter == "all" %}selected{% endif %}>{{ _("Tous") }}</option>
+      <option value="none" {% if suggestion_filter == "none" %}selected{% endif %}>{{ _("Sans suggestion") }}</option>
+      <option value="high" {% if suggestion_filter == "high" %}selected{% endif %}>{{ _("Avec suggestion &gt; 90%%") }}</option>
     </select>
   </div>
 
@@ -51,7 +51,7 @@
       @change="selected = $event.target.checked ? [...pageIds] : []"
       :checked="pageIds.length > 0 && selected.length === pageIds.length"
     />
-    <span class="text-sm text-secondary font-medium">Tout sélectionner (cette page)</span>
+    <span class="text-sm text-secondary font-medium">{{ _("Tout sélectionner (cette page)") }}</span>
   </label>
   {% endif %}
 
@@ -75,9 +75,8 @@
   >
     <p class="text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
       {{ icon('bulb') }}
-      {{ rule_suggestions | length }} règle{{ "s" if rule_suggestions | length > 1 else "" }}
-      proposée{{ "s" if rule_suggestions | length > 1 else "" }} pour ces opérations.
-      <a href="/rules" class="font-semibold underline">Les valider dans Règles {{ icon('arrow-narrow-right', size=14) }}</a>
+      {% trans rule_suggestions=rule_suggestions | length, rule_suggestions2="s" if rule_suggestions | length > 1 else "" %}{{ rule_suggestions }} règle{{ rule_suggestions2 }} proposée{{ rule_suggestions2 }} pour ces opérations.{% endtrans %}
+      <a href="/rules" class="font-semibold underline">{{ _("Les valider dans Règles") }} {{ icon('arrow-narrow-right', size=14) }}</a>
     </p>
   </div>
   {% endif %}
@@ -89,13 +88,13 @@
       hx-include="{{ state_include }}"
       hx-target="#backlog-content"
       hx-swap="outerHTML"
-      hx-confirm="Valider toutes les suggestions à plus de 90% de confiance sur cette page ?"
+      hx-confirm="{{ _("Valider toutes les suggestions à plus de 90%% de confiance sur cette page ?") }}"
       class="flex-1"
     >
       <input type="hidden" name="min_confidence" value="90" />
       <input type="hidden" name="page" value="{{ page }}" />
       <button type="submit" class="w-full min-h-[50px] rounded-xl bg-success text-on-accent font-medium">
-        {{ icon('check') }} Tout valider &gt; 90%
+        {{ icon('check') }} {{ _("Tout valider &gt; 90%%") }}
       </button>
     </form>
     <form
@@ -103,13 +102,13 @@
       hx-include="{{ state_include }}"
       hx-target="#backlog-content"
       hx-swap="outerHTML"
-      hx-confirm="Rejeter toutes les suggestions à moins de 70% de confiance sur cette page ?"
+      hx-confirm="{{ _("Rejeter toutes les suggestions à moins de 70%% de confiance sur cette page ?") }}"
       class="flex-1"
     >
       <input type="hidden" name="max_confidence" value="70" />
       <input type="hidden" name="page" value="{{ page }}" />
       <button type="submit" class="w-full min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium">
-        {{ icon('x') }} Tout rejeter &lt; 70%
+        {{ icon('x') }} {{ _("Tout rejeter &lt; 70%%") }}
       </button>
     </form>
   </div>
@@ -128,10 +127,10 @@
           class="w-5 h-5 mt-1 flex-shrink-0"
         />
         <div class="flex flex-col min-w-0">
-          <span class="text-primary font-medium truncate">{{ item.label or "(sans libellé)" }}</span>
+          <span class="text-primary font-medium truncate">{{ item.label or _("(sans libellé)") }}</span>
           <span class="text-xs text-secondary truncate">{{ item.date | fr_date }} · {{ item.account_name }}</span>
           {% if suggestion %}
-          <span class="text-xs text-secondary truncate">Basé sur : "{{ suggestion.based_on_label }}"</span>
+          <span class="text-xs text-secondary truncate">{% trans based_on_label=suggestion.based_on_label %}Basé sur : "{{ based_on_label }}"{% endtrans %}</span>
           {% endif %}
         </div>
       </div>
@@ -157,7 +156,7 @@
           </span>
         </span>
         {% else %}
-        <span class="text-sm text-secondary">Aucune suggestion</span>
+        <span class="text-sm text-secondary">{{ _("Aucune suggestion") }}</span>
         {% endif %}
       </div>
 
@@ -174,7 +173,7 @@
           <input type="hidden" name="page" value="{{ page }}" />
           <button
             type="submit"
-            aria-label="Valider la suggestion"
+            aria-label="{{ _("Valider la suggestion") }}"
             class="w-full min-h-[50px] rounded-xl bg-success text-on-accent font-semibold text-lg"
           >
             {{ icon('check') }}
@@ -191,7 +190,7 @@
           <input type="hidden" name="page" value="{{ page }}" />
           <button
             type="submit"
-            aria-label="Rejeter la suggestion"
+            aria-label="{{ _("Rejeter la suggestion") }}"
             class="w-full min-h-[50px] rounded-xl bg-container border border-border text-danger font-semibold text-lg"
           >
             {{ icon('x') }}
@@ -203,7 +202,7 @@
           hx-vals='{"page": {{ page }}}'
           hx-target="#backlog-row-actions-{{ item.transaction_id }}"
           hx-swap="innerHTML"
-          aria-label="Changer la catégorie"
+          aria-label="{{ _("Changer la catégorie") }}"
           class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-semibold text-lg"
         >
           ?
@@ -213,7 +212,7 @@
   </div>
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center">{{ icon('confetti') }} Backlog vide — tout est catégorisé !</p>
+    <p class="text-sm text-secondary text-center">{{ icon('confetti') }} {{ _("Backlog vide — tout est catégorisé !") }}</p>
   </div>
   {% endfor %}
 
@@ -229,9 +228,9 @@
       class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4 disabled:opacity-50"
       {% if page <= 1 %}disabled{% endif %}
     >
-      {{ icon('arrow-narrow-left') }} Précédent
+      {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
     </button>
-    <span class="text-sm text-secondary">Page {{ page }} / {{ total_pages }}</span>
+    <span class="text-sm text-secondary">{% trans page=page, total_pages=total_pages %}Page {{ page }} / {{ total_pages }}{% endtrans %}</span>
     <button
       type="button"
       hx-get="/backlog/content"
@@ -242,7 +241,7 @@
       class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4 disabled:opacity-50"
       {% if page >= total_pages %}disabled{% endif %}
     >
-      Suivant {{ icon('arrow-narrow-right') }}
+      {{ _("Suivant") }} {{ icon('arrow-narrow-right') }}
     </button>
   </div>
   {% endif %}
@@ -255,7 +254,7 @@
   >
     <div class="w-full max-w-lg bg-container border border-border rounded-xl shadow-lg p-3 flex flex-col gap-2">
       <p class="text-sm font-semibold text-primary text-center">
-        <span x-text="selected.length"></span> transactions sélectionnées
+        <span x-text="selected.length"></span> {{ _("transactions sélectionnées") }}
       </p>
       <select
         id="bulk-parent-category"
@@ -266,7 +265,7 @@
         hx-trigger="change"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       >
-        <option value="" selected disabled>Catégorie...</option>
+        <option value="" selected disabled>{{ _("Catégorie...") }}</option>
         {% for category in parent_categories %}
         <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
         {% endfor %}
@@ -279,7 +278,7 @@
         name="payment_method"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       >
-        <option value="">Mode de paiement (optionnel)</option>
+        <option value="">{{ _("Mode de paiement (optionnel)") }}</option>
         {% for code, meta in payment_methods.items() %}
         <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
         {% endfor %}
@@ -291,10 +290,10 @@
         hx-vals='{"page": {{ page }}}'
         hx-target="#backlog-content"
         hx-swap="outerHTML"
-        hx-confirm="Appliquer ces modifications aux opérations sélectionnées ?"
+        hx-confirm="{{ _("Appliquer ces modifications aux opérations sélectionnées ?") }}"
         class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
       >
-        {{ icon('check') }} Appliquer
+        {{ icon('check') }} {{ _("Appliquer") }}
       </button>
     </div>
   </div>

@@ -51,10 +51,11 @@ cannot honestly reproduce this promise of privacy and offline operation.
 - User roles: `viewer` (read-only), `editor` (categorization, budgets,
   projects), `admin` (full access: import, deletion, users, settings).
 - No stock/crypto/investment tracking, no double-entry accounting.
-- Product terminology (French, to be kept as is in the UI and the docs):
-  **La Savane** (categorization inbox), **Panorama** (dashboard),
-  **Opérations** (transaction list), **Rapports** (reports), **Projets**
-  (savings goals), **Paramètres** (settings).
+- Product terminology: three French brand names are kept as is in every
+  language and explained in the English guided tour: **La Savane**
+  (categorization inbox), **Panorama** (dashboard) and **Le Cap** (the monthly
+  budget ritual, inspired by the Japanese kakeibo method). The other screens
+  (Transactions, Reports, Projects, Settings) are translated.
 
 ## Brand Commitments
 

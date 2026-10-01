@@ -1,27 +1,27 @@
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
-  <h2 class="text-xl font-bold text-primary">Étape 2 — Aperçu de l'import QIF</h2>
+  <h2 class="text-xl font-bold text-primary">{{ _("Étape 2 — Aperçu de l'import QIF") }}</h2>
 
   <div class="flex flex-col gap-2">
-    <p class="text-sm font-medium text-primary">Comptes détectés</p>
+    <p class="text-sm font-medium text-primary">{{ _("Comptes détectés") }}</p>
     <ul class="flex flex-col gap-1">
       {% for account in accounts %}
       <li class="text-sm text-secondary">{{ account.name }} <span class="text-xs">({{ account.type }})</span></li>
       {% else %}
-      <li class="text-sm text-secondary">Aucun compte trouvé dans le fichier.</li>
+      <li class="text-sm text-secondary">{{ _("Aucun compte trouvé dans le fichier.") }}</li>
       {% endfor %}
     </ul>
   </div>
 
   <div class="flex flex-col gap-1 text-sm text-secondary">
-    <p>{{ category_count }} catégorie(s) (hiérarchie conservée)</p>
-    <p>{{ transaction_count }} opération(s)</p>
-    <p>{{ payee_count }} bénéficiaire(s) distinct(s)</p>
+    <p>{% trans category_count=category_count %}{{ category_count }} catégorie(s) (hiérarchie conservée){% endtrans %}</p>
+    <p>{% trans transaction_count=transaction_count %}{{ transaction_count }} opération(s){% endtrans %}</p>
+    <p>{% trans payee_count=payee_count %}{{ payee_count }} bénéficiaire(s) distinct(s){% endtrans %}</p>
   </div>
 
   <form hx-post="/imports/{{ import_id }}/confirm" hx-target="#import-wizard" hx-swap="innerHTML">
     <input type="hidden" name="format" value="qif" />
     <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold w-full">
-      Continuer
+      {{ _("Continuer") }}
     </button>
   </form>
 </div>

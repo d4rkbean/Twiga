@@ -7,7 +7,17 @@
     var container = document.getElementById("budget-alerts");
     if (!container) return;
 
-    var currencyFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+    var currencyFormatter = new Intl.NumberFormat((document.documentElement.dataset.numberLocale || 'fr-FR'), { style: "currency", currency: "EUR" });
+
+    // Les messages traduits portent des marqueurs {name}, {pct}, {spent} et
+    // {budget} que JS remplit : la phrase reste traduisible d'un seul bloc.
+    function fill(template, alert) {
+      return template
+        .replace("{name}", alert.category_name)
+        .replace("{pct}", Math.round(alert.percentage))
+        .replace("{spent}", currencyFormatter.format(alert.spent))
+        .replace("{budget}", currencyFormatter.format(alert.budget));
+    }
 
     function keyFor(categoryId) {
       return "dismissed_budget_alert_" + categoryId + "_" + month;
@@ -51,7 +61,7 @@
           var reveal = document.createElement("button");
           reveal.type = "button";
           reveal.className = "text-xs text-secondary underline self-center min-h-[32px]";
-          reveal.textContent = "🔔 Voir les alertes budget masquées";
+          reveal.textContent = {{ _("🔔 Voir les alertes budget masquées") | tojson }};
           reveal.addEventListener("click", revealAllForThisMonth);
           container.appendChild(reveal);
         }
@@ -71,14 +81,12 @@
         var text = document.createElement("p");
         text.className = "text-sm flex-1 " + (danger ? "text-danger" : "text-warning");
         text.textContent = danger
-          ? "🚨 " + alert.category_name + " : dépassé ! (" +
-            currencyFormatter.format(alert.spent) + " / " + currencyFormatter.format(alert.budget) + ")"
-          : "⚠️ " + alert.category_name + " : " + Math.round(alert.percentage) + "% consommé (" +
-            currencyFormatter.format(alert.spent) + " / " + currencyFormatter.format(alert.budget) + ")";
+          ? fill({{ _("🚨 {name} : dépassé ! ({spent} / {budget})") | tojson }}, alert)
+          : fill({{ _("⚠️ {name} : {pct}%% consommé ({spent} / {budget})") | tojson }}, alert);
 
         var closeBtn = document.createElement("button");
         closeBtn.type = "button";
-        closeBtn.setAttribute("aria-label", "Ignorer cette alerte");
+        closeBtn.setAttribute("aria-label", {{ _("Ignorer cette alerte") | tojson }});
         closeBtn.className = "text-secondary text-lg leading-none flex-shrink-0 w-11 h-11 flex items-center justify-center";
         closeBtn.textContent = "✕";
         closeBtn.addEventListener("click", function () {
@@ -93,9 +101,8 @@
       if (remaining > 0) {
         var more = document.createElement("p");
         more.className = "text-xs text-secondary text-center";
-        more.innerHTML =
-          "... et " + remaining + " autre" + (remaining > 1 ? "s" : "") + " budget" +
-          (remaining > 1 ? "s" : "") + " à surveiller → <a href=\"/budgets\" class=\"text-accent font-medium\">Voir les budgets</a>";
+        more.innerHTML = {{ _('... et {n} autre{s} budget{s} à surveiller → <a href="/budgets" class="text-accent font-medium">Voir les budgets</a>') | tojson }}
+          .replace("{n}", remaining).replace(/\{s\}/g, remaining > 1 ? "s" : "");
         container.appendChild(more);
       }
 

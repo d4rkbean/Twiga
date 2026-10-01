@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Opérations — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Opérations — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 <main class="flex flex-col max-w-lg mx-auto overflow-x-clip lg:flex-row lg:items-start lg:max-w-none lg:mx-0 lg:gap-6 lg:px-8 lg:pb-6 lg:overflow-x-visible">
@@ -20,7 +20,7 @@
        plutôt que de rester épinglé en entier à l'écran. -->
   <div class="flex flex-col gap-2 lg:static lg:order-2 lg:w-[340px] xl:w-[420px] lg:flex-shrink-0 lg:h-[calc(100vh-64px)] lg:overflow-y-auto lg:pl-4 lg:border-l lg:border-border lg:pb-4">
     <div class="sticky top-14 z-20 bg-page px-4 pb-2 flex items-center justify-between gap-2 border-b border-border lg:static lg:z-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:border-b-0">
-      <h1 class="text-2xl font-bold text-primary">Opérations</h1>
+      <h1 class="text-2xl font-bold text-primary">{{ _("Opérations") }}</h1>
       <button
         type="button"
         hx-get="/transactions/new"
@@ -28,7 +28,7 @@
         hx-swap="innerHTML"
         class="text-sm text-accent font-medium"
       >
-        + Nouvelle opération
+        {{ _("+ Nouvelle opération") }}
       </button>
     </div>
 
@@ -46,14 +46,14 @@
           type="date"
           name="f_date_from"
           value="{{ date_from }}"
-          aria-label="Du"
+          aria-label="{{ _("Du") }}"
           class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
         />
         <input
           type="date"
           name="f_date_to"
           value="{{ date_to }}"
-          aria-label="Au"
+          aria-label="{{ _("Au") }}"
           class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
         />
       </div>
@@ -62,7 +62,7 @@
         type="search"
         name="f_search"
         value="{{ search }}"
-        placeholder="Rechercher un libellé..."
+        placeholder="{{ _("Rechercher un libellé...") }}"
         class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3"
       />
 
@@ -72,7 +72,7 @@
           inputmode="decimal"
           name="f_amount_min"
           value="{{ amount_min }}"
-          placeholder="Montant min"
+          placeholder="{{ _("Montant min") }}"
           class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
         />
         <input
@@ -80,7 +80,7 @@
           inputmode="decimal"
           name="f_amount_max"
           value="{{ amount_max }}"
-          placeholder="Montant max"
+          placeholder="{{ _("Montant max") }}"
           class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
         />
       </div>
@@ -95,9 +95,9 @@
           hx-on:change="document.getElementById('f_subcategory-select').value = ''"
           class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
         >
-          <option value="">Toutes les catégories</option>
+          <option value="">{{ _("Toutes les catégories") }}</option>
           <option value="uncategorized" {% if category_filter == "uncategorized" %}selected{% endif %}>
-            Non catégorisé
+            {{ _("Non catégorisé") }}
           </option>
           {% for category in categories %}
           <option value="{{ category.id }}" {% if category.id|string == category_filter %}selected{% endif %}>
@@ -115,7 +115,7 @@
         @click="advancedOpen = !advancedOpen"
         class="text-sm text-accent font-medium text-left"
       >
-        <span x-text="advancedOpen ? '− de critères' : '+ de critères'"></span>
+        <span x-text="advancedOpen ? '{{ _("− de critères") | jsq }}' : '{{ _("+ de critères") | jsq }}'"></span>
       </button>
 
       <div x-show="advancedOpen" style="display: none;" class="flex flex-col gap-2">
@@ -124,7 +124,7 @@
             name="f_account"
             class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
           >
-            <option value="">Tous les comptes</option>
+            <option value="">{{ _("Tous les comptes") }}</option>
             {% for account in accounts %}
             <option value="{{ account.id }}" {% if account.id|string == account_filter %}selected{% endif %}>
               {{ account.name }}
@@ -135,7 +135,7 @@
             name="f_payment_method"
             class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
           >
-            <option value="">Tout mode de paiement</option>
+            <option value="">{{ _("Tout mode de paiement") }}</option>
             {% for code, meta in payment_methods.items() %}
             <option value="{{ code }}" {% if payment_method_filter == code %}selected{% endif %}>
               {{ meta.icon }} {{ meta.label }}
@@ -148,25 +148,25 @@
             name="f_type"
             class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
           >
-            <option value="">Tous types</option>
-            <option value="income" {% if type_filter == "income" %}selected{% endif %}>Recettes</option>
-            <option value="expense" {% if type_filter == "expense" %}selected{% endif %}>Dépenses</option>
-            <option value="transfer" {% if type_filter == "transfer" %}selected{% endif %}>Virements</option>
+            <option value="">{{ _("Tous types") }}</option>
+            <option value="income" {% if type_filter == "income" %}selected{% endif %}>{{ _("Recettes") }}</option>
+            <option value="expense" {% if type_filter == "expense" %}selected{% endif %}>{{ _("Dépenses") }}</option>
+            <option value="transfer" {% if type_filter == "transfer" %}selected{% endif %}>{{ _("Virements") }}</option>
           </select>
           <select
             name="f_sort"
             class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
           >
-            <option value="date_desc" {% if sort_filter == "date_desc" %}selected{% endif %}>Date (récent d'abord)</option>
-            <option value="date_asc" {% if sort_filter == "date_asc" %}selected{% endif %}>Date (ancien d'abord)</option>
-            <option value="amount_desc" {% if sort_filter == "amount_desc" %}selected{% endif %}>Montant décroissant</option>
-            <option value="amount_asc" {% if sort_filter == "amount_asc" %}selected{% endif %}>Montant croissant</option>
+            <option value="date_desc" {% if sort_filter == "date_desc" %}selected{% endif %}>{{ _("Date (récent d'abord)") }}</option>
+            <option value="date_asc" {% if sort_filter == "date_asc" %}selected{% endif %}>{{ _("Date (ancien d'abord)") }}</option>
+            <option value="amount_desc" {% if sort_filter == "amount_desc" %}selected{% endif %}>{{ _("Montant décroissant") }}</option>
+            <option value="amount_asc" {% if sort_filter == "amount_asc" %}selected{% endif %}>{{ _("Montant croissant") }}</option>
           </select>
         </div>
       </div>
 
       <button type="submit" class="min-h-[46px] rounded-xl bg-accent text-on-accent font-semibold">
-        Rechercher
+        {{ _("Rechercher") }}
       </button>
 
       <!-- Nombre de résultats par page : champ du même <form> que le reste
@@ -175,7 +175,7 @@
            sans câblage séparé. Préférence mémorisée en localStorage,
            restaurée/réappliquée par transactions-selection.js. -->
       <div class="flex items-center justify-end gap-2">
-        <label for="f_page_size" class="text-sm text-secondary">Afficher :</label>
+        <label for="f_page_size" class="text-sm text-secondary">{{ _("Afficher :") }}</label>
         <select
           id="f_page_size"
           name="f_page_size"
@@ -186,7 +186,7 @@
           <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>{{ size }}</option>
           {% endfor %}
         </select>
-        <span class="text-sm text-secondary">par page</span>
+        <span class="text-sm text-secondary">{{ _("par page") }}</span>
       </div>
     </form>
   </div>

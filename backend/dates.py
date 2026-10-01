@@ -1,6 +1,8 @@
 from calendar import monthrange
 from datetime import date
 
+from backend.i18n import current_format, current_language
+
 MONTH_NAMES_FR = [
     "Janvier",
     "Février",
@@ -17,12 +19,34 @@ MONTH_NAMES_FR = [
 ]
 
 
+MONTH_NAMES_EN = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+]
+
+
+def month_names() -> list[str]:
+    # Noms de mois dans la langue de la requête : MONTH_NAMES_FR sert de
+    # source, le reste vient de la langue courante (voir backend/i18n.py).
+    return MONTH_NAMES_EN if current_language() == "en" else MONTH_NAMES_FR
+
+
 def month_range(year: int, month: int) -> tuple[date, date]:
     return date(year, month, 1), date(year, month, monthrange(year, month)[1])
 
 
 def month_label(year: int, month: int) -> str:
-    return f"{MONTH_NAMES_FR[month - 1]} {year}"
+    return f"{month_names()[month - 1]} {year}"
 
 
 def quarter_range(year: int, quarter: int) -> tuple[date, date]:
@@ -101,12 +125,25 @@ def months_between(start: date, end: date) -> list[tuple[date, date, str]]:
 
 
 WEEKDAY_NAMES_FR = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+WEEKDAY_NAMES_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
-def format_date_long_fr(value: date) -> str:
-    # "mercredi 5 août 2026" : en-tête de groupe de la liste des opérations
-    # (regroupement par jour). date.weekday() : lundi=0 ... dimanche=6, même
-    # ordre que WEEKDAY_NAMES_FR.
+def format_date_long(value: date) -> str:
+    # En-tête de groupe de la liste des opérations (regroupement par jour).
+    # date.weekday() : lundi=0 ... dimanche=6.
+    #   français        "mercredi 5 août 2026"
+    #   international   "Wednesday 5 August 2026"
+    #   américain       "Wednesday, August 5, 2026"
+    if current_language() == "en":
+        weekday = WEEKDAY_NAMES_EN[value.weekday()]
+        month = MONTH_NAMES_EN[value.month - 1]
+        if current_format() == "en-US":
+            return f"{weekday}, {month} {value.day}, {value.year}"
+        return f"{weekday} {value.day} {month} {value.year}"
     weekday = WEEKDAY_NAMES_FR[value.weekday()]
     month = MONTH_NAMES_FR[value.month - 1].lower()
     return f"{weekday} {value.day} {month} {value.year}"
+
+
+# Ancien nom conservé pour les appelants existants.
+format_date_long_fr = format_date_long

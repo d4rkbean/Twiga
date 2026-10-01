@@ -1,14 +1,14 @@
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
-  <h2 class="text-xl font-bold text-primary">Étape 3 — Importer</h2>
+  <h2 class="text-xl font-bold text-primary">{{ _("Étape 3 — Importer") }}</h2>
 
   <div class="flex flex-col gap-1 text-sm">
     <p class="text-primary">
-      {{ new_account_count }} compte(s) seront créés
-      {% if existing_account_count %}({{ existing_account_count }} déjà existant(s)){% endif %}
+      {% trans new_account_count=new_account_count %}{{ new_account_count }} compte(s) seront créés{% endtrans %}
+      {% if existing_account_count %}{% trans existing_account_count=existing_account_count %}({{ existing_account_count }} déjà existant(s)){% endtrans %}{% endif %}
     </p>
-    <p class="text-primary">{{ category_count }} catégorie(s) détectée(s) (hiérarchie conservée)</p>
-    <p class="text-primary">{{ total_count }} opération(s) détectée(s)</p>
-    <p class="text-secondary">{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s)</p>
+    <p class="text-primary">{% trans category_count=category_count %}{{ category_count }} catégorie(s) détectée(s) (hiérarchie conservée){% endtrans %}</p>
+    <p class="text-primary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s){% endtrans %}</p>
+    <p class="text-secondary">{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s){% endtrans %}</p>
   </div>
 
   <form hx-post="/imports/{{ import_id }}/execute" hx-target="#import-wizard" hx-swap="innerHTML">
@@ -18,9 +18,9 @@
       class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold w-full disabled:opacity-50"
       {% if unique_count == 0 %}disabled{% endif %}
     >
-      Importer {{ unique_count }} opération(s)
+      {% trans unique_count=unique_count %}Importer {{ unique_count }} opération(s){% endtrans %}
     </button>
-    <p class="htmx-indicator text-sm text-secondary text-center pt-2"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga tend le cou...</p>
+    <p class="htmx-indicator text-sm text-secondary text-center pt-2"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga tend le cou...") }}</p>
   </form>
 
   <!-- Filet de sécurité, surtout quand unique_count == 0 (le bouton
@@ -30,6 +30,6 @@
     href="/imports/new"
     class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
   >
-    {{ icon('file-import', size=18) }} Importer un autre fichier
+    {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
   </a>
 </div>

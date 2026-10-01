@@ -10,7 +10,7 @@
 >
   {% if status == "running" %}
   <p class="text-sm text-secondary">
-    Import en cours{% if total %} : {{ processed }} / {{ total }}{% else %}...{% endif %}
+    {{ _("Import en cours") }}{% if total %} : {{ processed }} / {{ total }}{% else %}...{% endif %}
   </p>
   <div class="w-full h-2 rounded-full bg-page overflow-hidden">
     <div
@@ -20,12 +20,9 @@
   </div>
   {% elif status == "done" %}
   <p class="text-sm text-success py-2">
-    {{ icon('check', size=16) }} Import terminé : {{ summary.accounts }} compte(s), {{ summary.categories }} catégorie(s),
-    {{ summary.transactions }} transaction(s), {{ summary.budgets }} budget(s),
-    {{ summary.projects }} projet(s){% if summary.project_movements %} (+ {{ summary.project_movements }} mouvement(s)){% endif %},
-    {{ summary.rules }} règle(s).
+    {{ icon('check', size=16) }} {% trans accounts=summary.accounts, categories=summary.categories, transactions=summary.transactions, budgets=summary.budgets, projects=summary.projects %}Import terminé : {{ accounts }} compte(s), {{ categories }} catégorie(s), {{ transactions }} transaction(s), {{ budgets }} budget(s), {{ projects }} projet(s){% endtrans %}{% if summary.project_movements %} {% trans project_movements=summary.project_movements %}(+ {{ project_movements }} mouvement(s)){% endtrans %}{% endif %}{% trans rules=summary.rules %}, {{ rules }} règle(s).{% endtrans %}
   </p>
   {% elif status == "error" %}
-  <p class="text-sm text-danger py-2">{{ icon('circle-x', size=16) }} Erreur pendant l'import : {{ error }}</p>
+  <p class="text-sm text-danger py-2">{{ icon('circle-x', size=16) }} {% trans error=error %}Erreur pendant l'import : {{ error }}{% endtrans %}</p>
   {% endif %}
 </div>

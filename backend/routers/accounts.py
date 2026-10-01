@@ -9,6 +9,7 @@ from backend.database import get_db
 from backend.models import Account
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -75,7 +76,7 @@ def create_account(
 def account_row(request: Request, account_id: int, db: Session = Depends(get_db)):
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
     item = next((i for i in crud.get_accounts_overview(db) if i["account"].id == account_id), None)
     context = {"request": request, "item": item}
     return templates.TemplateResponse("accounts/_row.html", context)
@@ -85,7 +86,7 @@ def account_row(request: Request, account_id: int, db: Session = Depends(get_db)
 def edit_account_form(request: Request, account_id: int, db: Session = Depends(get_db)):
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
     context = {"request": request, "account": account}
     return templates.TemplateResponse("accounts/_row_edit.html", context)
 
@@ -103,7 +104,7 @@ def update_account(
 ):
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
     if name.strip():
         crud.update_account(
             db,
@@ -122,7 +123,7 @@ def update_account(
 def delete_confirm(request: Request, account_id: int, db: Session = Depends(get_db)):
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
     transaction_count = crud.get_account_transaction_count(db, account_id)
     context = {"request": request, "account": account, "transaction_count": transaction_count}
     return templates.TemplateResponse("accounts/_delete_confirm.html", context)
@@ -132,7 +133,7 @@ def delete_confirm(request: Request, account_id: int, db: Session = Depends(get_
 def delete_account(request: Request, account_id: int, db: Session = Depends(get_db)):
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
 
     if crud.get_account_transaction_count(db, account_id) == 0:
         crud.delete_account(db, account)

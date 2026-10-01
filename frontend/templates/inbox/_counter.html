@@ -8,8 +8,8 @@
     style="display: inline-block; transform: scale({{ giraffe_scale }}); transition: transform 0.4s ease;"
   ><img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:16px;width:auto;" /></span>
   {% if pending_count > 0 %}
-    {{ pending_count }} transaction{{ "s" if pending_count != 1 else "" }} restante{{ "s" if pending_count != 1 else "" }}
+    {% trans pending_count=pending_count, v="s" if pending_count != 1 else "" %}{{ pending_count }} transaction{{ v }} restante{{ v }}{% endtrans %}
   {% else %}
-    La Savane vide
+    {{ _("La Savane vide") }}
   {% endif %}
 </p>

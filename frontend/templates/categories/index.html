@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Catégories — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Catégories — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">Catégories</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Paramètres</a>
+    <h1 class="text-2xl font-bold text-primary">{{ _("Catégories") }}</h1>
+    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">Ajouter une catégorie</h2>
+    <h2 class="text-lg font-bold text-primary">{{ _("Ajouter une catégorie") }}</h2>
     <form
       hx-post="/categories/create"
       hx-target="#categories-content"
@@ -20,33 +20,33 @@
       <input
         type="text"
         name="name"
-        placeholder="Nom de la catégorie"
+        placeholder="{{ _("Nom de la catégorie") }}"
         required
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
       <select name="parent_id" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
-        <option value="">Catégorie de premier niveau</option>
+        <option value="">{{ _("Catégorie de premier niveau") }}</option>
         {% for parent in categories %}
-        <option value="{{ parent.id }}">Sous-catégorie de {{ parent.icon or "" }} {{ parent.name }}</option>
+        <option value="{{ parent.id }}">{% trans v=parent.icon or "", name=parent.name %}Sous-catégorie de {{ v }} {{ name }}{% endtrans %}</option>
         {% endfor %}
       </select>
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        Ajouter
+        {{ _("Ajouter") }}
       </button>
     </form>
   </div>
 
   <div class="flex items-center justify-between">
-    <h2 class="text-lg font-bold text-primary">Catégories existantes</h2>
+    <h2 class="text-lg font-bold text-primary">{{ _("Catégories existantes") }}</h2>
     <button
       type="button"
       hx-post="/categories/reset-pillar-overrides"
       hx-target="#categories-content"
       hx-swap="outerHTML"
-      hx-confirm="Réinitialiser tous les piliers des sous-catégories vers « hérite du parent » ?"
+      hx-confirm="{{ _("Réinitialiser tous les piliers des sous-catégories vers « hérite du parent » ?") }}"
       class="text-xs text-secondary font-medium"
     >
-      Réinitialiser les piliers
+      {{ _("Réinitialiser les piliers") }}
     </button>
   </div>
   {% include "categories/_content.html" %}

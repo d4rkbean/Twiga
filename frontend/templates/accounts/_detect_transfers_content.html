@@ -7,7 +7,7 @@
     hx-confirm="Confirmer les {{ pairs | length }} virement(s) détecté(s) ?"
   >
     <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      {{ icon('check') }} Tout confirmer ({{ pairs | length }})
+      {{ icon('check') }} {% trans pairs=pairs | length %}Tout confirmer ({{ pairs }}){% endtrans %}
     </button>
   </form>
   {% endif %}
@@ -19,10 +19,10 @@
     </p>
     <p class="text-sm text-secondary">
       <span class="amount-blur text-danger font-medium">{{ pair.negative.amount | eur }}</span>
-      le {{ pair.negative.date | fr_date }}
+      {% trans date=pair.negative.date | fr_date %}le {{ date }}{% endtrans %}
       {{ icon('arrows-left-right') }}
       <span class="amount-blur text-success font-medium">+{{ pair.positive.amount | eur }}</span>
-      le {{ pair.positive.date | fr_date }}
+      {% trans date=pair.positive.date | fr_date %}le {{ date }}{% endtrans %}
     </p>
     <div class="flex gap-2">
       <form
@@ -34,7 +34,7 @@
         <input type="hidden" name="tx_a_id" value="{{ pair.negative.id }}" />
         <input type="hidden" name="tx_b_id" value="{{ pair.positive.id }}" />
         <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-          {{ icon('check') }} Confirmer
+          {{ icon('check') }} {{ _("Confirmer") }}
         </button>
       </form>
       <button
@@ -42,13 +42,13 @@
         @click="$el.closest('[data-pair]').remove()"
         class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
       >
-        {{ icon('x') }} Ignorer
+        {{ icon('x') }} {{ _("Ignorer") }}
       </button>
     </div>
   </div>
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center">{{ icon('confetti') }} Aucun virement interne non confirmé détecté.</p>
+    <p class="text-sm text-secondary text-center">{{ icon('confetti') }} {{ _("Aucun virement interne non confirmé détecté.") }}</p>
   </div>
   {% endfor %}
 </div>

@@ -1,15 +1,14 @@
 <div id="recurring-content" class="flex flex-col gap-3">
   {% if recurring_patterns %}
   <p class="text-sm text-secondary">
-    {{ recurring_active_count }} abonnement{{ "s" if recurring_active_count != 1 else "" }} détecté{{ "s" if recurring_active_count != 1 else "" }}
-    · Total mensuel estimé : <span class="amount-blur">{{ recurring_monthly_total | eur }}</span>
+    {% trans recurring_active_count=recurring_active_count, v="s" if recurring_active_count != 1 else "" %}{{ recurring_active_count }} abonnement{{ v }} détecté{{ v }} · Total mensuel estimé :{% endtrans %} <span class="amount-blur">{{ recurring_monthly_total | eur }}</span>
   </p>
   {% endif %}
 
   {% for group in recurring_duplicate_groups %}
   <div class="bg-container rounded-xl shadow-sm p-3 flex flex-col gap-2 border border-accent">
     <p class="text-sm text-primary">
-      Ces {{ group | length }} entrées semblent être le même abonnement :
+      {% trans group=group | length %}Ces {{ group }} entrées semblent être le même abonnement :{% endtrans %}
       {% for item in group %}{{ item.label_pattern | replace("|", " / ") }}{% if not loop.last %}, {% endif %}{% endfor %}
     </p>
     <form hx-post="/recurring/merge" hx-target="#recurring-content" hx-swap="outerHTML">
@@ -20,7 +19,7 @@
       <input type="hidden" name="frequency_days" value="{{ group[0].frequency_days }}" />
       <input type="hidden" name="category_id" value="{{ group[0].category.id if group[0].category else '' }}" />
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold px-4">
-        Fusionner
+        {{ _("Fusionner") }}
       </button>
     </form>
   </div>
@@ -39,29 +38,29 @@
       -{{ item.amount | eur }} · {{ item.frequency_label }}
     </p>
 
-    <p class="text-sm text-secondary">Dernière fois : {{ item.last_date | fr_date }}</p>
+    <p class="text-sm text-secondary">{% trans last_date=item.last_date | fr_date %}Dernière fois : {{ last_date }}{% endtrans %}</p>
     {% if effective_state != "inactive" %}
     <p class="text-sm text-secondary">
-      Prochaine attendue : {{ item.next_expected | fr_date }}
+      {% trans next_expected=item.next_expected | fr_date %}Prochaine attendue : {{ next_expected }}{% endtrans %}
       {{ icon('bell-off', size=14) if effective_state == 'ignored' else (icon('circle-check', size=14) if effective_state == 'seen' else icon('alert-triangle', size=14)) }}
     </p>
     {% endif %}
 
     {% if item.category %}
-    <p class="text-sm text-secondary">Catégorie : {{ item.category.icon or "" }} {{ item.category.name | category_display }}</p>
+    <p class="text-sm text-secondary">{% trans v=item.category.icon or "", name=item.category.name | category_display %}Catégorie : {{ v }} {{ name }}{% endtrans %}</p>
     {% endif %}
 
     <p
       class="text-sm font-medium {{ 'text-success' if effective_state == 'seen' else ('text-warning' if effective_state == 'pending' else 'text-secondary') }}"
     >
       {% if effective_state == "ignored" %}
-      {{ icon('bell-off', size=14) }} Ignoré
+      {{ icon('bell-off', size=14) }} {{ _("Ignoré") }}
       {% elif effective_state == "inactive" %}
-      {{ icon('clock', size=14) }} Inactif/annulé ? (dernier vu il y a {{ item.days_since_last }} jours)
+      {{ icon('clock', size=14) }} {% trans days_since_last=item.days_since_last %}Inactif/annulé ? (dernier vu il y a {{ days_since_last }} jours){% endtrans %}
       {% elif effective_state == "seen" %}
-      {{ icon('circle-check', size=14) }} Déjà prélevé ce mois
+      {{ icon('circle-check', size=14) }} {{ _("Déjà prélevé ce mois") }}
       {% else %}
-      {{ icon('alert-triangle', size=14) }} Attendu ce mois, pas encore vu
+      {{ icon('alert-triangle', size=14) }} {{ _("Attendu ce mois, pas encore vu") }}
       {% endif %}
     </p>
 
@@ -80,7 +79,7 @@
           type="submit"
           class="w-full min-h-[50px] rounded-xl font-medium {{ 'bg-success text-on-accent font-semibold' if item.status == 'confirmed' else 'bg-container border border-border text-success' }}"
         >
-          {{ icon('check', size=16) }} Confirmer
+          {{ icon('check', size=16) }} {{ _("Confirmer") }}
         </button>
       </form>
       <form
@@ -97,14 +96,14 @@
           type="submit"
           class="w-full min-h-[50px] rounded-xl font-medium {{ 'border-2 border-danger text-danger font-semibold' if item.status == 'ignored' else 'bg-container border border-border text-danger' }}"
         >
-          {{ icon('x', size=16) }} Ignorer
+          {{ icon('x', size=16) }} {{ _("Ignorer") }}
         </button>
       </form>
     </div>
   </div>
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Aucun abonnement récurrent détecté pour l'instant.</p>
+    <p class="text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Aucun abonnement récurrent détecté pour l'instant.") }}</p>
   </div>
   {% endfor %}
 </div>

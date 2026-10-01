@@ -7,10 +7,10 @@
     hx-target=".category-suggestion"
     hx-swap="outerHTML"
   >
-    {{ icon('arrow-narrow-left') }} Retour aux catégories
+    {{ icon('arrow-narrow-left') }} {{ _("Retour aux catégories") }}
   </button>
   <p class="text-sm text-secondary">
-    Sous-catégorie de
+    {{ _("Sous-catégorie de") }}
     <span class="text-primary font-medium">
       {% if not category.parent_id %}{{ get_category_icon(category.name) }}{% endif %}
       {{ category.name }}
@@ -26,7 +26,7 @@
       hx-swap="outerHTML"
     >
       <span class="hidden sm:flex items-center justify-center w-5 h-5 rounded-full bg-page text-secondary text-xs font-semibold flex-shrink-0">1</span>
-      <span>{{ category.name }} (général)</span>
+      <span>{% trans name=category.name %}{{ name }} (général){% endtrans %}</span>
     </button>
     {% for subcategory in subcategories %}
     <button

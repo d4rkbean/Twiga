@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}La Savane — Twiga 🦒{% endblock %}
+{% block title %}{{ _("La Savane — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 <!-- min-h-[calc(100vh-123px)], pas min-h-screen : <body> réserve déjà
@@ -12,12 +12,12 @@
      propre à cette page : le dégagement de l'en-tête est maintenant
      entièrement géré par <body>, un pt-2 ici doublerait la marge. -->
 <main class="min-h-[calc(100vh-123px)] flex flex-col items-center gap-4 px-4 pb-4">
-  <h1 class="sr-only">La Savane</h1>
+  <h1 class="sr-only">{{ _("La Savane") }}</h1>
   {% include "inbox/_budget_alerts.html" %}
   {% include "inbox/_counter.html" %}
   {% include "inbox/_unexpected_toast.html" %}
   {% include "inbox/_rule_suggestion_toast.html" %}
-  <a id="tour-bulk-link" href="/backlog" class="text-sm text-accent font-medium">{{ icon('folders') }}️ Traitement en masse {{ icon('arrow-narrow-right') }}</a>
+  <a id="tour-bulk-link" href="/backlog" class="text-sm text-accent font-medium">{{ icon('folders') }}{{ _("️ Traitement en masse") }} {{ icon('arrow-narrow-right') }}</a>
   {% include "inbox/_routine_banner.html" %}
   {% include "inbox/_le_cap_midmonth_banner.html" %}
   <div class="flex-1 flex items-center justify-center">

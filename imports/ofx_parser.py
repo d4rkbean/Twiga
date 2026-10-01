@@ -6,6 +6,8 @@ from pathlib import Path
 
 from imports.common import ImportParseError, ParsedTransaction, parse_decimal_amount
 
+from backend.i18n import gettext as _t
+
 __all__ = [
     "OfxParseError",
     "iter_transaction_blocks",
@@ -43,7 +45,7 @@ def _parse_ofx_date(raw: str) -> date:
     try:
         return datetime.strptime(digits, "%Y%m%d").date()
     except ValueError as exc:
-        raise OfxParseError(f"Date invalide : {raw!r}") from exc
+        raise OfxParseError(_t("Date invalide : %(raw)r") % {"raw": raw}) from exc
 
 
 def iter_transaction_blocks(content: str) -> list[str]:
@@ -53,7 +55,7 @@ def iter_transaction_blocks(content: str) -> list[str]:
 def parse_ofx_transactions(content: str, account_name: str) -> list[ParsedTransaction]:
     blocks = iter_transaction_blocks(content)
     if not blocks:
-        raise OfxParseError("Aucune transaction trouvée (balise <STMTTRN> absente).")
+        raise OfxParseError(_t("Aucune transaction trouvée (balise <STMTTRN> absente)."))
 
     transactions: list[ParsedTransaction] = []
 
@@ -61,7 +63,7 @@ def parse_ofx_transactions(content: str, account_name: str) -> list[ParsedTransa
         date_raw = _extract_tag(block, "DTPOSTED")
         amount_raw = _extract_tag(block, "TRNAMT")
         if date_raw is None or amount_raw is None:
-            raise OfxParseError(f"Transaction {index} : DTPOSTED ou TRNAMT manquant.")
+            raise OfxParseError(_t("Transaction %(index)s : DTPOSTED ou TRNAMT manquant.") % {"index": index})
 
         name = _extract_tag(block, "NAME")
         memo = _extract_tag(block, "MEMO")
@@ -71,7 +73,7 @@ def parse_ofx_transactions(content: str, account_name: str) -> list[ParsedTransa
             tx_date = _parse_ofx_date(date_raw)
             amount = parse_decimal_amount(amount_raw)
         except ImportParseError as exc:
-            raise OfxParseError(f"Transaction {index} : {exc}") from exc
+            raise OfxParseError(_t("Transaction %(index)s : %(error)s") % {"index": index, "error": exc}) from exc
 
         transactions.append(
             ParsedTransaction(

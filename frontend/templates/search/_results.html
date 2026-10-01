@@ -1,7 +1,7 @@
 <div class="bg-container border border-border rounded-xl shadow-lg divide-y divide-border max-w-lg mx-auto max-h-[70vh] overflow-y-auto">
   {% if transactions %}
   <div class="p-2">
-    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('list-details', size=13) }} Opérations</p>
+    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('list-details', size=13) }} {{ _("Opérations") }}</p>
     {% for tx in transactions %}
     <a
       href="/transactions/list?f_search={{ tx.label | urlencode }}"
@@ -18,7 +18,7 @@
 
   {% if categories %}
   <div class="p-2">
-    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('folder', size=13) }} Catégories</p>
+    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('folder', size=13) }} {{ _("Catégories") }}</p>
     {% for category in categories %}
     <a
       href="/transactions/list?f_category={{ category.id }}"
@@ -32,7 +32,7 @@
 
   {% if projects %}
   <div class="p-2">
-    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('target', size=13) }} Projets</p>
+    <p class="text-xs text-secondary uppercase tracking-wide px-2 pb-1">{{ icon('target', size=13) }} {{ _("Projets") }}</p>
     {% for project in projects %}
     <a
       href="/projects#project-card-{{ project.id }}"
@@ -45,6 +45,6 @@
   {% endif %}
 
   {% if not transactions and not categories and not projects %}
-  <p class="text-sm text-secondary text-center p-4">Aucun résultat pour « {{ query }} ».</p>
+  <p class="text-sm text-secondary text-center p-4">{% trans query=query %}Aucun résultat pour « {{ query }} ».{% endtrans %}</p>
   {% endif %}
 </div>
