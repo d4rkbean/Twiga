@@ -232,13 +232,12 @@ cat <<DONE
   Login        admin
   Password     ${ADMIN_PASSWORD}
 
-  Write this password down now, then change it in Paramètres > Profil
-  (Settings > Profile). It also stays in /opt/twiga/.env, readable by root only.
+  Write this password down now, then change it in Settings > Security >
+  Change the password. It also stays in /opt/twiga/.env, readable by root only.
 
   Update             pct exec ${CTID} -- twiga-update
   Backups            daily at 3 a.m. in /opt/twiga/backups (30 days)
                      Copy them regularly outside this container.
-  Restore your data  Paramètres > Données > Restaurer depuis une sauvegarde JSON
-                     (Settings > Data > Restore from a JSON backup)
+  Restore your data  Settings > Data > Restore from a JSON backup
 
 DONE
