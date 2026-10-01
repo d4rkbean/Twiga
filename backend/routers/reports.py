@@ -25,6 +25,7 @@ from backend.dates import (
 )
 from backend.formatting import format_amount, format_date
 from backend.templating import category_display_filter, templates
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -357,7 +358,7 @@ def _build_report_context(
             float(sum((row["monthly"][i] for row in sorted_rows[6:]), Decimal("0.00")))
             for i in range(len(months))
         ]
-        receipt_chart_series.append({"label": "Autres", "data": others})
+        receipt_chart_series.append({"label": _t("Autres"), "data": others})
     current_month_start, _ = month_range(today.year, today.month)
 
     expense_rows = _build_category_rows(
@@ -470,9 +471,9 @@ def _build_report_context(
                 "bar_width": min(round(cap_actuals[key] / planned * 100), 100) if planned else 0,
             }
             for key, icon, name, planned in [
-                ("essentiel", "🏠", "Essentiel", cap_entry.planned_essentiel),
-                ("choix", "🌟", "Choix", cap_entry.planned_choix),
-                ("imprevu", "🆘", "Imprévus", cap_entry.planned_imprevu),
+                ("essentiel", "🏠", _t("Essentiel"), cap_entry.planned_essentiel),
+                ("choix", "🌟", _t("Choix"), cap_entry.planned_choix),
+                ("imprevu", "🆘", _t("Imprévus"), cap_entry.planned_imprevu),
             ]
         ]
     cap_unexpected = crud.get_unexpected_transactions(db, cap_month_start, cap_today)
@@ -758,10 +759,10 @@ def export_report_transactions_csv(
 
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
-    writer.writerow(["Date", "Libellé", "Catégorie", "Compte", "Montant"])
+    writer.writerow(["Date", _t("Libellé"), _t("Catégorie"), _t("Compte"), _t("Montant")])
     for tx in transactions:
         category_name = (
-            category_display_filter(tx.category.name) if tx.category else "Non catégorisé"
+            category_display_filter(tx.category.name) if tx.category else _t("Non catégorisé")
         )
         writer.writerow(
             [tx.date.isoformat(), tx.label or "", category_name, tx.account.name, str(tx.amount)]
@@ -796,20 +797,20 @@ def export_report_csv(
 
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";")
-    writer.writerow(["Rapport Twiga", context["period_bar_label"]])
+    writer.writerow([_t("Rapport Twiga"), context["period_bar_label"]])
     writer.writerow([])
-    writer.writerow(["Recettes", format_amount(context["income_total"])])
-    writer.writerow(["Dépenses", format_amount(context["expense_total"])])
-    writer.writerow(["Résultat", format_amount(context["result_total"])])
-    writer.writerow(["Taux d'épargne", f"{context['savings_rate']} %"])
-    writer.writerow(["Score Twiga", f"{context['twiga_score']['score']} / 100"])
+    writer.writerow([_t("Recettes"), format_amount(context["income_total"])])
+    writer.writerow([_t("Dépenses"), format_amount(context["expense_total"])])
+    writer.writerow([_t("Résultat"), format_amount(context["result_total"])])
+    writer.writerow([_t("Taux d'épargne"), f"{context['savings_rate']} %"])
+    writer.writerow([_t("Score Twiga"), f"{context['twiga_score']['score']} / 100"])
     writer.writerow([])
-    writer.writerow(["Dépenses par catégorie", "Montant", "% du total", "Évolution vs période précédente"])
+    writer.writerow([_t("Dépenses par catégorie"), _t("Montant"), "%" + _t(" du total"), _t("Évolution vs période précédente")])
     for row in context["expense_rows"]:
         change = f"{row['change']} %" if row["change"] is not None else ""
         writer.writerow([row["name"], format_amount(row["amount"]), f"{row['percent_of_total']} %", change])
     writer.writerow([])
-    writer.writerow(["Recettes par catégorie", "Montant", "% du total", "Évolution vs période précédente"])
+    writer.writerow([_t("Recettes par catégorie"), _t("Montant"), "%" + _t(" du total"), _t("Évolution vs période précédente")])
     for row in context["income_rows"]:
         change = f"{row['change']} %" if row["change"] is not None else ""
         writer.writerow([row["name"], format_amount(row["amount"]), f"{row['percent_of_total']} %", change])

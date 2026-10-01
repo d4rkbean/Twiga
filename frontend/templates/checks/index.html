@@ -1,22 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Chèques & paiements en attente — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Chèques & paiements en attente — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">Chèques & paiements en attente</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Paramètres</a>
+    <h1 class="text-2xl font-bold text-primary">{{ _("Chèques & paiements en attente") }}</h1>
+    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">Enregistrer un paiement émis</h2>
+    <h2 class="text-lg font-bold text-primary">{{ _("Enregistrer un paiement émis") }}</h2>
     <p class="text-sm text-secondary">
-      Dès que ce paiement sera débité (montant retrouvé, ET numéro de chèque
-      ou moyen de paiement identifié dans le libellé d'une opération
-      importée), il sera automatiquement catégorisé — sans passer par La
-      Savane. Utile aussi pour les paiements via un intermédiaire (Wero,
-      PayPal...) dont le libellé bancaire ne dit jamais à qui/pourquoi.
+      {{ _("Dès que ce paiement sera débité (montant retrouvé, ET numéro de chèque ou moyen de paiement identifié dans le libellé d'une opération importée), il sera automatiquement catégorisé — sans passer par La Savane. Utile aussi pour les paiements via un intermédiaire (Wero, PayPal...) dont le libellé bancaire ne dit jamais à qui/pourquoi.") }}
     </p>
     <form
       hx-post="/checks/create"
@@ -27,41 +23,40 @@
       <input
         type="text"
         name="check_number"
-        placeholder="Numéro de chèque (si chèque)"
+        placeholder="{{ _("Numéro de chèque (si chèque)") }}"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
       <select
         name="payment_method"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       >
-        <option value="" selected>— Moyen de paiement (si pas de chèque) —</option>
+        <option value="" selected>{{ _("— Moyen de paiement (si pas de chèque) —") }}</option>
         {% for code, meta in payment_methods.items() %}
         <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
         {% endfor %}
       </select>
       <p class="text-xs text-secondary -mt-1">
-        Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque,
-        ou moyen de paiement (Wero, PayPal...).
+        {{ _("Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque, ou moyen de paiement (Wero, PayPal...).") }}
       </p>
       <input
         type="text"
         inputmode="decimal"
         name="amount"
-        placeholder="Montant"
+        placeholder="{{ _("Montant") }}"
         required
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
       <input
         type="date"
         name="issued_date"
-        aria-label="Date d'émission"
+        aria-label="{{ _("Date d'émission") }}"
         required
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
       <input
         type="text"
         name="recipient"
-        placeholder="Destinataire / motif (optionnel)"
+        placeholder="{{ _("Destinataire / motif (optionnel)") }}"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
       <select
@@ -69,7 +64,7 @@
         required
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       >
-        <option value="" disabled selected>Compte débité...</option>
+        <option value="" disabled selected>{{ _("Compte débité...") }}</option>
         {% for account in accounts %}
         <option value="{{ account.id }}">{{ account.name }}</option>
         {% endfor %}
@@ -83,7 +78,7 @@
         hx-trigger="change"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       >
-        <option value="" disabled selected>Catégorie...</option>
+        <option value="" disabled selected>{{ _("Catégorie...") }}</option>
         {% for category in parent_categories %}
         <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
         {% endfor %}
@@ -92,7 +87,7 @@
       {% include "transactions/_subcategory_select.html" %}
       {% endwith %}
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        Enregistrer le paiement
+        {{ _("Enregistrer le paiement") }}
       </button>
     </form>
   </div>

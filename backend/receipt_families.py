@@ -10,20 +10,22 @@ pour la logique équivalente côté catégories de revenu.
 """
 from decimal import Decimal
 
+from backend.i18n import lazy_gettext
+
 RECEIPT_FAMILIES: list[tuple[str, str, str]] = [
-    ("fruits_legumes", "🥦", "Fruits et légumes"),
-    ("epicerie_salee", "🍝", "Épicerie salée"),
-    ("epicerie_sucree", "🍬", "Épicerie sucrée"),
-    ("pains_patisseries", "🥐", "Pains et pâtisseries"),
-    ("viandes_poissons", "🥩", "Viandes et poissons"),
-    ("laitiers_oeufs", "🥚", "Laitiers et œufs"),
-    ("charcuterie_traiteur", "🍖", "Charcuterie et traiteur"),
-    ("surgeles", "🧊", "Surgelés"),
-    ("boissons", "🥤", "Boissons"),
-    ("hygiene_beaute", "🧴", "Hygiène et beauté"),
-    ("animalerie", "🐾", "Animalerie"),
-    ("entretien_nettoyage", "🧹", "Entretien et nettoyage"),
-    ("maison_loisirs", "🛋️", "Maison et loisirs"),
+    ("fruits_legumes", "🥦", lazy_gettext("Fruits et légumes")),
+    ("epicerie_salee", "🍝", lazy_gettext("Épicerie salée")),
+    ("epicerie_sucree", "🍬", lazy_gettext("Épicerie sucrée")),
+    ("pains_patisseries", "🥐", lazy_gettext("Pains et pâtisseries")),
+    ("viandes_poissons", "🥩", lazy_gettext("Viandes et poissons")),
+    ("laitiers_oeufs", "🥚", lazy_gettext("Laitiers et œufs")),
+    ("charcuterie_traiteur", "🍖", lazy_gettext("Charcuterie et traiteur")),
+    ("surgeles", "🧊", lazy_gettext("Surgelés")),
+    ("boissons", "🥤", lazy_gettext("Boissons")),
+    ("hygiene_beaute", "🧴", lazy_gettext("Hygiène et beauté")),
+    ("animalerie", "🐾", lazy_gettext("Animalerie")),
+    ("entretien_nettoyage", "🧹", lazy_gettext("Entretien et nettoyage")),
+    ("maison_loisirs", "🛋️", lazy_gettext("Maison et loisirs")),
 ]
 
 RECEIPT_FAMILY_LABELS: dict[str, str] = {code: label for code, _icon, label in RECEIPT_FAMILIES}

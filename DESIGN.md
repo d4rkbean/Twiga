@@ -226,6 +226,8 @@ Content is constrained to `max-w-lg` (32rem) for forms and panels, `max-w-sm` (2
 
 **The 50px Rule.** Everything you tap is at least 50px tall: buttons, navigation rows, list entries. Input fields go down to 46px, never below. This is a product constraint, not an aesthetic preference: categorization is done with the thumb, on the go.
 
+**The Balanced Columns Rule.** When cards of very different heights share a page (Settings), do not use a grid: it aligns by rows and leaves two columns half empty next to a column three screens tall. `.settings-columns` (CSS columns: 2 from `lg`, 3 from `xl`, `break-inside: avoid`) fills top to bottom and balances itself; the order of the markup groups the cards by purpose.
+
 **The Single Breakpoint Rule.** The switch from mobile to desktop happens at `lg` and nowhere else. `sm` and `md` only adjust internal details (card padding, the orientation of a button group), never the navigation structure.
 
 ## Elevation & Depth
@@ -279,6 +281,13 @@ Borders are 1px, in `border`, on all surfaces. The only deliberate exception is 
 - **Style:** 46px height, 12px radius, 1px Hairline border, White Surface background, 14px text, 12px horizontal padding.
 - **Focus:** the global accent ring (`:focus-visible`).
 - **Title field:** a distinctive variant: a field with no background or border, underlined by a simple 1px line that turns amber on focus, and typeset like a title (24px, 700). Used to rename a transaction label without ever feeling like filling in a form.
+
+### Choice cards
+- **Usage:** a choice among a few options that are compared at a glance (language, number and date format in Settings > Preferences); beyond five options, or for a binary setting, use a field or a checkbox.
+- **Style:** 50px minimum height, 12px radius, 1px Hairline border, White Surface background; content stacks (title in `font-medium`, example or hint in faded 12px).
+- **Selected:** Giraffe Amber border and inner line plus a 12% amber background: the state reads from shape, not from color alone.
+- **Radio:** visually hidden (`.sr-only`) but never removed: the whole card is clickable, the keyboard keeps working, and the focus ring (2px amber) sits on the card (`:has(input:focus-visible)`).
+- **Class:** `.choice-card` (design-system.css). Show the real rendering inside the card (a sample date and amount) rather than describing it.
 
 ### Navigation
 - **Mobile (< 1024px):** fixed bottom bar, four destinations, each 50px tall, icon above the 12px label. Active = Giraffe Amber text in `font-semibold` + a `bg-accent/10` pill behind the icon.

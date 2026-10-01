@@ -17,8 +17,9 @@ depends_on: Union[str, Sequence[str], None] = None
 # Migration conservée (même identifiant) pour garder la chaîne Alembic
 # intacte, mais sans effet : elle recréait à l'origine des catégories
 # propres à une installation précise, ce qui n'a pas sa place dans une
-# installation neuve. Les catégories viennent d'un import QIF ou de la
-# restauration d'une sauvegarde.
+# installation neuve. Les catégories viennent d'un import QIF, de la
+# restauration d'une sauvegarde, ou du bouton « Ajouter des catégories de
+# base » de la page Catégories.
 
 
 def upgrade() -> None:

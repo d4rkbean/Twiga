@@ -10,15 +10,17 @@ renvoie alors un intitulé/icône par défaut plutôt que de planter, et
 l'utilisateur peut réassigner un type propre via le formulaire d'édition.
 """
 
+from backend.i18n import lazy_gettext
+
 ACCOUNT_TYPES: dict[str, dict[str, str]] = {
-    "courant": {"icon": "🏦", "label": "Courant"},
-    "epargne": {"icon": "💰", "label": "Épargne"},
-    "livret": {"icon": "📈", "label": "Livret"},
+    "courant": {"icon": "🏦", "label": lazy_gettext("Courant")},
+    "epargne": {"icon": "💰", "label": lazy_gettext("Épargne")},
+    "livret": {"icon": "📈", "label": lazy_gettext("Livret")},
     "cash": {"icon": "💵", "label": "Cash"},
-    "autre": {"icon": "❓", "label": "Autre"},
+    "autre": {"icon": "❓", "label": lazy_gettext("Autre")},
 }
 
-_DEFAULT = {"icon": "🏦", "label": "Autre"}
+_DEFAULT = {"icon": "🏦", "label": lazy_gettext("Autre")}
 
 
 def get_account_type(type_code: str | None) -> dict[str, str]:

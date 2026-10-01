@@ -1,30 +1,27 @@
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-3 text-center">
-  <h2 class="text-2xl font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:28px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga a tout avalé !</h2>
-  <p class="text-secondary">Import terminé.</p>
-  <p class="text-secondary">{{ icon('circle-check', size=16) }} {{ imported_count }} opération(s) importée(s).</p>
+  <h2 class="text-2xl font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:28px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga a tout avalé !") }}</h2>
+  <p class="text-secondary">{{ _("Import terminé.") }}</p>
+  <p class="text-secondary">{{ icon('circle-check', size=16) }} {% trans imported_count=imported_count %}{{ imported_count }} opération(s) importée(s).{% endtrans %}</p>
   {% if duplicate_count %}
-  <p class="text-secondary">{{ duplicate_count }} doublon(s) ignoré(s).</p>
+  <p class="text-secondary">{% trans duplicate_count=duplicate_count %}{{ duplicate_count }} doublon(s) ignoré(s).{% endtrans %}</p>
   {% endif %}
   {% if excluded_count %}
-  <p class="text-secondary">{{ excluded_count }} opération(s) exclue(s) volontairement.</p>
+  <p class="text-secondary">{% trans excluded_count=excluded_count %}{{ excluded_count }} opération(s) exclue(s) volontairement.{% endtrans %}</p>
   {% endif %}
   {% if relinked_count %}
-  <p class="text-secondary">{{ relinked_count }} opération(s) existante(s) recatégorisée(s).</p>
+  <p class="text-secondary">{% trans relinked_count=relinked_count %}{{ relinked_count }} opération(s) existante(s) recatégorisée(s).{% endtrans %}</p>
   {% endif %}
 
   {% if transfer_summary %}
   {% set transfer_total = transfer_summary | sum(attribute="count") %}
   <div class="text-left bg-page rounded-xl p-3 flex flex-col gap-1">
     <p class="text-sm font-semibold text-primary">
-      {{ icon('repeat', size=16) }} {{ transfer_total }} virement{{ "s" if transfer_total != 1 else "" }}
-      interne{{ "s" if transfer_total != 1 else "" }} détecté{{ "s" if transfer_total != 1 else "" }}
-      et exclu{{ "s" if transfer_total != 1 else "" }} automatiquement :
+      {{ icon('repeat', size=16) }} {% trans transfer_total=transfer_total, v="s" if transfer_total != 1 else "" %}{{ transfer_total }} virement{{ v }} interne{{ v }} détecté{{ v }} et exclu{{ v }} automatiquement :{% endtrans %}
     </p>
     <ul class="text-sm text-secondary list-disc pl-5">
       {% for g in transfer_summary %}
       <li>
-        {{ g.account_from }} {{ icon('arrow-narrow-right', size=14) }} {{ g.account_to }} : {{ g.count }} virement{{ "s" if g.count != 1 else "" }}
-        ({% for d in g.dates %}{{ d.strftime("%d/%m") }}{% if not loop.last %}, {% endif %}{% endfor %})
+        {% trans account_from=g.account_from, size=icon('arrow-narrow-right', size=14), account_to=g.account_to, count=g.count, v="s" if g.count != 1 else "" %}{{ account_from }} {{ size }} {{ account_to }} : {{ count }} virement{{ v }} ({% endtrans %}{% for d in g.dates %}{{ d.strftime("%d/%m") }}{% if not loop.last %}, {% endif %}{% endfor %})
       </li>
       {% endfor %}
     </ul>
@@ -34,13 +31,12 @@
   {% if check_match_summary %}
   <div class="text-left bg-page rounded-xl p-3 flex flex-col gap-1">
     <p class="text-sm font-semibold text-primary">
-      {{ icon('receipt', size=16) }} {{ check_match_summary | length }} paiement{{ "s" if check_match_summary | length != 1 else "" }} en attente
-      rapproché{{ "s" if check_match_summary | length != 1 else "" }} automatiquement :
+      {{ icon('receipt', size=16) }} {% trans check_match_summary=check_match_summary | length, check_match_summary2="s" if check_match_summary | length != 1 else "" %}{{ check_match_summary }} paiement{{ check_match_summary2 }} en attente rapproché{{ check_match_summary2 }} automatiquement :{% endtrans %}
     </p>
     <ul class="text-sm text-secondary list-disc pl-5">
       {% for c in check_match_summary %}
       <li>
-        {% if c.check_number %}N° {{ c.check_number }}{% else %}{{ c.payment_method }}{% endif %}
+        {% if c.check_number %}N° {{ c.check_number }}{% else %}{{ c.payment_method | pm_label }}{% endif %}
         — <span class="amount-blur">{{ c.amount | eur }}</span> {{ icon('arrow-narrow-right', size=14) }} {{ c.category_name }}
         {% if c.recipient %} ({{ c.recipient }}){% endif %}
       </li>
@@ -49,7 +45,7 @@
   </div>
   {% endif %}
 
-  <p class="text-secondary">{{ icon('inbox', size=16) }} {{ to_categorize_count }} opération(s) dans La Savane à catégoriser.</p>
+  <p class="text-secondary">{{ icon('inbox', size=16) }} {% trans to_categorize_count=to_categorize_count %}{{ to_categorize_count }} opération(s) dans La Savane à catégoriser.{% endtrans %}</p>
 
   <!-- Plusieurs comptes = souvent plusieurs fichiers à importer à la suite
        (un par banque/compte) : proposer d'enchaîner tout de suite, plutôt
@@ -58,13 +54,13 @@
     href="/imports/new"
     class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
   >
-    {{ icon('file-import', size=18) }} Importer un autre fichier
+    {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
   </a>
 
   <a
     href="/transactions/inbox"
     class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center"
   >
-    Aller à La Savane
+    {{ _("Aller à La Savane") }}
   </a>
 </div>

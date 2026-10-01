@@ -14,7 +14,7 @@
   class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5"
 >
   <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('calendar-event', size=88) }}</span>
-  <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('calendar-event', size=14) }} Ce mois</p>
+  <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('calendar-event', size=14) }} {{ _("Ce mois") }}</p>
 
   {# Bureau : le résultat du mois est LE chiffre de cette tuile, il passe donc
      en tête et en grand ; recettes et dépenses le détaillent en dessous, sur
@@ -31,13 +31,13 @@
   </p>
 
   <p class="text-xs text-secondary lg:hidden">
-    Recettes : <span class="amount-blur font-semibold text-success">+{{ row1_income | eur }}</span>
+    {{ _("Recettes :") }} <span class="amount-blur font-semibold text-success">+{{ row1_income | eur }}</span>
   </p>
   <p class="text-xs text-secondary lg:hidden">
-    Dépenses : <span class="amount-blur font-semibold text-danger">-{{ row1_expense | eur }}</span>
+    {{ _("Dépenses :") }} <span class="amount-blur font-semibold text-danger">-{{ row1_expense | eur }}</span>
   </p>
   <p class="text-xs text-secondary lg:hidden">
-    Résultat :
+    {{ _("Résultat :") }}
     <span class="amount-blur font-semibold {{ 'text-success' if row1_result >= 0 else 'text-danger' }}">
       {{ "+" if row1_result > 0 else "" }}{{ row1_result | eur }}
     </span>

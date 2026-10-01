@@ -11,7 +11,7 @@
     value="{{ account.name }}"
     required
     autofocus
-    placeholder="Nom du compte"
+    placeholder="{{ _("Nom du compte") }}"
     class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
   />
   <select name="type" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
@@ -20,7 +20,7 @@
     {% endfor %}
   </select>
   <label class="flex flex-col gap-1">
-    <span class="text-xs text-secondary uppercase tracking-wide">Solde initial (avant la 1ère opération importée)</span>
+    <span class="text-xs text-secondary uppercase tracking-wide">{{ _("Solde initial (avant la 1ère opération importée)") }}</span>
     <input
       type="text"
       inputmode="decimal"
@@ -30,7 +30,7 @@
     />
   </label>
   <label class="flex items-center justify-between gap-2 min-h-[50px]">
-    <span class="text-sm text-primary">Couleur</span>
+    <span class="text-sm text-primary">{{ _("Couleur") }}</span>
     <input
       type="color"
       name="color"
@@ -41,12 +41,12 @@
   <textarea
     name="notes"
     rows="2"
-    placeholder="Notes (optionnel)"
+    placeholder="{{ _("Notes (optionnel)") }}"
     class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 py-2"
   >{{ account.notes or "" }}</textarea>
   <div class="flex gap-2">
     <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      Enregistrer
+      {{ _("Enregistrer") }}
     </button>
     <button
       type="button"
@@ -55,7 +55,7 @@
       hx-swap="outerHTML"
       class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
     >
-      Annuler
+      {{ _("Annuler") }}
     </button>
   </div>
 </form>

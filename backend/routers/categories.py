@@ -6,6 +6,7 @@ from backend import crud
 from backend.database import get_db
 from backend.models import Category
 from backend.templating import templates
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -55,7 +56,7 @@ def category_row(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     context = {"request": request, "category": category, "is_child": is_child}
     return templates.TemplateResponse("categories/_row.html", context)
 
@@ -66,7 +67,7 @@ def edit_category_form(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     context = {"request": request, "category": category, "is_child": is_child}
     return templates.TemplateResponse("categories/_row_edit.html", context)
 
@@ -80,7 +81,7 @@ def update_category(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     if name.strip():
         crud.update_category_name(db, category, name.strip())
     context = {"request": request, **_content_context(db)}
@@ -97,7 +98,7 @@ def update_category_pillar(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     # "" (option "↳ Hériter du parent" / non défini) -> None, jamais une
     # chaîne vide stockée en base (voir Category.pillar / resolve_category_pillar).
     crud.update_category_pillar(db, category, pillar or None)
@@ -115,7 +116,7 @@ def update_category_budget_exclusion(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     crud.update_category_budget_exclusion(db, category, excluded)
     context = {"request": request, "category": category, "is_child": is_child}
     return templates.TemplateResponse("categories/_row.html", context)
@@ -134,7 +135,7 @@ def delete_confirm(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     context = {
         "request": request,
         "category": category,
@@ -154,7 +155,7 @@ def delete_category(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
 
     usage = crud.get_category_usage(db, category_id)
     if usage["children"]:
@@ -176,7 +177,7 @@ def delete_category(
 def add_subcategory_form(request: Request, parent_id: int, db: Session = Depends(get_db)):
     parent = db.get(Category, parent_id)
     if parent is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     context = {"request": request, "parent": parent}
     return templates.TemplateResponse("categories/_add_subcategory_form.html", context)
 
@@ -185,6 +186,6 @@ def add_subcategory_form(request: Request, parent_id: int, db: Session = Depends
 def add_subcategory_button(request: Request, parent_id: int, db: Session = Depends(get_db)):
     parent = db.get(Category, parent_id)
     if parent is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     context = {"request": request, "parent": parent}
     return templates.TemplateResponse("categories/_add_subcategory_button.html", context)

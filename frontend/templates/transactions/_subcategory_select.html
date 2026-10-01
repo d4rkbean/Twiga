@@ -6,10 +6,10 @@
 >
   {% if parent %}
     {% if allow_empty %}
-    <option value="" {% if not selected_category_id %}selected{% endif %}>Toutes les sous-catégories</option>
+    <option value="" {% if not selected_category_id %}selected{% endif %}>{{ _("Toutes les sous-catégories") }}</option>
     {% endif %}
     <option value="{{ parent.id }}" {% if selected_category_id == parent.id %}selected{% endif %}>
-      — {{ parent.name }} (sans sous-catégorie)
+      {% trans name=parent.name %}— {{ name }} (sans sous-catégorie){% endtrans %}
     </option>
     {% for sub in subcategories %}
     <option value="{{ sub.id }}" {% if selected_category_id == sub.id %}selected{% endif %}>

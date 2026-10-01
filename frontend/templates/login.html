@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Connexion — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Connexion — Twiga 🦒") }}{% endblock %}
 
 {% block sidebar %}{% endblock %}
 {% block header %}{% endblock %}
@@ -18,7 +18,7 @@
 {# Seul écran de l'application à porter le pelage en pleine page : aucune
    donnée à lire ici, donc rien avec quoi le motif puisse entrer en
    concurrence. Voir design-system.css, `body.pelage`. #}
-{% block body_brand %}pelage{% endblock %}
+{% block body_brand %}{{ _("pelage") }}{% endblock %}
 
 {% block content %}
 {# Pas de bg-page ici : <body> porte déjà ce fond, et un aplat opaque sur ce
@@ -33,29 +33,29 @@
   <div class="w-full max-w-sm bg-container border border-border rounded-xl shadow-sm p-6 flex flex-col items-center gap-2">
     <img
       src="/static/icons/twiga-logo.svg"
-      alt="Twiga"
+      alt="{{ _("Twiga") }}"
       class="w-32 h-32 mb-2"
       style="width:128px; height:128px;"
     />
-    <h1 class="text-3xl font-extrabold tracking-tight text-primary">TWIGA</h1>
-    <p class="text-sm text-secondary italic mb-4">Voir loin. Voir juste.</p>
+    <h1 class="text-3xl font-extrabold tracking-tight text-primary">{{ _("TWIGA") }}</h1>
+    <p class="text-sm text-secondary italic mb-4">{{ _("Voir loin. Voir juste.") }}</p>
     <form hx-post="/login" hx-target="#login-error" hx-swap="innerHTML" class="w-full flex flex-col gap-3">
-      <label for="login-username" class="sr-only">Nom d'utilisateur</label>
+      <label for="login-username" class="sr-only">{{ _("Nom d'utilisateur") }}</label>
       <input
         id="login-username"
         type="text"
         name="username"
-        placeholder="Nom d'utilisateur"
+        placeholder="{{ _("Nom d'utilisateur") }}"
         autocomplete="username"
         required
         autofocus
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 text-center"
       />
-      {% with field_name = "password", field_label = "Mot de passe", field_placeholder = "Mot de passe", field_autocomplete = "current-password", field_input_class = "text-center" %}
+      {% with field_name = "password", field_label = _("Mot de passe"), field_placeholder = _("Mot de passe"), field_autocomplete = "current-password", field_input_class = "text-center" %}
       {% include "_password_field.html" %}
       {% endwith %}
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        Se connecter
+        {{ _("Se connecter") }}
       </button>
       <div id="login-error"></div>
     </form>

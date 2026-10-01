@@ -2,7 +2,8 @@
 
 Un jeu volontairement court et courant, pour ne pas partir d'une page
 vide : l'utilisateur renomme, supprime ou complète ensuite (Paramètres >
-Catégories). Jamais inséré automatiquement — uniquement sur action
+Catégories). Les noms sont traduits au moment de l'ajout (langue de l'utilisateur), puis stockés tels quels.
+Jamais inséré automatiquement — uniquement sur action
 explicite (voir crud.seed_starter_categories), pour ne pas s'ajouter à des
 catégories déjà importées ou à une sauvegarde JSON restaurée ensuite.
 
@@ -16,190 +17,192 @@ de son parent, une valeur explicite la remplace.
 
 from typing import NamedTuple
 
+from backend.i18n import lazy_gettext
+
 
 class StarterCategory(NamedTuple):
-    name: str
+    name: object  # texte traduit à l'affichage (lazy_gettext)
     pillar: str | None
     excluded_from_budget: bool
-    children: list[tuple[str, str | None]]
+    children: list[tuple[object, str | None]]
 
 
 STARTER_CATEGORIES: list[StarterCategory] = [
     StarterCategory(
-        "Revenus",
+        lazy_gettext("Revenus"),
         None,
         True,  # pas une dépense : masquée de l'écran Budgets
         [
-            ("Salaire", None),
-            ("Primes et bonus", None),
-            ("Allocations et aides", None),
-            ("Remboursements", None),
-            ("Autres revenus", None),
+            (lazy_gettext("Salaire"), None),
+            (lazy_gettext("Primes et bonus"), None),
+            (lazy_gettext("Allocations et aides"), None),
+            (lazy_gettext("Remboursements"), None),
+            (lazy_gettext("Autres revenus"), None),
         ],
     ),
     StarterCategory(
-        "Logement",
+        lazy_gettext("Logement"),
         "essentiel",
         False,
         [
-            ("Loyer ou crédit immobilier", None),
-            ("Charges de copropriété", None),
-            ("Électricité", None),
-            ("Gaz", None),
-            ("Eau", None),
-            ("Chauffage", None),
-            ("Assurance habitation", None),
-            ("Travaux et entretien", None),
-            ("Mobilier et équipement", "choix"),
+            (lazy_gettext("Loyer ou crédit immobilier"), None),
+            (lazy_gettext("Charges de copropriété"), None),
+            (lazy_gettext("Électricité"), None),
+            (lazy_gettext("Gaz"), None),
+            (lazy_gettext("Eau"), None),
+            (lazy_gettext("Chauffage"), None),
+            (lazy_gettext("Assurance habitation"), None),
+            (lazy_gettext("Travaux et entretien"), None),
+            (lazy_gettext("Mobilier et équipement"), "choix"),
         ],
     ),
     StarterCategory(
-        "Alimentation",
+        lazy_gettext("Alimentation"),
         "essentiel",
         False,
         [
-            ("Courses", None),
-            ("Cantine et repas au travail", None),
-            ("Restaurants et cafés", "choix"),
-            ("Livraison de repas", "choix"),
+            (lazy_gettext("Courses"), None),
+            (lazy_gettext("Cantine et repas au travail"), None),
+            (lazy_gettext("Restaurants et cafés"), "choix"),
+            (lazy_gettext("Livraison de repas"), "choix"),
         ],
     ),
     StarterCategory(
-        "Transport",
+        lazy_gettext("Transport"),
         "essentiel",
         False,
         [
-            ("Carburant", None),
-            ("Transports en commun", None),
-            ("Parking et péages", None),
-            ("Entretien et réparations", None),
-            ("Assurance auto", None),
-            ("Taxi et VTC", "choix"),
+            (lazy_gettext("Carburant"), None),
+            (lazy_gettext("Transports en commun"), None),
+            (lazy_gettext("Parking et péages"), None),
+            (lazy_gettext("Entretien et réparations"), None),
+            (lazy_gettext("Assurance auto"), None),
+            (lazy_gettext("Taxi et VTC"), "choix"),
         ],
     ),
     StarterCategory(
-        "Abonnements et factures",
+        lazy_gettext("Abonnements et factures"),
         "essentiel",
         False,
         [
-            ("Internet", None),
-            ("Téléphone mobile", None),
-            ("Streaming et TV", "choix"),
-            ("Services en ligne", "choix"),
+            (lazy_gettext("Internet"), None),
+            (lazy_gettext("Téléphone mobile"), None),
+            (lazy_gettext("Streaming et TV"), "choix"),
+            (lazy_gettext("Services en ligne"), "choix"),
         ],
     ),
     StarterCategory(
-        "Santé",
+        lazy_gettext("Santé"),
         "essentiel",
         False,
         [
-            ("Médecin et spécialistes", None),
-            ("Pharmacie", None),
-            ("Mutuelle", None),
-            ("Dentiste et optique", None),
+            (lazy_gettext("Médecin et spécialistes"), None),
+            (lazy_gettext("Pharmacie"), None),
+            (lazy_gettext("Mutuelle"), None),
+            (lazy_gettext("Dentiste et optique"), None),
         ],
     ),
     StarterCategory(
-        "Enfants",
+        lazy_gettext("Enfants"),
         "essentiel",
         False,
         [
-            ("Garde et école", None),
-            ("Fournitures scolaires", None),
-            ("Activités et loisirs", "choix"),
-            ("Vêtements et jouets", "choix"),
+            (lazy_gettext("Garde et école"), None),
+            (lazy_gettext("Fournitures scolaires"), None),
+            (lazy_gettext("Activités et loisirs"), "choix"),
+            (lazy_gettext("Vêtements et jouets"), "choix"),
         ],
     ),
     StarterCategory(
-        "Animaux",
+        lazy_gettext("Animaux"),
         "essentiel",
         False,
         [
-            ("Alimentation des animaux", None),
-            ("Vétérinaire", "imprevu"),
-            ("Accessoires et soins", "choix"),
+            (lazy_gettext("Alimentation des animaux"), None),
+            (lazy_gettext("Vétérinaire"), "imprevu"),
+            (lazy_gettext("Accessoires et soins"), "choix"),
         ],
     ),
     StarterCategory(
-        "Impôts et taxes",
+        lazy_gettext("Impôts et taxes"),
         "essentiel",
         False,
         [
-            ("Impôt sur le revenu", None),
-            ("Taxe foncière", None),
-            ("Autres taxes", None),
+            (lazy_gettext("Impôt sur le revenu"), None),
+            (lazy_gettext("Taxe foncière"), None),
+            (lazy_gettext("Autres taxes"), None),
         ],
     ),
     StarterCategory(
-        "Banque",
+        lazy_gettext("Banque"),
         "essentiel",
         False,
         [
-            ("Frais de tenue de compte et cartes", None),
-            ("Agios et frais exceptionnels", "imprevu"),
+            (lazy_gettext("Frais de tenue de compte et cartes"), None),
+            (lazy_gettext("Agios et frais exceptionnels"), "imprevu"),
         ],
     ),
     StarterCategory(
-        "Loisirs et culture",
+        lazy_gettext("Loisirs et culture"),
         "choix",
         False,
         [
-            ("Sport", None),
-            ("Cinéma et spectacles", None),
-            ("Livres et presse", None),
-            ("Jeux et hobbies", None),
-            ("Sorties", None),
+            (lazy_gettext("Sport"), None),
+            (lazy_gettext("Cinéma et spectacles"), None),
+            (lazy_gettext("Livres et presse"), None),
+            (lazy_gettext("Jeux et hobbies"), None),
+            (lazy_gettext("Sorties"), None),
         ],
     ),
     StarterCategory(
-        "Shopping",
+        lazy_gettext("Shopping"),
         "choix",
         False,
         [
-            ("Vêtements", None),
-            ("High-tech", None),
-            ("Cadeaux", None),
-            ("Achats divers", None),
+            (lazy_gettext("Vêtements"), None),
+            (lazy_gettext("High-tech"), None),
+            (lazy_gettext("Cadeaux"), None),
+            (lazy_gettext("Achats divers"), None),
         ],
     ),
     StarterCategory(
-        "Soin de la personne",
+        lazy_gettext("Soin de la personne"),
         "choix",
         False,
         [
-            ("Coiffeur et beauté", None),
-            ("Bien-être", None),
+            (lazy_gettext("Coiffeur et beauté"), None),
+            (lazy_gettext("Bien-être"), None),
         ],
     ),
     StarterCategory(
-        "Vacances et voyages",
+        lazy_gettext("Vacances et voyages"),
         "choix",
         False,
         [
-            ("Hébergement", None),
-            ("Billets de transport", None),
-            ("Activités sur place", None),
-            ("Autres frais de voyage", None),
+            (lazy_gettext("Hébergement"), None),
+            (lazy_gettext("Billets de transport"), None),
+            (lazy_gettext("Activités sur place"), None),
+            (lazy_gettext("Autres frais de voyage"), None),
         ],
     ),
     StarterCategory(
-        "Épargne et placements",
+        lazy_gettext("Épargne et placements"),
         "choix",
         False,
         [
-            ("Épargne mensuelle", None),
-            ("Placements", None),
+            (lazy_gettext("Épargne mensuelle"), None),
+            (lazy_gettext("Placements"), None),
         ],
     ),
     StarterCategory(
-        "Imprévus et divers",
+        lazy_gettext("Imprévus et divers"),
         "imprevu",
         False,
         [
-            ("Réparations exceptionnelles", None),
-            ("Amendes et frais administratifs", None),
-            ("Dépenses exceptionnelles", None),
-            ("Dons et associations", "choix"),
+            (lazy_gettext("Réparations exceptionnelles"), None),
+            (lazy_gettext("Amendes et frais administratifs"), None),
+            (lazy_gettext("Dépenses exceptionnelles"), None),
+            (lazy_gettext("Dons et associations"), "choix"),
         ],
     ),
 ]

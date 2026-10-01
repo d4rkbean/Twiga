@@ -5,25 +5,25 @@
   hx-on:htmx:after-request="if(event.target === this && event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
   class="flex flex-col gap-4 p-6"
 >
-  <h2 class="text-xl font-bold text-primary">Nouvelle opération</h2>
+  <h2 class="text-xl font-bold text-primary">{{ _("Nouvelle opération") }}</h2>
   <p class="text-sm text-secondary -mt-2">
-    Pour une saisie manuelle : régularisation, achat en espèces, etc.
+    {{ _("Pour une saisie manuelle : régularisation, achat en espèces, etc.") }}
   </p>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">Libellé</span>
+    <span class="text-sm text-secondary">{{ _("Libellé") }}</span>
     <input
       type="text"
       name="label"
       required
       autofocus
-      placeholder="Ex : Régularisation, Achat en espèces..."
+      placeholder="{{ _("Ex : Régularisation, Achat en espèces...") }}"
       class="text-lg font-medium min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
     />
   </label>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">Catégorie</span>
+    <span class="text-sm text-secondary">{{ _("Catégorie") }}</span>
     <select
       name="parent_category_id"
       hx-get="/transactions/subcategories"
@@ -32,7 +32,7 @@
       hx-trigger="change"
       class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
     >
-      <option value="" selected>Non catégorisé</option>
+      <option value="" selected>{{ _("Non catégorisé") }}</option>
       {% for category in parent_categories %}
       <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
       {% endfor %}
@@ -40,17 +40,17 @@
   </label>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">Sous-catégorie</span>
+    <span class="text-sm text-secondary">{{ _("Sous-catégorie") }}</span>
     {% include "transactions/_subcategory_select.html" %}
   </label>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">Mode de paiement</span>
+    <span class="text-sm text-secondary">{{ _("Mode de paiement") }}</span>
     <select
       name="payment_method"
       class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
     >
-      <option value="" selected>— (non défini)</option>
+      <option value="" selected>{{ _("— (non défini)") }}</option>
       {% for code, meta in payment_methods.items() %}
       <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
       {% endfor %}
@@ -58,7 +58,7 @@
   </label>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">Compte</span>
+    <span class="text-sm text-secondary">{{ _("Compte") }}</span>
     <select
       name="account_id"
       required
@@ -72,15 +72,15 @@
 
   <label class="flex items-center gap-2 min-h-[50px]">
     <input type="checkbox" name="is_transfer" class="w-5 h-5" />
-    <span class="text-sm text-primary flex items-center gap-1" >{{ icon('repeat', size=16) }}Virement interne entre comptes</span>
+    <span class="text-sm text-primary flex items-center gap-1" >{{ icon('repeat', size=16) }}{{ _("Virement interne entre comptes") }}</span>
   </label>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">Montant</span>
+    <span class="text-sm text-secondary">{{ _("Montant") }}</span>
     <div class="flex gap-2">
       <button
         type="button"
-        aria-label="Inverser le signe (dépense / recette)"
+        aria-label="{{ _("Inverser le signe (dépense / recette)") }}"
         onclick="var i=this.nextElementSibling; var v=i.value.trim(); i.value = v.startsWith('-') ? v.slice(1) : ('-' + v); i.focus();"
         class="min-h-[50px] w-14 flex-shrink-0 rounded-xl border border-border bg-container text-primary text-2xl font-bold"
       >
@@ -98,7 +98,7 @@
   </label>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">Date</span>
+    <span class="text-sm text-secondary">{{ _("Date") }}</span>
     <input
       type="date"
       name="date"
@@ -109,25 +109,25 @@
   </label>
 
   <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary flex items-center gap-1" >{{ icon('note', size=16) }}Note</span>
+    <span class="text-sm text-secondary flex items-center gap-1" >{{ icon('note', size=16) }}{{ _("Note") }}</span>
     <textarea
       name="note"
       rows="2"
-      placeholder="Remboursement Pierre..."
+      placeholder="{{ _("Remboursement Pierre...") }}"
       class="rounded-xl border border-border bg-container text-primary px-3 py-2"
     ></textarea>
   </label>
 
   <div class="flex flex-col gap-2">
     <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      Ajouter l'opération
+      {{ _("Ajouter l'opération") }}
     </button>
     <button
       type="button"
       onclick="this.closest('dialog').close()"
       class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
     >
-      Annuler
+      {{ _("Annuler") }}
     </button>
   </div>
 </form>

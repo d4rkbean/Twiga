@@ -20,9 +20,9 @@
     }
   "
 >
-  <a id="tour-logo" href="/" class="flex items-center gap-2 flex-shrink-0 lg:hidden" x-show="!searchOpen" aria-label="Twiga — retour à l'accueil">
+  <a id="tour-logo" href="/" class="flex items-center gap-2 flex-shrink-0 lg:hidden" x-show="!searchOpen" aria-label="{{ _("Twiga — retour à l'accueil") }}">
     <img src="/static/icons/twiga-logo.svg" alt="" class="h-8 w-8" style="height:32px; width:auto;" />
-    <span class="text-lg font-extrabold tracking-tight text-primary">TWIGA</span>
+    <span class="text-lg font-extrabold tracking-tight text-primary">{{ _("TWIGA") }}</span>
   </a>
 
   <div
@@ -36,7 +36,7 @@
         type="search"
         name="q"
         x-ref="searchInput"
-        placeholder="Rechercher..."
+        placeholder="{{ _("Rechercher...") }}"
         autocomplete="off"
         hx-get="/search/quick"
         hx-trigger="keyup[target.value.length >= 2] changed delay:300ms, search"
@@ -48,7 +48,7 @@
       <button
         type="button"
         @click="searchOpen = false"
-        aria-label="Fermer la recherche"
+        aria-label="{{ _("Fermer la recherche") }}"
         class="text-secondary text-lg flex-shrink-0 w-11 h-11 flex items-center justify-center"
       >
         {{ icon('x') }}
@@ -70,7 +70,7 @@
         type="search"
         name="q"
         x-ref="desktopSearchInput"
-        placeholder="Rechercher... Ctrl+K"
+        placeholder="{{ _("Rechercher... Ctrl+K") }}"
         autocomplete="off"
         hx-get="/search/quick"
         hx-trigger="keyup[target.value.length >= 2] changed delay:300ms, search"
@@ -100,15 +100,15 @@
     <a
       id="tour-import"
       href="/imports/new"
-      aria-label="Importer des données"
+      aria-label="{{ _("Importer des données") }}"
       class="inline-flex items-center justify-center gap-2 w-11 h-11 lg:w-auto lg:h-auto lg:min-h-[40px] lg:px-3 rounded-xl bg-accent text-on-accent text-sm font-semibold flex-shrink-0"
     >
-      {{ icon('file-import', size=18) }}<span class="hidden lg:inline">Importer</span>
+      {{ icon('file-import', size=18) }}<span class="hidden lg:inline">{{ _("Importer") }}</span>
     </a>
     <button
       id="tour-search-icon"
       type="button"
-      aria-label="Recherche"
+      aria-label="{{ _("Recherche") }}"
       class="lg:hidden w-11 h-11 flex items-center justify-center text-lg text-secondary"
       @click="searchOpen = !searchOpen; if (searchOpen) $nextTick(() => $refs.searchInput.focus())"
     >
@@ -122,7 +122,7 @@
     <button
       id="tour-privacy-toggle"
       type="button"
-      aria-label="Basculer le mode confidentialité"
+      aria-label="{{ _("Basculer le mode confidentialité") }}"
       class="flex w-11 h-11 items-center justify-center text-lg text-secondary lg:hidden"
       @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
     >
@@ -144,7 +144,7 @@
     <button
       type="button"
       @click="$dispatch('open-user-sheet')"
-      aria-label="Menu utilisateur"
+      aria-label="{{ _("Menu utilisateur") }}"
       class="lg:hidden w-11 h-11 flex items-center justify-center flex-shrink-0"
     >
       <span class="w-8 h-8 rounded-full bg-accent text-on-accent flex items-center justify-center text-xs font-bold">
@@ -156,7 +156,7 @@
          accès direct conservé (visible ≥640px, comme avant). -->
     <a
       href="/settings"
-      aria-label="Paramètres"
+      aria-label="{{ _("Paramètres") }}"
       class="hidden sm:flex lg:hidden w-11 h-11 items-center justify-center text-lg text-secondary"
     >
       {{ icon('settings') }}
@@ -165,7 +165,7 @@
       type="button"
       id="theme-toggle"
       onclick="window.toggleTheme()"
-      aria-label="Basculer entre thème clair et sombre"
+      aria-label="{{ _("Basculer entre thème clair et sombre") }}"
       class="hidden sm:flex lg:hidden w-11 h-11 items-center justify-center text-lg text-secondary"
     >
       <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>

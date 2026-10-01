@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
+from backend.i18n import gettext as _t
+
 
 class ImportParseError(ValueError):
     pass
@@ -41,7 +43,7 @@ def parse_decimal_amount(raw: str) -> Decimal:
     try:
         amount = Decimal(value)
     except InvalidOperation as exc:
-        raise ImportParseError(f"Montant invalide : {raw!r}") from exc
+        raise ImportParseError(_t("Montant invalide : %(raw)r") % {"raw": raw}) from exc
 
     if negative:
         amount = -amount

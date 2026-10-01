@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from backend import auth, crud
 from backend.auth_middleware import AuthMiddleware
+from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
 from backend.security_headers import SecurityHeadersMiddleware
 from backend.routers import (
@@ -34,6 +35,7 @@ from backend.routers import (
     users as users_router,
 )
 from backend.templating import templates
+from backend.i18n import gettext as _t, ngettext
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,6 +46,9 @@ app = FastAPI(title="Twiga")
 # donc être ajoutée APRÈS AuthMiddleware pour s'appliquer aussi aux réponses
 # de redirection/401 générées par celle-ci, pas seulement aux réponses des
 # routes.
+# LocaleMiddleware d'abord : elle doit s'exécuter APRÈS AuthMiddleware (ordre
+# inverse de l'ajout) pour lire request.state.user.
+app.add_middleware(LocaleMiddleware)
 if auth.AUTH_ENABLED:
     # AuthMiddleware gère elle-même son cookie de session signé (voir
     # backend/auth.py) : pas besoin de SessionMiddleware ni de se soucier
@@ -159,7 +164,7 @@ def save_cap_income_source(
     except (ArithmeticError, ValueError):
         settings_row.income_fixed_amount = None
     db.commit()
-    return HTMLResponse(content='<p class="text-sm text-success py-2">✓ Réglage enregistré</p>')
+    return HTMLResponse(content=_t('<p class="text-sm text-success py-2">✓ Réglage enregistré</p>'))
 
 
 @app.post("/settings/detect-payment-methods", response_class=HTMLResponse)
@@ -168,8 +173,10 @@ def detect_payment_methods(db: Session = Depends(get_db)):
     return HTMLResponse(
         content=(
             '<p class="text-sm text-success py-2">'
-            f"✓ {updated_count} transaction{'s' if updated_count != 1 else ''} "
-            f"mise{'s' if updated_count != 1 else ''} à jour</p>"
+            + ngettext(
+                "✓ %(n)s transaction mise à jour</p>", "✓ %(n)s transactions mises à jour</p>", updated_count
+            )
+            % {"n": updated_count}
         )
     )
 
@@ -189,13 +196,13 @@ def change_password(
     error = '<p class="text-sm text-danger py-2">{}</p>'
     current_user = auth.get_current_user(request)
     if not auth.AUTH_ENABLED or current_user is None:
-        return HTMLResponse(error.format("Authentification désactivée."), status_code=400)
+        return HTMLResponse(error.format(_t("Authentification désactivée.")), status_code=400)
     if auth.verify_password(db, current_user.username, current_password) is None:
-        return HTMLResponse(error.format("Mot de passe actuel incorrect."), status_code=401)
+        return HTMLResponse(error.format(_t("Mot de passe actuel incorrect.")), status_code=401)
     if new_password != confirm_password:
-        return HTMLResponse(error.format("Les nouveaux mots de passe ne correspondent pas."), status_code=400)
+        return HTMLResponse(error.format(_t("Les nouveaux mots de passe ne correspondent pas.")), status_code=400)
     if len(new_password) < 8:
-        return HTMLResponse(error.format("Le nouveau mot de passe doit faire au moins 8 caractères."), status_code=400)
+        return HTMLResponse(error.format(_t("Le nouveau mot de passe doit faire au moins 8 caractères.")), status_code=400)
 
     crud.set_user_password(db, current_user.id, new_password)
     db.refresh(current_user)
@@ -204,7 +211,7 @@ def change_password(
     # backend/auth.py, authenticate_request) : changer le mot de passe
     # invalide donc le cookie actuel, on en réémet un nouveau tout de suite
     # pour ne pas déconnecter l'utilisateur qui vient de changer le sien.
-    response = HTMLResponse('<p class="text-sm text-success py-2">✓ Mot de passe modifié.</p>')
+    response = HTMLResponse(_t('<p class="text-sm text-success py-2">✓ Mot de passe modifié.</p>'))
     response.set_cookie(
         auth.SESSION_COOKIE_NAME,
         auth.create_session_token(current_user),

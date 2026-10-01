@@ -1,7 +1,7 @@
 {% include "cap/_progress_dots.html" %}
 
 <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4 text-center">
-  <h2 class="text-lg font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:22px;width:auto;display:inline-block;vertical-align:-3px" /> Le cap est fixé !</h2>
+  <h2 class="text-lg font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:22px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Le cap est fixé !") }}</h2>
 
   {% if entry.intention %}
   <blockquote class="text-primary italic border-l-2 border-accent pl-3 text-left">
@@ -10,18 +10,18 @@
   {% endif %}
 
   <div class="flex flex-col gap-1.5 text-sm text-left">
-    <p class="flex justify-between"><span class="text-primary">{{ icon('home', size=16) }} Essentiel</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_essentiel | eur }}</span></p>
-    <p class="flex justify-between"><span class="text-primary">{{ icon('star', size=16) }} Choix</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_choix | eur }}</span></p>
-    <p class="flex justify-between"><span class="text-primary">{{ icon('urgent', size=16) }} Imprévus</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_imprevu | eur }}</span></p>
+    <p class="flex justify-between"><span class="text-primary">{{ icon('home', size=16) }} {{ _("Essentiel") }}</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_essentiel | eur }}</span></p>
+    <p class="flex justify-between"><span class="text-primary">{{ icon('star', size=16) }} {{ _("Choix") }}</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_choix | eur }}</span></p>
+    <p class="flex justify-between"><span class="text-primary">{{ icon('urgent', size=16) }} {{ _("Imprévus") }}</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_imprevu | eur }}</span></p>
     <p class="flex justify-between border-t border-border pt-1.5">
-      <span class="text-primary font-semibold">{{ icon('pig-money', size=16) }} Épargne visée</span>
+      <span class="text-primary font-semibold">{{ icon('pig-money', size=16) }} {{ _("Épargne visée") }}</span>
       <span class="amount-blur font-bold text-success">{{ (entry.planned_income - entry.planned_essentiel - entry.planned_choix - entry.planned_imprevu) | eur }}</span>
     </p>
   </div>
 
-  <p class="text-sm text-secondary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> La girafe veille sur votre route.</p>
+  <p class="text-sm text-secondary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("La girafe veille sur votre route.") }}</p>
 
   <a href="/dashboard" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
-    {{ icon('arrow-narrow-right') }} Aller au Panorama
+    {{ icon('arrow-narrow-right') }} {{ _("Aller au Panorama") }}
   </a>
 </div>

@@ -6,8 +6,8 @@
 <div id="report-tx-list-{{ type }}" class="flex flex-col gap-2 mt-2 pt-2 border-t border-border">
   <div class="flex items-center justify-between gap-2 flex-wrap">
     <div class="flex items-baseline gap-2 flex-wrap">
-      <p class="text-sm font-bold text-primary">{% if category_id or exact_category_id %}{{ category_name }}{% else %}Toutes les {{ "recettes" if type == "income" else "dépenses" }}{% endif %} — {{ period_label }}</p>
-      <p class="text-xs text-secondary whitespace-nowrap">{{ total }} opération{{ "s" if total != 1 else "" }}</p>
+      <p class="text-sm font-bold text-primary">{% if category_id or exact_category_id %}{{ category_name }}{% else %}{% trans penses="recettes" if type == "income" else "dépenses" %}Toutes les {{ penses }}{% endtrans %}{% endif %} — {{ period_label }}</p>
+      <p class="text-xs text-secondary whitespace-nowrap">{% trans total=total, v="s" if total != 1 else "" %}{{ total }} opération{{ v }}{% endtrans %}</p>
     </div>
     <!-- CSV : icône seule, exporte exactement ce tableau (mêmes filtres que
          base_qs ci-dessus, donc period/compte/décalage/type/catégorie déjà
@@ -15,8 +15,8 @@
          à l'écran) — même position/comportement mobile et desktop. -->
     <a
       href="/reports/transactions/export.csv?{{ base_qs }}"
-      aria-label="Exporter en CSV"
-      title="Exporter en CSV"
+      aria-label="{{ _("Exporter en CSV") }}"
+      title="{{ _("Exporter en CSV") }}"
       class="w-9 h-9 flex items-center justify-center text-secondary hover:text-primary flex-shrink-0"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -32,20 +32,20 @@
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-secondary text-xs uppercase">
-          <th class="pb-2 px-1">Date</th>
-          <th class="pb-2 px-1">Libellé</th>
-          <th class="pb-2 px-1 hidden md:table-cell">Catégorie</th>
-          <th class="pb-2 px-1 hidden md:table-cell">Compte</th>
-          <th class="pb-2 px-1 text-right">Montant</th>
+          <th class="pb-2 px-1">{{ _("Date") }}</th>
+          <th class="pb-2 px-1">{{ _("Libellé") }}</th>
+          <th class="pb-2 px-1 hidden md:table-cell">{{ _("Catégorie") }}</th>
+          <th class="pb-2 px-1 hidden md:table-cell">{{ _("Compte") }}</th>
+          <th class="pb-2 px-1 text-right">{{ _("Montant") }}</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-border">
         {% for tx in transactions %}
         <tr>
           <td class="py-2 px-1 whitespace-nowrap text-secondary">{{ tx.date | fr_date }}</td>
-          <td class="py-2 px-1 text-primary truncate max-w-[10rem] md:max-w-[16rem]">{{ tx.label or "(sans libellé)" }}</td>
+          <td class="py-2 px-1 text-primary truncate max-w-[10rem] md:max-w-[16rem]">{{ tx.label or _("(sans libellé)") }}</td>
           <td class="py-2 px-1 text-secondary truncate max-w-[10rem] hidden md:table-cell">
-            {% if tx.category %}{{ tx.category.icon or icon('tag', size=14) }} {{ tx.category.name | category_display }}{% else %}Non catégorisé{% endif %}
+            {% if tx.category %}{{ tx.category.icon or icon('tag', size=14) }} {{ tx.category.name | category_display }}{% else %}{{ _(_("Non catégorisé")) }}{% endif %}
           </td>
           <td class="py-2 px-1 text-secondary truncate max-w-[8rem] hidden md:table-cell">{{ tx.account.name }}</td>
           <td class="py-2 px-1 text-right amount-blur font-medium whitespace-nowrap {{ 'text-success' if tx.amount > 0 else 'text-danger' }}">
@@ -68,9 +68,9 @@
       class="min-h-[46px] rounded-xl bg-container border border-border text-primary text-sm font-medium px-4 disabled:opacity-50"
       {% if page <= 1 %}disabled{% endif %}
     >
-      {{ icon('arrow-narrow-left') }} Précédent
+      {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
     </button>
-    <span class="text-xs text-secondary">Page {{ page }} / {{ total_pages }}</span>
+    <span class="text-xs text-secondary">{% trans page=page, total_pages=total_pages %}Page {{ page }} / {{ total_pages }}{% endtrans %}</span>
     <button
       type="button"
       hx-get="/reports/transactions?{{ base_qs }}"
@@ -80,11 +80,11 @@
       class="min-h-[46px] rounded-xl bg-container border border-border text-primary text-sm font-medium px-4 disabled:opacity-50"
       {% if page >= total_pages %}disabled{% endif %}
     >
-      Suivant {{ icon('arrow-narrow-right') }}
+      {{ _("Suivant") }} {{ icon('arrow-narrow-right') }}
     </button>
   </div>
   {% endif %}
   {% else %}
-  <p class="text-sm text-secondary text-center py-6">Aucune opération sur cette période.</p>
+  <p class="text-sm text-secondary text-center py-6">{{ _("Aucune opération sur cette période.") }}</p>
   {% endif %}
 </div>

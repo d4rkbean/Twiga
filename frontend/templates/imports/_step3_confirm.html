@@ -1,9 +1,9 @@
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4" x-data="{ count: {{ unique_count }} }">
-  <h2 class="text-xl font-bold text-primary">Étape 3 — Vérifier</h2>
+  <h2 class="text-xl font-bold text-primary">{{ _("Étape 3 — Vérifier") }}</h2>
 
   <div class="flex flex-col gap-1 text-sm">
-    <p class="text-primary">{{ total_count }} opération(s) détectée(s)</p>
-    <p class="text-secondary">{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s)</p>
+    <p class="text-primary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s){% endtrans %}</p>
+    <p class="text-secondary">{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s){% endtrans %}</p>
   </div>
 
   <form hx-post="/imports/{{ import_id }}/execute" hx-target="#import-wizard" hx-swap="innerHTML" class="flex flex-col gap-4">
@@ -26,9 +26,9 @@
         <thead>
           <tr class="bg-page">
             <th class="w-10 px-3 py-2"></th>
-            <th class="text-left text-secondary font-medium px-3 py-2">Date</th>
-            <th class="text-left text-secondary font-medium px-3 py-2">Libellé</th>
-            <th class="text-right text-secondary font-medium px-3 py-2">Montant</th>
+            <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Date") }}</th>
+            <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Libellé") }}</th>
+            <th class="text-right text-secondary font-medium px-3 py-2">{{ _("Montant") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -48,7 +48,7 @@
             <td class="text-primary px-3 py-2">
               {{ tx.label }}
               {% if tx.transfer_account %}
-              <span class="block text-xs text-secondary">{{ icon('repeat', size=12) }} Virement détecté ↔ {{ tx.transfer_account }}</span>
+              <span class="block text-xs text-secondary">{{ icon('repeat', size=12) }} {% trans transfer_account=tx.transfer_account %}Virement détecté ↔ {{ transfer_account }}{% endtrans %}</span>
               {% endif %}
             </td>
             <td class="{{ 'text-success' if tx.amount > 0 else 'text-danger' }} font-medium px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
@@ -67,7 +67,7 @@
          silencieusement. -->
     <details class="rounded-xl border border-border">
       <summary class="cursor-pointer select-none px-3 py-2 text-sm text-secondary font-medium">
-        Doublons ignorés ({{ duplicate_count }})
+        {% trans duplicate_count=duplicate_count %}Doublons ignorés ({{ duplicate_count }}){% endtrans %}
       </summary>
       <div class="overflow-y-auto max-h-64 border-t border-border">
         <table class="w-full text-sm">
@@ -86,7 +86,7 @@
               <td class="text-primary px-3 py-2 whitespace-nowrap align-top">{{ tx.date | fr_date }}</td>
               <td class="text-primary px-3 py-2 align-top">
                 {{ tx.label }}
-                <span class="block text-xs text-secondary">Déjà présente en base</span>
+                <span class="block text-xs text-secondary">{{ _("Déjà présente en base") }}</span>
               </td>
               <td class="{{ 'text-success' if tx.amount > 0 else 'text-danger' }} font-medium px-3 py-2 text-right whitespace-nowrap align-top">{{ tx.amount | eur }}</td>
             </tr>
@@ -102,9 +102,9 @@
       class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold w-full disabled:opacity-50"
       :disabled="count === 0"
     >
-      Importer <span x-text="count"></span> opération(s)
+      {{ _("Importer") }} <span x-text="count"></span> {{ _("opération(s)") }}
     </button>
-    <p class="htmx-indicator text-sm text-secondary text-center pt-2"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga tend le cou...</p>
+    <p class="htmx-indicator text-sm text-secondary text-center pt-2"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga tend le cou...") }}</p>
   </form>
 
   <!-- Filet de sécurité, surtout quand unique_count == 0 (le bouton
@@ -114,6 +114,6 @@
     href="/imports/new"
     class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
   >
-    {{ icon('file-import', size=18) }} Importer un autre fichier
+    {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
   </a>
 </div>

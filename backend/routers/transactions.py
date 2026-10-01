@@ -15,6 +15,7 @@ from backend.models import Account, Category, Transaction
 from backend.receipt_families import RECEIPT_FAMILIES, group_items_by_family
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
+from backend.i18n import gettext as _t, ngettext
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -230,11 +231,11 @@ def categorize(
     # /finalize au tap sur un mode de paiement ou "Passer".
     transaction = db.get(Transaction, transaction_id)
     if transaction is None or transaction.validated:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
 
     return _render_payment_step(request, db, transaction, category)
 
@@ -253,11 +254,11 @@ def select_category(
     # l'étape mode de paiement (facultatif), sans encore sauvegarder.
     transaction = db.get(Transaction, transaction_id)
     if transaction is None or transaction.validated:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
 
     subcategories = crud.get_child_categories(db, category.id)
     if not subcategories:
@@ -286,11 +287,11 @@ def finalize_categorization(
     # mode de paiement OU sur "Passer" (payment_method absent dans ce cas).
     transaction = db.get(Transaction, transaction_id)
     if transaction is None or transaction.validated:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
 
     payment = payment_method if payment_method in crud.get_payment_methods_dict(db) else None
     return _categorize_and_advance(request, db, transaction, category, label, history, payment)
@@ -306,7 +307,7 @@ def skip(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None or transaction.validated:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     crud.skip_transaction(db, transaction, label=label)
 
@@ -325,7 +326,7 @@ def mark_transfer(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None or transaction.validated:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     crud.mark_transaction_as_transfer(db, transaction, label=label)
 
@@ -355,7 +356,7 @@ def undo(request: Request, history: str | None = Form(None), db: Session = Depen
 def categories_grid(request: Request, transaction_id: int, db: Session = Depends(get_db)):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     context = {
         "request": request,
@@ -630,7 +631,7 @@ def create_transaction(
     category = db.get(Category, int(category_id)) if category_id else None
     account = db.get(Account, int(account_id))
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
 
     crud.create_manual_transaction(
         db,
@@ -645,7 +646,7 @@ def create_transaction(
     )
 
     context = {"request": request, **_build_list_context(db, filters)}
-    context["success_message"] = "✅ Opération ajoutée"
+    context["success_message"] = _t("✅ Opération ajoutée")
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
@@ -658,7 +659,7 @@ def transaction_detail(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     current_parent = crud.resolve_top_level_category(transaction.category)
     subcategories = crud.get_child_categories(db, current_parent.id) if current_parent else []
@@ -739,12 +740,12 @@ def update_transaction_detail(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     category = db.get(Category, int(category_id)) if category_id else None
     account = db.get(Account, int(account_id))
     if account is None:
-        raise HTTPException(status_code=404, detail="Compte introuvable")
+        raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
 
     crud.update_transaction(
         db,
@@ -774,7 +775,7 @@ def mark_unexpected(transaction_id: int, db: Session = Depends(get_db)):
     # à poser. hx-swap="none" côté template, aucun contenu à renvoyer.
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
     crud.mark_transaction_unexpected(db, transaction)
     return HTMLResponse(content="", status_code=200)
 
@@ -788,7 +789,7 @@ def unvalidate_transaction_detail(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     crud.unvalidate_transaction(db, transaction)
 
@@ -805,7 +806,7 @@ def delete_transaction_detail(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     crud.delete_transaction(db, transaction)
 
@@ -842,8 +843,9 @@ def bulk_apply(
     crud.bulk_update_transactions(db, transactions, category=category, payment_method=payment)
 
     context = {"request": request, **_build_list_context(db, filters)}
-    plural = _plural_feminine(len(transactions))
-    context["success_message"] = f"✅ {len(transactions)} opération{plural} mise{plural} à jour"
+    context["success_message"] = ngettext(
+        "✅ %(n)s opération mise à jour", "✅ %(n)s opérations mises à jour", len(transactions)
+    ) % {"n": len(transactions)}
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
@@ -860,8 +862,9 @@ def bulk_unvalidate(
 
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
-        plural = _plural_feminine(count)
-        context["success_message"] = f"📥 {count} opération{plural} remise{plural} dans La Savane"
+        context["success_message"] = ngettext(
+            "📥 %(n)s opération remise dans La Savane", "📥 %(n)s opérations remises dans La Savane", count
+        ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
@@ -896,8 +899,9 @@ def bulk_mark_unexpected(
 
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
-        plural = _plural_feminine(count)
-        context["success_message"] = f"🆘 {count} opération{plural} marquée{plural} comme imprévu{plural}"
+        context["success_message"] = ngettext(
+            "🆘 %(n)s opération marquée comme imprévu", "🆘 %(n)s opérations marquées comme imprévus", count
+        ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
@@ -914,8 +918,11 @@ def bulk_unmark_transfer(
 
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
-        plural = _plural_feminine(count)
-        context["success_message"] = f"↩️ {count} opération{plural} renvoyée{plural} dans La Savane (virement annulé)"
+        context["success_message"] = ngettext(
+            "↩️ %(n)s opération renvoyée dans La Savane (virement annulé)",
+            "↩️ %(n)s opérations renvoyées dans La Savane (virement annulé)",
+            count,
+        ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)
 
 

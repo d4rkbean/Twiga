@@ -7,18 +7,18 @@
     hx-target=".category-suggestion"
     hx-swap="outerHTML"
   >
-    {{ icon('arrow-narrow-left') }} Retour aux catégories
+    {{ icon('arrow-narrow-left') }} {{ _("Retour aux catégories") }}
   </button>
   {% set top_level = category.parent if category.parent else category %}
   {% set subcategory_name = category.name if category.parent else none %}
   <p class="text-sm text-secondary">
-    Catégorie :
+    {{ _("Catégorie :") }}
     <span class="text-primary font-medium">
       {{ get_category_icon(top_level.name) }}
       {{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}
     </span>
   </p>
-  <p class="text-xs text-secondary">Mode de paiement <span class="italic">(facultatif)</span></p>
+  <p class="text-xs text-secondary">{{ _("Mode de paiement") }} <span class="italic">{{ _("(facultatif)") }}</span></p>
   <div class="grid grid-cols-3 gap-2">
     {% for code, meta in payment_methods.items() %}
     <button
@@ -43,7 +43,7 @@
       hx-swap="outerHTML"
     >
       <span class="text-base">⏭️</span>
-      <span>Passer</span>
+      <span>{{ _("Passer") }}</span>
     </button>
   </div>
 </div>

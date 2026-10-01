@@ -16,6 +16,8 @@
   ("typographie", "Typographie"),
   ("boutons", "Boutons"),
   ("champs", "Champs & Formulaires"),
+  ("choix", "Cartes de choix"),
+  ("colonnes", "Colonnes équilibrées"),
   ("cartes", "Cartes"),
   ("badges", "Badges & Pilules"),
   ("alertes", "Alertes"),
@@ -45,7 +47,7 @@
   <div class="flex items-center justify-between gap-3 py-4">
     <div class="flex flex-col gap-1">
       <h1 class="text-page-title">Design System</h1>
-      <p class="text-small">Source de vérité unique — 51 classes canoniques dans design-system.css</p>
+      <p class="text-small">Source de vérité unique — 53 classes canoniques dans design-system.css</p>
     </div>
     <button type="button" onclick="window.toggleTheme()" class="btn btn-secondary flex-shrink-0">
       Basculer le thème
@@ -171,6 +173,40 @@
           <input class="input-base" type="text" disabled value="Champ désactivé" style="opacity: .5;" />
           <span class="text-small">.input-base · .input-error · .input-hint · .input-message · .form-group · .form-label</span>
         </div>
+      </section>
+
+      {# ─────────── CARTES DE CHOIX ─────────── #}
+      <section id="choix" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Cartes de choix</h2>
+        <div class="card flex flex-col gap-4" style="max-width: 28rem;">
+          <fieldset class="flex flex-col gap-2">
+            <legend class="form-label">Un choix parmi quelques options</legend>
+            <label class="choice-card">
+              <input type="radio" name="ds-choice" class="sr-only" checked />
+              <span class="text-body font-medium">Option sélectionnée</span>
+              <span class="text-small">Bordure et fond ambrés : l'état se lit sans la couleur seule.</span>
+            </label>
+            <label class="choice-card">
+              <input type="radio" name="ds-choice" class="sr-only" />
+              <span class="text-body font-medium">Option disponible</span>
+              <span class="text-small">Tout le rectangle se clique ; le radio reste au clavier.</span>
+            </label>
+          </fieldset>
+          <span class="text-small">.choice-card — le radio est masqué (.sr-only), la carte porte l'état coché (:has) et l'anneau de focus clavier. Utilisée pour la langue et le format dans Paramètres &gt; Préférences.</span>
+        </div>
+      </section>
+
+      {# ─────────── COLONNES ÉQUILIBRÉES ─────────── #}
+      <section id="colonnes" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Colonnes équilibrées</h2>
+        <div class="settings-columns">
+          <div class="card" style="height: 9rem;"><span class="text-body font-medium">Carte haute</span></div>
+          <div class="card" style="height: 4rem;"><span class="text-body font-medium">Carte basse</span></div>
+          <div class="card" style="height: 7rem;"><span class="text-body font-medium">Carte moyenne</span></div>
+          <div class="card" style="height: 5rem;"><span class="text-body font-medium">Carte courte</span></div>
+          <div class="card" style="height: 8rem;"><span class="text-body font-medium">Autre carte haute</span></div>
+        </div>
+        <span class="text-small">.settings-columns — 2 colonnes dès 1024 px, 3 dès 1280 px, une carte ne se coupe jamais. Pour des cartes de hauteurs très différentes, là où une grille laisserait des colonnes à moitié vides. Sous 1024 px : pile verticale. Voir la page Paramètres.</span>
       </section>
 
       {# ─────────── CARTES ─────────── #}

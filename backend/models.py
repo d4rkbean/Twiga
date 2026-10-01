@@ -389,6 +389,11 @@ class User(Base):
     # localStorage pour qu'un nouvel appareil ou un navigateur vidé ne la
     # rejoue pas. La migration marque les comptes existants comme l'ayant vue.
     tour_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Langue de l'interface ("fr" / "en", voir backend/i18n.py) et format des
+    # montants et dates ("fr" / "en-GB" / "en-US"). Deux réglages distincts.
+    # number_format NULL = celui de la langue choisie.
+    language: Mapped[str] = mapped_column(String(5), default="fr", server_default="fr")
+    number_format: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
 
 class RecurringPattern(Base):

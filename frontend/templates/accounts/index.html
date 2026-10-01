@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Comptes — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Comptes — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">Comptes</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Paramètres</a>
+    <h1 class="text-2xl font-bold text-primary">{{ _("Comptes") }}</h1>
+    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <a
     href="/accounts/detect-transfers"
     class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
   >
-    {{ icon('repeat') }} Détecter virements
+    {{ icon('repeat') }} {{ _("Détecter virements") }}
   </a>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">Ajouter un compte</h2>
+    <h2 class="text-lg font-bold text-primary">{{ _("Ajouter un compte") }}</h2>
     <form
       hx-post="/accounts/create"
       hx-target="#accounts-content"
@@ -27,7 +27,7 @@
       <input
         type="text"
         name="name"
-        placeholder="Nom du compte"
+        placeholder="{{ _("Nom du compte") }}"
         required
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
@@ -37,7 +37,7 @@
         {% endfor %}
       </select>
       <label class="flex flex-col gap-1">
-        <span class="text-xs text-secondary uppercase tracking-wide">Solde initial (avant la 1ère opération importée)</span>
+        <span class="text-xs text-secondary uppercase tracking-wide">{{ _("Solde initial (avant la 1ère opération importée)") }}</span>
         <input
           type="text"
           inputmode="decimal"
@@ -47,15 +47,15 @@
         />
       </label>
       <select name="currency" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
-        <option value="EUR" selected>EUR — €</option>
+        <option value="EUR" selected>{{ _("EUR — €") }}</option>
       </select>
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        Ajouter
+        {{ _("Ajouter") }}
       </button>
     </form>
   </div>
 
-  <h2 class="text-lg font-bold text-primary">Comptes existants</h2>
+  <h2 class="text-lg font-bold text-primary">{{ _("Comptes existants") }}</h2>
   {% include "accounts/_content.html" %}
 
   {% include "accounts/_suspicious.html" %}

@@ -6,6 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
+from backend.i18n import gettext as _t
 from imports.common import (
     ImportParseError,
     ParsedTransaction,
@@ -84,7 +85,7 @@ def _parse_date(raw: str) -> date:
         except ValueError:
             continue
 
-    raise QifParseError(f"Date invalide : {raw!r}")
+    raise QifParseError(_t("Date invalide : %(raw)r") % {"raw": raw})
 
 
 def _build_categories(category_paths: set[str]) -> list[ParsedCategory]:
@@ -220,7 +221,7 @@ def parse_qif(content: str, default_account_name: str = DEFAULT_ACCOUNT_NAME) ->
                             )
                         )
             except ImportParseError as exc:
-                raise QifParseError(f"Ligne {line_no} : {exc}") from exc
+                raise QifParseError(_t("Ligne %(line)s : %(error)s") % {"line": line_no, "error": exc}) from exc
 
             pending = {}
             continue

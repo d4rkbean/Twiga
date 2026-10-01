@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 from backend import crud
 from backend.database import get_db
 from backend.dates import (
-    MONTH_NAMES_FR,
-    format_date_long_fr,
+    month_names,
+    format_date_long,
     month_label,
     month_range,
     shift_month,
@@ -17,6 +17,7 @@ from backend.dates import (
 )
 from backend.formatting import format_amount
 from backend.templating import templates
+from backend.i18n import gettext as _t, lazy_gettext
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -32,11 +33,11 @@ def _prev_month_year(month: int, year: int) -> tuple[int, int]:
 # Raccourcis de période proposés dans le Panorama, dans l'ordre d'affichage.
 # Volontairement courts : le sélecteur doit se lire d'un coup d'œil.
 PERIOD_CHOICES = [
-    ("mois", "Mois en cours"),
-    ("mois-dernier", "Mois dernier"),
-    ("90j", "90 J"),
-    ("1an", "1 an"),
-    ("perso", "Personnalisé"),
+    ("mois", lazy_gettext("Mois en cours")),
+    ("mois-dernier", lazy_gettext("Mois dernier")),
+    ("90j", lazy_gettext("90 J")),
+    ("1an", lazy_gettext("1 an")),
+    ("perso", lazy_gettext("Personnalisé")),
 ]
 PERIOD_KEYS = {key for key, _ in PERIOD_CHOICES}
 DEFAULT_PERIOD = "mois"
@@ -74,7 +75,7 @@ def _resolve_period(
             # qui vient de saisir deux dates à la main.
             if custom_start > custom_end:
                 custom_start, custom_end = custom_end, custom_start
-            label = f"{format_date_long_fr(custom_start)} → {format_date_long_fr(custom_end)}"
+            label = f"{format_date_long(custom_start)} → {format_date_long(custom_end)}"
             is_month = (custom_start, custom_end) == month_range(
                 custom_start.year, custom_start.month
             )
@@ -123,7 +124,10 @@ def _build_period_context(
     if shift_income:
         prev_month, prev_year = _prev_month_year(period_start.month, period_start.year)
         income_period_start, income_period_end = month_range(prev_year, prev_month)
-        shift_label = f"Recettes {MONTH_NAMES_FR[prev_month - 1]} → Dépenses {period_label}"
+        shift_label = _t("Recettes %(month)s → Dépenses %(period)s") % {
+            "month": month_names()[prev_month - 1],
+            "period": period_label,
+        }
     else:
         income_period_start, income_period_end = period_start, period_end
         shift_label = None
@@ -168,7 +172,7 @@ def _build_period_context(
         )
         for start, _, _ in months
     ]
-    trend_income_label = "Recettes (M-1)" if shift_income else "Recettes"
+    trend_income_label = "Recettes (M-1)" if shift_income else _t("Recettes")
 
     # Budgets déjà triés par % consommé décroissant (get_budget_progress) :
     # les 6 premiers (grille compacte 3 colonnes x 2 rangées en desktop) sont
@@ -311,9 +315,9 @@ def _build_cap_progress(db: Session, today: date):
             "over": bool(planned) and actuals[key] > planned,
         }
         for key, label, tabler_icon, planned in [
-            ("essentiel", "Essentiel", "home", cap_entry.planned_essentiel),
-            ("choix", "Choix", "star", cap_entry.planned_choix),
-            ("imprevu", "Imprévu", "urgent", cap_entry.planned_imprevu),
+            ("essentiel", _t("Essentiel"), "home", cap_entry.planned_essentiel),
+            ("choix", _t("Choix"), "star", cap_entry.planned_choix),
+            ("imprevu", _t("Imprévu"), "urgent", cap_entry.planned_imprevu),
         ]
     ]
     return cap_entry, pillars, savings_so_far
@@ -395,7 +399,7 @@ def dashboard(
         "cap_entry": cap_entry,
         "cap_pillar_progress": cap_pillar_progress,
         "cap_savings_so_far": cap_savings_so_far,
-        "cap_month_label": f"{MONTH_NAMES_FR[today.month - 1]} {today.year}",
+        "cap_month_label": f"{month_names()[today.month - 1]} {today.year}",
         "show_le_cap_banner": today.day == 1 and cap_entry is None,
         "current_month_key": today.strftime("%Y-%m"),
         **content,
@@ -456,7 +460,7 @@ def dashboard_content(
         "cap_entry": cap_entry,
         "cap_pillar_progress": cap_pillar_progress,
         "cap_savings_so_far": cap_savings_so_far,
-        "cap_month_label": f"{MONTH_NAMES_FR[today.month - 1]} {today.year}",
+        "cap_month_label": f"{month_names()[today.month - 1]} {today.year}",
         "row1_oob": True,
         **content,
     }

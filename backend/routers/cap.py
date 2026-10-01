@@ -10,6 +10,7 @@ from backend.database import get_db
 from backend.dates import month_label, month_range, shift_month
 from backend.pillars import get_pillar_label
 from backend.templating import templates
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/cap", tags=["cap"])
 
@@ -27,11 +28,11 @@ def _bilan_context(db: Session, month_start: date) -> dict:
     detail = crud.get_month_detail_by_pillar(db, start, end)
     lines = []
     for key, icon, name, real in [
-        ("income", "💰", "Revenus", real_income),
-        ("essentiel", "🏠", "Essentiel", real_pillars["essentiel"]),
-        ("choix", "🌟", "Choix", real_pillars["choix"]),
-        ("imprevu", "🆘", "Imprévus", real_pillars["imprevu"]),
-        ("savings", "🐷", "Épargne", real_savings),
+        ("income", "💰", _t("Revenus"), real_income),
+        ("essentiel", "🏠", _t("Essentiel"), real_pillars["essentiel"]),
+        ("choix", "🌟", _t("Choix"), real_pillars["choix"]),
+        ("imprevu", "🆘", _t("Imprévus"), real_pillars["imprevu"]),
+        ("savings", "🐷", _t("Épargne"), real_savings),
     ]:
         planned = None
         écart = None
@@ -334,9 +335,9 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
     worst_ratio = Decimal("0.00")
     worst_label = None
     for key, icon, name, planned in [
-        ("essentiel", "🏠", "Essentiel", sommes_budgets["essentiel"] or None),
-        ("choix", "🌟", "Choix", sommes_budgets["choix"] or None),
-        ("imprevu", "🆘", "Imprévus", entry.planned_imprevu if entry else None),
+        ("essentiel", "🏠", _t("Essentiel"), sommes_budgets["essentiel"] or None),
+        ("choix", "🌟", _t("Choix"), sommes_budgets["choix"] or None),
+        ("imprevu", "🆘", _t("Imprévus"), entry.planned_imprevu if entry else None),
     ]:
         actual = pillar_actuals[key]
         ratio = (actual / planned * 100) if planned else Decimal("0.00")
@@ -360,13 +361,13 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
 
     if worst_ratio > 80:
         status = "danger"
-        status_message = f"🔴 {worst_label} presque épuisé à mi-mois !"
+        status_message = _t("🔴 %(label)s presque épuisé à mi-mois !") % {"label": worst_label}
     elif worst_ratio > 60:
         status = "warning"
-        status_message = f"🟠 Surveillez {worst_label} dans les prochaines semaines."
+        status_message = _t("🟠 Surveillez %(label)s dans les prochaines semaines.") % {"label": worst_label}
     else:
         status = "success"
-        status_message = "🟢 Le cap tient ! Continuez comme ça."
+        status_message = _t("🟢 Le cap tient ! Continuez comme ça.")
 
     context = {
         "request": request,

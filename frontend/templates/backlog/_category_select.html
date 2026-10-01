@@ -9,10 +9,10 @@
     hx-trigger="change"
     class="w-full min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
   >
-    <option value="" disabled selected>Choisir une catégorie...</option>
+    <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
     {% for parent in categories %}
     <optgroup label="{{ parent.icon or '' }} {{ parent.name }}">
-      <option value="{{ parent.id }}">{{ parent.name }} (général)</option>
+      <option value="{{ parent.id }}">{% trans name=parent.name %}{{ name }} (général){% endtrans %}</option>
       {% for child in parent.children %}
       <option value="{{ child.id }}">{{ child.name }}</option>
       {% endfor %}

@@ -1,35 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Règles — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Règles — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">Règles de catégorisation</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} Paramètres</a>
+    <h1 class="text-2xl font-bold text-primary">{{ _("Règles de catégorisation") }}</h1>
+    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">Tester une règle</h2>
+    <h2 class="text-lg font-bold text-primary">{{ _("Tester une règle") }}</h2>
     <form hx-post="/rules/test" hx-target="#rule-test-result" hx-swap="innerHTML" class="flex gap-2">
       <input
         type="text"
         name="label"
-        placeholder="Libellé à tester (ex : CARREFOUR MARKET PARIS)"
+        placeholder="{{ _("Libellé à tester (ex : CARREFOUR MARKET PARIS)") }}"
         required
         class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold px-4">
-        Tester
+        {{ _("Tester") }}
       </button>
     </form>
     <div id="rule-test-result">
-      <p class="text-sm text-secondary">Saisis un libellé pour voir quelle règle s'appliquerait.</p>
+      <p class="text-sm text-secondary">{{ _("Saisis un libellé pour voir quelle règle s'appliquerait.") }}</p>
     </div>
   </div>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">Ajouter une règle</h2>
+    <h2 class="text-lg font-bold text-primary">{{ _("Ajouter une règle") }}</h2>
     <form
       hx-post="/rules/create"
       hx-target="#rules-content"
@@ -39,7 +39,7 @@
       <input
         type="text"
         name="keyword"
-        placeholder="Mot-clé (ex : CARREFOUR)"
+        placeholder="{{ _("Mot-clé (ex : CARREFOUR)") }}"
         required
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       />
@@ -52,7 +52,7 @@
         hx-trigger="change"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       >
-        <option value="" disabled selected>Choisir une catégorie...</option>
+        <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
         {% for category in parent_categories %}
         <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
         {% endfor %}
@@ -64,7 +64,7 @@
         name="payment_method"
         class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
       >
-        <option value="">Mode de paiement (optionnel)</option>
+        <option value="">{{ _("Mode de paiement (optionnel)") }}</option>
         {% for code, meta in payment_methods.items() %}
         <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
         {% endfor %}
@@ -74,25 +74,22 @@
           name="receipt_family"
           class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
         >
-          <option value="">Rayon de ticket auto (optionnel)</option>
+          <option value="">{{ _("Rayon de ticket auto (optionnel)") }}</option>
           {% for code, icon, label in receipt_families %}
           <option value="{{ code }}">{{ icon }} {{ label }}</option>
           {% endfor %}
         </select>
         <p class="text-xs text-secondary px-1">
-          Pour un commerce à famille de produit unique (boulangerie...) :
-          ajoute automatiquement une ligne de ticket couvrant tout le montant
-          — uniquement pris en compte si la catégorie choisie ci-dessus est
-          Courses.
+          {{ _("Pour un commerce à famille de produit unique (boulangerie...) : ajoute automatiquement une ligne de ticket couvrant tout le montant — uniquement pris en compte si la catégorie choisie ci-dessus est Courses.") }}
         </p>
       </div>
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        Ajouter la règle
+        {{ _("Ajouter la règle") }}
       </button>
     </form>
   </div>
 
-  <h2 class="text-lg font-bold text-primary">Règles existantes</h2>
+  <h2 class="text-lg font-bold text-primary">{{ _("Règles existantes") }}</h2>
   {% include "rules/_content.html" %}
 </main>
 {% endblock %}

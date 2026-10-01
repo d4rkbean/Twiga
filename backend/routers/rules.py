@@ -7,6 +7,7 @@ from backend.database import get_db
 from backend.models import Category, Rule
 from backend.receipt_families import RECEIPT_FAMILIES
 from backend.templating import templates
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/rules", tags=["rules"])
 
@@ -59,7 +60,7 @@ def create_rule(
 ):
     category = db.get(Category, int(category_id)) if category_id else None
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     if keyword.strip():
         crud.create_rule(
             db,
@@ -76,7 +77,7 @@ def create_rule(
 def rule_row(request: Request, rule_id: int, db: Session = Depends(get_db)):
     rule = db.get(Rule, rule_id)
     if rule is None:
-        raise HTTPException(status_code=404, detail="Règle introuvable")
+        raise HTTPException(status_code=404, detail=_t("Règle introuvable"))
     usage_count = next(
         (item["usage_count"] for item in crud.get_rules_with_usage(db) if item["rule"].id == rule_id),
         0,
@@ -94,7 +95,7 @@ def rule_row(request: Request, rule_id: int, db: Session = Depends(get_db)):
 def edit_rule_form(request: Request, rule_id: int, db: Session = Depends(get_db)):
     rule = db.get(Rule, rule_id)
     if rule is None:
-        raise HTTPException(status_code=404, detail="Règle introuvable")
+        raise HTTPException(status_code=404, detail=_t("Règle introuvable"))
     current_parent = crud.resolve_top_level_category(rule.category)
     subcategories = crud.get_child_categories(db, current_parent.id) if current_parent else []
     context = {
@@ -123,10 +124,10 @@ def update_rule(
 ):
     rule = db.get(Rule, rule_id)
     if rule is None:
-        raise HTTPException(status_code=404, detail="Règle introuvable")
+        raise HTTPException(status_code=404, detail=_t("Règle introuvable"))
     category = db.get(Category, int(category_id)) if category_id else None
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     crud.update_rule(
         db,
         rule,
@@ -147,7 +148,7 @@ def update_rule(
 def delete_rule(request: Request, rule_id: int, db: Session = Depends(get_db)):
     rule = db.get(Rule, rule_id)
     if rule is None:
-        raise HTTPException(status_code=404, detail="Règle introuvable")
+        raise HTTPException(status_code=404, detail=_t("Règle introuvable"))
     crud.delete_rule(db, rule)
     context = {"request": request, **_list_context(db)}
     return templates.TemplateResponse("rules/_content.html", context)

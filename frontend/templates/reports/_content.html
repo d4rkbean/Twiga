@@ -37,44 +37,44 @@
        valeur déjà connue. -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
     <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1">
-      <span class="text-xs text-secondary">{{ icon('currency-euro', size=14) }} Recettes</span>
-      <span class="report-counter amount-blur text-2xl font-extrabold text-success" data-target="{{ income_total }}" data-prefix="+">+0,00 €</span>
+      <span class="text-xs text-secondary">{{ icon('currency-euro', size=14) }} {{ _("Recettes") }}</span>
+      <span class="report-counter amount-blur text-2xl font-extrabold text-success" data-target="{{ income_total }}" data-prefix="+">+{{ zero_eur() }}</span>
       {% if income_change is not none %}
       <span class="text-xs font-medium {{ 'text-success' if income_change >= 0 else 'text-danger' }}">
-        {{ '▲' if income_change >= 0 else '▼' }} {{ '+' if income_change >= 0 else '' }}{{ income_change }} % vs période précédente
+        {% trans v='▲' if income_change >= 0 else '▼', v2='+' if income_change >= 0 else '', income_change=income_change %}{{ v }} {{ v2 }}{{ income_change }} % vs période précédente{% endtrans %}
       </span>
       {% else %}
-      <span class="text-xs text-secondary">Pas de référence sur la période précédente</span>
+      <span class="text-xs text-secondary">{{ _("Pas de référence sur la période précédente") }}</span>
       {% endif %}
     </div>
     <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1">
-      <span class="text-xs text-secondary">{{ icon('minus', size=14) }} Dépenses</span>
-      <span class="report-counter amount-blur text-2xl font-extrabold text-danger" data-target="-{{ expense_total }}" data-prefix="-">-0,00 €</span>
+      <span class="text-xs text-secondary">{{ icon('minus', size=14) }} {{ _("Dépenses") }}</span>
+      <span class="report-counter amount-blur text-2xl font-extrabold text-danger" data-target="-{{ expense_total }}" data-prefix="-">-{{ zero_eur() }}</span>
       {% if expense_change is not none %}
       <span class="text-xs font-medium {{ 'text-danger' if expense_change >= 0 else 'text-success' }}">
-        {{ '▲' if expense_change >= 0 else '▼' }} {{ '+' if expense_change >= 0 else '' }}{{ expense_change }} % vs période précédente
+        {% trans v='▲' if expense_change >= 0 else '▼', v2='+' if expense_change >= 0 else '', expense_change=expense_change %}{{ v }} {{ v2 }}{{ expense_change }} % vs période précédente{% endtrans %}
       </span>
       {% else %}
-      <span class="text-xs text-secondary">Pas de référence sur la période précédente</span>
+      <span class="text-xs text-secondary">{{ _("Pas de référence sur la période précédente") }}</span>
       {% endif %}
     </div>
     <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1">
-      <span class="text-xs text-secondary">{{ icon('scale', size=14) }} Résultat net</span>
+      <span class="text-xs text-secondary">{{ icon('scale', size=14) }} {{ _("Résultat net") }}</span>
       <span
         class="report-counter amount-blur text-2xl font-extrabold {{ 'text-success' if result_positive else 'text-danger' }}"
         data-target="{{ result_total }}"
         data-prefix="{{ '+' if result_total > 0 else '' }}"
-      >0,00 €</span>
+      >{{ zero_eur() }}</span>
       {% if result_change is not none %}
       <span class="text-xs font-medium {{ 'text-success' if result_change >= 0 else 'text-danger' }}">
-        {{ '▲' if result_change >= 0 else '▼' }} {{ '+' if result_change >= 0 else '' }}{{ result_change }} % vs période précédente
+        {% trans v='▲' if result_change >= 0 else '▼', v2='+' if result_change >= 0 else '', result_change=result_change %}{{ v }} {{ v2 }}{{ result_change }} % vs période précédente{% endtrans %}
       </span>
       {% else %}
-      <span class="text-xs text-secondary">Pas de référence sur la période précédente</span>
+      <span class="text-xs text-secondary">{{ _("Pas de référence sur la période précédente") }}</span>
       {% endif %}
     </div>
     <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1">
-      <span class="text-xs text-secondary">{{ icon('target', size=14) }} Budget Performance</span>
+      <span class="text-xs text-secondary">{{ icon('target', size=14) }} {{ _("Budget Performance") }}</span>
       {% if budget_performance_pct is not none %}
       <span
         class="report-counter text-2xl font-extrabold {{ 'text-danger' if budget_performance_pct > 90 else ('text-warning' if budget_performance_pct >= 75 else 'text-success') }}"
@@ -83,14 +83,14 @@
       >0 %</span>
       {% if budget_performance_change is not none %}
       <span class="text-xs font-medium {{ 'text-danger' if budget_performance_change >= 0 else 'text-success' }}">
-        {{ '▲' if budget_performance_change >= 0 else '▼' }} {{ '+' if budget_performance_change >= 0 else '' }}{{ budget_performance_change }} % vs période précédente
+        {% trans v='▲' if budget_performance_change >= 0 else '▼', v2='+' if budget_performance_change >= 0 else '', budget_performance_change=budget_performance_change %}{{ v }} {{ v2 }}{{ budget_performance_change }} % vs période précédente{% endtrans %}
       </span>
       {% else %}
-      <span class="text-xs text-secondary">Pas de référence sur la période précédente</span>
+      <span class="text-xs text-secondary">{{ _("Pas de référence sur la période précédente") }}</span>
       {% endif %}
       {% else %}
       <span class="text-2xl font-extrabold text-secondary">—</span>
-      <span class="text-xs text-secondary">Aucun budget défini</span>
+      <span class="text-xs text-secondary">{{ _("Aucun budget défini") }}</span>
       {% endif %}
     </div>
   </div>
@@ -98,25 +98,24 @@
   <!-- SCORE TWIGA — exclusif à cette appli, aucun équivalent Finary. -->
   <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2 mt-4">
     <div class="flex items-center justify-between">
-      <span class="text-sm font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Score Twiga : <span id="twiga-score-value">0</span> / 100</span>
+      <span class="text-sm font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Score Twiga :") }} <span id="twiga-score-value">0</span> / 100</span>
     </div>
     <div class="w-full h-3 rounded-full bg-page overflow-hidden print-score-track">
       <div id="twiga-score-bar" class="h-full bg-accent transition-all duration-[900ms] ease-out" style="width: 0%"></div>
     </div>
     <p class="text-sm text-secondary">{{ twiga_score.message }}</p>
     <p class="text-xs text-secondary">
-      Budgets {{ twiga_score.budget_points }}/40 · Résultat {{ twiga_score.result_points }}/30 ·
-      Catégorisation {{ twiga_score.categorized_points }}/20 · Projets {{ twiga_score.project_points }}/10
+      {% trans budget_points=twiga_score.budget_points, result_points=twiga_score.result_points, categorized_points=twiga_score.categorized_points, project_points=twiga_score.project_points %}Budgets {{ budget_points }}/40 · Résultat {{ result_points }}/30 · Catégorisation {{ categorized_points }}/20 · Projets {{ project_points }}/10{% endtrans %}
     </p>
   </div>
 
   {% if not has_any_data %}
   <div class="bg-container rounded-xl shadow-sm p-8 flex flex-col items-center gap-2 text-center mt-4">
     <p><img src="/static/icons/twiga-logo.svg" alt="" style="height:40px;width:auto;display:inline-block;vertical-align:-3px" /></p>
-    <p class="text-primary font-medium">Twiga ne trouve rien sur cette période.</p>
-    <p class="text-sm text-secondary">Essaie une autre période, ou importe des opérations depuis Paramètres.</p>
+    <p class="text-primary font-medium">{{ _("Twiga ne trouve rien sur cette période.") }}</p>
+    <p class="text-sm text-secondary">{{ _("Essaie une autre période, ou importe des opérations depuis Paramètres.") }}</p>
     <a href="/imports/new" class="mt-2 min-h-[46px] px-4 rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
-      {{ icon('file-import', size=18) }} Importer des opérations
+      {{ icon('file-import', size=18) }} {{ _("Importer des opérations") }}
     </a>
   </div>
   {% endif %}
@@ -124,7 +123,7 @@
   <!-- CASHFLOW — toujours visible, 12 mois glissants jusqu'au mois en
        cours, indépendant de l'onglet de détail actif ci-dessous. -->
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-2 mt-4">
-    <h2 class="text-lg font-bold text-primary">Flux financier — 12 derniers mois</h2>
+    <h2 class="text-lg font-bold text-primary">{{ _("Flux financier — 12 derniers mois") }}</h2>
     <div class="h-64 lg:h-[400px]">
       <canvas id="report-cashflow-chart"></canvas>
     </div>
@@ -134,13 +133,13 @@
        toutes les données des 5 onglets sont déjà rendues ci-dessous, aucun
        aller-retour serveur au changement d'onglet. -->
   <div class="flex gap-2 overflow-x-auto mt-4 pb-1" style="scrollbar-width: none;">
-    <button type="button" @click="activeTab = 'depenses'" :class="activeTab === 'depenses' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('minus', size=14) }} Dépenses</button>
-    <button type="button" @click="activeTab = 'recettes'" :class="activeTab === 'recettes' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('currency-euro', size=14) }} Recettes</button>
-    <button type="button" @click="activeTab = 'balance'" :class="activeTab === 'balance' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('scale', size=14) }} Balance</button>
-    <button type="button" @click="activeTab = 'budget'" :class="activeTab === 'budget' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('target', size=14) }} Budget</button>
-    <button type="button" @click="activeTab = 'patrimoine'" :class="activeTab === 'patrimoine' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('building-bank', size=14) }} Patrimoine</button>
-    <button type="button" @click="activeTab = 'le_cap'" :class="activeTab === 'le_cap' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('compass', size=14) }} Le Cap</button>
-    <button type="button" @click="activeTab = 'courses'" :class="activeTab === 'courses' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('receipt', size=14) }} Courses</button>
+    <button type="button" @click="activeTab = 'depenses'" :class="activeTab === 'depenses' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('minus', size=14) }} {{ _("Dépenses") }}</button>
+    <button type="button" @click="activeTab = 'recettes'" :class="activeTab === 'recettes' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('currency-euro', size=14) }} {{ _("Recettes") }}</button>
+    <button type="button" @click="activeTab = 'balance'" :class="activeTab === 'balance' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('scale', size=14) }} {{ _("Balance") }}</button>
+    <button type="button" @click="activeTab = 'budget'" :class="activeTab === 'budget' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('target', size=14) }} {{ _("Budget") }}</button>
+    <button type="button" @click="activeTab = 'patrimoine'" :class="activeTab === 'patrimoine' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('building-bank', size=14) }} {{ _("Patrimoine") }}</button>
+    <button type="button" @click="activeTab = 'le_cap'" :class="activeTab === 'le_cap' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('compass', size=14) }} {{ _("Le Cap") }}</button>
+    <button type="button" @click="activeTab = 'courses'" :class="activeTab === 'courses' ? 'bg-accent text-on-accent' : 'bg-container border border-border text-primary'" class="flex-shrink-0 min-h-[46px] px-4 rounded-xl text-sm font-medium whitespace-nowrap" >{{ icon('receipt', size=14) }} {{ _("Courses") }}</button>
   </div>
 
   <!-- --- TAB 1 : DÉPENSES --- -->
@@ -156,7 +155,7 @@
       <div class="relative w-full lg:w-1/2 max-w-56 lg:max-w-[400px] mx-auto lg:mx-0 h-56 lg:h-[400px] lg:min-h-[400px] flex-shrink-0">
         <canvas id="report-expense-donut"></canvas>
         <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-4">
-          <span class="text-xs text-secondary">Total dépenses</span>
+          <span class="text-xs text-secondary">{{ _("Total dépenses") }}</span>
           <span class="amount-blur text-lg font-bold text-primary">{{ expense_total | eur }}</span>
         </div>
       </div>
@@ -182,8 +181,8 @@
             </div>
             <button
               type="button"
-              aria-label="Évolution de {{ row.name }} sur 12 mois"
-              title="Évolution sur 12 mois"
+              aria-label="{{ _("Évolution de %(name)s sur 12 mois", name=row.name) }}"
+              title="{{ _("Évolution sur 12 mois") }}"
               hx-on:click="event.stopPropagation()"
               hx-get="/reports/category-trend?{{ report_qs }}&type=expense&category_id={{ cat_param }}&category_name={{ row.name | urlencode }}"
               hx-target="#category-trend-content"
@@ -205,7 +204,7 @@
             hx-target="#report-tx-list-expense"
             hx-swap="outerHTML"
             class="text-sm text-accent font-medium mb-2"
-          >{{ icon('arrow-narrow-left') }} Retour</button>
+          >{{ icon('arrow-narrow-left') }} {{ _("Retour") }}</button>
           <p class="text-sm font-semibold text-primary mb-1">{{ row.name }}</p>
           {% for sub in row.subcategories %}
           {% set sub_exact = sub.category_id if sub.category_id is not none else row.category_id %}
@@ -219,8 +218,8 @@
             <span class="amount-blur text-sm font-bold text-primary whitespace-nowrap">{{ sub.amount | eur }}</span>
             <button
               type="button"
-              aria-label="Évolution de {{ sub.name }} sur 12 mois"
-              title="Évolution sur 12 mois"
+              aria-label="{{ _("Évolution de %(name)s sur 12 mois", name=sub.name) }}"
+              title="{{ _("Évolution sur 12 mois") }}"
               hx-on:click="event.stopPropagation()"
               hx-get="/reports/category-trend?{{ report_qs }}&type=expense&category_id={{ sub_exact }}&exact=true&category_name={{ sub.name | urlencode }}"
               hx-target="#category-trend-content"
@@ -237,7 +236,7 @@
       </div>
     </div>
     {% else %}
-    <p class="text-sm text-secondary text-center py-8">Aucune dépense sur cette période.</p>
+    <p class="text-sm text-secondary text-center py-8">{{ _("Aucune dépense sur cette période.") }}</p>
     {% endif %}
 
     <div
@@ -246,7 +245,7 @@
       hx-trigger="load"
       hx-swap="outerHTML"
     >
-      <p class="text-sm text-secondary text-center py-4"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga cherche…</p>
+      <p class="text-sm text-secondary text-center py-4"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga cherche…") }}</p>
     </div>
   </div>
 
@@ -263,7 +262,7 @@
       <div class="relative w-full lg:w-1/2 max-w-56 lg:max-w-[400px] mx-auto lg:mx-0 h-56 lg:h-[400px] lg:min-h-[400px] flex-shrink-0">
         <canvas id="report-income-donut"></canvas>
         <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-4">
-          <span class="text-xs text-secondary">Total recettes{% if mois_shift_active %} ({{ income_period_label }}){% endif %}</span>
+          <span class="text-xs text-secondary">{{ _("Total recettes") }}{% if mois_shift_active %} ({{ income_period_label }}){% endif %}</span>
           <span class="amount-blur text-lg font-bold text-primary">{{ income_total | eur }}</span>
         </div>
       </div>
@@ -289,8 +288,8 @@
             </div>
             <button
               type="button"
-              aria-label="Évolution de {{ row.name }} sur 12 mois"
-              title="Évolution sur 12 mois"
+              aria-label="{{ _("Évolution de %(name)s sur 12 mois", name=row.name) }}"
+              title="{{ _("Évolution sur 12 mois") }}"
               hx-on:click="event.stopPropagation()"
               hx-get="/reports/category-trend?{{ report_qs }}&type=income&category_id={{ cat_param }}&category_name={{ row.name | urlencode }}"
               hx-target="#category-trend-content"
@@ -312,7 +311,7 @@
             hx-target="#report-tx-list-income"
             hx-swap="outerHTML"
             class="text-sm text-accent font-medium mb-2"
-          >{{ icon('arrow-narrow-left') }} Retour</button>
+          >{{ icon('arrow-narrow-left') }} {{ _("Retour") }}</button>
           <p class="text-sm font-semibold text-primary mb-1">{{ row.name }}</p>
           {% for sub in row.subcategories %}
           {% set sub_exact = sub.category_id if sub.category_id is not none else row.category_id %}
@@ -326,8 +325,8 @@
             <span class="amount-blur text-sm font-bold text-primary whitespace-nowrap">{{ sub.amount | eur }}</span>
             <button
               type="button"
-              aria-label="Évolution de {{ sub.name }} sur 12 mois"
-              title="Évolution sur 12 mois"
+              aria-label="{{ _("Évolution de %(name)s sur 12 mois", name=sub.name) }}"
+              title="{{ _("Évolution sur 12 mois") }}"
               hx-on:click="event.stopPropagation()"
               hx-get="/reports/category-trend?{{ report_qs }}&type=income&category_id={{ sub_exact }}&exact=true&category_name={{ sub.name | urlencode }}"
               hx-target="#category-trend-content"
@@ -344,7 +343,7 @@
       </div>
     </div>
     {% else %}
-    <p class="text-sm text-secondary text-center py-8">Aucune recette sur cette période.</p>
+    <p class="text-sm text-secondary text-center py-8">{{ _("Aucune recette sur cette période.") }}</p>
     {% endif %}
 
     <div
@@ -353,7 +352,7 @@
       hx-trigger="load"
       hx-swap="outerHTML"
     >
-      <p class="text-sm text-secondary text-center py-4"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga cherche…</p>
+      <p class="text-sm text-secondary text-center py-4"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga cherche…") }}</p>
     </div>
   </div>
 
@@ -368,17 +367,17 @@
     <p class="text-sm font-bold text-primary">{{ period_bar_label }}</p>
     <div class="flex flex-col gap-2">
       <div class="flex items-center gap-2">
-        <span class="text-xs text-secondary w-24 flex-shrink-0">Recettes</span>
+        <span class="text-xs text-secondary w-24 flex-shrink-0">{{ _("Recettes") }}</span>
         <div class="flex-1 h-8 rounded-lg bg-success/20 overflow-hidden"><div class="h-full bg-success" style="width: {{ income_bar_pct }}%"></div></div>
         <span class="amount-blur text-sm font-bold text-success w-28 text-right flex-shrink-0">+{{ income_total | eur }}</span>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-xs text-secondary w-24 flex-shrink-0">Dépenses</span>
+        <span class="text-xs text-secondary w-24 flex-shrink-0">{{ _("Dépenses") }}</span>
         <div class="flex-1 h-8 rounded-lg bg-danger/20 overflow-hidden"><div class="h-full bg-danger" style="width: {{ expense_bar_pct }}%"></div></div>
         <span class="amount-blur text-sm font-bold text-danger w-28 text-right flex-shrink-0">-{{ expense_total | eur }}</span>
       </div>
       <div class="flex items-center gap-2 pt-2 border-t border-border">
-        <span class="text-xs text-secondary w-24 flex-shrink-0 font-semibold">Résultat</span>
+        <span class="text-xs text-secondary w-24 flex-shrink-0 font-semibold">{{ _("Résultat") }}</span>
         <div class="flex-1"></div>
         <span class="amount-blur text-sm font-bold w-28 text-right flex-shrink-0 {{ 'text-success' if result_positive else 'text-danger' }}">
           {{ '+' if result_total > 0 else '' }}{{ result_total | eur }}
@@ -387,7 +386,7 @@
     </div>
 
     {% if period_months > 1 %}
-    <p class="text-sm font-bold text-primary mt-2">Détail mensuel</p>
+    <p class="text-sm font-bold text-primary mt-2">{{ _("Détail mensuel") }}</p>
     <!-- Tous les mois civils de la période (voir crud.get_period_monthly_breakdown),
          mois sans transaction inclus à 0,00 € — pas un filtrage de la
          fenêtre glissante cashflow_months (ancrée sur aujourd'hui, hors de
@@ -397,11 +396,11 @@
     <div class="overflow-x-auto -mx-1">
       <div class="min-w-[440px] flex flex-col gap-1 px-1">
         <div class="flex items-center gap-2 py-1 text-xs font-semibold text-secondary uppercase">
-          <span class="flex-1 min-w-0">Mois</span>
-          <span class="w-20 text-right flex-shrink-0">Recettes{% if monthly_shift_active %} (M-1){% endif %}</span>
-          <span class="w-20 text-right flex-shrink-0">Dépenses</span>
-          <span class="w-20 text-right flex-shrink-0">Net</span>
-          <span class="w-20 text-right flex-shrink-0">Taux épargne</span>
+          <span class="flex-1 min-w-0">{{ _("Mois") }}</span>
+          <span class="w-20 text-right flex-shrink-0">{{ _("Recettes") }}{% if monthly_shift_active %} (M-1){% endif %}</span>
+          <span class="w-20 text-right flex-shrink-0">{{ _("Dépenses") }}</span>
+          <span class="w-20 text-right flex-shrink-0">{{ _("Net") }}</span>
+          <span class="w-20 text-right flex-shrink-0">{{ _("Taux épargne") }}</span>
         </div>
         {% for m in monthly_breakdown %}
         {% set month_savings_rate = (m.net / m.income * 100) | round | int if m.income else 0 %}
@@ -421,15 +420,15 @@
          aucune opération ne dilue pas la moyenne vers 0. -->
     <div class="grid grid-cols-3 gap-2 mt-2">
       <div class="bg-page rounded-xl p-3 flex flex-col gap-1 text-center">
-        <span class="text-xs text-secondary">Moy. Recettes</span>
+        <span class="text-xs text-secondary">{{ _("Moy. Recettes") }}</span>
         <span class="amount-blur text-sm font-bold text-success">{{ monthly_avg_income | eur }}</span>
       </div>
       <div class="bg-page rounded-xl p-3 flex flex-col gap-1 text-center">
-        <span class="text-xs text-secondary">Moy. Dépenses</span>
+        <span class="text-xs text-secondary">{{ _("Moy. Dépenses") }}</span>
         <span class="amount-blur text-sm font-bold text-danger">{{ monthly_avg_expense | eur }}</span>
       </div>
       <div class="bg-page rounded-xl p-3 flex flex-col gap-1 text-center">
-        <span class="text-xs text-secondary">Moy. Épargne</span>
+        <span class="text-xs text-secondary">{{ _("Moy. Épargne") }}</span>
         <span class="amount-blur text-sm font-bold {{ 'text-success' if monthly_avg_net >= 0 else 'text-danger' }}">
           {{ '+' if monthly_avg_net > 0 else '' }}{{ monthly_avg_net | eur }}
         </span>
@@ -461,18 +460,18 @@
       </div>
       <p class="amount-blur text-xs text-secondary">
         {{ item.spent | eur }} / {{ item.budget | eur }}
-        {% if period_months > 1 %}· moyenne {{ (item.spent / period_months) | eur }} / mois (budget {{ (item.budget / period_months) | eur }} / mois){% endif %}
+        {% if period_months > 1 %}{% trans period_months=(item.spent / period_months) | eur, period_months2=(item.budget / period_months) | eur %}· moyenne {{ period_months }} / mois (budget {{ period_months2 }} / mois){% endtrans %}{% endif %}
       </p>
     </div>
     {% endfor %}
     <div class="flex items-center justify-between pt-3 border-t border-border">
-      <span class="text-sm font-bold text-primary">Total économisé sur la période</span>
+      <span class="text-sm font-bold text-primary">{{ _("Total économisé sur la période") }}</span>
       <span class="amount-blur text-sm font-bold {{ 'text-success' if budget_saved >= 0 else 'text-danger' }}">
         {{ '+' if budget_saved > 0 else '' }}{{ budget_saved | eur }}
       </span>
     </div>
     {% else %}
-    <p class="text-sm text-secondary text-center py-8">Aucun budget défini pour cette période.</p>
+    <p class="text-sm text-secondary text-center py-8">{{ _("Aucun budget défini pour cette période.") }}</p>
     {% endif %}
   </div>
 
@@ -487,18 +486,18 @@
     {% if net_worth_points %}
     <div class="flex items-center justify-between flex-wrap gap-2">
       <span class="text-sm font-medium {{ 'text-success' if net_worth_delta >= 0 else 'text-danger' }}">
-        {{ '▲' if net_worth_delta >= 0 else '▼' }} {{ '+' if net_worth_delta > 0 else '' }}{{ net_worth_delta | eur }} depuis le début de la période
+        {% trans v='▲' if net_worth_delta >= 0 else '▼', v2='+' if net_worth_delta > 0 else '', net_worth_delta=net_worth_delta | eur %}{{ v }} {{ v2 }}{{ net_worth_delta }} depuis le début de la période{% endtrans %}
       </span>
     </div>
     <div class="h-64 lg:h-[400px]">
       <canvas id="report-networth-chart"></canvas>
     </div>
     <div class="grid grid-cols-2 gap-2 text-sm">
-      <p class="text-secondary">Plus haut : <span class="amount-blur text-primary font-semibold">{{ net_worth_high | eur }}</span></p>
-      <p class="text-secondary">Plus bas : <span class="amount-blur text-primary font-semibold">{{ net_worth_low | eur }}</span></p>
+      <p class="text-secondary">{{ _("Plus haut :") }} <span class="amount-blur text-primary font-semibold">{{ net_worth_high | eur }}</span></p>
+      <p class="text-secondary">{{ _("Plus bas :") }} <span class="amount-blur text-primary font-semibold">{{ net_worth_low | eur }}</span></p>
     </div>
     {% else %}
-    <p class="text-sm text-secondary text-center py-8">Pas assez de données pour tracer le patrimoine sur cette période.</p>
+    <p class="text-sm text-secondary text-center py-8">{{ _("Pas assez de données pour tracer le patrimoine sur cette période.") }}</p>
     {% endif %}
   </div>
 
@@ -527,7 +526,7 @@
         </div>
       </div>
       {% endfor %}
-      <p class="text-sm text-secondary">Taux d'épargne (période) : <span class="font-semibold {{ 'text-success' if savings_rate >= 0 else 'text-danger' }}">{{ savings_rate }} %</span></p>
+      <p class="text-sm text-secondary">{{ _("Taux d'épargne (période) :") }} <span class="font-semibold {{ 'text-success' if savings_rate >= 0 else 'text-danger' }}">{{ savings_rate }} %</span></p>
     </div>
 
     {% if cap_entry.intention %}
@@ -537,19 +536,19 @@
     {% if cap_unexpected %}
     <div class="flex flex-col gap-1">
       <div class="flex items-center justify-between text-sm">
-        <p class="font-semibold text-primary">{{ icon('urgent', size=16) }} Imprévus de {{ cap_month_label }}</p>
+        <p class="font-semibold text-primary">{{ icon('urgent', size=16) }} {% trans cap_month_label=cap_month_label %}Imprévus de {{ cap_month_label }}{% endtrans %}</p>
         <span class="amount-blur text-danger font-semibold">{{ cap_unexpected_total | eur }}</span>
       </div>
       {% for tx in cap_unexpected %}
       <p class="text-sm text-secondary flex justify-between gap-2">
-        <span class="truncate">{{ tx.date | fr_date }} {{ tx.label or "(sans libellé)" }}</span>
+        <span class="truncate">{{ tx.date | fr_date }} {{ tx.label or _("(sans libellé)") }}</span>
         <span class="amount-blur whitespace-nowrap">{{ tx.amount | eur }}</span>
       </p>
       {% endfor %}
     </div>
     {% endif %}
     {% else %}
-    <p class="text-sm text-secondary text-center py-4">Aucun cap fixé pour {{ cap_month_label }}. <a href="/cap" class="text-accent font-medium">{{ icon('arrow-narrow-right') }} Fixer le cap</a></p>
+    <p class="text-sm text-secondary text-center py-4">{% trans cap_month_label=cap_month_label %}Aucun cap fixé pour {{ cap_month_label }}.{% endtrans %} <a href="/cap" class="text-accent font-medium">{{ icon('arrow-narrow-right') }} {{ _("Fixer le cap") }}</a></p>
     {% endif %}
 
     {% if cap_history %}
@@ -557,13 +556,13 @@
       <table class="w-full text-xs min-w-[480px]">
         <thead>
           <tr class="text-secondary uppercase tracking-wide">
-            <th class="text-left font-medium py-1 px-1">Mois</th>
-            <th class="text-right font-medium py-1 px-1">Revenus</th>
-            <th class="text-right font-medium py-1 px-1" title="Essentiel">{{ icon('home', size=14) }}</th>
-            <th class="text-right font-medium py-1 px-1" title="Choix">{{ icon('star', size=14) }}</th>
-            <th class="text-right font-medium py-1 px-1" title="Imprévus">{{ icon('urgent', size=14) }}</th>
-            <th class="text-right font-medium py-1 px-1" title="Épargne">{{ icon('pig-money', size=14) }}</th>
-            <th class="text-left font-medium py-1 px-1" title="Intention">{{ icon('writing', size=14) }}</th>
+            <th class="text-left font-medium py-1 px-1">{{ _("Mois") }}</th>
+            <th class="text-right font-medium py-1 px-1">{{ _("Revenus") }}</th>
+            <th class="text-right font-medium py-1 px-1" title="{{ _("Essentiel") }}">{{ icon('home', size=14) }}</th>
+            <th class="text-right font-medium py-1 px-1" title="{{ _("Choix") }}">{{ icon('star', size=14) }}</th>
+            <th class="text-right font-medium py-1 px-1" title="{{ _("Imprévus") }}">{{ icon('urgent', size=14) }}</th>
+            <th class="text-right font-medium py-1 px-1" title="{{ _("Épargne") }}">{{ icon('pig-money', size=14) }}</th>
+            <th class="text-left font-medium py-1 px-1" title="{{ _("Intention") }}">{{ icon('writing', size=14) }}</th>
           </tr>
         </thead>
         <tbody>
@@ -594,12 +593,10 @@
   >
     {% if receipt_report.family_rows %}
     <div class="flex flex-col gap-1">
-      <h2 class="text-lg font-bold text-primary">{{ icon('receipt', size=18) }} Courses par rayon — 12 derniers mois</h2>
+      <h2 class="text-lg font-bold text-primary">{{ icon('receipt', size=18) }} {{ _("Courses par rayon — 12 derniers mois") }}</h2>
       <p class="text-xs text-secondary">
-        Basé sur les <strong>{{ receipt_report.coverage.detailed }} course(s)</strong>
-        dont le ticket a été importé — les autres n'apparaissent pas ici.
-        Montants <strong>avant remises, bons d'achat et titres-restaurant</strong> :
-        ce rapport mesure ce qui est acheté, pas ce qui est payé.
+        {{ _("Basé sur les") }} <strong>{% trans detailed=receipt_report.coverage.detailed %}{{ detailed }} course(s){% endtrans %}</strong>
+        {{ _("dont le ticket a été importé — les autres n'apparaissent pas ici. Montants") }} <strong>{{ _("avant remises, bons d'achat et titres-restaurant") }}</strong> {{ _(": ce rapport mesure ce qui est acheté, pas ce qui est payé.") }}
       </p>
     </div>
 
@@ -619,12 +616,12 @@
       <table class="w-full text-xs min-w-[480px]">
         <thead>
           <tr class="text-secondary border-b border-border">
-            <th class="text-left font-medium py-1.5 pr-2">Rayon</th>
+            <th class="text-left font-medium py-1.5 pr-2">{{ _("Rayon") }}</th>
             {% for month in receipt_report.months %}
             <th class="text-right font-medium py-1.5 px-1 whitespace-nowrap">{{ month }}</th>
             {% endfor %}
-            <th class="text-right font-medium py-1.5 pl-2 whitespace-nowrap">Total</th>
-            <th class="text-right font-medium py-1.5 pl-2 whitespace-nowrap">Moy.</th>
+            <th class="text-right font-medium py-1.5 pl-2 whitespace-nowrap">{{ _("Total") }}</th>
+            <th class="text-right font-medium py-1.5 pl-2 whitespace-nowrap">{{ _("Moy.") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -650,7 +647,7 @@
         </tbody>
         <tfoot>
           <tr class="font-bold text-primary">
-            <td class="py-2 pr-2">Total détaillé</td>
+            <td class="py-2 pr-2">{{ _("Total détaillé") }}</td>
             {% for amount in receipt_report.monthly_totals %}
             <td class="amount-blur text-right py-2 px-1">{{ amount | eur if amount > 0 else "—" }}</td>
             {% endfor %}
@@ -662,15 +659,14 @@
     </div>
     {% else %}
     <p class="text-sm text-secondary text-center py-4">
-      Aucun détail de ticket sur les 12 derniers mois. Importez la facture PDF
-      d'une course depuis le détail de l'opération pour alimenter ce rapport.
+      {{ _("Aucun détail de ticket sur les 12 derniers mois. Importez la facture PDF d'une course depuis le détail de l'opération pour alimenter ce rapport.") }}
     </p>
     {% endif %}
   </div>
 
   <!-- EN-TÊTE D'IMPRESSION -->
   <div class="hidden print:block print-report-header">
-    <h1 class="text-xl font-bold"><img src="/static/icons/twiga-logo.svg" alt="" style="height:20px;width:auto;display:inline-block;vertical-align:-3px" /> TWIGA — Rapport {{ period_bar_label }}</h1>
+    <h1 class="text-xl font-bold"><img src="/static/icons/twiga-logo.svg" alt="" style="height:20px;width:auto;display:inline-block;vertical-align:-3px" /> {% trans period_bar_label=period_bar_label %}TWIGA — Rapport {{ period_bar_label }}{% endtrans %}</h1>
   </div>
 
 </div>
@@ -693,8 +689,8 @@
     Chart.defaults.scale.grid.color = colorBorder;
     Chart.defaults.scale.ticks.color = colorSecondary;
 
-    var currencyFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
-    var numberFormatter = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var currencyFormatter = new Intl.NumberFormat((document.documentElement.dataset.numberLocale || 'fr-FR'), { style: "currency", currency: "EUR" });
+    var numberFormatter = new Intl.NumberFormat((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     // --- Compteurs animés (comptent de 0 jusqu'à la vraie valeur déjà
     // connue serveur, 600ms ease-out) : signature Finary. ---
@@ -716,7 +712,7 @@
         var progress = Math.min((timestamp - startTime) / duration, 1);
         var eased = easeOutCubic(progress);
         var current = absTarget * eased;
-        var formatted = isEuro ? numberFormatter.format(current) + " €" : Math.round(current) + suffix;
+        var formatted = isEuro ? currencyFormatter.format(current) : Math.round(current) + suffix;
         el.textContent = prefix + formatted;
         if (progress < 1) {
           window.requestAnimationFrame(step);
@@ -776,9 +772,9 @@
           labels: cashflowLabels,
           datasets: [
             { type: "bar", label: "Recettes", data: cashflowIncome, backgroundColor: incomeColors, order: 2 },
-            { type: "bar", label: "Dépenses", data: cashflowExpense.map(function (v) { return -v; }), backgroundColor: expenseColors, order: 2 },
+            { type: "bar", label: {{ _("Dépenses") | tojson }}, data: cashflowExpense.map(function (v) { return -v; }), backgroundColor: expenseColors, order: 2 },
             {
-              type: "line", label: "Résultat cumulé", data: netCumulative, borderColor: colorAccent,
+              type: "line", label: {{ _("Résultat cumulé") | tojson }}, data: netCumulative, borderColor: colorAccent,
               backgroundColor: colorAccent, tension: 0.3, order: 1, pointRadius: 2, yAxisID: "y1",
             },
           ],
@@ -804,11 +800,11 @@
                   var index = items[0].dataIndex;
                   var dataset = items[0].dataset.label;
                   var blocs = [];
-                  if (dataset !== "Dépenses") {
+                  if (dataset !== {{ _("Dépenses") | tojson }}) {
                     blocs.push(["Top recettes :", cashflowTopIncome[index] || []]);
                   }
                   if (dataset !== "Recettes") {
-                    blocs.push(["Top dépenses :", cashflowTopCategories[index] || []]);
+                    blocs.push([{{ _("Top dépenses :") | tojson }}, cashflowTopCategories[index] || []]);
                   }
                   var lines = [];
                   blocs.forEach(function (bloc) {

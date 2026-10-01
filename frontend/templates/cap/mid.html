@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Mon mois — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Mon mois — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pt-2 pb-8 max-w-lg mx-auto lg:max-w-3xl lg:px-8 lg:py-6">
@@ -8,7 +8,7 @@
      voir _sidebar.html) et non plus une étape intermédiaire du rituel :
      d'où le titre, et le pied qui mène au détail par catégorie et au
      rituel, au lieu d'un simple bouton « Fermer ». #}
-  <h1 class="text-2xl font-bold text-primary">{{ icon('calendar-event', size=24) }} Mon mois — {{ current_month_label }}</h1>
+  <h1 class="text-2xl font-bold text-primary">{{ icon('calendar-event', size=24) }} {% trans current_month_label=current_month_label %}Mon mois — {{ current_month_label }}{% endtrans %}</h1>
 
   {% if entry %}
   {# Le plan et sa consommation, aux deux mêmes niveaux de zoom que l'écran
@@ -71,7 +71,7 @@
         {# Sans cette ligne, la somme des catégories serait inférieure à la
            jauge du pilier, sans explication visible. #}
         <div class="flex items-center justify-between gap-2 text-xs">
-          <span class="text-secondary italic">Hors budget</span>
+          <span class="text-secondary italic">{{ _("Hors budget") }}</span>
           <span class="amount-blur text-secondary flex-shrink-0 tabular-nums">{{ pillar.detail.unbudgeted | eur }}</span>
         </div>
         {% endif %}
@@ -82,14 +82,14 @@
 
     <div class="flex flex-col gap-0.5 pt-1">
       <p class="text-sm font-semibold {{ 'text-success' if savings_so_far >= 0 else 'text-danger' }}">
-        {{ icon('pig-money', size=16) }} Épargne en cours : {{ "+" if savings_so_far >= 0 else "" }}{{ savings_so_far | eur }}
+        {{ icon('pig-money', size=16) }} {% trans v="+" if savings_so_far >= 0 else "", savings_so_far=savings_so_far | eur %}Épargne en cours : {{ v }}{{ savings_so_far }}{% endtrans %}
       </p>
       {# L'encaissé à côté de l'engagé : comparer à l'engagement rend la jauge
          juste dès le 1er du mois, mais masquerait un mois où l'argent promis
          n'arrive jamais. Les deux chiffres, et l'écart se voit. #}
       {% if income_is_planned %}
       <p class="text-xs text-secondary">
-        Sur {{ income_reference | eur }} prévus — {{ income_actual | eur }} encaissés à ce jour
+        {% trans income_reference=income_reference | eur, income_actual=income_actual | eur %}Sur {{ income_reference }} prévus — {{ income_actual }} encaissés à ce jour{% endtrans %}
       </p>
       {% endif %}
     </div>
@@ -107,19 +107,19 @@
   </div>
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-3 text-center">
-    <p class="text-sm text-secondary">Aucun cap fixé pour {{ current_month_label }}.</p>
+    <p class="text-sm text-secondary">{% trans current_month_label=current_month_label %}Aucun cap fixé pour {{ current_month_label }}.{% endtrans %}</p>
     <a href="/cap" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
-      {{ icon('arrow-narrow-right') }} Fixer le cap
+      {{ icon('arrow-narrow-right') }} {{ _("Fixer le cap") }}
     </a>
   </div>
   {% endif %}
 
   <a href="/budgets" class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2">
-    {{ icon('edit', size=18) }} Ajuster le plan du mois
+    {{ icon('edit', size=18) }} {{ _("Ajuster le plan du mois") }}
   </a>
   {% if entry %}
   <a href="/cap" class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2">
-    {{ icon('target', size=18) }} Revoir le cap du mois
+    {{ icon('target', size=18) }} {{ _("Revoir le cap du mois") }}
   </a>
   {% endif %}
 </main>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Paramètres — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Paramètres — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
 {# Bureau vs mobile : toute la refonte bureau passe par des préfixes `lg:`,
@@ -31,11 +31,19 @@
     <div class="flex items-center gap-3">
       <img src="/static/icons/twiga-logo.svg" alt="" class="h-8 w-8 flex-shrink-0" style="height:32px; width:auto;" />
       <div class="flex flex-col">
-        <h1 class="text-2xl font-bold text-primary">Paramètres</h1>
-        <p class="hidden lg:block text-sm text-secondary">Ce que vous gérez, et comment votre instance Twiga est réglée.</p>
+        <h1 class="text-2xl font-bold text-primary">{{ _("Paramètres") }}</h1>
+        <p class="hidden lg:block text-sm text-secondary">{{ _("Ce que vous gérez, et comment votre instance Twiga est réglée.") }}</p>
       </div>
     </div>
   </div>
+
+  {# Composition bureau : colonnes CSS (.settings-columns, design-system.css) et
+     non une grille. Une grille aligne les cartes par rangées ; ici elles ont
+     des hauteurs très différentes, d'où deux colonnes à moitié vides face à
+     une troisième de trois écrans. Les colonnes se remplissent de haut en bas
+     et s'équilibrent seules ; l'ordre du balisage fait le regroupement :
+     Gérer + Le Cap (le travail), Données + Préférences, Sécurité + déconnexion
+     (le compte). #}
 
   <!-- Sections repliables (Alpine, un booléen par section — pas un accordéon
        strict à un seul ouvert à la fois, rien ne l'exigeait) : "Gérer"
@@ -48,7 +56,7 @@
        JS sur la largeur de fenêtre. L'en-tête devient alors inerte
        (`lg:pointer-events-none`) et le chevron disparaît. -->
   <div
-    class="w-full max-w-sm flex flex-col gap-3 lg:max-w-none lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-6 lg:items-start"
+    class="settings-columns w-full max-w-sm flex flex-col gap-3 lg:max-w-none"
     x-data="{ gerer: true, donnees: false, cap: false, securite: false, preferences: false }"
   >
 
@@ -59,7 +67,7 @@
         @click="gerer = !gerer"
         class="min-h-[50px] w-full flex items-center justify-between px-4 text-primary font-semibold lg:pointer-events-none lg:pt-4 lg:text-base"
       >
-        <span class="flex items-center gap-2">{{ icon('tool', size=18) }}Gérer</span>
+        <span class="flex items-center gap-2">{{ icon('tool', size=18) }}{{ _("Gérer") }}</span>
         <span x-text="gerer ? '▼' : '▶'" class="text-secondary lg:hidden"></span>
       </button>
       <div x-show="gerer" x-transition class="flex flex-col gap-3 px-4 pb-4 lg:!flex">
@@ -67,55 +75,116 @@
           href="/accounts"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('building-bank', size=18) }} Comptes
+          {{ icon('building-bank', size=18) }} {{ _("Comptes") }}
         </a>
         <a
           href="/categories"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('tag', size=18) }} Catégories
+          {{ icon('tag', size=18) }} {{ _("Catégories") }}
         </a>
         <a
           href="/payment-methods"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('credit-card', size=18) }} Modes de paiement
+          {{ icon('credit-card', size=18) }} {{ _("Modes de paiement") }}
         </a>
         <a
           href="/rules"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('tool', size=18) }} Règles de catégorisation
+          {{ icon('tool', size=18) }} {{ _("Règles de catégorisation") }}
         </a>
         <a
           href="/backlog"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('folders', size=18) }} Catégorisation en masse
+          {{ icon('folders', size=18) }} {{ _("Catégorisation en masse") }}
         </a>
         <a
           href="/recurring"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('repeat', size=18) }} Abonnements récurrents
+          {{ icon('repeat', size=18) }} {{ _("Abonnements récurrents") }}
         </a>
         <a
           href="/checks"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('receipt', size=18) }} Chèques &amp; paiements en attente
+          {{ icon('receipt', size=18) }} {{ _("Chèques &amp; paiements en attente") }}
         </a>
         <button
           type="button"
           hx-post="/settings/detect-payment-methods"
           hx-target="#detect-payment-result"
           hx-swap="innerHTML"
-          hx-confirm="Détecter automatiquement le mode de paiement des opérations qui n'en ont pas encore, à partir de leur libellé ?"
+          hx-confirm="{{ _("Détecter automatiquement le mode de paiement des opérations qui n'en ont pas encore, à partir de leur libellé ?") }}"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2 text-left"
         >
-          {{ icon('search', size=18) }} Détecter les modes de paiement manquants
+          {{ icon('search', size=18) }} {{ _("Détecter les modes de paiement manquants") }}
         </button>
         <div id="detect-payment-result"></div>
+      </div>
+    </div>
+
+      {# Le Cap — d'où viennent les ressources du mois.
+       Réglage et non règle codée en dur : les foyers financent leur mois de
+       façons très différentes (salaire du mois, salaire du mois précédent,
+       virements vers un pot commun, enveloppe fixe). Le moteur, lui, ne
+       connaît que le montant saisi dans le rituel — ce choix ne pilote que
+       ce qui est PROPOSÉ. #}
+    <div class="bg-container rounded-xl shadow-sm overflow-hidden">
+      <button
+        type="button"
+        @click="cap = !cap"
+        class="min-h-[50px] w-full flex items-center justify-between px-4 text-primary font-semibold lg:pointer-events-none lg:pt-4 lg:text-base"
+      >
+        <span class="flex items-center gap-2">{{ icon('compass', size=18) }}{{ _("Le Cap") }}</span>
+        <span x-text="cap ? '▼' : '▶'" class="text-secondary lg:hidden"></span>
+      </button>
+      <div x-show="cap" x-transition class="flex flex-col gap-3 px-4 pb-4 lg:!flex">
+        <form
+          hx-post="/settings/cap-income-source"
+          hx-target="#cap-income-result"
+          hx-swap="innerHTML"
+          class="bg-page rounded-xl border border-border p-4 flex flex-col gap-3"
+          x-data="{ source: '{{ cap_settings.income_source }}' }"
+        >
+          <p class="text-sm font-medium text-primary">{{ _("D'où viennent les ressources du mois ?") }}</p>
+          {% for code, label, aide in income_sources %}
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="radio" name="income_source" value="{{ code }}" x-model="source" class="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <span class="flex flex-col min-w-0">
+              <span class="text-sm text-primary">{{ label }}</span>
+              <span class="text-xs text-secondary">{{ aide }}</span>
+            </span>
+          </label>
+          {% endfor %}
+
+          <label class="flex flex-col gap-1" x-show="source === 'virements'" style="display: none;">
+            <span class="text-xs text-secondary">{{ _("Compte qui reçoit les virements") }}</span>
+            <select name="income_account_id" class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm">
+              <option value="">{{ _("— choisir —") }}</option>
+              {% for account in accounts %}
+              <option value="{{ account.id }}" {% if cap_settings.income_account_id == account.id %}selected{% endif %}>{{ account.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-1" x-show="source === 'fixe'" style="display: none;">
+            <span class="text-xs text-secondary">{{ _("Montant fixe") }}</span>
+            <input
+              type="number" step="0.01" name="income_fixed_amount"
+              value="{% if cap_settings.income_fixed_amount is not none %}{{ '%.2f' % cap_settings.income_fixed_amount }}{% endif %}"
+              class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3"
+            />
+          </label>
+
+          <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+            {{ icon('device-floppy', size=18) }} {{ _("Enregistrer") }}
+          </button>
+          <div id="cap-income-result"></div>
+        </form>
       </div>
     </div>
 
@@ -126,7 +195,7 @@
         @click="donnees = !donnees"
         class="min-h-[50px] w-full flex items-center justify-between px-4 text-primary font-semibold lg:pointer-events-none lg:pt-4 lg:text-base"
       >
-        <span class="flex items-center gap-2">{{ icon('folder', size=18) }}Données</span>
+        <span class="flex items-center gap-2">{{ icon('folder', size=18) }}{{ _("Données") }}</span>
         <span x-text="donnees ? '▼' : '▶'" class="text-secondary lg:hidden"></span>
       </button>
       <div x-show="donnees" x-transition class="flex flex-col gap-3 px-4 pb-4 lg:!flex">
@@ -134,20 +203,20 @@
           href="/export/json"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('file-download', size=18) }} Export JSON complet
+          {{ icon('file-download', size=18) }} {{ _("Export JSON complet") }}
         </a>
         <a
           href="/export/transactions.csv"
           class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
         >
-          {{ icon('file-download', size=18) }} Export CSV des opérations
+          {{ icon('file-download', size=18) }} {{ _("Export CSV des opérations") }}
         </a>
         <form
           hx-post="/export/restore"
           hx-target="#restore-progress"
           hx-swap="outerHTML"
           hx-encoding="multipart/form-data"
-          hx-confirm="Restaurer depuis cette sauvegarde JSON ? Les données déjà présentes (même id) seront mises à jour, pas dupliquées."
+          hx-confirm="{{ _("Restaurer depuis cette sauvegarde JSON ? Les données déjà présentes (même id) seront mises à jour, pas dupliquées.") }}"
           class="bg-page rounded-xl border border-border p-4 flex flex-col gap-3"
         >
           <input
@@ -161,78 +230,10 @@
             type="submit"
             class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
           >
-            {{ icon('upload', size=18) }} Restaurer depuis une sauvegarde JSON
+            {{ icon('upload', size=18) }} {{ _("Restaurer depuis une sauvegarde JSON") }}
           </button>
         </form>
         <div id="restore-progress"></div>
-      </div>
-    </div>
-
-    {# Préférences et Sécurité partagent une colonne de la grille, empilées.
-       Sans ce regroupement, la quatrième carte repartait à la ligne dans la
-       colonne 1, donc SOUS « Gérer » — la carte la plus haute — au lieu de
-       suivre Préférences. Un conteneur plutôt qu'un col-start figé : ça tient
-       aussi bien à deux colonnes (lg) qu'à trois (xl), et l'ordre mobile est
-       inchangé. #}
-    <div class="flex flex-col gap-3 lg:gap-6">
-      {# Le Cap — d'où viennent les ressources du mois.
-       Réglage et non règle codée en dur : les foyers financent leur mois de
-       façons très différentes (salaire du mois, salaire du mois précédent,
-       virements vers un pot commun, enveloppe fixe). Le moteur, lui, ne
-       connaît que le montant saisi dans le rituel — ce choix ne pilote que
-       ce qui est PROPOSÉ. #}
-    <div class="bg-container rounded-xl shadow-sm overflow-hidden">
-      <button
-        type="button"
-        @click="cap = !cap"
-        class="min-h-[50px] w-full flex items-center justify-between px-4 text-primary font-semibold lg:pointer-events-none lg:pt-4 lg:text-base"
-      >
-        <span class="flex items-center gap-2">{{ icon('compass', size=18) }}Le Cap</span>
-        <span x-text="cap ? '▼' : '▶'" class="text-secondary lg:hidden"></span>
-      </button>
-      <div x-show="cap" x-transition class="flex flex-col gap-3 px-4 pb-4 lg:!flex">
-        <form
-          hx-post="/settings/cap-income-source"
-          hx-target="#cap-income-result"
-          hx-swap="innerHTML"
-          class="bg-page rounded-xl border border-border p-4 flex flex-col gap-3"
-          x-data="{ source: '{{ cap_settings.income_source }}' }"
-        >
-          <p class="text-sm font-medium text-primary">D'où viennent les ressources du mois ?</p>
-          {% for code, label, aide in income_sources %}
-          <label class="flex items-start gap-3 cursor-pointer">
-            <input type="radio" name="income_source" value="{{ code }}" x-model="source" class="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <span class="flex flex-col min-w-0">
-              <span class="text-sm text-primary">{{ label }}</span>
-              <span class="text-xs text-secondary">{{ aide }}</span>
-            </span>
-          </label>
-          {% endfor %}
-
-          <label class="flex flex-col gap-1" x-show="source === 'virements'" style="display: none;">
-            <span class="text-xs text-secondary">Compte qui reçoit les virements</span>
-            <select name="income_account_id" class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm">
-              <option value="">— choisir —</option>
-              {% for account in accounts %}
-              <option value="{{ account.id }}" {% if cap_settings.income_account_id == account.id %}selected{% endif %}>{{ account.name }}</option>
-              {% endfor %}
-            </select>
-          </label>
-
-          <label class="flex flex-col gap-1" x-show="source === 'fixe'" style="display: none;">
-            <span class="text-xs text-secondary">Montant fixe</span>
-            <input
-              type="number" step="0.01" name="income_fixed_amount"
-              value="{% if cap_settings.income_fixed_amount is not none %}{{ '%.2f' % cap_settings.income_fixed_amount }}{% endif %}"
-              class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3"
-            />
-          </label>
-
-          <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-            {{ icon('device-floppy', size=18) }} Enregistrer
-          </button>
-          <div id="cap-income-result"></div>
-        </form>
       </div>
     </div>
 
@@ -243,10 +244,61 @@
           @click="preferences = !preferences"
           class="min-h-[50px] w-full flex items-center justify-between px-4 text-primary font-semibold lg:pointer-events-none lg:pt-4 lg:text-base"
         >
-          <span class="flex items-center gap-2">{{ icon('adjustments', size=18) }}Préférences</span>
+          <span class="flex items-center gap-2">{{ icon('adjustments', size=18) }}{{ _("Préférences") }}</span>
           <span x-text="preferences ? '▼' : '▶'" class="text-secondary lg:hidden"></span>
         </button>
         <div x-show="preferences" x-transition class="flex flex-col gap-3 px-4 pb-4 lg:!flex">
+          {# Langue et format : deux choix distincts (on peut lire l'interface en
+             anglais avec des dates à la française). Chaque carte montre le
+             rendu réel. Le changement s'enregistre seul et recharge la page :
+             pas de bouton « Enregistrer » à oublier. Les radios sont masquées
+             visuellement mais restent au clavier (voir .choice-card). #}
+          <form
+            hx-post="/profile/preferences"
+            hx-trigger="twiga-prefs"
+            hx-swap="none"
+            x-data="{ lang: '{{ current_language() }}', fmt: '{{ current_format() }}' }"
+            class="bg-page rounded-xl border border-border p-4 flex flex-col gap-4"
+          >
+            <fieldset class="flex flex-col gap-2">
+              <legend class="text-sm font-semibold text-primary mb-2">{{ _("Langue") }}</legend>
+              <div class="grid grid-cols-2 gap-2">
+                {% for code, name in LANGUAGES.items() %}
+                <label class="choice-card">
+                  <input
+                    type="radio"
+                    name="language"
+                    value="{{ code }}"
+                    class="sr-only"
+                    x-model="lang"
+                    @change="fmt = lang === 'fr' ? 'fr' : 'en-GB'; $nextTick(() => $dispatch('twiga-prefs'))"
+                  />
+                  <span class="text-sm font-medium text-primary">{{ name }}{% if code == "en" %} <span class="text-xs text-secondary">({{ _("bêta") }})</span>{% endif %}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </fieldset>
+            <fieldset class="flex flex-col gap-2">
+              <legend class="text-sm font-semibold text-primary mb-2">{{ _("Format des nombres et des dates") }}</legend>
+              <div class="flex flex-col gap-2">
+                {% for code, label in [("fr", _("Français")), ("en-GB", _("International")), ("en-US", _("États-Unis"))] %}
+                <label class="choice-card">
+                  <input
+                    type="radio"
+                    name="number_format"
+                    value="{{ code }}"
+                    class="sr-only"
+                    x-model="fmt"
+                    @change="$nextTick(() => $dispatch('twiga-prefs'))"
+                  />
+                  <span class="text-sm font-medium text-primary">{{ label }}</span>
+                  <span class="text-xs text-secondary">{{ format_preview(code) }}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </fieldset>
+            <p class="text-xs text-secondary">{{ _("Le changement s'applique immédiatement.") }}</p>
+          </form>
           <div class="bg-page rounded-xl border border-border p-4">
             <label class="flex items-center gap-3 min-h-[50px]">
               <input
@@ -255,7 +307,7 @@
                 @change="localStorage.setItem('privacy', privacy)"
                 class="w-5 h-5"
               />
-              <span class="text-sm text-primary">Masquer les montants sensibles</span>
+              <span class="text-sm text-primary">{{ _("Masquer les montants sensibles") }}</span>
             </label>
           </div>
           <button
@@ -263,7 +315,7 @@
             onclick="window.startTwigaTour()"
             class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
           >
-            {{ icon('map', size=18) }} Revoir la visite guidée
+            {{ icon('map', size=18) }} {{ _("Revoir la visite guidée") }}
           </button>
         </div>
       </div>
@@ -277,11 +329,11 @@
           @click="securite = !securite"
           class="min-h-[50px] w-full flex items-center justify-between px-4 text-primary font-semibold lg:pointer-events-none lg:pt-4 lg:text-base"
         >
-          <span class="flex items-center gap-2">{{ icon('shield-lock', size=18) }}Sécurité</span>
+          <span class="flex items-center gap-2">{{ icon('shield-lock', size=18) }}{{ _("Sécurité") }}</span>
           <span x-text="securite ? '▼' : '▶'" class="text-secondary lg:hidden"></span>
         </button>
         <div x-show="securite" x-transition class="flex flex-col gap-3 px-4 pb-4 lg:!flex">
-          <p class="text-sm font-medium text-primary">Changer le mot de passe</p>
+          <p class="text-sm font-medium text-primary">{{ _("Changer le mot de passe") }}</p>
           <form
             hx-post="/settings/change-password"
             hx-target="#change-password-result"
@@ -290,19 +342,19 @@
             class="bg-page rounded-xl border border-border p-4 flex flex-col gap-3"
           >
             <label class="flex flex-col gap-1">
-              <span class="text-xs text-secondary">Mot de passe actuel</span>
+              <span class="text-xs text-secondary">{{ _("Mot de passe actuel") }}</span>
               {% with field_name = "current_password", field_autocomplete = "current-password" %}
               {% include "_password_field.html" %}
               {% endwith %}
             </label>
             <label class="flex flex-col gap-1">
-              <span class="text-xs text-secondary">Nouveau mot de passe</span>
+              <span class="text-xs text-secondary">{{ _("Nouveau mot de passe") }}</span>
               {% with field_name = "new_password", field_autocomplete = "new-password", field_minlength = 8 %}
               {% include "_password_field.html" %}
               {% endwith %}
             </label>
             <label class="flex flex-col gap-1">
-              <span class="text-xs text-secondary">Confirmer le nouveau mot de passe</span>
+              <span class="text-xs text-secondary">{{ _("Confirmer le nouveau mot de passe") }}</span>
               {% with field_name = "confirm_password", field_autocomplete = "new-password", field_minlength = 8 %}
               {% include "_password_field.html" %}
               {% endwith %}
@@ -311,7 +363,7 @@
               type="submit"
               class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
             >
-              {{ icon('device-floppy', size=18) }} Enregistrer
+              {{ icon('device-floppy', size=18) }} {{ _("Enregistrer") }}
             </button>
             <div id="change-password-result"></div>
           </form>
@@ -322,25 +374,22 @@
             href="/users"
             class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center lg:justify-start lg:px-4 lg:gap-2"
           >
-            {{ icon('users', size=18) }} Utilisateurs
+            {{ icon('users', size=18) }} {{ _("Utilisateurs") }}
           </a>
           {% endif %}
         </div>
       </div>
       {% endif %}
-    </div>
 
     {% if auth_enabled %}
-    <!-- Toujours visible, jamais repliée dans une section — indépendante de
-         l'état des accordéons ci-dessus. Sur bureau, elle occupe toute la
-         largeur de la grille et le bouton se range à droite : une action de
-         sortie n'a pas à s'étaler sur 1600 px. -->
-    <form hx-post="/logout" class="pt-2 lg:col-span-full lg:pt-0 lg:flex lg:justify-end">
+    <!-- Toujours visible, jamais repliée dans une section : une action de sortie
+         vit avec Sécurité, en bas de la dernière colonne. -->
+    <form hx-post="/logout" class="pt-2 lg:pt-0">
       <button
         type="submit"
-        class="min-h-[50px] rounded-xl bg-container border border-border text-danger font-medium w-full lg:w-auto lg:px-6 flex items-center justify-center gap-2"
+        class="min-h-[50px] rounded-xl bg-container border border-border text-danger font-medium w-full flex items-center justify-center gap-2"
       >
-        {{ icon('logout', size=18) }} Se déconnecter
+        {{ icon('logout', size=18) }} {{ _("Se déconnecter") }}
       </button>
     </form>
     {% endif %}

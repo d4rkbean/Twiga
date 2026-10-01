@@ -2,17 +2,17 @@
   <table class="w-full text-sm">
     <thead>
       <tr class="text-left text-secondary text-xs uppercase">
-        <th class="pb-2 px-1">Date</th>
-        <th class="pb-2 px-1">Libellé</th>
-        <th class="pb-2 px-1">Compte</th>
-        <th class="pb-2 px-1 text-right">Montant</th>
+        <th class="pb-2 px-1">{{ _("Date") }}</th>
+        <th class="pb-2 px-1">{{ _("Libellé") }}</th>
+        <th class="pb-2 px-1">{{ _("Compte") }}</th>
+        <th class="pb-2 px-1 text-right">{{ _("Montant") }}</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-border">
       {% for tx in transactions %}
       <tr>
         <td class="py-2 px-1 whitespace-nowrap text-secondary">{{ tx.date | fr_date }}</td>
-        <td class="py-2 px-1 text-primary truncate max-w-[9rem]">{{ tx.label or "(sans libellé)" }}</td>
+        <td class="py-2 px-1 text-primary truncate max-w-[9rem]">{{ tx.label or _("(sans libellé)") }}</td>
         <td class="py-2 px-1 text-secondary truncate max-w-[6rem]">{{ tx.account.name }}</td>
         <td
           class="py-2 px-1 text-right amount-blur font-medium whitespace-nowrap {{ 'text-success' if tx.amount > 0 else 'text-danger' }}"
@@ -22,7 +22,7 @@
       </tr>
       {% else %}
       <tr>
-        <td colspan="4" class="py-6 text-center text-secondary">Aucune opération sur cette période.</td>
+        <td colspan="4" class="py-6 text-center text-secondary">{{ _("Aucune opération sur cette période.") }}</td>
       </tr>
       {% endfor %}
     </tbody>

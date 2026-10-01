@@ -1,16 +1,9 @@
 <div id="receipt-section-{{ transaction.id }}" class="flex flex-col gap-3 rounded-xl border border-border p-4">
-  <h3 class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('receipt') }}Détail du ticket</h3>
+  <h3 class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('receipt') }}{{ _("Détail du ticket") }}</h3>
 
   <form class="flex flex-col gap-2">
     <label class="text-xs text-secondary">
-      Facture PDF de l'appli du magasin (Leclerc, Intermarché...) : les
-      lignes en sont proposées automatiquement dès le fichier choisi
-      ci-dessous, rayon compris quand il est reconnaissable — à vérifier
-      avant d'enregistrer, l'extraction n'est jamais garantie exacte. Le
-      fichier n'est pas conservé, seules les lignes le sont — et un nouvel
-      import <strong>remplace</strong> le détail existant. Pour un ticket
-      papier (photo), pas d'extraction automatique possible : ajoutez les
-      lignes à la main ci-dessous.
+      {{ _("Facture PDF de l'appli du magasin (Leclerc, Intermarché...) : les lignes en sont proposées automatiquement dès le fichier choisi ci-dessous, rayon compris quand il est reconnaissable — à vérifier avant d'enregistrer, l'extraction n'est jamais garantie exacte. Le fichier n'est pas conservé, seules les lignes le sont — et un nouvel import") }} <strong>{{ _("remplace") }}</strong> {{ _("le détail existant. Pour un ticket papier (photo), pas d'extraction automatique possible : ajoutez les lignes à la main ci-dessous.") }}
     </label>
     <!-- hx-post/hx-trigger directement sur le champ fichier, pas sur le
          <form> : hx-trigger ne déclenche que la requête portée par le MÊME
@@ -32,15 +25,15 @@
       hx-trigger="change"
       class="text-sm text-primary"
     />
-    <p class="htmx-indicator text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline" /> Twiga tend le cou...</p>
+    <p class="htmx-indicator text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline" /> {{ _("Twiga tend le cou...") }}</p>
   </form>
 
   {% if raw_extracted_text is not none %}
   <details class="rounded-lg border border-border">
     <summary class="text-xs text-secondary px-2 py-1.5 cursor-pointer select-none">
-      {{ icon('zoom-in', size=16) }} Texte brut extrait de la facture (ne réapparaîtra plus après — le fichier n'est pas gardé)
+      {{ icon('zoom-in', size=16) }} {{ _("Texte brut extrait de la facture (ne réapparaîtra plus après — le fichier n'est pas gardé)") }}
     </summary>
-    <pre class="text-xs text-secondary whitespace-pre-wrap break-words px-2 pb-2 max-h-64 overflow-y-auto">{{ raw_extracted_text or "(aucun texte extrait — ce PDF n'a peut-être pas de calque de texte, par ex. une image scannée)" }}</pre>
+    <pre class="text-xs text-secondary whitespace-pre-wrap break-words px-2 pb-2 max-h-64 overflow-y-auto">{{ raw_extracted_text or _("(aucun texte extrait — ce PDF n'a peut-être pas de calque de texte, par ex. une image scannée)") }}</pre>
   </details>
   {% endif %}
 
@@ -57,7 +50,7 @@
       <div class="flex items-baseline justify-between gap-2 border-b border-border pb-1">
         <span class="text-sm font-semibold text-primary">{{ group.icon }} {{ group.label }}</span>
         <span class="amount-blur text-xs text-secondary whitespace-nowrap">
-          {{ group['items'] | length }} art. · {{ group.subtotal | eur }}
+          {% trans items=group['items'] | length, subtotal=group.subtotal | eur %}{{ items }} art. · {{ subtotal }}{% endtrans %}
         </span>
       </div>
 
@@ -67,7 +60,7 @@
           type="text"
           name="label"
           value="{{ item.label }}"
-          aria-label="Libellé du produit"
+          aria-label="{{ _("Libellé du produit") }}"
           hx-post="/transactions/receipts/items/{{ item.id }}/update"
           hx-trigger="change"
           hx-include="closest .receipt-item-row"
@@ -78,7 +71,7 @@
         <div class="flex items-center gap-1.5">
           <select
             name="family"
-            aria-label="Rayon"
+            aria-label="{{ _("Rayon") }}"
             hx-post="/transactions/receipts/items/{{ item.id }}/update"
             hx-trigger="change"
             hx-include="closest .receipt-item-row"
@@ -86,7 +79,7 @@
             hx-swap="outerHTML"
             class="flex-1 min-w-0 min-h-[42px] rounded-lg border border-border bg-container text-primary text-xs px-1"
           >
-            <option value="">— Rayon —</option>
+            <option value="">{{ _("— Rayon —") }}</option>
             {% for code, icon, label in receipt_families %}
             <option value="{{ code }}" {{ 'selected' if item.family == code else '' }}>{{ icon }} {{ label }}</option>
             {% endfor %}
@@ -96,7 +89,7 @@
             inputmode="decimal"
             name="amount"
             value="{{ '%.2f' % item.amount }}"
-            aria-label="Montant"
+            aria-label="{{ _("Montant") }}"
             hx-post="/transactions/receipts/items/{{ item.id }}/update"
             hx-trigger="change"
             hx-include="closest .receipt-item-row"
@@ -109,7 +102,7 @@
             hx-post="/transactions/receipts/items/{{ item.id }}/delete"
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
-            aria-label="Supprimer cette ligne"
+            aria-label="{{ _("Supprimer cette ligne") }}"
             class="w-10 h-[42px] flex-shrink-0 text-danger text-sm"
           >
             {{ icon('trash') }}
@@ -125,13 +118,13 @@
   {% set transaction_abs_amount = transaction.amount | abs %}
   {% set ecart = items_total - transaction_abs_amount %}
   <p class="amount-blur text-xs text-secondary border-t border-border pt-2">
-    Total des lignes : <span class="text-primary font-medium">{{ items_total | eur }}</span>
-    — Transaction : {{ transaction_abs_amount | eur }}
+    {{ _("Total des lignes :") }} <span class="text-primary font-medium">{{ items_total | eur }}</span>
+    {% trans transaction_abs_amount=transaction_abs_amount | eur %}— Transaction : {{ transaction_abs_amount }}{% endtrans %}
     {% if ecart | abs > 0.01 %}
     <br />
     <span class="text-warning">
-      {{ icon('alert-triangle', size=16) }} écart de {{ ecart | abs | eur }}
-      {% if ecart > 0 %}(remises, bons d'achat ou avoirs non comptés dans les lignes){% endif %}
+      {{ icon('alert-triangle', size=16) }} {% trans ecart=ecart | abs | eur %}écart de {{ ecart }}{% endtrans %}
+      {% if ecart > 0 %}{{ _("(remises, bons d'achat ou avoirs non comptés dans les lignes)") }}{% endif %}
     </span>
     {% else %}
     {{ icon('circle-check') }}
@@ -146,6 +139,6 @@
     hx-swap="outerHTML"
     class="min-h-[42px] rounded-xl bg-container border border-border text-primary text-sm font-medium px-3 self-start"
   >
-    + Ajouter une ligne
+    {{ _("+ Ajouter une ligne") }}
   </button>
 </div>

@@ -11,6 +11,7 @@ from backend import crud
 from backend.database import get_db
 from backend.models import Category, Transaction
 from backend.templating import templates
+from backend.i18n import gettext as _t
 
 logger = logging.getLogger("backend.backlog")
 
@@ -194,7 +195,7 @@ def category_select(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
     context = {
         "request": request,
         "transaction": transaction,
@@ -214,7 +215,7 @@ def category_confirm(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     context = {
         "request": request,
         "transaction_id": transaction_id,
@@ -236,10 +237,10 @@ def validate_suggestion(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
 
     rule_suggestion = crud.maybe_rule_suggestion(db, transaction, category)
     crud.categorize_transaction(db, transaction, category)
@@ -266,7 +267,7 @@ def reject_suggestion(
 ):
     transaction = db.get(Transaction, transaction_id)
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction introuvable")
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
 
     crud.reject_from_backlog(db, transaction)
     _remove_from_cache({transaction_id})
@@ -376,7 +377,7 @@ def create_rule_from_suggestion(
 ):
     category = db.get(Category, category_id)
     if category is None:
-        raise HTTPException(status_code=404, detail="Catégorie introuvable")
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     if keyword.strip():
         crud.create_rule(db, keyword.strip(), category)
-    return HTMLResponse(content='<p class="text-sm text-success py-2">✓ Règle créée</p>')
+    return HTMLResponse(content=_t('<p class="text-sm text-success py-2">✓ Règle créée</p>'))

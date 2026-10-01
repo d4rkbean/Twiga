@@ -4,8 +4,7 @@
 >
   {% if usage.children %}
   <p class="text-sm text-danger">
-    "{{ category.name }}" a {{ usage.children }} sous-catégorie{{ "s" if usage.children != 1 else "" }}.
-    Supprime-les ou déplace-les d'abord.
+    {% trans name=category.name, children=usage.children, v="s" if usage.children != 1 else "" %}"{{ name }}" a {{ children }} sous-catégorie{{ v }}. Supprime-les ou déplace-les d'abord.{% endtrans %}
   </p>
   <button
     type="button"
@@ -14,16 +13,15 @@
     hx-swap="outerHTML"
     class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
   >
-    OK
+    {{ _("OK") }}
   </button>
   {% elif usage.transactions or usage.budgets or usage.rules or usage.recurring_patterns %}
   <p class="text-sm text-danger">
-    "{{ category.name }}" est utilisée par
-    {%- if usage.transactions %} {{ usage.transactions }} opération{{ "s" if usage.transactions != 1 else "" }}{% endif -%}
-    {%- if usage.budgets %}{{ "," if usage.transactions }} {{ usage.budgets }} budget{{ "s" if usage.budgets != 1 else "" }}{% endif -%}
-    {%- if usage.rules %}{{ "," if usage.transactions or usage.budgets }} {{ usage.rules }} règle{{ "s" if usage.rules != 1 else "" }}{% endif -%}
-    {%- if usage.recurring_patterns %}{{ "," if usage.transactions or usage.budgets or usage.rules }} {{ usage.recurring_patterns }} abonnement{{ "s" if usage.recurring_patterns != 1 else "" }} récurrent{{ "s" if usage.recurring_patterns != 1 else "" }}{% endif -%}.
-    Choisis une catégorie de remplacement avant de supprimer :
+    {% trans name=category.name %}"{{ name }}" est utilisée par{% endtrans %}
+    {%- if usage.transactions %} {% trans transactions=usage.transactions, v="s" if usage.transactions != 1 else "" %}{{ transactions }} opération{{ v }}{% endtrans %}{% endif -%}
+    {%- if usage.budgets %}{% trans transactions="," if usage.transactions, budgets=usage.budgets, v="s" if usage.budgets != 1 else "" %}{{ transactions }} {{ budgets }} budget{{ v }}{% endtrans %}{% endif -%}
+    {%- if usage.rules %}{% trans budgets="," if usage.transactions or usage.budgets, rules=usage.rules, v="s" if usage.rules != 1 else "" %}{{ budgets }} {{ rules }} règle{{ v }}{% endtrans %}{% endif -%}
+    {%- if usage.recurring_patterns %}{% trans rules="," if usage.transactions or usage.budgets or usage.rules, recurring_patterns=usage.recurring_patterns, v="s" if usage.recurring_patterns != 1 else "" %}{{ rules }} {{ recurring_patterns }} abonnement{{ v }} récurrent{{ v }}{% endtrans %}{% endif -%}{{ _(". Choisis une catégorie de remplacement avant de supprimer :") }}
   </p>
   <form
     hx-post="/categories/{{ category.id }}/delete"
@@ -37,7 +35,7 @@
       required
       class="w-full min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
     >
-      <option value="" disabled selected>Choisir une catégorie...</option>
+      <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
       {% for other in all_categories %}
       {% if other.id != category.id %}
       <option value="{{ other.id }}">{{ other.icon or "" }} {{ other.name }}</option>
@@ -51,7 +49,7 @@
     </select>
     <div class="flex gap-2">
       <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-danger font-medium">
-        Réaffecter et supprimer
+        {{ _("Réaffecter et supprimer") }}
       </button>
       <button
         type="button"
@@ -60,17 +58,17 @@
         hx-swap="outerHTML"
         class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
       >
-        Annuler
+        {{ _("Annuler") }}
       </button>
     </div>
   </form>
   {% else %}
   <p class="text-sm text-secondary">
-    Supprimer "{{ category.name }}" ? Aucune opération, budget, règle ou abonnement récurrent ne l'utilise.
+    {% trans name=category.name %}Supprimer "{{ name }}" ? Aucune opération, budget, règle ou abonnement récurrent ne l'utilise.{% endtrans %}
   </p>
   <form hx-post="/categories/{{ category.id }}/delete" hx-target="#categories-content" hx-swap="outerHTML" class="flex gap-2">
     <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-danger font-medium">
-      Supprimer
+      {{ _("Supprimer") }}
     </button>
     <button
       type="button"
@@ -79,7 +77,7 @@
       hx-swap="outerHTML"
       class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
     >
-      Annuler
+      {{ _("Annuler") }}
     </button>
   </form>
   {% endif %}

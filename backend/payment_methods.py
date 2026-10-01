@@ -53,3 +53,26 @@ _DEFAULT_ICON_NAME = "wallet"
 
 def get_payment_method_icon_name(name: str | None) -> str:
     return _ICON_NAMES.get((name or "").strip().lower(), _DEFAULT_ICON_NAME)
+
+
+# Affichage des moyens de paiement par défaut dans la langue de l'utilisateur.
+# Le NOM français reste la clé stockée en base (Transaction.payment_method,
+# Rule.payment_method) : seul l'affichage est traduit, et un moyen ajouté par
+# l'utilisateur (Wero, PayPal...) s'affiche tel quel.
+from backend.i18n import lazy_gettext  # noqa: E402
+
+_DISPLAY_LABELS = {
+    "CB": lazy_gettext("CB"),
+    "Chèque": lazy_gettext("Chèque"),
+    "Virement": lazy_gettext("Virement"),
+    "Prélèvement": lazy_gettext("Prélèvement"),
+    "Espèces": lazy_gettext("Espèces"),
+    "Débit différé": lazy_gettext("Débit différé"),
+}
+
+
+def get_payment_method_label(name: str | None) -> str:
+    if not name:
+        return ""
+    label = _DISPLAY_LABELS.get(name)
+    return str(label) if label is not None else name

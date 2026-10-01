@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Panorama — Twiga 🦒{% endblock %}
+{% block title %}{{ _("Panorama — Twiga 🦒") }}{% endblock %}
 
 {% block extra_head %}
 <script src="{{ static_url('/static/vendor/chart.min.js') }}"></script>
@@ -9,7 +9,7 @@
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
-  <h1 class="sr-only">Panorama</h1>
+  <h1 class="sr-only">{{ _("Panorama") }}</h1>
 
   <!-- ROW 1 — situation globale, toujours mois civil en cours / tous
        comptes, indépendamment des filtres de la ROW 2 ci-dessous : un
@@ -27,7 +27,7 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">
       <div class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5">
         <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('wallet', size=88) }}</span>
-        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('currency-euro', size=14) }} Solde total</p>
+        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('currency-euro', size=14) }} {{ _("Solde total") }}</p>
         <p class="amount-blur text-2xl font-extrabold lg:text-3xl lg:tabular-nums {{ 'text-success' if total_balance >= 0 else 'text-danger' }}">
           {{ total_balance | eur }}
         </p>
@@ -36,7 +36,7 @@
           @click="showAccounts = !showAccounts"
           class="text-xs text-accent font-medium text-left mt-auto pt-1 relative"
         >
-          <span x-text="showAccounts ? '▲ masquer comptes' : '▼ voir comptes'">▼ voir comptes</span>
+          <span x-text="showAccounts ? '▲ masquer comptes' : '▼ voir comptes'">{{ _("▼ voir comptes") }}</span>
         </button>
       </div>
 
@@ -49,22 +49,22 @@
          garde que le chiffre qui décide d'agir et y renvoie. #}
       <div class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5">
         <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('target', size=88) }}</span>
-        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('target', size=14) }} Mon mois</p>
+        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('target', size=14) }} {{ _("Mon mois") }}</p>
         {% if budget_danger_count %}
         <p class="hidden lg:block text-3xl font-extrabold tabular-nums text-danger">{{ budget_danger_count }}</p>
         <p class="hidden lg:block text-xs text-secondary">
-          budget{{ "s" if budget_danger_count > 1 else "" }} dépassé{{ "s" if budget_danger_count > 1 else "" }}
+          {% trans v="s" if budget_danger_count > 1 else "" %}budget{{ v }} dépassé{{ v }}{% endtrans %}
         </p>
         {% elif cap_savings_so_far is not none %}
         <p class="amount-blur hidden lg:block text-3xl font-extrabold tabular-nums {{ 'text-success' if cap_savings_so_far >= 0 else 'text-danger' }}">
           {{ "+" if cap_savings_so_far >= 0 else "" }}{{ cap_savings_so_far | eur }}
         </p>
-        <p class="hidden lg:block text-xs text-secondary">épargnés à date</p>
+        <p class="hidden lg:block text-xs text-secondary">{{ _("épargnés à date") }}</p>
         {% elif budget_defined_count %}
         <p class="hidden lg:block text-3xl font-extrabold tabular-nums text-success">{{ budget_ok_count }}</p>
-        <p class="hidden lg:block text-xs text-secondary">budget{{ "s" if budget_ok_count > 1 else "" }} sous contrôle</p>
+        <p class="hidden lg:block text-xs text-secondary">{% trans v="s" if budget_ok_count > 1 else "" %}budget{{ v }} sous contrôle{% endtrans %}</p>
         {% else %}
-        <p class="text-sm text-secondary">Plan non fixé</p>
+        <p class="text-sm text-secondary">{{ _("Plan non fixé") }}</p>
         {% endif %}
 
         {# Mobile : les trois jauges de piliers tiennent dans la tuile et
@@ -82,29 +82,29 @@
         </div>
         {% elif budget_defined_count %}
         <p class="text-sm font-semibold text-primary lg:hidden">
-          {{ budget_ok_count }} OK &nbsp; {{ budget_warning_count }} {{ icon('alert-triangle', size=13) }} &nbsp; {{ budget_danger_count }} {{ icon('circle-x', size=13) }}
+          {% trans budget_ok_count=budget_ok_count, budget_warning_count=budget_warning_count, size=icon('alert-triangle', size=13), budget_danger_count=budget_danger_count %}{{ budget_ok_count }} OK &nbsp; {{ budget_warning_count }} {{ size }} &nbsp; {{ budget_danger_count }}{% endtrans %} {{ icon('circle-x', size=13) }}
         </p>
         {% endif %}
 
         <a href="/cap/mid" class="text-xs text-accent font-medium mt-auto pt-1 relative">
-          {% if cap_entry %}Voir le détail →{% else %}Fixer le cap →{% endif %}
+          {% if cap_entry %}{{ _("Voir le détail →") }}{% else %}{{ _("Fixer le cap →") }}{% endif %}
         </a>
       </div>
 
       <div class="relative overflow-hidden bg-container rounded-xl shadow-sm p-4 flex flex-col gap-1 lg:p-5">
         <span aria-hidden="true" class="hidden lg:block absolute -right-3 -bottom-3 text-primary opacity-[0.06] pointer-events-none">{{ icon('bell', size=88) }}</span>
-        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('bell', size=14) }} Alertes</p>
+        <p class="text-xs text-secondary uppercase tracking-wide">{{ icon('bell', size=14) }} {{ _("Alertes") }}</p>
         {% if pending_count %}
         <p class="hidden lg:block text-3xl font-extrabold tabular-nums text-warning">{{ pending_count }}</p>
         <p class="hidden lg:block text-xs text-secondary">
-          opération{{ "s" if pending_count > 1 else "" }} en attente
+          {% trans v="s" if pending_count > 1 else "" %}opération{{ v }} en attente{% endtrans %}
         </p>
         <p class="text-sm font-semibold text-primary lg:hidden">
-          {{ pending_count }} transaction{{ "s" if pending_count > 1 else "" }}<br />en attente
+          {% trans pending_count=pending_count, v="s" if pending_count > 1 else "" %}{{ pending_count }} transaction{{ v }}{% endtrans %}<br />{{ _("en attente") }}
         </p>
-        <a href="/transactions/inbox" class="text-xs text-accent font-medium mt-auto pt-1 relative">Traiter →</a>
+        <a href="/transactions/inbox" class="text-xs text-accent font-medium mt-auto pt-1 relative">{{ _("Traiter →") }}</a>
         {% else %}
-        <p class="text-sm text-secondary">Aucune alerte</p>
+        <p class="text-sm text-secondary">{{ _("Aucune alerte") }}</p>
         {% endif %}
       </div>
 
@@ -131,20 +131,20 @@
             {{ item.balance | eur }}
           </span>
           <span class="amount-blur text-xs {{ 'text-success' if item.monthly_evolution >= 0 else 'text-danger' }}">
-            {{ "+" if item.monthly_evolution > 0 else "" }}{{ item.monthly_evolution | eur }} ce mois-ci
+            {% trans v="+" if item.monthly_evolution > 0 else "", monthly_evolution=item.monthly_evolution | eur %}{{ v }}{{ monthly_evolution }} ce mois-ci{% endtrans %}
           </span>
         </div>
       </div>
       {% else %}
       <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
-        <p class="text-sm text-secondary text-center">Aucun compte pour l'instant.</p>
+        <p class="text-sm text-secondary text-center">{{ _("Aucun compte pour l'instant.") }}</p>
       </div>
       {% endfor %}
       <a
         href="/transactions/list"
         class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
       >
-        {{ icon('list-details', size=18) }} Voir toutes les opérations
+        {{ icon('list-details', size=18) }} {{ _("Voir toutes les opérations") }}
       </a>
     </div>
   </div>
@@ -189,7 +189,7 @@
       value="{{ period_start.isoformat() }}"
       x-show="periode === 'perso'"
       style="display: none;"
-      aria-label="Date de début"
+      aria-label="{{ _("Date de début") }}"
       class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
     />
     <input
@@ -198,14 +198,14 @@
       value="{{ period_end.isoformat() }}"
       x-show="periode === 'perso'"
       style="display: none;"
-      aria-label="Date de fin"
+      aria-label="{{ _("Date de fin") }}"
       class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
     />
     <select
       name="account_id"
       class="flex-1 min-w-[140px] lg:flex-none lg:w-auto lg:min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
     >
-      <option value="" {% if account_id is none %}selected{% endif %}>Tous les comptes</option>
+      <option value="" {% if account_id is none %}selected{% endif %}>{{ _("Tous les comptes") }}</option>
       {% for account in accounts %}
       <option value="{{ account.id }}" {% if account.id == account_id %}selected{% endif %}>
         {{ account.name }}
@@ -232,7 +232,7 @@
     <label
       class="flex items-center gap-2 min-h-[46px] cursor-pointer flex-shrink-0"
       :class="mensuel ? '' : 'opacity-50 cursor-not-allowed'"
-      :title="mensuel ? '' : 'Disponible seulement sur « Mois en cours » ou « Mois dernier »'"
+      :title="mensuel ? '' : '{{ _("Disponible seulement sur « Mois en cours » ou « Mois dernier »") | jsq }}'"
       x-data="{ get mensuel() { return ['mois', 'mois-dernier'].includes(periode) } }"
     >
       <input
@@ -244,7 +244,7 @@
         @change="localStorage.setItem('twiga_panorama_shift_income', $event.target.checked ? '1' : '0')"
         class="w-5 h-5 flex-shrink-0"
       />
-      <span class="text-sm text-primary whitespace-nowrap">{{ icon('adjustments', size=14) }} Décaler recettes</span>
+      <span class="text-sm text-primary whitespace-nowrap">{{ icon('adjustments', size=14) }} {{ _("Décaler recettes") }}</span>
     </label>
   </form>
   </div>
@@ -257,7 +257,7 @@
     href="/reports"
     class="min-h-[50px] rounded-xl border-2 border-accent text-accent font-semibold flex items-center justify-center gap-1"
   >
-    {{ icon('chart-bar', size=18) }} Voir le rapport complet {{ icon('arrow-narrow-right') }}
+    {{ icon('chart-bar', size=18) }} {{ _("Voir le rapport complet") }} {{ icon('arrow-narrow-right') }}
   </a>
 
 </main>

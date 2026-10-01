@@ -13,9 +13,10 @@ from backend.auth import get_current_user
 from backend.category_icons import get_category_icon, get_category_icon_name
 from backend.crud import resolve_category_pillar, resolve_transaction_pillar
 from backend.icons import available as icon_names, icon
-from backend.formatting import format_amount, format_date
+from backend.formatting import format_amount, format_amount_as, format_date, format_date_as
+from backend import i18n
 from backend.models import Account
-from backend.payment_methods import get_payment_method_icon_name
+from backend.payment_methods import get_payment_method_icon_name, get_payment_method_label
 from backend.pillars import PILLAR_ORDER, PILLARS, get_pillar_icon, get_pillar_label
 from backend.receipt_families import receipt_family_display
 
@@ -27,6 +28,8 @@ def _json_default(value):
         return float(value)
     if hasattr(value, "isoformat"):
         return value.isoformat()
+    if isinstance(value, i18n.LazyString):
+        return str(value)
     raise TypeError(f"Objet non sérialisable en JSON : {value!r}")
 
 
@@ -135,7 +138,11 @@ def category_display_filter(name: str | None) -> str:
     return f"{parent.strip()} → {child.strip()}"
 
 
-_ROLE_LABELS = {"admin": "Administrateur", "editor": "Éditeur", "viewer": "Lecture seule"}
+_ROLE_LABELS = {
+    "admin": i18n.lazy_gettext("Administrateur"),
+    "editor": i18n.lazy_gettext("Éditeur"),
+    "viewer": i18n.lazy_gettext("Lecture seule"),
+}
 _USER_DISPLAY_NAME_MAX = 16
 
 
@@ -198,8 +205,44 @@ templates.env.filters["receipt_family_display"] = receipt_family_display
 templates.env.globals["get_category_icon"] = get_category_icon
 templates.env.globals["get_category_icon_name"] = get_category_icon_name
 templates.env.globals["get_payment_method_icon_name"] = get_payment_method_icon_name
+templates.env.filters["pm_label"] = get_payment_method_label
 templates.env.globals["account_types"] = ACCOUNT_TYPES
 templates.env.globals["get_current_user"] = get_current_user
+
+# Traduction : jinja2.ext.i18n + gettext/ngettext lus dans la langue de la
+# requête (backend/i18n.py). newstyle=True permet {{ _("Bonjour %(nom)s", nom=x) }}
+# et les blocs {% trans %}.
+templates.env.add_extension("jinja2.ext.i18n")
+templates.env.install_gettext_callables(i18n.gettext, i18n.ngettext, newstyle=True)
+
+
+def jsq_filter(value) -> str:
+    # Texte traduit à placer dans une chaîne JS entre apostrophes, elle-même
+    # dans un attribut HTML (Alpine : :aria-label="x ? '...' : '...'"). Renvoie
+    # un str (pas un Markup) : l'auto-échappement HTML passe ensuite, et le
+    # navigateur décode les entités avant qu'Alpine n'évalue l'expression.
+    return str(value).replace("\\", "\\\\").replace("'", "\\'")
+
+
+templates.env.filters["jsq"] = jsq_filter
+templates.env.globals["current_language"] = i18n.current_language
+templates.env.globals["current_format"] = i18n.current_format
+templates.env.globals["number_locale"] = i18n.number_locale
+
+
+def format_preview(number_format: str) -> str:
+    # Exemple affiché sur chaque carte du sélecteur de format (Paramètres >
+    # Préférences) : la même date et le même montant rendus dans chaque format.
+    from datetime import date
+
+    return f"{format_date_as(date(2026, 12, 31), number_format)} · {format_amount_as(Decimal('1234.56'), number_format)}"
+
+
+templates.env.globals["format_preview"] = format_preview
+templates.env.globals["zero_eur"] = lambda: format_amount(Decimal("0"))
+templates.env.globals["default_format_for"] = i18n.default_format_for
+templates.env.globals["LANGUAGES"] = i18n.LANGUAGES
+templates.env.globals["FORMATS"] = i18n.FORMATS
 
 
 def tour_context(request) -> dict:
