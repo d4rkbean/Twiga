@@ -75,7 +75,7 @@
       this.groupes[code].lignes.forEach(l => { l.montant = l.repere })
     },
     get totalDepenses() {
-      return {{ groupes | map(attribute='code') | list | tojson }}
+      return {{ groupes | map(attribute='code') | list | tojson | forceescape }}
         .reduce((s, c) => s + this.totalGroupe(c), 0) + (Number(this.imprevu) || 0)
     },
     /* Deux nombres distincts, et la nuance compte :
