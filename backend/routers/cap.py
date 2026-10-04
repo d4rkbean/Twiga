@@ -221,11 +221,19 @@ def cap_back_to_step1(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("cap/_step1_bilan.html", context)
 
 
+def _decimal(valeur: str) -> Decimal:
+    """Montant saisi -> Decimal ; un champ vide ou illisible vaut 0 (jamais une 500)."""
+    try:
+        return Decimal((valeur or "0").replace(",", ".").strip() or "0")
+    except ArithmeticError:
+        return Decimal("0")
+
+
 @router.post("/save", response_class=HTMLResponse)
 async def cap_save(
     request: Request,
-    planned_income: str = Form(...),
-    planned_imprevu: str = Form(...),
+    planned_income: str = Form("0"),
+    planned_imprevu: str = Form("0"),
     savings_withdrawal: str = Form("0"),
     intention: str = Form(""),
     reflection_unexpected: str = Form(""),
@@ -270,10 +278,10 @@ async def cap_save(
     entry = crud.save_cap_entry(
         db,
         current_month_start,
-        planned_income=Decimal(planned_income),
+        planned_income=_decimal(planned_income),
         planned_essentiel=sommes["essentiel"],
         planned_choix=sommes["choix"],
-        planned_imprevu=Decimal(planned_imprevu),
+        planned_imprevu=_decimal(planned_imprevu),
         intention=intention.strip() or None,
         reflection_unexpected=reflection_unexpected.strip() or None,
         reflection_regret=reflection_regret.strip() or None,
