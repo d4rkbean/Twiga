@@ -44,8 +44,8 @@
         <li class="flex items-center gap-2"><span class="text-accent-ink">{{ icon('star', size=16) }}</span><span><strong class="font-semibold">{{ _("Choix") }}</strong> · {{ _("sorties, loisirs, plaisirs") }}</span></li>
         <li class="flex items-center gap-2"><span class="text-accent-ink">{{ icon('urgent', size=16) }}</span><span><strong class="font-semibold">{{ _("Imprévu") }}</strong> · {{ _("une réserve, sans détail") }}</span></li>
       </ul>
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink">{{ _("Ouvrir Le Cap") }} {{ icon('arrow-narrow-right', size=16) }}</a>
+      <div class="flex flex-col gap-1 items-start">
+        <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink whitespace-nowrap">{{ _("Ouvrir Le Cap") }} {{ icon('arrow-narrow-right', size=16) }}</a>
         <button
           type="button"
           hx-post="/categories/reset-pillar-overrides"

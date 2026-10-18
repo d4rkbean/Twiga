@@ -10,7 +10,7 @@
     <table class="w-full text-sm">
       <thead>
         <tr class="bg-sunken">
-          <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Date") }}</th>
+          <th scope="col" class="hidden sm:table-cell text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Date") }}</th>
           <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Libellé") }}</th>
           <th scope="col" class="text-right text-secondary text-xs font-medium px-3 py-2">{{ _("Montant") }}</th>
         </tr>
@@ -18,8 +18,8 @@
       <tbody>
         {% for tx in transactions %}
         <tr class="border-t border-border">
-          <td class="text-primary px-3 py-2 whitespace-nowrap tabular-nums">{{ tx.date | fr_date }}</td>
-          <td class="text-primary px-3 py-2">{{ tx.label }}</td>
+          <td class="hidden sm:table-cell text-primary px-3 py-2 whitespace-nowrap tabular-nums">{{ tx.date | fr_date }}</td>
+          <td class="text-primary px-3 py-2">{{ tx.label }}<span class="block sm:hidden text-xs text-secondary tabular-nums">{{ tx.date | fr_date }}</span></td>
           <td class="amount-blur text-primary font-semibold tabular-nums px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
         </tr>
         {% endfor %}

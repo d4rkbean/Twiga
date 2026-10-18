@@ -9,7 +9,7 @@
   id="category-row-{{ category.id }}"
   class="px-4 lg:px-6 py-3 border-t border-border {{ 'pl-8 lg:pl-14 bg-sunken/30' if is_child else '' }}"
 >
-  <div class="grid grid-cols-[minmax(0,1fr)_auto] {{ 'lg:grid-cols-[minmax(0,1fr)_300px_auto]' if is_child else 'lg:grid-cols-[minmax(0,1fr)_300px_210px_auto]' }} items-center gap-x-4 gap-y-2">
+  <div class="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_360px_210px_auto] items-center gap-x-4 gap-y-2">
     <div class="flex items-center gap-3 min-w-0">
       {% if not is_child %}
       <button
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <div class="flex gap-2 justify-end {{ 'lg:col-start-3' if is_child else 'lg:col-start-4' }} lg:row-start-1">
+    <div class="flex gap-2 justify-end lg:col-start-4 lg:row-start-1">
       <button
         type="button"
         hx-get="/categories/{{ category.id }}/edit?is_child={{ is_child_param }}"
