@@ -240,7 +240,7 @@ Amounts form a **separate scale** from text, because they are a semantic categor
 
 ## Layout
 
-A **mobile-first** application with two layouts, switched at `lg` (1024px) and only there:
+A **mobile-first** application with two layouts, switched at `lg` (1024px) and only there (this is the Classic interface; the other way has its own shell, see "Two interfaces" below, switched at the same breakpoint):
 
 - **Below 1024px**: a fixed header at the top (56px) and a fixed navigation bar at the bottom (50px + 1px border), four destinations. The `<body>` reserves the space once for everyone (`pt-[64px] pb-[59px]`); no page adds its own compensation.
 - **From 1024px**: the bottom bar gives way to a fixed full-height sidebar with three modes: pinned (240px), automatic (a 64px rail that expands on hover, overlaying the content), hidden (0). The content offset follows the mode, not the hover.
@@ -274,6 +274,39 @@ A per-account display preference (Mon profil, Paramètres > Préférences), save
 Compact shows more lines on screen, Airy gives more breathing room. What does not move, in any density: the font sizes, the 50px height of buttons, checkboxes and tappable rows (`--row-touch` and `--row-list` never go below 50px), colors, order and components. The selector is the attribute alone (`[data-density="..."]`), so the preview of the preference screen can set its own density on a small element. `/design-system` has a "Densité" button that cycles the whole page through the three and a section that shows them side by side.
 
 The theme follows the same path: the server renders `class="dark"` on `<html>` for "dark", nothing for "light", and only "system" is left to the browser (`prefers-color-scheme`, followed live by the head script). So there is no flash on load.
+
+## Two interfaces
+
+Twiga ships two interfaces on the same data and the same routes. **Classic** is the one described everywhere else in this file (sidebar, five destinations). **The other way** ("L'autre voie", `other_way`) keeps the colors, the type, the 50px rule, the densities and the themes, and changes the shell around the page and, screen by screen, the page itself.
+
+The choice is a per-account preference (Mon profil > Affichage, `User.ui_variant`, mirrored in the `twiga_ui` cookie, resolved account then cookie then default exactly like the theme). The server renders it as `<html data-ui="classic|other_way">` and as `request.state.ui_variant`. The other way is selectable only when `ENABLE_OTHER_WAY=true`; until then an account set to it renders Classic. Switching it reloads the page (`HX-Refresh`), because the whole shell changes.
+
+### How a template is found
+
+`backend/templating.py` holds two Jinja environments behind one `templates` object (`VariantTemplates`): Classic reads `frontend/templates/`, the other way reads `frontend/templates/other_way/` first and falls back on `frontend/templates/`. The routers still call `templates.TemplateResponse(name, context)`; the variant of the request picks the environment. A fragment built in Python (`flash_html`) has no request at hand and reads the same preference from a `ContextVar`. Filters and globals are registered by one function (`configure_environment`) on both environments, so a template never depends on the interface that renders it.
+
+### Named Rules
+
+**The Override Rule.** To give a screen its other-way version, add a file under `frontend/templates/other_way/` with the same relative path (`other_way/budgets/_content.html` replaces `budgets/_content.html`). Whatever `other_way/` does not contain is the Classic template, so the other way is complete from the first day and is built one screen at a time. Override the narrowest template that changes (a partial, not its page), and never copy a template to change one line: the copy drifts.
+
+**The Unique Name Rule.** An override cannot `{% extends %}` or `{% include %}` the template it replaces: under the same name it would find itself. What two interfaces share therefore lives in a template with its own name: `_layout.html` (the `<head>`, the theme and density scripts, the confirmation, help and about dialogs, the blocks `sidebar`, `header`, `nav`, `tour`, `body_chrome`, `body_state`, `body_offset`) is extended by `base.html` (Classic) and by `other_way/base.html`; `_tour_ui.html` is the tour's markup, included by `_tour.html` and `other_way/_tour.html`. The shells are filled through the same block names, so a page without a shell (the login) empties them in both interfaces.
+
+**The Fragment Contract.** HTMX swaps into elements by `id`. An override may rewrite a page, but every `id` that a `hx-target="#..."` names, and every element that an `hx-swap-oob` fragment lands on, must still exist in the rendered page (or, for a request sent with `hx-get`, in the fragment that route returns). `tests/test_fragments.py` renders every GET page of the inventory in both interfaces, for the three roles, and checks it; a screen of the other way that renames or drops such an `id` fails there, not silently in the browser. When a screen is rewritten, keep the ids, or change them on both sides in the same commit.
+
+**Amber Stays Rare in Both.** One solid amber fill per screen, in both interfaces (`tests/test_amber.py`). The other way's shell has none at all: its top bar and bottom bar have no Importer button (the import lives under Plus > Alimenter), the active destination is a soft amber background with amber-ink text, and the single amber fill of a screen is its own primary action.
+
+### The other way's shell
+
+- **Top bar** (`other_way/_topbar.html`, fixed, 56px, same clearance as Classic so sticky bars under it keep working). From `lg`: the logo, four destinations at the centre (La Savane, Panorama, Le Cap, Plus), then the search field (opens the global search), the eye ("Masquer les montants"), Aide and the avatar. Below `lg`: the title of the current page, the magnifier, the eye and the avatar; the destinations move to the bottom bar (`other_way/_bottom_nav.html`, the same 50px pill-and-label bar as Classic).
+- **Destinations.** La Savane is `/transactions/inbox`, Panorama `/dashboard`, Le Cap `/cap`. The active one comes from the route: Le Cap is also active on Mon mois and Budgets (they are the same monthly plan), Plus is active on everything else. `other_way/_shell_data.html` is the single list that the bars and the menu read.
+- **Plus** (`other_way/_more_menu.html`): a panel under the bar on desktop, a bottom sheet on mobile. It opens with the total balance ("Solde total, sur N comptes", blurred by the eye, loaded on first opening), then groups by intention: Au quotidien (Opérations, Mon mois, Budgets, Projets, Traitement en masse), Faire le point (Rapports), Alimenter (Importer un relevé), Régler Twiga (Paramètres, Comptes, Catégories, Règles, Modes de paiement, Abonnements, Chèques, Utilisateurs, Mon profil).
+- **Roles.** The entries that `backend/auth.py` reserves to the administrator (`_ADMIN_ONLY_PREFIXES`: Importer un relevé, hence the whole Alimenter group, and Utilisateurs) disappear for the editor and the reader, and only for them.
+- **Sheets.** Plus, the avatar menu (name, role, Mon profil, Paramètres, Aide & raccourcis, Thème, Se déconnecter in red), the help sheet (Revoir la visite guidée, Raccourcis clavier, À propos de Twiga: the dialogs of `_layout.html` are reused) and the search sheet (the global search, `Ctrl/Cmd+K`, "Que cherches-tu ?"). One menu is open at a time (`shell` on `<body>`, `static/js/other-way.js`); a `bg-scrim` veil sits behind, "Fermer" and Échap close, the page does not scroll under a sheet on mobile.
+- **Search results** are `other_way/search/_results.html`: the same data as the Classic fragment, flat, because the sheet is already the card.
+
+### The guided tour
+
+`static/js/tour.js` has no step of its own. Each interface's `_tour.html` provides the steps (target, fallback target for the other breakpoint, icon, title, text) as JSON in `data-steps` on the root of `_tour_ui.html`. Classic keeps its five steps; the other way tells five too: welcome, the four destinations, "Le reste se cache sous Plus", search, help. Same mechanics in both (Suivant, Précédent, Passer, remembered on the account).
 
 ## Elevation & Depth
 
@@ -339,7 +372,8 @@ Borders are 1px, in `border`, on all surfaces. The only deliberate exception is 
 ### Navigation
 - **Mobile (< 1024px):** fixed bottom bar, four destinations, each 50px tall, icon above the 12px label. Active = Amber Ink text in `font-semibold` + a `bg-accent-soft` pill behind the icon.
 - **Desktop (≥ 1024px):** a sidebar on the page background with three modes (pinned / automatic / hidden), five destinations, rows of 50px, active = `bg-accent-soft` background, Amber Ink text and `font-semibold`. In automatic mode, the bar expands as an overlay on hover, at `z-50` to pass above the header.
-- **Icons:** hand-drawn line SVGs, 24×24 `viewBox`, `stroke-width: 2`, rounded caps and joins, `stroke="currentColor"`. A single system, shared between both bars.
+- **The other way:** no sidebar. A fixed 56px top bar (logo, La Savane, Panorama, Le Cap, Plus, search, eye, Aide, avatar) from `lg`; below, a header with the page title and the same four destinations in the bottom bar. Active = `bg-accent-soft`, Amber Ink text, `font-semibold`, never a solid fill. Plus opens a panel (desktop) or a bottom sheet (mobile). See "Two interfaces".
+- **Icons:** hand-drawn line SVGs, 24×24 `viewBox`, `stroke-width: 2`, rounded caps and joins, `stroke="currentColor"`. A single system, shared between both bars (`nav_icon` in `_macros/brand.html`, `shell_icon` in `other_way/_icons.html` for the other way's destinations and menu entries).
 
 ### Dialogs
 A native `<dialog>` element, `backdrop:bg-scrim` backdrop (`--color-scrim`: black at 50% in light, `rgb(8 6 4 / 0.66)` in dark), 12px radius, Overlay shadow, width `calc(100% - 2rem)` capped at `max-w-sm`. Opened and closed by HTMX swap, not by JavaScript state. On large screens, some detail panels switch to a full-height right-hand drawer (380px, rounded corners on the left only) rather than a centered modal.

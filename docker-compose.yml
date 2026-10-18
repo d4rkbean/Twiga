@@ -35,7 +35,7 @@ services:
       # returns 404 unless this variable is true.
       SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}
       # "The other way" interface variant (Mon profil > Affichage): offered
-      # disabled until it is built.
+      # disabled until this is true.
       ENABLE_OTHER_WAY: ${ENABLE_OTHER_WAY:-false}
 
   # --- Tests (profile "test", left out of the normal start) ---
