@@ -1,22 +1,26 @@
-<div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
-  <h2 class="text-xl font-bold text-primary">{{ _("Étape 2 — Aperçu des opérations") }}</h2>
-  <p class="text-sm text-secondary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s) dans le fichier OFX.{% endtrans %}</p>
+{% from "imports/_stepper.html" import stepper %}
+{{ stepper(2, _("Aperçu")) }}
+<div class="card flex flex-col gap-4 lg:p-6">
+  <div class="flex flex-col gap-1">
+    <h2 class="text-section-title">{{ _("Aperçu des opérations") }}</h2>
+    <p class="text-sm text-secondary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s) dans le fichier OFX.{% endtrans %}</p>
+  </div>
 
   <div class="overflow-x-auto overflow-y-auto max-h-64 rounded-xl border border-border">
     <table class="w-full text-sm">
       <thead>
-        <tr class="bg-page">
-          <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Date") }}</th>
-          <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Libellé") }}</th>
-          <th class="text-right text-secondary font-medium px-3 py-2">{{ _("Montant") }}</th>
+        <tr class="bg-sunken">
+          <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Date") }}</th>
+          <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Libellé") }}</th>
+          <th scope="col" class="text-right text-secondary text-xs font-medium px-3 py-2">{{ _("Montant") }}</th>
         </tr>
       </thead>
       <tbody>
         {% for tx in transactions %}
         <tr class="border-t border-border">
-          <td class="text-primary px-3 py-2 whitespace-nowrap">{{ tx.date | fr_date }}</td>
+          <td class="text-primary px-3 py-2 whitespace-nowrap tabular-nums">{{ tx.date | fr_date }}</td>
           <td class="text-primary px-3 py-2">{{ tx.label }}</td>
-          <td class="{{ 'text-success' if tx.amount > 0 else 'text-danger' }} font-medium px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
+          <td class="amount-blur text-primary font-semibold tabular-nums px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -26,8 +30,8 @@
   <form hx-post="/imports/{{ import_id }}/confirm" hx-target="#import-wizard" hx-swap="innerHTML">
     <input type="hidden" name="format" value="ofx" />
     <input type="hidden" name="account_id" value="{{ account.id }}" />
-    <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold w-full">
-      {{ _("Continuer") }}
+    <button type="submit" class="btn btn-primary w-full lg:w-auto lg:ml-auto lg:px-8">
+      {{ _("Continuer") }} {{ icon('arrow-narrow-right', size=18) }}
     </button>
   </form>
 </div>
