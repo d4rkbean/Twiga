@@ -1,0 +1,30 @@
+{#
+  En-tête de page des écrans de réglages (Comptes, Catégories, Règles...).
+
+    {% from "_macros/page.html" import page_header %}
+
+    {% call page_header(_("Comptes"), subtitle=_("3 comptes"), back_href="/settings", back_label=_("Paramètres")) %}
+      <a href="..." class="btn btn-primary">Action principale</a>
+    {% endcall %}
+
+  Fil d'Ariane (retour vers la page parente), titre en Bricolage 800, sous-titre
+  en gris, et à droite l'action principale de l'écran (le bloc du `call`, absent
+  quand l'écran n'en a pas). Sur mobile l'action passe sous le titre, pleine
+  largeur.
+#}
+{% macro page_header(title, subtitle=None, back_href=None, back_label=None) -%}
+<header class="flex flex-col gap-1">
+  {% if back_href %}
+  <a href="{{ back_href }}" class="-my-3 min-h-[50px] inline-flex items-center gap-1 self-start text-sm font-medium text-accent-ink">
+    {{ icon('arrow-left', size=16) }} {{ back_label }}
+  </a>
+  {% endif %}
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
+    <div class="flex flex-col gap-1 min-w-0">
+      <h1 class="text-page-title">{{ title }}</h1>
+      {% if subtitle %}<p class="text-sm text-secondary">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if caller %}<div class="flex flex-col gap-2 sm:flex-row lg:shrink-0">{{ caller() }}</div>{% endif %}
+  </div>
+</header>
+{%- endmacro %}
