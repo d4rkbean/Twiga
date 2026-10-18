@@ -198,3 +198,28 @@ def clients(app, demo):
             client.cookies.set(auth.SESSION_COOKIE_NAME, token)
             built[role] = client
         yield built
+
+
+VARIANTS = ("classic", "other_way")
+
+
+def switch_variant(variant: str) -> None:
+    """Puts every demo account on an interface variant (the account wins over
+    the cookie, see backend/preferences.py)."""
+    from backend.database import SessionLocal
+    from backend.models import User
+
+    with SessionLocal() as db:
+        db.query(User).update({User.ui_variant: variant})
+        db.commit()
+
+
+@pytest.fixture(params=VARIANTS)
+def variant(request, demo, monkeypatch):
+    """Runs the test once per interface: the three demo accounts are switched to
+    the variant (and the other way is enabled), then put back on Classic."""
+    if request.param == "other_way":
+        monkeypatch.setenv("ENABLE_OTHER_WAY", "true")
+    switch_variant(request.param)
+    yield request.param
+    switch_variant("classic")
