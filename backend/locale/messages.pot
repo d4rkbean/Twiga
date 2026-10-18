@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-01 08:17+0000\n"
+"POT-Creation-Date: 2026-10-18 16:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -292,7 +292,7 @@ msgstr ""
 #, python-brace-format
 msgid ""
 "... et {n} autre{s} budget{s} à surveiller → <a href=\"/budgets\" class"
-"=\"text-accent font-medium\">Voir les budgets</a>"
+"=\"text-primary font-medium\">Voir les budgets</a>"
 msgstr ""
 
 msgid "1 an"
@@ -2414,6 +2414,9 @@ msgstr ""
 msgid "Twiga ne trouve rien sur cette période."
 msgstr ""
 
+msgid "Twiga regarde au loin, une boussole devant elle"
+msgstr ""
+
 msgid "Twiga tend le cou..."
 msgstr ""
 
@@ -2421,6 +2424,18 @@ msgid "Twiga — retour à l'accueil"
 msgstr ""
 
 msgid "Twiga 🦒"
+msgstr ""
+
+msgid "Twiga, la girafe de l'application"
+msgstr ""
+
+msgid "Twiga, le cou étiré très haut, les yeux levés vers une feuille"
+msgstr ""
+
+msgid "Twiga, les yeux fermés de plaisir, une branche feuillue dans la bouche"
+msgstr ""
+
+msgid "Twiga, repue, un relevé encore visible en bosse dans le cou"
 msgstr ""
 
 msgid "Téléphone mobile"
@@ -2591,9 +2606,6 @@ msgid "override"
 msgstr ""
 
 msgid "par page"
-msgstr ""
-
-msgid "pelage"
 msgstr ""
 
 msgid "pour les poser, ou répartissez librement ci-dessous."
