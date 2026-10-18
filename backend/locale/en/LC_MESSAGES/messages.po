@@ -1,12 +1,18 @@
 # English translations for Twiga.
 msgid ""
 msgstr ""
-"Project-Id-Version: Twiga\n"
+"Project-Id-Version:  Twiga\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-18 17:22+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.18.0\n"
 
 msgid " du total"
 msgstr " of total"
@@ -66,6 +72,10 @@ msgstr "%(duplicate_count)s duplicate(s) skipped."
 #, python-format
 msgid "%(excluded_count)s opération(s) exclue(s) volontairement."
 msgstr "%(excluded_count)s transaction(s) deliberately excluded."
+
+#, python-format
+msgid "%(id)s art."
+msgstr "%(id)s items"
 
 #, python-format
 msgid "%(imported_count)s opération(s) importée(s)."
@@ -229,17 +239,11 @@ msgstr "(no label)"
 msgid "(vous)"
 msgstr "(you)"
 
-msgid "+ Ajouter une ligne"
-msgstr "+ Add a line"
-
 msgid "+ Ajouter une sous-catégorie"
 msgstr "+ Add a subcategory"
 
 msgid "+ Nouveau"
 msgstr "+ New"
-
-msgid "+ Nouvelle opération"
-msgstr "+ New transaction"
 
 msgid "+ de critères"
 msgstr "+ more criteria"
@@ -262,6 +266,7 @@ msgstr "... and %(duplicates)s more group%(duplicates2)s"
 msgid "... et %(unusual)s autre%(unusual2)s"
 msgstr "... and %(unusual)s more"
 
+#, python-brace-format
 msgid "... et {n} autre{s} budget{s} à surveiller → <a href=\"/budgets\" class=\"text-primary font-medium\">Voir les budgets</a>"
 msgstr "... and {n} more budget{s} to watch → <a href=\"/budgets\" class=\"text-primary font-medium\">See budgets</a>"
 
@@ -372,6 +377,9 @@ msgstr "Add a user"
 
 msgid "Ajouter une catégorie"
 msgstr "Add a category"
+
+msgid "Ajouter une ligne"
+msgstr "Add a line"
 
 msgid "Ajouter une règle"
 msgstr "Add a rule"
@@ -686,9 +694,6 @@ msgstr "Categories — Twiga 🦒"
 msgid "Catégorisation en masse"
 msgstr "Bulk categorization"
 
-msgid "Catégorisation en masse — Twiga 🦒"
-msgstr "Bulk categorization — Twiga 🦒"
-
 msgid "Catégorisé en"
 msgstr "Categorized as"
 
@@ -804,6 +809,9 @@ msgstr "Existing accounts"
 
 msgid "Comptes — Twiga 🦒"
 msgstr "Accounts — Twiga 🦒"
+
+msgid "Confiance de la suggestion"
+msgstr "Suggestion confidence"
 
 msgid "Confirmer"
 msgstr "Confirm"
@@ -1093,6 +1101,12 @@ msgstr "Empty CSV file."
 msgid "Fichier QIF, CSV ou OFX"
 msgstr "QIF, CSV or OFX file"
 
+msgid "Filtres"
+msgstr "Filters"
+
+msgid "Fixer Le Cap"
+msgstr "Set Le Cap"
+
 msgid "Fixer le cap"
 msgstr "Set the cap"
 
@@ -1209,6 +1223,9 @@ msgstr "Import a file"
 msgid "Importer un fichier — Twiga 🦒"
 msgstr "Import a file — Twiga 🦒"
 
+msgid "Importer un relevé"
+msgstr "Import a statement"
+
 msgid "Importez d'abord un fichier"
 msgstr "Import a file first"
 
@@ -1277,8 +1294,8 @@ msgstr "La Savane"
 msgid "La Savane vide"
 msgstr "La Savane is empty"
 
-msgid "La Savane — Twiga 🦒"
-msgstr "La Savane — Twiga 🦒"
+msgid "La Savane — Twiga"
+msgstr "La Savane — Twiga"
 
 msgid "La girafe veille sur votre route."
 msgstr "The giraffe watches over your journey."
@@ -1658,8 +1675,8 @@ msgstr "Transactions without account (%(no_account)s)"
 msgid "Opérations suspectes"
 msgstr "Suspicious transactions"
 
-msgid "Opérations — Twiga 🦒"
-msgstr "Transactions — Twiga 🦒"
+msgid "Opérations — Twiga"
+msgstr "Transactions — Twiga"
 
 msgid "Oui"
 msgstr "Yes"
@@ -1807,6 +1824,9 @@ msgstr "Keyboard shortcuts"
 
 msgid "Rafraîchir"
 msgstr "Refresh"
+
+msgid "Ranger"
+msgstr "File"
 
 msgid "Rapport Twiga"
 msgstr "Twiga report"
@@ -1970,6 +1990,9 @@ msgstr "Try again"
 
 msgid "Réinitialiser"
 msgstr "Reset"
+
+msgid "Réinitialiser les filtres"
+msgstr "Reset filters"
 
 msgid "Réinitialiser les piliers"
 msgstr "Reset the pillars"
@@ -2216,15 +2239,15 @@ msgstr "All"
 msgid "Tous les comptes"
 msgstr "All accounts"
 
-msgid "Tous types"
-msgstr "All types"
-
 msgid "Tout commence par un relevé bancaire : QIF, CSV ou OFX."
 msgstr "It all starts with a bank statement: QIF, CSV or OFX."
 
 #, python-format
 msgid "Tout confirmer (%(pairs)s)"
 msgstr "Confirm all (%(pairs)s)"
+
+msgid "Tout ignorer"
+msgstr "Dismiss all"
 
 msgid "Tout mode de paiement"
 msgstr "Any payment method"
@@ -2243,6 +2266,9 @@ msgstr "Select all (this page)"
 msgid "Tout valider &gt; 90%%"
 msgstr "Validate all &gt; 90%%"
 
+msgid "Toutes"
+msgstr "All"
+
 #, python-format
 msgid "Toutes les %(penses)s"
 msgstr "All %(penses)s"
@@ -2252,6 +2278,12 @@ msgstr "All categories"
 
 msgid "Toutes les sous-catégories"
 msgstr "All subcategories"
+
+msgid "Traitement en masse"
+msgstr "Bulk processing"
+
+msgid "Traitement en masse — Twiga"
+msgstr "Bulk processing — Twiga"
 
 msgid "Traiter normalement"
 msgstr "Process normally"
@@ -2285,6 +2317,9 @@ msgstr "Public transport"
 msgid "Travaux et entretien"
 msgstr "Home improvement and upkeep"
 
+msgid "Tri"
+msgstr "Sort"
+
 msgid "Trimestre"
 msgstr "Quarter"
 
@@ -2309,6 +2344,9 @@ msgstr "Twiga is looking…"
 msgid "Twiga ne trouve rien sur cette période."
 msgstr "Twiga finds nothing for this period."
 
+msgid "Twiga regarde au loin, une boussole devant elle"
+msgstr "Twiga looks into the distance, a compass in front of her"
+
 msgid "Twiga tend le cou..."
 msgstr "Twiga is stretching its neck..."
 
@@ -2317,6 +2355,21 @@ msgstr "Twiga — back to home"
 
 msgid "Twiga 🦒"
 msgstr "Twiga 🦒"
+
+msgid "Twiga, la girafe de l'application"
+msgstr "Twiga, the app's giraffe"
+
+msgid "Twiga, le cou étiré très haut, les yeux levés vers une feuille"
+msgstr "Twiga, her neck stretched very high, eyes on a leaf"
+
+msgid "Twiga, les yeux fermés de plaisir, une branche feuillue dans la bouche"
+msgstr "Twiga, eyes closed in delight, a leafy branch in her mouth"
+
+msgid "Twiga, repue, un relevé encore visible en bosse dans le cou"
+msgstr "Twiga, full, a statement still showing as a bump in her neck"
+
+msgid "Type"
+msgstr "Type"
 
 msgid "Téléphone mobile"
 msgstr "Mobile phone"
@@ -2394,6 +2447,9 @@ msgstr "Transfers"
 msgid "Visite guidée"
 msgstr "Guided tour"
 
+msgid "Voir Mon mois"
+msgstr "See My month"
+
 msgid "Voir le diagnostic de solde"
 msgstr "See the balance diagnostic"
 
@@ -2402,6 +2458,9 @@ msgstr "See details →"
 
 msgid "Voir le rapport complet"
 msgstr "See the full report"
+
+msgid "Voir les alertes budget masquées"
+msgstr "Show hidden budget alerts"
 
 msgid "Voir loin. Voir juste."
 msgstr "Voir loin. Voir juste."
@@ -2462,6 +2521,9 @@ msgstr "and to the withdrawal"
 msgid "ex. Jean Dupont"
 msgstr "e.g. John Smith"
 
+msgid "incertaine"
+msgstr "uncertain"
+
 #, python-format
 msgid "le %(date)s"
 msgstr "on %(date)s"
@@ -2485,11 +2547,17 @@ msgstr "per page"
 msgid "pour les poser, ou répartissez librement ci-dessous."
 msgstr "to set them, or distribute freely below."
 
+msgid "probable"
+msgstr "likely"
+
 msgid "remplace"
 msgstr "replaces"
 
 msgid "suivants viendront alimenter un compte déjà existant."
 msgstr "following ones will feed an already existing account."
+
+msgid "sûre"
+msgstr "sure"
 
 msgid "transactions sélectionnées"
 msgstr "selected transactions"
@@ -2498,17 +2566,13 @@ msgstr "selected transactions"
 msgid "vs %(year_ago_label)s :"
 msgstr "vs %(year_ago_label)s:"
 
-#, python-format
-msgid "· %(size)s %(id)s art."
-msgstr "· %(size)s %(id)s items"
+#, python-brace-format
+msgid "{name} : dépassé ! ({spent} / {budget})"
+msgstr "{name}: over budget! ({spent} / {budget})"
 
-#, python-format
-msgid "· %(size)s Imprévu"
-msgstr "· %(size)s Unexpected"
-
-#, python-format
-msgid "· %(size)s Virement"
-msgstr "· %(size)s Transfer"
+#, python-brace-format, python-format
+msgid "{name} : {pct}%% consommé ({spent} / {budget})"
+msgstr "{name}: {pct}%% used ({spent} / {budget})"
 
 #, python-format
 msgid "· moyenne %(period_months)s / mois (budget %(period_months2)s / mois)"
@@ -2520,8 +2584,14 @@ msgstr "· no reference last year"
 msgid "À propos de Twiga"
 msgstr "About Twiga"
 
+msgid "À trier"
+msgstr "To sort"
+
 msgid "Écart"
 msgstr "Gap"
+
+msgid "Écarter"
+msgstr "Set aside"
 
 msgid "Échap"
 msgstr "Esc"
@@ -2638,34 +2708,38 @@ msgstr "— suggested %(occurrences)s times"
 msgid "→ / Espace"
 msgstr "→ / Space"
 
+#, fuzzy, python-format
+msgid "↩️ %(n)s opération renvoyée dans La Savane (virement annulé)"
+msgstr "↩️ %(n)s transaction sent back to La Savane (transfer cancelled)"
+
 msgid "− de critères"
 msgstr "− fewer criteria"
-
-msgid "⏭️ Passer"
-msgstr "⏭️ Skip"
 
 msgid "▼ voir comptes"
 msgstr "▼ see accounts"
 
-#, python-format
-msgid "⚠️ {name} : {pct}%% consommé ({spent} / {budget})"
-msgstr "⚠️ {name}: {pct}%% used ({spent} / {budget})"
+#, fuzzy, python-format
+msgid "✅ %(n)s opération mise à jour"
+msgstr "✅ %(n)s transaction updated"
 
 msgid "✅ Opération ajoutée"
 msgstr "✅ Transaction added"
 
-msgid "️ Traitement en masse"
-msgstr "️ Bulk processing"
+#, fuzzy, python-format
+msgid "✓ %(n)s transaction mise à jour</p>"
+msgstr "✓ %(n)s transaction updated</p>"
 
-msgid "🔔 Voir les alertes budget masquées"
-msgstr "🔔 Show hidden budget alerts"
+#, fuzzy, python-format
+msgid "🆘 %(n)s opération marquée comme imprévu"
+msgstr "🆘 %(n)s transaction marked as unexpected"
+
+#, fuzzy, python-format
+msgid "📥 %(n)s opération remise dans La Savane"
+msgstr "📥 %(n)s transaction put back in La Savane"
 
 #, python-format
 msgid "🔴 %(label)s presque épuisé à mi-mois !"
 msgstr "🔴 %(label)s almost used up at mid-month!"
-
-msgid "🚨 {name} : dépassé ! ({spent} / {budget})"
-msgstr "🚨 {name}: exceeded! ({spent} / {budget})"
 
 #, python-format
 msgid "🟠 Surveillez %(label)s dans les prochaines semaines."
@@ -2686,47 +2760,45 @@ msgstr "🦒 You're on the right track!"
 msgid "🦒 Twiga tend le cou pour voir mieux..."
 msgstr "🦒 Twiga is stretching its neck to see better..."
 
-#, python-format
-msgid "✅ %(n)s opération mise à jour"
-msgid_plural "✅ %(n)s opérations mises à jour"
-msgstr[0] "✅ %(n)s transaction updated"
-msgstr[1] "✅ %(n)s transactions updated"
+#~ msgid "+ Ajouter une ligne"
+#~ msgstr "+ Add a line"
 
-#, python-format
-msgid "📥 %(n)s opération remise dans La Savane"
-msgid_plural "📥 %(n)s opérations remises dans La Savane"
-msgstr[0] "📥 %(n)s transaction put back in La Savane"
-msgstr[1] "📥 %(n)s transactions put back in La Savane"
+#~ msgid "+ Nouvelle opération"
+#~ msgstr "+ New transaction"
 
-#, python-format
-msgid "🆘 %(n)s opération marquée comme imprévu"
-msgid_plural "🆘 %(n)s opérations marquées comme imprévus"
-msgstr[0] "🆘 %(n)s transaction marked as unexpected"
-msgstr[1] "🆘 %(n)s transactions marked as unexpected"
+#~ msgid "Catégorisation en masse — Twiga 🦒"
+#~ msgstr "Bulk categorization — Twiga 🦒"
 
-#, python-format
-msgid "↩️ %(n)s opération renvoyée dans La Savane (virement annulé)"
-msgid_plural "↩️ %(n)s opérations renvoyées dans La Savane (virement annulé)"
-msgstr[0] "↩️ %(n)s transaction sent back to La Savane (transfer cancelled)"
-msgstr[1] "↩️ %(n)s transactions sent back to La Savane (transfer cancelled)"
+#~ msgid "La Savane — Twiga 🦒"
+#~ msgstr "La Savane — Twiga 🦒"
 
-#, python-format
-msgid "✓ %(n)s transaction mise à jour</p>"
-msgid_plural "✓ %(n)s transactions mises à jour</p>"
-msgstr[0] "✓ %(n)s transaction updated</p>"
-msgstr[1] "✓ %(n)s transactions updated</p>"
+#~ msgid "Opérations — Twiga 🦒"
+#~ msgstr "Transactions — Twiga 🦒"
 
-msgid "Twiga regarde au loin, une boussole devant elle"
-msgstr "Twiga looks into the distance, a compass in front of her"
+#~ msgid "Tous types"
+#~ msgstr "All types"
 
-msgid "Twiga, la girafe de l'application"
-msgstr "Twiga, the app's giraffe"
+#~ msgid "· %(size)s %(id)s art."
+#~ msgstr "· %(size)s %(id)s items"
 
-msgid "Twiga, le cou étiré très haut, les yeux levés vers une feuille"
-msgstr "Twiga, her neck stretched very high, eyes on a leaf"
+#~ msgid "· %(size)s Imprévu"
+#~ msgstr "· %(size)s Unexpected"
 
-msgid "Twiga, les yeux fermés de plaisir, une branche feuillue dans la bouche"
-msgstr "Twiga, eyes closed in delight, a leafy branch in her mouth"
+#~ msgid "· %(size)s Virement"
+#~ msgstr "· %(size)s Transfer"
 
-msgid "Twiga, repue, un relevé encore visible en bosse dans le cou"
-msgstr "Twiga, full, a statement still showing as a bump in her neck"
+#~ msgid "⏭️ Passer"
+#~ msgstr "⏭️ Skip"
+
+#~ msgid "⚠️ {name} : {pct}%% consommé ({spent} / {budget})"
+#~ msgstr "⚠️ {name}: {pct}%% used ({spent} / {budget})"
+
+#~ msgid "️ Traitement en masse"
+#~ msgstr "️ Bulk processing"
+
+#~ msgid "🔔 Voir les alertes budget masquées"
+#~ msgstr "🔔 Show hidden budget alerts"
+
+#~ msgid "🚨 {name} : dépassé ! ({spent} / {budget})"
+#~ msgstr "🚨 {name}: exceeded! ({spent} / {budget})"
+
