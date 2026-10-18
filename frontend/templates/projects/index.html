@@ -3,19 +3,10 @@
 {% block title %}{{ _("Projets — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-page-title">{{ icon('target', size=24) }} {{ _("Projets") }}</h1>
-    <button
-      type="button"
-      onclick="document.getElementById('new-project-dialog').showModal()"
-      class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold px-4"
-    >
-      {{ _("+ Nouveau") }}
-    </button>
-  </div>
-
-  <div id="projects-list" class="flex flex-col gap-3">
+{# Tout l'écran (titre compris) vit dans #projects-list : chaque action
+   renvoie projects/_list.html, et le résumé sous le titre doit suivre. #}
+<main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+  <div id="projects-list" class="flex flex-col gap-5">
     {% include "projects/_list.html" %}
   </div>
 </main>
