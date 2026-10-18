@@ -41,7 +41,7 @@ from backend.i18n import gettext as _t, lazy_gettext
 from backend.payment_methods import get_payment_method_label
 
 
-def get_next_pending_transaction(db: Session) -> Transaction | None:
+def _pending_queue_stmt():
     # Les transactions passées ("Passer") repassent après toutes celles
     # jamais encore vues, triées par date de skip (la plus ancienne d'abord)
     # pour ne pas bloquer indéfiniment sur la même transaction.
@@ -53,7 +53,7 @@ def get_next_pending_transaction(db: Session) -> Transaction | None:
     # validated=True, ce qui pouvait laisser un virement (re)marqué comme tel
     # traîner ici tant qu'il n'était pas validé par ailleurs. Ce filtre est
     # le filet de sécurité côté lecture, en plus du correctif à la source.
-    stmt = (
+    return (
         select(Transaction)
         .options(selectinload(Transaction.account))
         .where(Transaction.validated.is_(False), Transaction.is_transfer.is_(False))
@@ -63,9 +63,18 @@ def get_next_pending_transaction(db: Session) -> Transaction | None:
             Transaction.date,
             Transaction.id,
         )
-        .limit(1)
     )
-    return db.execute(stmt).scalar_one_or_none()
+
+
+def get_next_pending_transaction(db: Session) -> Transaction | None:
+    return db.execute(_pending_queue_stmt().limit(1)).scalar_one_or_none()
+
+
+def get_upcoming_pending_transactions(db: Session, limit: int = 8) -> list[Transaction]:
+    # Le début de la file de La Savane, dans l'ordre exact où les cartes sont
+    # présentées (même requête que get_next_pending_transaction) : sert la
+    # liste « À suivre » à côté de la carte.
+    return list(db.execute(_pending_queue_stmt().limit(limit)).scalars().all())
 
 
 def get_top_level_categories(db: Session) -> list[Category]:
@@ -142,6 +151,7 @@ def categorize_transaction(
     category: Category,
     label: str | None = None,
     payment_method: str | None = None,
+    is_unexpected: bool | None = None,
 ) -> Transaction:
     if label and label.strip():
         transaction.label = label.strip()
@@ -149,6 +159,11 @@ def categorize_transaction(
     transaction.validated = True
     if payment_method:
         transaction.payment_method = payment_method
+    # Bascule « Imprévu » de la carte (La Savane) : s'ajoute à la décision,
+    # sans remplacer la catégorie. None = la carte ne disait rien, on ne
+    # touche pas au drapeau.
+    if is_unexpected is not None:
+        transaction.is_unexpected = is_unexpected
     db.commit()
     db.refresh(transaction)
     _maybe_add_receipt_family_line(db, transaction, category)
@@ -2991,6 +3006,35 @@ def suggest_backlog_category(
         "based_on_label": based_on_label,
         "confidence": round(best_ratio * 100),
     }
+
+
+def suggest_categories_for_transactions(
+    db: Session, transactions: list[Transaction]
+) -> dict[int, dict]:
+    # Même moteur que suggest_category_with_confidence (règle explicite
+    # d'abord, sinon similarité floue), mais l'échantillon d'historique et
+    # les catégories ne sont chargés qu'une fois pour tout le lot : la liste
+    # « À suivre » et la carte Enveloppes du Panorama proposent une catégorie
+    # pour plusieurs opérations à la fois. Seules les opérations qui ont une
+    # proposition figurent dans le résultat (clé : id de l'opération).
+    if not transactions:
+        return {}
+    samples = get_categorized_label_samples(db)
+    categories_by_id = {c.id: c for c in db.execute(select(Category)).scalars().all()}
+    suggestions: dict[int, dict] = {}
+    for transaction in transactions:
+        matched_rule = find_matching_rule(db, transaction.raw_label)
+        if matched_rule is not None:
+            suggestions[transaction.id] = {
+                "category": matched_rule.category,
+                "based_on_label": None,
+                "confidence": 100,
+            }
+            continue
+        suggestion = suggest_backlog_category(transaction, samples, categories_by_id)
+        if suggestion is not None:
+            suggestions[transaction.id] = suggestion
+    return suggestions
 
 
 def suggest_category_with_confidence(db: Session, transaction: Transaction) -> dict | None:

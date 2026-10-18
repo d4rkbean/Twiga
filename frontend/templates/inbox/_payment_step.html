@@ -30,7 +30,7 @@
       {% if code == suggested_payment_method %}style="box-shadow: inset 0 0 0 1px var(--color-accent-ink);"{% endif %}
       hx-post="/transactions/{{ transaction.id }}/finalize/{{ category.id }}"
       hx-vals='{"payment_method": "{{ code }}"}'
-      hx-include="#simplified-label, #nav-history"
+      hx-include="#simplified-label, #nav-history, #inbox-unexpected"
       hx-target="#transaction-card"
       hx-swap="outerHTML"
     >
@@ -42,7 +42,7 @@
       type="button"
       class="btn btn-secondary flex-col gap-0.5 px-1 text-center text-xs text-secondary"
       hx-post="/transactions/{{ transaction.id }}/finalize/{{ category.id }}"
-      hx-include="#simplified-label, #nav-history"
+      hx-include="#simplified-label, #nav-history, #inbox-unexpected"
       hx-target="#transaction-card"
       hx-swap="outerHTML"
     >

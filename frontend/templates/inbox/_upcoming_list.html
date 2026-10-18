@@ -1,0 +1,30 @@
+{# Les prochaines opérations de la file, dans l'ordre où La Savane les
+   présente. Lecture seule : l'appli n'a pas de geste « passer directement à
+   celle-ci », la liste ne promet donc pas de clic. La catégorie proposée, si
+   elle existe, est la même que celle que la carte afficherait. #}
+<ul id="inbox-upcoming-list" {% if oob %}hx-swap-oob="true"{% endif %} class="flex flex-col divide-y divide-border border-t border-border">
+  {% for item in upcoming %}
+  {% set row = item.transaction %}
+  <li
+    class="flex flex-col gap-0.5 px-4 py-2.5 min-h-[50px] justify-center {{ 'bg-accent-soft' if row.id == current_id else '' }}"
+    {% if row.id == current_id %}aria-current="true"{% endif %}
+  >
+    <div class="flex items-baseline justify-between gap-3">
+      <span class="flex items-center gap-2 min-w-0 text-sm font-semibold text-primary">
+        <span class="inline-block w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ row.account | account_color }};" aria-hidden="true"></span>
+        <span class="truncate">{{ row.label or row.raw_label }}</span>
+      </span>
+      <span class="amount-blur text-sm tabular-nums flex-shrink-0 text-primary">{{ "+" if row.amount > 0 else "" }}{{ row.amount | eur }}</span>
+    </div>
+    <p class="flex flex-wrap gap-x-2 text-xs text-secondary pl-4">
+      <span class="whitespace-nowrap">{{ row.date | fr_date }}</span>
+      {% if item.category %}
+      <span aria-hidden="true">·</span>
+      <span class="truncate">{{ item.category.name | category_display }}</span>
+      {% endif %}
+    </p>
+  </li>
+  {% else %}
+  <li class="px-4 py-3 text-sm text-secondary">{{ _("Rien à suivre : La Savane est vide.") }}</li>
+  {% endfor %}
+</ul>

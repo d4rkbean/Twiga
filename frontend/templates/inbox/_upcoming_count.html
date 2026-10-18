@@ -1,0 +1,6 @@
+{# Compteur de l'en-tête « À suivre » : cible OOB, rafraîchie à chaque carte
+   (voir _card_with_counter.html) tandis que le panneau garde son état
+   déplié/replié. #}
+<span id="inbox-upcoming-count" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% trans count=pending_count %}{{ count }} restante{% pluralize %}{{ count }} restantes{% endtrans %}
+</span>
