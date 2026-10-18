@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 17:29+0000\n"
+"POT-Creation-Date: 2026-10-18 17:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,6 +38,14 @@ msgstr ""
 
 #, python-format
 msgid "%(account_from)s %(size)s %(account_to)s : %(count)s virement%(v)s ("
+msgstr ""
+
+#, python-format
+msgid "%(budget_danger_count)s budget%(v)s dépassé%(v)s"
+msgstr ""
+
+#, python-format
+msgid "%(budget_ok_count)s budget%(v)s sous contrôle"
 msgstr ""
 
 #, python-format
@@ -132,6 +140,10 @@ msgstr ""
 
 #, python-format
 msgid "%(new_account_count)s compte(s) seront créés"
+msgstr ""
+
+#, python-format
+msgid "%(ok)s dans la cible · %(warning)s à surveiller · %(danger)s dépassés"
 msgstr ""
 
 #, python-format
@@ -311,6 +323,10 @@ msgid "1 an"
 msgstr ""
 
 msgid "1. Bilan"
+msgstr ""
+
+#, python-format
+msgid "12 mois jusqu'à %(period_label)s"
 msgstr ""
 
 msgid "2. Fixer le cap"
@@ -564,6 +580,9 @@ msgstr ""
 msgid "Aucun virement reçu sur le compte choisi depuis %(previous_month_label)s."
 msgstr ""
 
+msgid "Aucune alerte"
+msgstr ""
+
 msgid "Aucune catégorie disponible."
 msgstr ""
 
@@ -763,6 +782,9 @@ msgid "Catégorisation en masse — Twiga 🦒"
 msgstr ""
 
 msgid "Catégorisé en"
+msgstr ""
+
+msgid "Ce mois"
 msgstr ""
 
 msgid "Ce mois-ci, nous voulons..."
@@ -1201,6 +1223,9 @@ msgstr ""
 msgid "Fixer le cap du mois →"
 msgstr ""
 
+msgid "Fixer le cap →"
+msgstr ""
+
 #, python-format
 msgid "Flux financier — %(period_label)s"
 msgstr ""
@@ -1564,6 +1589,9 @@ msgstr ""
 msgid "Masquer le mot de passe"
 msgstr ""
 
+msgid "Masquer les comptes"
+msgstr ""
+
 msgid "Masquer les montants"
 msgstr ""
 
@@ -1868,6 +1896,9 @@ msgstr ""
 msgid "Placements"
 msgstr ""
 
+msgid "Plan non fixé"
+msgstr ""
+
 msgid "Plus bas :"
 msgstr ""
 
@@ -1952,9 +1983,6 @@ msgid "Raccourcis clavier"
 msgstr ""
 
 msgid "Rafraîchir"
-msgstr ""
-
-msgid "Ranger maintenant"
 msgstr ""
 
 msgid "Rapport Twiga"
@@ -2423,9 +2451,6 @@ msgstr ""
 msgid "Tout confirmer (%(pairs)s)"
 msgstr ""
 
-msgid "Tout est rangé"
-msgstr ""
-
 msgid "Tout mode de paiement"
 msgstr ""
 
@@ -2454,6 +2479,9 @@ msgid "Toutes les sous-catégories"
 msgstr ""
 
 msgid "Traiter normalement"
+msgstr ""
+
+msgid "Traiter →"
 msgstr ""
 
 #, python-format
@@ -2624,6 +2652,12 @@ msgstr ""
 msgid "Voir le diagnostic de solde"
 msgstr ""
 
+msgid "Voir le détail →"
+msgstr ""
+
+msgid "Voir les comptes"
+msgstr ""
+
 msgid "Voir les opérations : "
 msgstr ""
 
@@ -2709,6 +2743,10 @@ msgid "léger écart"
 msgstr ""
 
 msgid "manque"
+msgstr ""
+
+#, python-format
+msgid "opération%(v)s en attente"
 msgstr ""
 
 msgid "opération(s)"
@@ -2868,6 +2906,9 @@ msgid "économisé"
 msgstr ""
 
 msgid "épargne au rendez-vous"
+msgstr ""
+
+msgid "épargnés à date"
 msgstr ""
 
 #, python-format

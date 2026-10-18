@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 17:29+0000\n"
+"POT-Creation-Date: 2026-10-18 17:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -40,6 +40,14 @@ msgstr "\"%(name)s\" is used by"
 #, python-format
 msgid "%(account_from)s %(size)s %(account_to)s : %(count)s virement%(v)s ("
 msgstr "%(account_from)s %(size)s %(account_to)s: %(count)s transfer%(v)s ("
+
+#, python-format
+msgid "%(budget_danger_count)s budget%(v)s dépassé%(v)s"
+msgstr "%(budget_danger_count)s budget%(v)s over"
+
+#, python-format
+msgid "%(budget_ok_count)s budget%(v)s sous contrôle"
+msgstr "%(budget_ok_count)s budget%(v)s under control"
 
 #, python-format
 msgid "%(budgets)s %(rules)s règle%(v)s"
@@ -138,6 +146,10 @@ msgid "%(new_account_count)s compte(s) seront créés"
 msgstr "%(new_account_count)s account(s) will be created"
 
 #, python-format
+msgid "%(ok)s dans la cible · %(warning)s à surveiller · %(danger)s dépassés"
+msgstr "%(ok)s on target · %(warning)s to watch · %(danger)s over"
+
+#, python-format
 msgid "%(payee_count)s bénéficiaire(s) distinct(s)"
 msgstr "%(payee_count)s distinct payee(s)"
 
@@ -157,7 +169,9 @@ msgstr "%(percentage)s %% used"
 msgid ""
 "%(period)s : le foyer a reçu %(income)s et dépensé %(expense)s, soit un "
 "résultat de %(result)s."
-msgstr "%(period)s: the household received %(income)s and spent %(expense)s, a result of %(result)s."
+msgstr ""
+"%(period)s: the household received %(income)s and spent %(expense)s, a "
+"result of %(result)s."
 
 #, python-format
 msgid ""
@@ -325,6 +339,10 @@ msgstr "1 yr"
 
 msgid "1. Bilan"
 msgstr "1. Review"
+
+#, python-format
+msgid "12 mois jusqu'à %(period_label)s"
+msgstr "12 months up to %(period_label)s"
 
 msgid "2. Fixer le cap"
 msgstr "2. Set the course"
@@ -585,6 +603,9 @@ msgstr "No unconfirmed internal transfer detected."
 msgid "Aucun virement reçu sur le compte choisi depuis %(previous_month_label)s."
 msgstr "No transfer received on the chosen account since %(previous_month_label)s."
 
+msgid "Aucune alerte"
+msgstr "No alerts"
+
 msgid "Aucune catégorie disponible."
 msgstr "No category available."
 
@@ -789,6 +810,9 @@ msgstr "Bulk categorization — Twiga 🦒"
 
 msgid "Catégorisé en"
 msgstr "Categorized as"
+
+msgid "Ce mois"
+msgstr "This month"
 
 msgid "Ce mois-ci, nous voulons..."
 msgstr "This month, we want..."
@@ -1242,6 +1266,9 @@ msgstr "Set the cap for %(current_month_label)s"
 msgid "Fixer le cap du mois →"
 msgstr "Set the month's cap →"
 
+msgid "Fixer le cap →"
+msgstr "Set the course →"
+
 #, python-format
 msgid "Flux financier — %(period_label)s"
 msgstr "Cash flow — %(period_label)s"
@@ -1616,6 +1643,9 @@ msgstr "Hide menu"
 msgid "Masquer le mot de passe"
 msgstr "Hide password"
 
+msgid "Masquer les comptes"
+msgstr "Hide accounts"
+
 msgid "Masquer les montants"
 msgstr "Hide amounts"
 
@@ -1923,6 +1953,9 @@ msgstr "Le Cap pillar"
 msgid "Placements"
 msgstr "Investments"
 
+msgid "Plan non fixé"
+msgstr "Plan not set"
+
 msgid "Plus bas :"
 msgstr "Lowest:"
 
@@ -2011,9 +2044,6 @@ msgstr "Keyboard shortcuts"
 
 msgid "Rafraîchir"
 msgstr "Refresh"
-
-msgid "Ranger maintenant"
-msgstr "Sort them now"
 
 msgid "Rapport Twiga"
 msgstr "Twiga report"
@@ -2499,9 +2529,6 @@ msgstr "It all starts with a bank statement: QIF, CSV or OFX."
 msgid "Tout confirmer (%(pairs)s)"
 msgstr "Confirm all (%(pairs)s)"
 
-msgid "Tout est rangé"
-msgstr "All sorted"
-
 msgid "Tout mode de paiement"
 msgstr "Any payment method"
 
@@ -2531,6 +2558,9 @@ msgstr "All subcategories"
 
 msgid "Traiter normalement"
 msgstr "Process normally"
+
+msgid "Traiter →"
+msgstr "Sort them →"
 
 #, python-format
 msgid "Transaction %(index)s : %(error)s"
@@ -2703,6 +2733,12 @@ msgstr "Guided tour"
 msgid "Voir le diagnostic de solde"
 msgstr "See the balance diagnostic"
 
+msgid "Voir le détail →"
+msgstr "See the detail →"
+
+msgid "Voir les comptes"
+msgstr "Show accounts"
+
 msgid "Voir les opérations : "
 msgstr "See the transactions: "
 
@@ -2792,6 +2828,10 @@ msgstr "slight gap"
 msgid "manque"
 msgstr "short"
 
+#, python-format
+msgid "opération%(v)s en attente"
+msgstr "transaction%(v)s waiting"
+
 msgid "opération(s)"
 msgstr "transaction(s)"
 
@@ -2851,7 +2891,9 @@ msgstr "· no reference last year"
 msgid ""
 "À ce jour, <strong class=\"font-bold\">%(count)s opération%(v)s</strong> "
 "attend%(v2)s encore dans La Savane."
-msgstr "So far, <strong class=\"font-bold\">%(count)s transaction%(v)s</strong> still waiting in La Savane."
+msgstr ""
+"So far, <strong class=\"font-bold\">%(count)s transaction%(v)s</strong> "
+"still waiting in La Savane."
 
 msgid "À propos de Twiga"
 msgstr "About Twiga"
@@ -2950,6 +2992,9 @@ msgstr "saved"
 
 msgid "épargne au rendez-vous"
 msgstr "savings on track"
+
+msgid "épargnés à date"
+msgstr "saved so far"
 
 #, python-format
 msgid "— %(name)s (sans sous-catégorie)"
@@ -3161,4 +3206,10 @@ msgstr "🚨 {name}: exceeded! ({spent} / {budget})"
 
 #~ msgid "🦒 Twiga tend le cou pour voir mieux..."
 #~ msgstr "🦒 Twiga is stretching its neck to see better..."
+
+#~ msgid "Ranger maintenant"
+#~ msgstr "Sort them now"
+
+#~ msgid "Tout est rangé"
+#~ msgstr "All sorted"
 
