@@ -35,7 +35,7 @@
         {% if not is_child %}
         <span class="text-xs text-secondary">
           {% set child_count = category.children | length %}
-          {% if child_count %}{% trans child_count=child_count, v="s" if child_count != 1 else "" %}{{ child_count }} sous-catégorie{{ v }}{% endtrans %}{% else %}{{ _("aucune sous-catégorie") }}{% endif %}
+          {% if child_count %}{% trans count=child_count %}{{ count }} sous-catégorie{% pluralize %}{{ count }} sous-catégories{% endtrans %}{% else %}{{ _("aucune sous-catégorie") }}{% endif %}
         </span>
         {% elif category.pillar and category.pillar != inherited_pillar %}
         <span class="text-xs text-secondary" title="{{ _("Diffère du pilier hérité du parent") }}">{{ _("override") }}</span>
