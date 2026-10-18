@@ -153,6 +153,7 @@
       spotlightStyle: "top: -9999px; left: -9999px; width: 0; height: 0;",
       steps: STEPS,
       tracked: false,
+      progressTemplate: "{step} / {total}",
 
       // SVG de l'icône de l'étape, lu dans le <div id="tour-icons"> rendu
       // côté serveur par _tour.html (même jeu d'icônes que la navigation).
@@ -190,6 +191,9 @@
 
         var dataset = this.$el.dataset;
         this.tracked = dataset.tracked === "true";
+        // Gabarit traduit de la progression, fourni par _tour.html
+        // comme les textes des étapes.
+        this.progressTemplate = dataset.progressLabel || this.progressTemplate;
         var skipImport = dataset.skipImport === "true";
         var texts = {};
         try {
@@ -324,7 +328,9 @@
       },
 
       progressLabel: function () {
-        return "Étape " + (this.stepIndex + 1) + " sur " + this.steps.length;
+        return this.progressTemplate
+          .replace("{step}", this.stepIndex + 1)
+          .replace("{total}", this.steps.length);
       },
     };
   };

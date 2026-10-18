@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 18:12+0000\n"
+"POT-Creation-Date: 2026-10-18 18:17+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3219,6 +3219,10 @@ msgid "Épingler le menu ouvert"
 msgstr ""
 
 msgid "Épingler le menu ouvert, ou le laisser se réduire au survol"
+msgstr ""
+
+#, python-brace-format
+msgid "Étape {step} sur {total}"
 msgstr ""
 
 msgid "Étapes de l'import"
