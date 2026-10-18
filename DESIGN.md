@@ -3,15 +3,27 @@ name: Twiga
 description: "Voir loin. Voir juste." (See far. See true.) — personal finance steering, 100% local.
 colors:
   accent: "#d4a96a"
-  on-accent: "#5c3d1e"
-  page: "#f9f9f9"
+  accent-hover: "#c99a58"
+  on-accent: "#4a2f12"
+  accent-ink: "#8a5a1f"
+  accent-soft: "#f7efe3"
+  page: "#faf8f5"
   container: "#ffffff"
+  sunken: "#f3f0eb"
   primary: "#111827"
   secondary: "#585e6a"
-  border: "#e5e7eb"
-  success: "#16a34a"
-  warning: "#f59e0b"
-  danger: "#dc2626"
+  border: "#e7e2da"
+  border-strong: "#d6cfc4"
+  field: "#848a94"
+  success: "#13703a"
+  success-soft: "#eaf6ee"
+  warning: "#a14a07"
+  warning-gauge: "#f59e0b"
+  warning-soft: "#fdf3e3"
+  danger: "#c81e1e"
+  danger-soft: "#fdecec"
+  info: "#1d4ed8"
+  info-soft: "#eef3fd"
 typography:
   display:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
@@ -19,15 +31,17 @@ typography:
     fontWeight: 800
     lineHeight: 1.2
   headline:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-    fontSize: "1.5rem"
-    fontWeight: 700
-    lineHeight: 1.25
+    fontFamily: "'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 800
+    letterSpacing: "-0.02em"
+    lineHeight: 1.15
   title:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    fontFamily: "'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
     fontSize: "1.125rem"
-    fontWeight: 600
-    lineHeight: 1.4
+    fontWeight: 800
+    letterSpacing: "-0.02em"
+    lineHeight: 1.3
   body:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
     fontSize: "0.875rem"
@@ -108,7 +122,8 @@ components:
     typography: "{typography.label}"
     height: "50px"
   nav-item-active:
-    textColor: "{colors.accent}"
+    backgroundColor: "{colors.accent-soft}"
+    textColor: "{colors.accent-ink}"
     typography: "{typography.label}"
     height: "50px"
   dialog:
@@ -147,53 +162,60 @@ before the amount it accompanies, it is too strong.
 
 **Key Characteristics:**
 - A single radius (12px) on 90% of surfaces: shape carries no information
-- Rare amber: reserved for the primary action and the active state, nowhere else
-- Almost flat: a 1px border and surface contrast before any shadow
+- Rare amber: a solid fill only for the primary action; the active state is a soft amber background with amber-ink text; never a link, a chart series or a decoration
+- Almost flat: a 1px border and surface contrast before any shadow, two warm-tinted levels
 - Touch targets of 50px minimum, designed for the thumb before the mouse
-- No font loaded, no CDN, no outgoing network request
+- One font file family loaded (Bricolage Grotesque 700/800, self-hosted), no CDN, no outgoing network request
 - Light and dark themes in full parity, with no `dark:` variant in the templates
 
 ## Colors
 
-A semantic palette of ten tokens, driven by CSS variables and redefined as a
-block for the dark theme. Templates never use a raw color or a `dark:` variant.
+A semantic palette driven by CSS variables (`@theme` in `design-system.css`), redefined as a block for the dark theme. Templates never use a raw color or a `dark:` variant.
 
 ### Primary
-- **Giraffe Amber** (`#d4a96a`): the color of the spots and the only identity color of the system. It is used for two things only: the background of primary action buttons, and the active navigation state (text + a `bg-accent/10` pill behind the icon). Identical in light and dark: a mid-tone reads correctly on both backgrounds, which avoids duplicating it.
-- **Bark Brown** (`#5c3d1e`): the foreground color on amber, used for the text and icons of primary buttons. Never white: amber is too light to carry white legibly.
+- **Giraffe Amber** (`#d4a96a`, hover `#c99a58`): the color of the spots. A solid fill for one thing only: the primary action button. Identical in light and dark.
+- **Bark Brown** (`#4a2f12`): the foreground on amber, used for the text and icons of primary buttons. Never white.
+- **Amber Ink** (`#8a5a1f`): amber when it has to be text or a fine line (5:1 on the page, where `#d4a96a` only reaches 2:1): the active navigation item, the focus ring, the selected choice card.
+- **Soft Amber** (`#f7efe3`): the background of an active state (navigation pill, user avatar, selected row).
 
 ### Neutral
-- **Light Sand** (`#f9f9f9` light / `#0f172a` dark): the page background, against which containers stand out. Also the background of progress bar rails.
-- **White Surface** (`#ffffff` light / `#1e293b` dark): every content surface: cards, fields, dialogs, navigation bars.
-- **Ink** (`#111827` light / `#f1f5f9` dark): the main text and the amounts.
-- **Faded Ink** (`#585e6a` light / `#94a3b8` dark): labels, metadata, inactive navigation states.
-- **Hairline** (`#e5e7eb` light / `#334155` dark): all borders and separators, always 1px.
+- **Warm Page** (`#faf8f5` light / `#0f172a` dark): the page background. The sidebar shares it, separated by a hairline.
+- **White Surface** (`#ffffff` light / `#1e293b` dark): cards, fields, dialogs, the bottom bar.
+- **Sunken** (`#f3f0eb`): rails, recessed zones, row hover. Provisional dark value: the page color.
+- **Ink** (`#111827` light / `#f1f5f9` dark): the main text, the amounts and all links.
+- **Faded Ink** (`#585e6a` light / `#94a3b8` dark): labels, metadata, inactive states.
+- **Hairline** (`#e7e2da`) and **Strong Hairline** (`#d6cfc4`): borders (1px) of surfaces, then of controls placed on a surface.
+- **Field Outline** (`#848a94`): the border of text fields, 3.4:1 on the surface (WCAG 1.4.11).
 
 ### Tertiary
-Three state colors, lightened in the dark theme to keep contrast on the navy background:
-- **Green** (`#16a34a` light / `#22c55e` dark): positive amount, healthy threshold.
-- **Warning Amber** (`#f59e0b` light / `#fbbf24` dark): watch threshold.
-- **Red** (`#dc2626` light / `#f87171` dark): negative amount, exceeded threshold, destructive action.
+Verdict colors, each with a soft background, lightened in the dark theme (provisional values for the soft ones):
+- **Green** (`#13703a` / `#eaf6ee`; dark `#22c55e`): positive amount, healthy threshold.
+- **Orange** (text `#a14a07`, gauge fill `#f59e0b`, background `#fdf3e3`; dark `#fbbf24`): watch threshold. The gauge fill is a flat bar, never text.
+- **Red** (`#c81e1e` / `#fdecec`; dark `#f87171`): negative amount, exceeded threshold, destructive action.
+- **Blue** (`#1d4ed8` / `#eef3fd`; dark `#93c5fd`): neutral information.
+
+### Data palette
+Eight series colors for charts and shares, read from CSS variables by the chart scripts (`--color-chart-1` to `8`): `#2563eb #0d9488 #9333ea #db2777 #65a30d #ea580c #0891b2 #64748b`. No amber, no verdict green or red.
 
 ### Named Rules
 
-**The Rare Amber Rule.** Amber only designates the primary action and the active state. It is never a decoration color, a section background, an emphasis border or a chart color. Its rarity is what makes it readable as a signal.
+**The Rare Amber Rule.** A solid amber fill designates the primary action; amber-ink text and soft amber background designate the active state. Amber is never a link color, a decoration, an emphasis border or a chart color. Its rarity is what makes it readable as a signal.
 
-**The Brown on Amber Rule.** On `accent`, the foreground is always `on-accent` (`#5c3d1e`). Never white, never pure black.
+**The Brown on Amber Rule.** On `accent`, the foreground is always `on-accent` (`#4a2f12`). Never white, never pure black.
 
-**The Traffic Light Rule.** Green / orange / red are only computed verdicts: the sign of an amount, or a threshold being crossed (≥ 75% watch, ≥ 90% exceeded on budget bars). They are never used to categorize or decorate.
+**The Traffic Light Rule.** Green / orange / red are only computed verdicts: the sign of an amount, or a threshold being crossed (≥ 75% watch, ≥ 90% exceeded on budget bars). They are never used to categorize or decorate, and always come with a word.
 
 ## Typography
 
-**Display Font:** none, the system stack (`-apple-system`, `BlinkMacSystemFont`, `Segoe UI`, `Roboto`...)
-**Body Font:** same.
+**Display Font:** Bricolage Grotesque, weights 700 and 800 (SIL Open Font License, `frontend/static/fonts/OFL.txt`). Page titles, section titles and the giraffe's lines.
+**Body Font:** the system stack (`-apple-system`, `BlinkMacSystemFont`, `Segoe UI`, `Roboto`...).
 
-**Character:** Twiga loads no font. This is a deliberate constraint of the project: no CDN, no font file to serve, an instant and native rendering on every platform. The typographic identity therefore rests entirely on scale and weight, not on letterforms: clear weight jumps (500 → 800) over a deliberately short range of sizes.
+**Character:** one expressive face for the voice of the app, one native stack for everything you read and compare. The two font files are self-hosted (about 18 KB each, subset to Latin, Latin-1, `€` and `−`, optical size fixed at 32), preloaded in `base.html`, loaded with `font-display: swap` and precached by the service worker. No CDN, no network call at runtime. Titles use `letter-spacing: -0.02em`; `h1` and `h2` get the display font from the base layer, `.text-page-title`, `.text-section-title` and `.text-replique` spell it out.
 
 ### Hierarchy
 - **Display** (800, 1.875rem / 30px): the amount of the transaction being categorized in La Savane. One per screen, colored by the sign of the amount.
-- **Headline** (700, 1.5rem / 24px): page and card titles, and the editable label of the transaction, which keeps the look of a title even as an input field.
-- **Title** (600, 1.125rem / 18px): section headers and secondary amounts.
+- **Headline** (Bricolage 800, 1.75rem / 28px, 2.125rem / 34px from `lg`): page titles. The editable label of the transaction keeps the look of a title even as an input field.
+- **Title** (Bricolage 800, 1.125rem / 18px): section headers. The giraffe's lines (`.text-replique`) use 1.375rem / 22px.
 - **Body** (400–500, 0.875rem / 14px): all running text, control labels, list content.
 - **Label** (500, 0.75rem / 12px): metadata, navigation labels, dates, secondary notes.
 
@@ -211,7 +233,7 @@ Amounts form a **separate scale** from text, because they are a semantic categor
 
 **The 14px Rule.** Body text is `text-sm` (14px), not 16px: it is the reference size of the whole application, and `text-base` is effectively unused. A screen that goes above it signals an exception, not a preference.
 
-**The Two Weights Rule.** A single block never uses more than two font weights. Hierarchy comes from the weight jump (500 → 700), not from a continuous gradation.
+**The Two Weights Rule.** A single block never uses more than two font weights. Hierarchy comes from the weight jump (500 → 800), not from a continuous gradation. Bricolage is for titles only: never in a table, a field or an amount.
 
 ## Layout
 
@@ -235,8 +257,8 @@ Content is constrained to `max-w-lg` (32rem) for forms and panels, `max-w-sm` (2
 The system is **almost flat**. Depth comes first from the contrast between the page background and the container surface, reinforced by a 1px border; the shadow is only a whisper on top. There are only two levels, and nothing in between.
 
 ### Shadow Vocabulary
-- **Rest** (`box-shadow: 0 1px 2px rgb(0 0 0 / 0.05)`, i.e. `shadow-sm`): every card or content container placed on the page. This is the default level, used a hundred times in the application.
-- **Overlay** (`box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)`, i.e. `shadow-lg`): only what really floats above the content: native `<dialog>` dialogs, the user menu, pop-up panels.
+- **Rest** (`box-shadow: 0 1px 2px rgb(60 40 20 / 0.06)`, i.e. `shadow-sm`): every card or content container placed on the page. This is the default level, used a hundred times in the application.
+- **Floating** (`box-shadow: 0 12px 24px -6px rgb(60 40 20 / 0.16)`, i.e. `shadow-lg`): only what really floats above the content: native `<dialog>` dialogs, the user menu, pop-up panels.
 
 ### Named Rules
 
@@ -267,7 +289,7 @@ Borders are 1px, in `border`, on all surfaces. The only deliberate exception is 
 - **Danger:** Red background, white text, `font-medium`. Reserved for deletions, systematically behind a confirmation.
 - **Hover:** `filter: brightness(0.96)`, applied only under `@media (hover: hover)` to avoid a "stuck" hover state after a touch tap.
 - **Active:** `transform: scale(0.97)` and `opacity: 0.85` in 100ms.
-- **Focus:** a 2px Giraffe Amber ring with a 2px offset, on `:focus-visible` only, never on mouse click.
+- **Focus:** a 2px Amber Ink ring with a 2px offset, on `:focus-visible` only, never on mouse click.
 - **During a request:** `opacity: 0.6` and `pointer-events: none` (`.htmx-request` class), which also neutralizes double-clicks.
 
 ### Cards / Containers
@@ -290,8 +312,8 @@ Borders are 1px, in `border`, on all surfaces. The only deliberate exception is 
 - **Class:** `.choice-card` (design-system.css). Show the real rendering inside the card (a sample date and amount) rather than describing it.
 
 ### Navigation
-- **Mobile (< 1024px):** fixed bottom bar, four destinations, each 50px tall, icon above the 12px label. Active = Giraffe Amber text in `font-semibold` + a `bg-accent/10` pill behind the icon.
-- **Desktop (≥ 1024px):** a sidebar with three modes (pinned / automatic / hidden), seven destinations, rows of 44px minimum, active = `bg-accent/10` background and amber text. In automatic mode, the bar expands as an overlay on hover, at `z-50` to pass above the header.
+- **Mobile (< 1024px):** fixed bottom bar, four destinations, each 50px tall, icon above the 12px label. Active = Amber Ink text in `font-semibold` + a `bg-accent-soft` pill behind the icon.
+- **Desktop (≥ 1024px):** a sidebar on the page background with three modes (pinned / automatic / hidden), five destinations, rows of 50px, active = `bg-accent-soft` background, Amber Ink text and `font-semibold`. In automatic mode, the bar expands as an overlay on hover, at `z-50` to pass above the header.
 - **Icons:** hand-drawn line SVGs, 24×24 `viewBox`, `stroke-width: 2`, rounded caps and joins, `stroke="currentColor"`. A single system, shared between both bars.
 
 ### Dialogs
@@ -303,10 +325,22 @@ The signature component of the application and its measure of success: thirty tr
 ### Privacy mode
 Every amount carries a static `.amount-blur` class set by the template; only the `.privacy-mode` class on `<body>` triggers a `blur(8px)`. Pure CSS, so it is effective on any content injected afterwards by HTMX or Chart.js, without relying on a JavaScript re-scan. No `:hover` or `:active` rule on the amount: only the dedicated button can lift the blur, never an accidental hover or tap.
 
+## Motion
+
+One easing, `--ease-out: cubic-bezier(0.16, 1, 0.3, 1)` (fast arrival, soft end), and three durations (100 / 200 / 300 ms). Page entry, content swapped in by HTMX, the upload indicator ("Twiga tend le cou…"), the tour bubble and the rule-suggestion popup rise by a few pixels while fading in over 0.3 s. All of it sits under `@media (prefers-reduced-motion: no-preference)`: with the preference set, nothing slides.
+
+### Named Rules
+
+**The No Transform on Main Rule.** The page-entry animation targets the children of `<main>`, never `<main>` itself, and skips fixed elements: a transform on an ancestor becomes the containing block of its `position: fixed` descendants.
+
+## The giraffe
+
+The mascot is an inline SVG macro, `mascot(state, size)` in `frontend/templates/_macros/brand.html`, with five states: `default` (the logo), `done` ("Twiga a tout brouté !"), `waiting` ("Twiga tend le cou…"), `swallowed` ("Twiga a tout avalé !") and `cap` ("Le cap est fixé !"). Same shapes and colors as the logo; only the eyes, the mouth, the neck and one prop change. The favicon and the app icon stay files. The navigation icons shared by the sidebar and the bottom bar live in the same file (`nav_icon`).
+
 ## Do's and Don'ts
 
 ### Do:
-- **Do** use the semantic utility classes (`bg-page`, `bg-container`, `text-primary`, `text-secondary`, `border-border`, `bg-accent`, `text-on-accent`) for every color. They are driven by CSS variables and switch to the dark theme on their own.
+- **Do** use the semantic utility classes (`bg-page`, `bg-container`, `bg-sunken`, `text-primary`, `text-secondary`, `border-border`, `border-field`, `bg-accent`, `text-on-accent`, `text-accent-ink`, `bg-accent-soft`) for every color. They are driven by CSS variables and switch to the dark theme on their own.
 - **Do** redefine the dark tokens in the `.dark` block of `design-system.css`, outside any `@layer`: a rule without a layer always beats a rule that has one, which avoids adding a `dark:` variant to every template.
 - **Do** keep the `color-scheme` declaration (`light` on `:root`, `dark` in `.dark`, plus the `<meta name="color-scheme">` of `base.html`). Without it, browsers with forced dark mode (a native Chrome Android setting or an extension) rewrite the whole palette into neutral grays and remove the background pattern; observed in production.
 - **Do** give at least 50px of height to every tappable element, and 46px to input fields.
@@ -317,10 +351,11 @@ Every amount carries a static `.amount-blur` class set by the template; only the
 
 ### Don't:
 - **Don't** make Twiga look like a dark "data" dashboard: black background, saturated neons, sparklines everywhere, cockpit density. Dark mode exists for night-time comfort; it is not the identity of the product.
-- **Don't** use amber anywhere other than the primary action and the active state. No amber section background, no emphasis border, no amber chart series by default.
-- **Don't** put white on amber: the foreground on `accent` is always `on-accent` (`#5c3d1e`).
+- **Don't** use amber anywhere other than the primary action (solid) and the active state (soft background, amber-ink text). No amber link, section background, emphasis border or chart series.
+- **Don't** put white on amber: the foreground on `accent` is always `on-accent` (`#4a2f12`).
 - **Don't** introduce a third shadow level or a third radius. If a separation is missing, add a 1px border or change surface.
 - **Don't** write a raw color (`bg-white`, `text-black`, `#fff`) in a template: it will not switch to the dark theme.
 - **Don't** add an inline `<script>` in a Jinja2 template. An `&&` or a special character can be badly escaped depending on the context; files in `static/js/` with data passed through `data-*` attributes are the normal way.
-- **Don't** load anything from a CDN: font, script, stylesheet or image. The application must work without Internet access.
+- **Don't** load anything from a CDN: font, script, stylesheet or image. The application must work without Internet access. The one font family is self-hosted.
+- **Don't** pass a CSS class name through the translation function (`_("pelage")` once made the login page lose its pattern in English).
 - **Don't** make the background pattern more present than it is (10% in light, 35% in dark). It should be guessed at; if it is noticed, it steals the attention meant for the amounts.
