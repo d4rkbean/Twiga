@@ -45,7 +45,7 @@
    fragment : renvoyé ici en swap hors bande pour rester synchronisé. #}
 {% if row1_oob %}{% include "dashboard/_period_label.html" %}{% endif %}
 
-<div class="flex flex-col gap-5">
+<div class="flex flex-col gap-[var(--space-block)]">
 
   {% set income_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(income_total, plus=true) }}</strong>{% endset %}
   {% set expense_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(-expense_total) }}</strong>{% endset %}
@@ -62,7 +62,7 @@
      montants restent à l'encre : un montant négatif n'est pas un verdict ;
      seul le résultat porte une couleur, doublée d'un mot. #}
   <div class="grid grid-cols-2 lg:grid-cols-6 gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm">
-    <div class="bg-container p-4 flex flex-col gap-0.5">
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('wallet', size=14) }} {{ _("Solde total") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(total_balance) }}</p>
       <p class="text-xs text-secondary">{% trans count=accounts_count, v="s" if accounts_count > 1 else "" %}{{ count }} compte{{ v }}{% endtrans %}</p>
@@ -75,15 +75,15 @@
         <span class="transition-transform" :class="showAccounts ? 'rotate-180' : ''">{{ icon('chevron-down', size=14) }}</span>
       </button>
     </div>
-    <div class="bg-container p-4 flex flex-col gap-0.5">
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('trending-up', size=14) }} {{ _("Recettes") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(income_total, plus=true) }}</p>
     </div>
-    <div class="bg-container p-4 flex flex-col gap-0.5">
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('trending-down', size=14) }} {{ _("Dépenses") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(-expense_total) }}</p>
     </div>
-    <div class="bg-container p-4 flex flex-col gap-0.5">
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('scale', size=14) }} {{ _("Résultat") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums {{ 'text-success' if result_total > 0 else ('text-danger' if result_total < 0 else 'text-primary') }}">{{ signed(result_total, plus=true) }}</p>
       {% if result_total != 0 %}
@@ -93,21 +93,21 @@
     {# Taux d'épargne dérivé de income_total/result_total déjà en contexte :
        aucune requête supplémentaire. #}
     {% set savings_rate = (result_total / income_total * 100) | round | int if income_total else 0 %}
-    <div class="bg-container p-4 flex flex-col gap-0.5">
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('pig-money', size=14) }} {{ _("Taux d'épargne") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ savings_rate | string | replace("-", "−") }} %</p>
       <p class="text-xs text-secondary">{{ _("du revenu") }}</p>
     </div>
     {# Alertes : les opérations qui attendent encore dans La Savane. #}
     {% if pending_count %}
-    <a href="/transactions/inbox" class="bg-container p-4 flex flex-col gap-0.5 min-h-[50px] hover:bg-sunken">
+    <a href="/transactions/inbox" class="bg-container p-[var(--space-card)] flex flex-col gap-0.5 min-h-[50px] hover:bg-sunken">
       <span class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('inbox', size=14) }} {{ _("À trier") }}</span>
       <span class="text-xl font-bold tabular-nums text-primary">{{ pending_count }}</span>
       <span class="text-xs text-secondary">{% trans v="s" if pending_count > 1 else "" %}opération{{ v }} en attente{% endtrans %}</span>
       <span class="flex items-center gap-1 text-xs font-semibold text-primary">{{ _("Traiter →") }}</span>
     </a>
     {% else %}
-    <div class="bg-container p-4 flex flex-col gap-0.5">
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('inbox', size=14) }} {{ _("À trier") }}</p>
       <p class="text-xl font-bold tabular-nums text-primary">0</p>
       <p class="text-xs text-secondary">{{ _("Aucune alerte") }}</p>
@@ -119,8 +119,8 @@
      quelle que soit la période choisie (« Mois dernier », « 90 J »…), et
      indépendants du compte. Deux cartes discrètes, rafraîchies avec le
      fragment (la case « Décaler recettes » s'applique aux recettes du mois). #}
-  <div class="grid gap-5 lg:grid-cols-2">
-    <section id="panorama-ce-mois" aria-labelledby="this-month-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+  <div class="grid gap-[var(--space-block)] lg:grid-cols-2">
+    <section id="panorama-ce-mois" aria-labelledby="this-month-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <h2 id="this-month-title" class="text-section-title">{{ _("Ce mois") }}</h2>
       <dl class="grid grid-cols-3 gap-3">
         <div class="flex flex-col gap-0.5">
@@ -141,7 +141,7 @@
       </dl>
     </section>
 
-    <section id="panorama-plan" aria-labelledby="plan-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+    <section id="panorama-plan" aria-labelledby="plan-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <div class="flex items-center justify-between gap-3">
         <h2 id="plan-title" class="text-section-title">{{ _("Mon mois") }}</h2>
         <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">
@@ -176,13 +176,13 @@
     </section>
   </div>
 
-  <div class="flex flex-col gap-5 lg:grid lg:grid-cols-12 lg:items-stretch">
+  <div class="flex flex-col gap-[var(--space-block)] lg:grid lg:grid-cols-12 lg:items-stretch">
 
     {# Flux sur 12 mois : la courbe suit la PÉRIODE filtrée, les enveloppes
        à droite suivent le MOIS CIVIL en cours (un budget est un
        engagement mensuel) ; le mois est rappelé dans leur titre pour que
        l'écart avec le reste de la page soit explicite. #}
-    <section aria-labelledby="trend-title" class="lg:col-span-8 bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+    <section aria-labelledby="trend-title" class="lg:col-span-8 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <div class="flex items-center justify-between gap-3">
         <h2 id="trend-title" class="text-section-title">{{ _("Flux sur 12 mois") }}</h2>
         <a href="/reports" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Rapports") }} {{ icon('arrow-right', size=16) }}</a>
@@ -209,7 +209,7 @@
        l'ancienne carte « Budgets à risque » : une seule carte pour les
        budgets. La barre porte le dépensé (couleur du verdict), puis en gris
        ce qui attend d'être trié ; le verdict est toujours doublé d'un mot. #}
-    <section id="tour-budget-section" aria-labelledby="envelopes-title" class="lg:col-span-4 bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4">
+    <section id="tour-budget-section" aria-labelledby="envelopes-title" class="lg:col-span-4 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-block)]">
       <div class="flex items-center justify-between gap-3">
         <h2 id="envelopes-title" class="text-section-title">{{ _("Enveloppes") }} <span class="text-xs font-normal text-secondary">· {{ budget_month_label }}</span></h2>
         <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Mon mois") }} {{ icon('arrow-right', size=16) }}</a>
@@ -252,7 +252,7 @@
     {# Les deux répartitions côte à côte : on lit ce qui est entré avant ce
        qui est sorti. Une rangée de 50 px par catégorie, cliquable pour ouvrir
        le détail des opérations. #}
-    <section aria-labelledby="income-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+    <section aria-labelledby="income-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <h2 id="income-title" class="text-section-title">{% trans period_label=period_label %}Recettes par catégorie — {{ period_label }}{% endtrans %}</h2>
       {% if income_spending %}
       <div class="flex flex-col gap-3">
@@ -271,7 +271,7 @@
       {% endif %}
     </section>
 
-    <section aria-labelledby="expense-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+    <section aria-labelledby="expense-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <h2 id="expense-title" class="text-section-title">{% trans period_label=period_label %}Dépenses par catégorie — {{ period_label }}{% endtrans %}</h2>
       {% if category_spending %}
       <div class="flex flex-col gap-3">
@@ -292,7 +292,7 @@
 
     {# Flux financier (Sankey) : masqué sur bureau, où les deux répartitions
        ci-dessus disent déjà la même chose. #}
-    <section aria-labelledby="flow-title" class="lg:hidden bg-container rounded-xl border border-border shadow-sm p-4 flex flex-col gap-3">
+    <section aria-labelledby="flow-title" class="lg:hidden bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <h2 id="flow-title" class="text-section-title">{% trans period_label=period_label %}Flux financier — {{ period_label }}{% endtrans %}</h2>
       {% if category_spending and income_spending %}
       <div class="h-80">
@@ -632,7 +632,7 @@
           // bordure colorée.
           var row = document.createElement("button");
           row.type = "button";
-          row.className = "flex items-center gap-3 w-full min-h-[50px] px-2 text-left border-b border-border";
+          row.className = "flex items-center gap-3 w-full min-h-[var(--row-list)] px-2 text-left border-b border-border";
           row.setAttribute("aria-label", {{ _("Voir les opérations : ") | tojson | safe }} + label);
 
           var dot = document.createElement("span");

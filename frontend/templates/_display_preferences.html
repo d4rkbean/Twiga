@@ -1,0 +1,151 @@
+{#- Réglages d'affichage du compte : interface, thème, densité, plus l'ouverture
+    en mode confidentialité (propre à l'appareil). Un seul gabarit pour Mon
+    profil et Paramètres > Préférences.
+
+    Chaque clic s'applique tout de suite à la page (classe sur <html>), puis
+    s'enregistre seul sur le compte et en cookie (POST /profile/preferences,
+    voir backend/preferences.py) : pas de bouton « Enregistrer » à oublier.
+    L'aperçu suit le choix en direct. Le texte et les boutons gardent leur
+    taille quelle que soit la densité : seul l'espace change. -#}
+<div
+  class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-[var(--space-block)] items-start"
+  x-data="{
+    ui: '{{ current_ui_variant() }}',
+    theme: '{{ current_theme() }}',
+    density: '{{ current_density() }}',
+    systemDark: window.matchMedia('(prefers-color-scheme: dark)').matches,
+    get dark() { return this.theme === 'dark' || (this.theme === 'system' && this.systemDark); },
+  }"
+>
+  <div class="flex flex-col gap-5 min-w-0">
+    <form
+      hx-post="/profile/preferences"
+      hx-trigger="change"
+      hx-target="#display-prefs-result"
+      hx-swap="innerHTML"
+      class="flex flex-col gap-5"
+    >
+      <fieldset class="flex flex-col gap-2">
+        <legend class="form-label mb-1">{{ _("Interface") }}</legend>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <label class="choice-card">
+            <input
+              type="radio"
+              name="ui_variant"
+              value="classic"
+              class="sr-only"
+              x-model="ui"
+              @change="document.documentElement.setAttribute('data-ui', $event.target.value)"
+            />
+            <span class="text-sm font-semibold text-primary">{{ _("Classique") }}</span>
+            <span class="text-xs text-secondary">{{ _("L'interface que tu connais.") }}</span>
+          </label>
+          <label class="choice-card">
+            <input
+              type="radio"
+              name="ui_variant"
+              value="other_way"
+              class="sr-only"
+              x-model="ui"
+              {% if not other_way_enabled() %}disabled{% endif %}
+              @change="document.documentElement.setAttribute('data-ui', $event.target.value)"
+            />
+            <span class="text-sm font-semibold text-primary">{{ _("L'autre voie") }}</span>
+            <span class="text-xs text-secondary">{% if other_way_enabled() %}{{ _("Une autre façon de parcourir Twiga.") }}{% else %}{{ _("Bientôt") }}{% endif %}</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="flex flex-col gap-2">
+        <legend class="form-label mb-1">{{ _("Thème") }}</legend>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {% for code, label, hint in [
+            ("light", _("Clair"), _("Toujours clair")),
+            ("system", _("Système"), _("Suit ton appareil")),
+            ("dark", _("Sombre"), _("Toujours sombre")),
+          ] %}
+          <label class="choice-card">
+            <input
+              type="radio"
+              name="theme"
+              value="{{ code }}"
+              class="sr-only"
+              x-model="theme"
+              @change="window.twigaApplyTheme($event.target.value)"
+            />
+            <span class="text-sm font-semibold text-primary">{{ label }}</span>
+            <span class="text-xs text-secondary">{{ hint }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="flex flex-col gap-2">
+        <legend class="form-label mb-1">{{ _("Densité") }}</legend>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {% for code, label, hint in [
+            ("compact", _("Compact"), _("Plus de lignes à l'écran")),
+            ("normal", _("Normal"), _("L'équilibre habituel")),
+            ("comfortable", _("Aéré"), _("Plus d'air entre les éléments")),
+          ] %}
+          <label class="choice-card">
+            <input
+              type="radio"
+              name="density"
+              value="{{ code }}"
+              class="sr-only"
+              x-model="density"
+              @change="document.documentElement.setAttribute('data-density', $event.target.value)"
+            />
+            <span class="text-sm font-semibold text-primary">{{ label }}</span>
+            <span class="text-xs text-secondary">{{ hint }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="text-xs text-secondary">{{ _("Le texte et les boutons gardent leur taille : seul l'espace entre les éléments change.") }}</p>
+      </fieldset>
+
+      <div id="display-prefs-result" aria-live="polite"></div>
+    </form>
+
+    {# Propre à l'appareil : rien n'est envoyé au serveur. #}
+    <label class="flex items-center justify-between gap-4 min-h-[50px] cursor-pointer border-t border-border pt-3">
+      <span class="flex flex-col">
+        <span class="text-sm font-medium text-primary">{{ _("Masquer les montants à l'ouverture") }}</span>
+        <span class="text-xs text-secondary">{{ _("Sur cet appareil seulement.") }}</span>
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        x-model="privacyOnOpen"
+        @change="localStorage.setItem('privacyOnOpen', privacyOnOpen)"
+        class="peer sr-only"
+      />
+      <span
+        aria-hidden="true"
+        class="relative shrink-0 w-11 h-6 rounded-full bg-field transition-colors peer-checked:bg-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-container after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"
+      ></span>
+    </label>
+  </div>
+
+  {# Aperçu : une fausse page qui prend le thème et la densité choisis. #}
+  <div class="flex flex-col gap-2">
+    <p class="form-label">{{ _("Aperçu") }}</p>
+    <div class="pref-preview" :class="dark ? 'dark' : 'pref-light'" :data-density="density" aria-hidden="true">
+      <div class="pref-preview-bar" style="width: 40%; height: 0.625rem;"></div>
+      <div class="pref-preview-card">
+        {% for width in [72, 56, 64, 48, 68] %}
+        <div class="pref-preview-row">
+          <span class="pref-preview-dot"></span>
+          <span class="pref-preview-bar flex-1" style="max-width: {{ width }}%;"></span>
+          <span class="pref-preview-bar ml-auto" style="width: 2rem;"></span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="pref-preview-card">
+        <div class="pref-preview-row"><span class="pref-preview-bar" style="width: 50%;"></span></div>
+        <div class="pref-preview-row"><span class="pref-preview-bar" style="width: 35%;"></span></div>
+      </div>
+    </div>
+  </div>
+</div>

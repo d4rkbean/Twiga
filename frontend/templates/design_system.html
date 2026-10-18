@@ -19,6 +19,7 @@
   ("champs", "Champs & Formulaires"),
   ("choix", "Cartes de choix"),
   ("colonnes", "Colonnes équilibrées"),
+  ("densites", "Densités"),
   ("cartes", "Cartes"),
   ("badges", "Badges & Pilules"),
   ("alertes", "Alertes"),
@@ -67,9 +68,16 @@
       <h1 class="text-page-title">Design System</h1>
       <p class="text-small">Source de vérité unique — 53 classes canoniques dans design-system.css</p>
     </div>
-    <button type="button" onclick="window.toggleTheme()" class="btn btn-secondary flex-shrink-0">
-      Basculer le thème
-    </button>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      {# Densité de la page entière, sans l'enregistrer : pour voir la page
+         dans les trois (la vraie préférence se règle dans Mon profil). #}
+      <button type="button" onclick="window.cycleDensity()" class="btn btn-secondary">
+        Densité : <span id="ds-density-label">{{ current_density() }}</span>
+      </button>
+      <button type="button" onclick="window.toggleTheme()" class="btn btn-secondary">
+        Basculer le thème
+      </button>
+    </div>
   </div>
 
   <div class="lg:flex lg:gap-10 lg:items-start">
@@ -237,6 +245,34 @@
             </label>
           </fieldset>
           <span class="text-small">.choice-card — le radio est masqué (.sr-only), la carte porte l'état coché (:has) et l'anneau de focus clavier. Utilisée pour la langue et le format dans Paramètres &gt; Préférences.</span>
+        </div>
+      </section>
+
+      {# ─────────── DENSITÉS ─────────── #}
+      <section id="densites" class="flex flex-col gap-3">
+        <h2 class="text-section-title">Densités</h2>
+        <p class="text-small">
+          Trois densités, portées par <code>&lt;html data-density&gt;</code> : seul l'air change
+          (marges des cartes, écarts, hauteur des lignes qui ne se touchent pas). Le texte et
+          les éléments touchables (50&nbsp;px) ne bougent jamais. Le bouton « Densité » en haut
+          de page bascule la page entière ; ici, les trois côte à côte.
+        </p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {% for code, label in [("compact", "Compact"), ("normal", "Normal"), ("comfortable", "Aéré")] %}
+          <div data-density="{{ code }}" class="flex flex-col gap-[var(--space-block)]">
+            <p class="text-body font-semibold">{{ label }}</p>
+            <div class="card flex flex-col">
+              {% for row in ["Courses", "Loyer", "Électricité", "Transport", "Loisirs"] %}
+              <div class="flex items-center justify-between gap-3 min-h-[var(--row-static)] border-b border-border last:border-b-0 text-sm">
+                <span>{{ row }}</span>
+                <span class="tabular-nums text-secondary">−{{ loop.index * 12 }},40&nbsp;€</span>
+              </div>
+              {% endfor %}
+              <button type="button" class="btn btn-secondary mt-[var(--space-list)]">Bouton : 50&nbsp;px, quelle que soit la densité</button>
+            </div>
+            <p class="text-small">--space-card · --space-block · --space-list · --row-pad · --row-touch · --row-list · --row-static</p>
+          </div>
+          {% endfor %}
         </div>
       </section>
 
@@ -453,4 +489,17 @@
     </div>
   </div>
 </main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Bascule de densité de la page, sans enregistrement (guide de style).
+  window.cycleDensity = function () {
+    var order = ["compact", "normal", "comfortable"];
+    var root = document.documentElement;
+    var next = order[(order.indexOf(root.getAttribute("data-density")) + 1) % order.length];
+    root.setAttribute("data-density", next);
+    document.getElementById("ds-density-label").textContent = next;
+  };
+</script>
 {% endblock %}

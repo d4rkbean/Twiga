@@ -3,7 +3,7 @@
 {# Savane vide : la girafe rassasiée et trois suites possibles. « Voir Mon
    mois » est l'action principale de l'écran ; les deux autres sont des gestes
    de plus tard. #}
-<div id="transaction-card" class="w-full flex flex-col gap-3">
+<div id="transaction-card" class="w-full flex flex-col gap-[var(--space-list)]">
   <input type="hidden" id="nav-history" value="{{ history }}" />
   <div class="bg-container rounded-xl shadow-sm overflow-hidden flex flex-col sm:flex-row">
     <div class="bg-accent-soft flex items-end justify-center pt-6 sm:w-[200px] sm:flex-shrink-0">
@@ -63,7 +63,7 @@
      outerHTML sur cet id remplace tout le bloc, boutons compris. Le geste de
      swipe (x-data, touch handlers) reste sur la carte visuelle UNIQUEMENT :
      les boutons en dessous ne doivent pas s'envoler avec elle. -->
-<div id="transaction-card" class="w-full flex flex-col gap-3">
+<div id="transaction-card" class="w-full flex flex-col gap-[var(--space-list)]">
   {# Deux niveaux : l'enveloppe porte le geste (x-data, :style de
      translation, qui réécrit tout l'attribut style) et la carte porte la
      couleur du compte dans son propre style statique. #}
@@ -98,7 +98,7 @@
     :style="'transform: translateX(' + dragX + 'px) rotate(' + (dragX / 20) + 'deg); transition: ' + (dragging ? 'none' : 'transform 0.3s ease') + ';'"
   >
   <div
-    class="bg-container rounded-xl shadow-sm p-5 md:p-6 flex flex-col gap-5 border-2"
+    class="bg-container rounded-xl shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-block)] border-2"
     style="border-color: {{ transaction.account | account_color }};"
   >
     <input type="hidden" id="nav-history" value="{{ history }}" />
@@ -165,7 +165,7 @@
         {% if suggested_category %}
         {% set top_level = suggested_category.parent if suggested_category.parent else suggested_category %}
         {% set subcategory_name = suggested_category.name if suggested_category.parent else none %}
-        <div class="category-suggestion flex flex-col gap-3">
+        <div class="category-suggestion flex flex-col gap-[var(--space-list)]">
           <div class="flex flex-col gap-1.5">
             <p class="form-label">{{ _("Catégorie proposée :") }}</p>
             <div class="flex items-center justify-between gap-2">

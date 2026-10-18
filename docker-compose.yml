@@ -34,6 +34,9 @@ services:
       # Living style guide at /design-system. Off by default: the route
       # returns 404 unless this variable is true.
       SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}
+      # "The other way" interface variant (Mon profil > Affichage): offered
+      # disabled until it is built.
+      ENABLE_OTHER_WAY: ${ENABLE_OTHER_WAY:-false}
 
   # --- Tests (profile "test", left out of the normal start) ---
   # tools/test.sh: a throwaway PostgreSQL database (in memory, no volume) and

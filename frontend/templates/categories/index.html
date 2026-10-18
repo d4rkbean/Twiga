@@ -12,7 +12,7 @@
   {{ page_header(_("Catégories"), back_href="/settings", back_label=_("Paramètres")) }}
 
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 lg:gap-6 items-start">
-    <section class="card flex flex-col gap-3 lg:p-5">
+    <section class="card flex flex-col gap-3">
       <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
       <form
         hx-post="/categories/create"
@@ -40,7 +40,7 @@
       </form>
     </section>
 
-    <aside class="card flex flex-col gap-3 lg:p-5">
+    <aside class="card flex flex-col gap-3">
       <h2 class="text-section-title">{{ _("Pilier du Cap") }}</h2>
       <p class="text-sm text-secondary">{{ _("Chaque catégorie compte dans un pilier du Cap. Une sous-catégorie hérite de sa catégorie, sauf si tu lui en donnes un autre.") }}</p>
       <ul class="flex flex-col gap-2 text-sm">
