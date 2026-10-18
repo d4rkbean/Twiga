@@ -142,7 +142,7 @@ def test_inventory_matches_the_routes(app):
 
 @pytest.mark.parametrize("role", ROLES)
 @pytest.mark.parametrize("page", PAGES, ids=lambda page: page.template)
-def test_page_answers_for_each_role(clients, demo, role, page):
+def test_page_answers_for_each_role(clients, demo, variant, role, page):
     response = request(clients[role], page, demo)
 
     if page.template.startswith(ADMIN_ONLY_PREFIXES) and role != "admin":

@@ -40,6 +40,7 @@
       type="button"
       aria-haspopup="dialog"
       :aria-expanded="shell === 'more'"
+      {% if shell.shell_active == "more" %}aria-current="page"{% endif %}
       @click="toggleShell('more')"
       class="min-h-[50px] px-4 inline-flex items-center gap-1.5 rounded-xl text-sm {{ 'bg-accent-soft text-accent-ink font-semibold' if shell.shell_active == 'more' else 'text-primary font-medium hover:bg-sunken' }}"
     >
