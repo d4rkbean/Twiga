@@ -1318,6 +1318,68 @@ def get_budget_progress(
     return results
 
 
+def get_budget_envelopes(
+    db: Session, start: date, end: date, account_id: int | None = None
+) -> list[dict]:
+    """Chaque budget du mois avec ce qu'il deviendrait « avec le tri ».
+
+    Les lignes de get_budget_progress, enrichies de `pending` (somme des
+    dépenses encore dans La Savane que celle-ci proposerait dans cette
+    catégorie) et du pourcentage atteint si on les comptait aussi
+    (`projected_percentage`). Mêmes règles que la consommation réelle : la
+    période et le compte demandés, les virements et les opérations déjà
+    marquées imprévues exclus, et une dépense proposée dans une sous-catégorie
+    compte pour le budget de sa catégorie parente, à condition d'être du même pilier.
+    """
+    envelopes = get_budget_progress(db, start, end, account_id)
+    if not envelopes:
+        return []
+
+    conditions = [
+        Transaction.validated.is_(False),
+        Transaction.is_transfer.is_(False),
+        Transaction.is_unexpected.is_(False),
+        Transaction.amount < 0,
+        Transaction.date >= start,
+        Transaction.date <= end,
+    ]
+    if account_id is not None:
+        conditions.append(Transaction.account_id == account_id)
+    pending = list(db.execute(select(Transaction).where(*conditions)).scalars().all())
+    suggestions = suggest_categories_for_transactions(db, pending)
+
+    # Même rattachement que get_budget_progress : la catégorie qui porte le
+    # budget et ses enfants directs.
+    budget_categories = {item["category"].id: item["category"] for item in envelopes}
+    pending_by_budget: dict[int, Decimal] = {}
+    for transaction in pending:
+        suggestion = suggestions.get(transaction.id)
+        if suggestion is None:
+            continue
+        category = suggestion["category"]
+        if category.id in budget_categories:
+            owner = category
+        elif category.parent_id in budget_categories:
+            owner = budget_categories[category.parent_id]
+        else:
+            continue
+        if resolve_category_pillar(category) != resolve_budget_pillar(owner, list(owner.children)):
+            continue
+        pending_by_budget[owner.id] = pending_by_budget.get(owner.id, Decimal("0.00")) - transaction.amount
+
+    for item in envelopes:
+        pending_amount = pending_by_budget.get(item["category"].id, Decimal("0.00"))
+        projected = (
+            (item["spent"] + pending_amount) / item["budget"] * 100 if item["budget"] else Decimal("0.00")
+        )
+        item["pending"] = pending_amount
+        item["projected_percentage"] = projected
+        item["pending_width"] = max(
+            0, min(round(projected), 100) - item["bar_width"]
+        ) if pending_amount else 0
+    return envelopes
+
+
 def get_budgets_for_month(db: Session, month_start: date) -> dict[int, Decimal]:
     stmt = select(Budget.category_id, Budget.amount).where(Budget.month == month_start)
     return {category_id: amount for category_id, amount in db.execute(stmt).all()}

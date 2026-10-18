@@ -200,3 +200,59 @@ def test_export_amounts_use_the_ascii_hyphen(clients):
 def test_export_with_no_match_is_just_the_header(clients):
     rows = _csv_rows(clients["admin"].get("/export/transactions.csv?f_search=zzzzznomatch"))
     assert len(rows) == 1
+
+
+# --- 3. Panorama: the "Enveloppes" card --------------------------------------
+
+
+def _month_bounds() -> tuple[date, date]:
+    from backend.dates import month_range
+
+    today = date.today()
+    return month_range(today.year, today.month)
+
+
+def test_envelopes_add_what_is_still_in_la_savane_to_each_budget(demo):
+    start, end = _month_bounds()
+    with SessionLocal() as db:
+        envelopes = crud.get_budget_envelopes(db, start, end)
+        food = next(item for item in envelopes if item["category"].id == demo["subcategory_id"])
+        # "Carrefour city" (23.50) is proposed in the groceries sub-category by
+        # the CARREFOUR rule, which carries the budget.
+        assert food["pending"] == Decimal("23.50")
+        expected = (food["spent"] + Decimal("23.50")) / food["budget"] * 100
+        assert food["projected_percentage"] == expected
+        assert food["projected_percentage"] > food["percentage"]
+        # The flagged-unexpected pharmacy and the transfers never count.
+        assert food["pending"] < Decimal("30.00")
+        # The envelopes follow the chosen account.
+        savings = next(a for a in crud.list_accounts(db) if a.name == "Savings book")
+        for item in crud.get_budget_envelopes(db, start, end, savings.id):
+            assert item["pending"] == 0
+
+
+def test_panorama_shows_one_envelopes_card_instead_of_budgets_at_risk(clients):
+    html = clients["admin"].get("/dashboard").text
+    assert "Enveloppes" in html
+    assert "Budgets à risque" not in html
+    assert "Test groceries" in html
+    assert "à trier" in html
+    assert "Avec le tri : " in html
+    # The verdict is doubled with a word and links to "Mon mois".
+    section = html.split('id="tour-budget-section"')[1].split("</section>")[0]
+    assert "dans la cible" in section or "à surveiller" in section or "presque atteint" in section
+    assert 'href="/cap/mid"' in section
+    assert "amount-blur" in section
+
+
+def test_panorama_envelopes_follow_the_account_filter(clients):
+    from backend.models import Account
+
+    with SessionLocal() as db:
+        savings_id = db.query(Account).filter(Account.name == "Savings book").one().id
+    html = clients["admin"].get(
+        f"/dashboard/content?account_id={savings_id}", headers={"HX-Request": "true"}
+    ).text
+    section = html.split('id="tour-budget-section"')[1].split("</section>")[0]
+    assert "Test groceries" in section
+    assert "Avec le tri" not in section  # nothing of this account waits in La Savane
