@@ -745,7 +745,7 @@
                     (versTotal ? {{ _("Recette · ") | tojson }} : {{ _("Dépense · ") | tojson }}) +
                     nom +
                     " : " +
-                    currencyFormatter.format(raw.flow)
+                    currencyFormatter.format(raw.flow).replace("-", "−")
                   );
                 },
               },
