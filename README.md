@@ -116,6 +116,8 @@ installed on your machine.
 tools/css.sh build   # recompile frontend/static/vendor/tailwind.min.css
 tools/css.sh watch   # same, on every change to a template or design-system.css
 tools/test.sh        # run the test suite (pytest)
+tools/i18n.sh all    # extract the texts, update the English catalog, compile it
+tools/i18n.sh check  # list the texts without a translation
 ```
 
 The page only serves the compiled `tailwind.min.css`, which is versioned:
@@ -124,6 +126,13 @@ class to a template. `tools/test.sh` starts a throwaway PostgreSQL database
 (the `db-test` service, `test` profile of `docker-compose.yml`), builds its
 schema with the Alembic migrations, and checks that every page answers for
 each role. It never touches your data or the running application.
+
+Twiga has two interfaces on the same data: **Classic** and **The other way**
+(*L'autre voie*). A user picks one in *Mon profil → Affichage → Interface*; the
+choice is offered once `ENABLE_OTHER_WAY=true` is set in `.env`. A template in
+`frontend/templates/other_way/` replaces the one of the same path for users of
+the other way; everything else is shared with Classic (see "Two interfaces" in
+`DESIGN.md`, including the contract that HTMX fragments must keep their ids).
 
 ## License
 
