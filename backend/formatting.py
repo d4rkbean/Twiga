@@ -12,7 +12,9 @@ def format_amount(value: Decimal) -> str:
 
 def format_amount_as(value: Decimal, number_format: str) -> str:
     quantized = value.quantize(Decimal("0.01"))
-    sign = "-" if quantized < 0 else ""
+    # Vrai signe moins (U+2212), de la largeur du « + » : le trait d'union
+    # est trop court et fait lire « -48,00 € » comme un tiret.
+    sign = "\u2212" if quantized < 0 else ""
     integer_part, _, decimal_part = f"{abs(quantized):.2f}".partition(".")
 
     groups = []
