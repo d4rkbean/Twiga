@@ -16,9 +16,9 @@
 .twiga-tour-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgb(17 24 39 / 0.55);
   z-index: 9998;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--duration-base) var(--ease-out);
   pointer-events: none;
 }
 
@@ -34,61 +34,64 @@
      l'optimisation ici — voir l'ignore inline ci-dessous. */
   position: fixed;
   z-index: 9998;
-  border-radius: 0.5rem;
-  outline: 3px solid #d4a96a;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+  border-radius: 0.75rem;
+  outline: 4px solid var(--color-accent);
+  outline-offset: 0;
+  box-shadow: 0 0 0 9999px rgb(17 24 39 / 0.55);
   pointer-events: none;
-  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease; /* impeccable-disable-line layout-transition: box-shadow-based spotlight mask on a fixed, out-of-flow element — transform:translate() was tried and reverted, it desynced the shadow mask from the outline in practice; see comment above */
+  transition: top 0.25s var(--ease-out), left 0.25s var(--ease-out), width 0.25s var(--ease-out), height 0.25s var(--ease-out); /* impeccable-disable-line layout-transition: box-shadow-based spotlight mask on a fixed, out-of-flow element — transform:translate() was tried and reverted, it desynced the shadow mask from the outline in practice; see comment above */
 }
 
 .twiga-tour-bubble {
   width: min(90vw, 360px);
-  background: #d4a96a;
-  color: #2b1d0e;
+  background: var(--color-container);
+  color: var(--color-primary);
   border-radius: 0.75rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-lg);
   padding: 1rem;
   text-align: left;
-  transition: top 0.25s ease, left 0.25s ease;
+  transition: top 0.25s var(--ease-out), left 0.25s var(--ease-out);
   z-index: 10000;
   pointer-events: auto;
 }
 
 .twiga-tour-close {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 32px;
-  height: 32px;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2b1d0e;
-  opacity: 0.7;
+  border-radius: 0.75rem;
+  color: var(--color-secondary);
   font-size: 1rem;
   line-height: 1;
 }
 
 .twiga-tour-close:hover {
-  opacity: 1;
+  color: var(--color-primary);
 }
 
 .twiga-tour-progress {
   font-size: 0.75rem;
-  color: #5c4423;
-  margin: 0 1.5rem 0.25rem 0;
+  letter-spacing: 0.15em;
+  color: var(--color-accent-ink);
+  margin: 0 2.5rem 0.25rem 0;
 }
 
 .twiga-tour-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: var(--font-display);
   font-size: 1.125rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   line-height: 1.25;
   text-wrap: balance;
-  margin: 0 1.5rem 0.5rem 0;
+  margin: 0 2.5rem 0.5rem 0;
 }
 
 .twiga-tour-text {
@@ -109,25 +112,27 @@
 
 .twiga-tour-btn {
   flex: 1;
-  min-height: 44px;
+  min-height: 50px;
   border-radius: 0.75rem;
   font-weight: 600;
-  background: #2b1d0e;
-  color: #f4e6cf;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .twiga-tour-btn:hover {
-  filter: brightness(1.15);
+  background: var(--color-accent-hover);
+  filter: none;
 }
 
 .twiga-tour-btn-secondary {
-  background: transparent;
-  border: 1px solid rgba(43, 29, 14, 0.4);
-  color: #2b1d0e;
+  background: var(--color-container);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-primary);
+  font-weight: 500;
 }
 
 .twiga-tour-btn-secondary:hover {
-  background: rgba(43, 29, 14, 0.08);
+  background: var(--color-sunken);
 }
 
 @media (max-width: 480px) {
@@ -139,7 +144,7 @@
 .twiga-tour-title-icon {
   display: inline-flex;
   flex-shrink: 0;
-  color: #2b1d0e;
+  color: var(--color-accent-ink);
 }
 
 /* Étape sans cible (bienvenue) : carte centrée dans l'écran, donc texte et
