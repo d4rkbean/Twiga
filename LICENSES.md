@@ -2,7 +2,7 @@
 
 Audit of Twiga's direct dependencies (`requirements.txt` and
 `frontend/static/vendor/`). All of them use a permissive license
-(MIT/BSD/Apache-2.0) or LGPL with a linking exception: compatible with
+(MIT/BSD/Apache-2.0, plus the OFL for the font) or LGPL with a linking exception: compatible with
 Twiga's MIT license.
 
 ## Backend (Python — `requirements.txt`)
@@ -37,6 +37,17 @@ licensing question.
 Shepherd.js is not present in `frontend/static/vendor/`: the guided tour
 (`_tour.html`, `static/js/tour.js`) is a home-grown implementation with no
 external dependency.
+
+## Fonts (`frontend/static/fonts/`)
+
+| Font | Source | License |
+|---|---|---|
+| Bricolage Grotesque (700 and 800, Latin subset, optical size 32) | the official Atelier Triay repository (ateliertriay/bricolage), variable font | SIL Open Font License 1.1 |
+
+The license text is next to the files (`frontend/static/fonts/OFL.txt`). The
+font has no Reserved Font Name; the files are a subset instance of the
+official variable font (fonttools `instancer` + `pyftsubset`), served by the
+application itself, never from a CDN.
 
 ## Conclusion
 
