@@ -5,8 +5,8 @@
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ _("Comptes") }}</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
+    <h1 class="text-page-title">{{ _("Comptes") }}</h1>
+    <a href="/settings" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <a
@@ -29,9 +29,9 @@
         name="name"
         placeholder="{{ _("Nom du compte") }}"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
-      <select name="type" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+      <select name="type" class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3">
         {% for code, meta in account_types.items() %}
         <option value="{{ code }}" {% if code == "courant" %}selected{% endif %}>{{ meta.icon }} {{ meta.label }}</option>
         {% endfor %}
@@ -43,10 +43,10 @@
           inputmode="decimal"
           name="initial_balance"
           value="0"
-          class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+          class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
         />
       </label>
-      <select name="currency" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+      <select name="currency" class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3">
         <option value="EUR" selected>{{ _("EUR — €") }}</option>
       </select>
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">

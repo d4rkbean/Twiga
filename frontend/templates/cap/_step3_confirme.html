@@ -1,7 +1,8 @@
+{% from "_macros/brand.html" import mascot %}
 {% include "cap/_progress_dots.html" %}
 
 <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4 text-center">
-  <h2 class="text-lg font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:22px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Le cap est fixé !") }}</h2>
+  <h2 class="text-lg font-bold text-primary">{{ mascot(size=22) }} {{ _("Le cap est fixé !") }}</h2>
 
   {% if entry.intention %}
   <blockquote class="text-primary italic border-l-2 border-accent pl-3 text-left">
@@ -19,7 +20,7 @@
     </p>
   </div>
 
-  <p class="text-sm text-secondary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("La girafe veille sur votre route.") }}</p>
+  <p class="text-sm text-secondary">{{ mascot(size=16) }} {{ _("La girafe veille sur votre route.") }}</p>
 
   <a href="/dashboard" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
     {{ icon('arrow-narrow-right') }} {{ _("Aller au Panorama") }}

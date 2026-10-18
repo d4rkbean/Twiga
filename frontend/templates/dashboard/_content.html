@@ -202,7 +202,7 @@
           </div>
           <div class="h-2 rounded-full bg-page overflow-hidden">
             <div
-              class="h-full rounded-full {{ 'bg-danger' if item.percentage > 90 else 'bg-warning' }}"
+              class="h-full rounded-full {{ 'bg-danger' if item.percentage > 90 else 'bg-warning-gauge' }}"
               style="width: {{ item.bar_width }}%;"
             ></div>
           </div>
@@ -213,11 +213,11 @@
           class="mt-auto pt-2 text-sm font-medium border-t border-border flex items-baseline justify-between gap-2"
         >
           <span class="text-secondary">{{ _("Voir tout le mois") }}</span>
-          <span class="text-accent">{{ icon('arrow-narrow-right', size=16) }}</span>
+          <span class="text-secondary">{{ icon('arrow-narrow-right', size=16) }}</span>
         </a>
         {% else %}
         <p class="text-sm text-secondary">{{ _("Aucun budget au-delà de 75 %% sur cette période.") }}</p>
-        <a href="/cap/mid" class="text-sm text-accent font-medium">{{ _("Voir tout le mois →") }}</a>
+        <a href="/cap/mid" class="text-sm text-primary font-medium">{{ _("Voir tout le mois →") }}</a>
         {% endif %}
       </div>
     </div>
@@ -268,7 +268,7 @@
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-bold text-primary">{{ _("Projets") }}</h2>
     {% if project_summaries_total > 6 %}
-    <a href="/projects" class="text-sm text-accent font-medium">{{ _("Voir tous les projets →") }}</a>
+    <a href="/projects" class="text-sm text-primary font-medium">{{ _("Voir tous les projets →") }}</a>
     {% endif %}
   </div>
 
@@ -491,12 +491,11 @@
       var value = rootStyles.getPropertyValue(name).trim();
       return value || fallback;
     };
-    var colorSuccess = cssColor("--color-success", "#16a34a");
-    var colorDanger = cssColor("--color-danger", "#dc2626");
+    var colorSuccess = cssColor("--color-success", "#13703a");
+    var colorDanger = cssColor("--color-danger", "#c81e1e");
     var colorSecondary = cssColor("--color-secondary", "#6b7280");
-    var colorBorder = cssColor("--color-border", "#e5e7eb");
+    var colorBorder = cssColor("--color-border", "#e7e2da");
     var colorPrimary = cssColor("--color-primary", "#111827");
-    var colorAccent = cssColor("--color-accent", "#1e40af");
 
     // Texte et grille des graphiques Chart.js harmonisés avec le thème
     // actif : sans ça, le texte par défaut de Chart.js (gris foncé) devient
@@ -507,7 +506,12 @@
     Chart.defaults.scale.grid.color = colorBorder;
     Chart.defaults.scale.ticks.color = colorSecondary;
 
-    var palette = ["#1e40af", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
+    // Palette de données : huit teintes lues dans design-system.css
+    // (--color-chart-1 à 8), sans ambre ni vert/rouge de verdict. Les replis
+    // sont les mêmes valeurs, au cas où la feuille de style manquerait.
+    var palette = ["#2563eb", "#0d9488", "#9333ea", "#db2777", "#65a30d", "#ea580c", "#0891b2", "#64748b"].map(function (fallback, index) {
+      return cssColor("--color-chart-" + (index + 1), fallback);
+    });
     var greyedOutColor = colorBorder;
     var colorsFor = function (labels) {
       return labels.map(function (_, index) {
@@ -710,7 +714,7 @@
     if (sankeyCanvas && categoryLabels.length && incomeLabels.length) {
       var incomeColorsForSankey = colorsFor(incomeLabels);
       var expenseColorsForSankey = colorsFor(categoryLabels);
-      var sankeyColorByKey = { total: colorAccent };
+      var sankeyColorByKey = { total: colorPrimary };
       var sankeyLabelByKey = { total: "Total" };
       var sankeyData = [];
 

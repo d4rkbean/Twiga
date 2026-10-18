@@ -1,3 +1,4 @@
+{% from "_macros/brand.html" import mascot %}
 <div id="receipt-section-{{ transaction.id }}" class="flex flex-col gap-3 rounded-xl border border-border p-4">
   <h3 class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('receipt') }}{{ _("Détail du ticket") }}</h3>
 
@@ -25,7 +26,7 @@
       hx-trigger="change"
       class="text-sm text-primary"
     />
-    <p class="htmx-indicator text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline" /> {{ _("Twiga tend le cou...") }}</p>
+    <p class="htmx-indicator text-sm text-secondary text-center">{{ mascot(size=16) }} {{ _("Twiga tend le cou...") }}</p>
   </form>
 
   {% if raw_extracted_text is not none %}
@@ -66,7 +67,7 @@
           hx-include="closest .receipt-item-row"
           hx-target="#receipt-section-{{ transaction.id }}"
           hx-swap="outerHTML"
-          class="w-full min-h-[42px] rounded-lg border border-border bg-container text-primary text-sm px-2"
+          class="w-full min-h-[42px] rounded-lg border border-field bg-container text-primary text-sm px-2"
         />
         <div class="flex items-center gap-1.5">
           <select
@@ -77,7 +78,7 @@
             hx-include="closest .receipt-item-row"
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
-            class="flex-1 min-w-0 min-h-[42px] rounded-lg border border-border bg-container text-primary text-xs px-1"
+            class="flex-1 min-w-0 min-h-[42px] rounded-lg border border-field bg-container text-primary text-xs px-1"
           >
             <option value="">{{ _("— Rayon —") }}</option>
             {% for code, icon, label in receipt_families %}
@@ -95,7 +96,7 @@
             hx-include="closest .receipt-item-row"
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
-            class="w-20 flex-shrink-0 text-right min-h-[42px] rounded-lg border border-border bg-container text-primary text-sm px-2"
+            class="w-20 flex-shrink-0 text-right min-h-[42px] rounded-lg border border-field bg-container text-primary text-sm px-2"
           />
           <button
             type="button"

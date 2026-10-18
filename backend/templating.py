@@ -51,19 +51,21 @@ def tojson_filter(value) -> Markup:
     return Markup(json.dumps(value, default=_json_default).replace("<", "\\u003c"))
 
 
-# Même palette que les graphiques du dashboard, pour une identité visuelle
-# cohérente. Couleur déterministe par id de catégorie (pas de champ "color"
-# en base) : aucune configuration nécessaire, toujours stable d'un rendu à
+# Même palette que les graphiques du dashboard (--color-chart-1 à 8 dans
+# design-system.css : bleu, sarcelle, violet, rose, vert olive, orange, cyan,
+# ardoise), pour une identité visuelle cohérente. Ni ambre, ni vert/rouge de
+# verdict. Couleur déterministe par id de catégorie (pas de champ "color" en
+# base) : aucune configuration nécessaire, toujours stable d'un rendu à
 # l'autre.
 _CATEGORY_PALETTE = [
-    "#1e40af",
-    "#16a34a",
-    "#f59e0b",
-    "#dc2626",
-    "#7c3aed",
-    "#0891b2",
+    "#2563eb",
+    "#0d9488",
+    "#9333ea",
     "#db2777",
     "#65a30d",
+    "#ea580c",
+    "#0891b2",
+    "#64748b",
 ]
 _UNCATEGORIZED_COLOR = "#9ca3af"
 

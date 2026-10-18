@@ -18,10 +18,10 @@
        exporte (plus dans cet en-tête, ni ici ni sur desktop). -->
   <div class="print:hidden flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
     <div class="flex items-center justify-between lg:contents">
-      <a href="/dashboard" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Retour au Panorama") }}</a>
+      <a href="/dashboard" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Retour au Panorama") }}</a>
     </div>
     <div class="flex items-center justify-between gap-2 lg:contents">
-      <h1 class="text-2xl font-bold text-primary">{{ icon('chart-bar', size=24) }} {{ _("Rapport complet") }}</h1>
+      <h1 class="text-page-title">{{ icon('chart-bar', size=24) }} {{ _("Rapport complet") }}</h1>
       <button
         type="button"
         onclick="window.print()"
@@ -118,14 +118,14 @@
       name="date_from"
       value="{{ period.date_from }}"
       aria-label="{{ _("Du") }}"
-      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+      class="min-h-[46px] rounded-xl border border-field bg-container text-primary px-2 text-sm"
     />
     <input
       type="date"
       name="date_to"
       value="{{ period.date_to }}"
       aria-label="{{ _("Au") }}"
-      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+      class="min-h-[46px] rounded-xl border border-field bg-container text-primary px-2 text-sm"
     />
     {% else %}
     <input type="hidden" name="date_from" value="" />
@@ -134,7 +134,7 @@
 
     <select
       name="account_id"
-      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm flex-1 min-w-[160px]"
+      class="min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm flex-1 min-w-[160px]"
     >
       <option value="" {% if account_id is none %}selected{% endif %}>{{ _("Tous les comptes") }}</option>
       {% for account in accounts %}

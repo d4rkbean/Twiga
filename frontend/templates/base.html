@@ -1,9 +1,10 @@
+{% from "_macros/brand.html" import mascot %}
 <!doctype html>
 <html lang="{{ current_language() }}" data-number-locale="{{ number_locale() }}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#d4a96a" />
+  <meta name="theme-color" content="#faf8f5" />
   <!-- Annonce que la page gère elle-même clair ET sombre, avant même que le
        CSS ne soit parsé. Sans ça, le « thème sombre automatique » de Chrome
        Android réécrit toute la palette en gris neutres et supprime le motif
@@ -26,6 +27,12 @@
       document.documentElement.classList.toggle("dark", dark);
     })();
   </script>
+  <!-- Police d'affichage (titres, répliques de la girafe), servie par
+       l'application : préchargée pour qu'un titre ne s'affiche pas d'abord
+       en police système puis ne saute. crossorigin est obligatoire même pour
+       une police de même origine, sans quoi le navigateur la télécharge deux
+       fois. Seule la graisse 800 (celle des titres) est préchargée. -->
+  <link rel="preload" href="/static/fonts/bricolage-grotesque-800.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="{{ static_url('/static/vendor/tailwind.min.css') }}" />
   <link rel="stylesheet" href="{{ static_url('/static/css/tour.css') }}" />
   <link rel="stylesheet" href="{{ static_url('/static/css/rule-suggestion.css') }}" />
@@ -88,15 +95,15 @@
   >
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center gap-2">
-        <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" />
-        <p class="text-base font-bold text-primary">{{ _("Twiga") }}</p>
+        {{ mascot(size=28) }}
+        <p class="font-display text-lg font-extrabold tracking-[0.04em] text-primary">{{ _("Twiga") }}</p>
       </div>
       <p id="twiga-confirm-message" class="text-sm text-primary"></p>
       <div class="flex gap-2">
         <button
           type="button"
           id="twiga-confirm-cancel"
-          class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+          class="flex-1 min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium"
         >
           {{ _("Annuler") }}
         </button>
@@ -124,12 +131,12 @@
   >
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold text-primary flex items-center gap-2">{{ icon('help-circle') }}{{ _("Aide &amp; raccourcis") }}</h2>
+        <h2 class="text-xl text-primary flex items-center gap-2">{{ icon('help-circle') }}{{ _("Aide &amp; raccourcis") }}</h2>
         <button
           type="button"
           onclick="document.getElementById('twiga-help-dialog').close()"
           aria-label="{{ _("Fermer") }}"
-          class="text-secondary text-xl leading-none"
+          class="-m-3 w-[50px] h-[50px] flex items-center justify-center rounded-xl text-secondary text-xl leading-none"
         >
           {{ icon('x') }}
         </button>
@@ -150,8 +157,8 @@
         ] %}
         <div class="bg-page rounded-xl border border-border divide-y divide-border overflow-hidden">
           {% for key, label in shortcuts %}
-          <div class="flex items-center justify-between gap-2 px-3 py-2">
-            <span class="text-xs font-mono font-semibold text-primary bg-container border border-border rounded px-2 py-0.5 flex-shrink-0">
+          <div class="flex items-center justify-between gap-2 px-3 min-h-[46px]">
+            <span class="text-xs font-mono font-semibold text-primary bg-container border border-border-strong rounded-md px-2 py-0.5 flex-shrink-0">
               {{ key }}
             </span>
             <span class="text-sm text-secondary text-right">{{ label }}</span>
@@ -165,14 +172,14 @@
         <button
           type="button"
           onclick="document.getElementById('twiga-help-dialog').close(); window.startTwigaTour();"
-          class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center gap-2"
+          class="min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium flex items-center justify-center gap-2"
         >
           {{ icon('book') }}{{ _("Revoir la visite guidée") }}
         </button>
         <button
           type="button"
           onclick="document.getElementById('twiga-about-dialog').showModal()"
-          class="min-h-[50px] rounded-xl bg-page border border-border text-primary font-medium flex items-center justify-center gap-2"
+          class="min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium flex items-center justify-center gap-2"
         >
           {{ icon('info-circle') }}{{ _("À propos de Twiga") }}
         </button>
@@ -187,14 +194,14 @@
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <img src="/static/icons/twiga-logo.svg" alt="" class="w-7 h-7" />
-          <h2 class="text-base font-bold text-primary flex items-center gap-2">{{ _("Twiga") }}<img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:20px;width:auto;" /></h2>
+          {{ mascot(size=28) }}
+          <h2 class="text-xl text-primary">{{ _("Twiga") }}</h2>
         </div>
         <button
           type="button"
           onclick="document.getElementById('twiga-about-dialog').close()"
           aria-label="{{ _("Fermer") }}"
-          class="text-secondary text-xl leading-none"
+          class="-m-3 w-[50px] h-[50px] flex items-center justify-center rounded-xl text-secondary text-xl leading-none"
         >
           {{ icon('x') }}
         </button>
@@ -216,7 +223,7 @@
     }
 
     (function () {
-      var THEME_COLORS = { light: "#d4a96a", dark: "#0f172a" };
+      var THEME_COLORS = { light: "#faf8f5", dark: "#0f172a" };
 
       function applyThemeColorMeta(isDark) {
         var meta = document.querySelector('meta[name="theme-color"]');

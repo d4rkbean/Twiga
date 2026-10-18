@@ -10,7 +10,7 @@
     name="keyword"
     value="{{ rule.keyword }}"
     required
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   />
   <select
     name="parent_category_id"
@@ -19,7 +19,7 @@
     hx-target="#edit-rule-subcategory-{{ rule.id }}"
     hx-swap="outerHTML"
     hx-trigger="change"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   >
     <option value="" disabled>{{ _("Choisir une catégorie...") }}</option>
     {% for category in parent_categories %}
@@ -33,7 +33,7 @@
   {% endwith %}
   <select
     name="payment_method"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   >
     <option value="" {% if not rule.payment_method %}selected{% endif %}>{{ _("Mode de paiement (optionnel)") }}</option>
     {% for code, meta in payment_methods.items() %}
@@ -43,7 +43,7 @@
   <div class="flex flex-col gap-1">
     <select
       name="receipt_family"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
     >
       <option value="" {% if not rule.receipt_family %}selected{% endif %}>{{ _("Rayon de ticket auto (optionnel)") }}</option>
       {% for code, icon, label in receipt_families %}

@@ -101,7 +101,7 @@
       if (remaining > 0) {
         var more = document.createElement("p");
         more.className = "text-xs text-secondary text-center";
-        more.innerHTML = {{ _('... et {n} autre{s} budget{s} à surveiller → <a href="/budgets" class="text-accent font-medium">Voir les budgets</a>') | tojson }}
+        more.innerHTML = {{ _('... et {n} autre{s} budget{s} à surveiller → <a href="/budgets" class="text-primary font-medium">Voir les budgets</a>') | tojson }}
           .replace("{n}", remaining).replace(/\{s\}/g, remaining > 1 ? "s" : "");
         container.appendChild(more);
       }

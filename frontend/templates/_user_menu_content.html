@@ -16,34 +16,32 @@
                        cette ligne, changer de thème deviendrait impossible
                        sur mobile.
 
-  Couleur avatar : tokens sémantiques bg-accent/text-on-accent (jamais de
-  couleur brute, voir le guide du projet) plutôt que "fond ambre, initiales blanches"
-  demandé littéralement — design-system.css documente déjà POURQUOI (le
-  brun texte-sur-accent a bien plus de contraste que du blanc sur cet ambre
-  précis), cohérent avec tous les autres usages de bg-accent dans l'appli.
+  Couleur avatar : ambre doux (accent-soft) et ambre en texte (accent-ink),
+  l'état « actif » de la marque, plutôt qu'un aplat ambre réservé à l'action
+  principale. Jamais de couleur brute (voir DESIGN.md).
 #}
 <div class="flex items-center gap-3 px-4 py-3">
-  <span class="w-10 h-10 rounded-full bg-accent text-on-accent flex items-center justify-center text-sm font-bold flex-shrink-0">
+  <span class="w-10 h-10 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-sm font-semibold flex-shrink-0">
     {{ user_initials(current) }}
   </span>
   <div class="flex flex-col min-w-0">
-    <span class="text-sm font-bold text-primary truncate">{{ user_display_name(current) }}</span>
+    <span class="text-sm font-semibold text-primary truncate">{{ user_display_name(current) }}</span>
     <span class="text-xs text-secondary">{{ user_role_label(current.role) }}</span>
   </div>
 </div>
 <div class="border-t border-border"></div>
-<a href="/profile" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-page">
+<a href="/profile" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-sunken">
   {{ icon('user', cls='flex-shrink-0') }}
   <span>{{ _("Mon profil") }}</span>
 </a>
-<a href="/settings" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-page">
+<a href="/settings" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-sunken">
   {{ icon('settings', cls='flex-shrink-0') }}
   <span>{{ _("Paramètres") }}</span>
 </a>
 <button
   type="button"
   onclick="document.getElementById('twiga-help-dialog').showModal()"
-  class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-page text-left"
+  class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-sunken text-left"
 >
   {{ icon('help-circle', cls='flex-shrink-0') }}
   <span>{{ _("Aide &amp; raccourcis") }}</span>
@@ -52,7 +50,7 @@
 <button
   type="button"
   onclick="window.toggleTheme()"
-  class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-page text-left"
+  class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-sunken text-left"
 >
   <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
   <span>{{ _("Thème") }}</span>
@@ -60,7 +58,7 @@
 {% endif %}
 <div class="border-t border-border"></div>
 <form hx-post="/logout" class="contents">
-  <button type="submit" class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-danger hover:bg-page text-left">
+  <button type="submit" class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-danger hover:bg-sunken text-left">
     {{ icon('logout', cls='flex-shrink-0') }}
     <span>{{ _("Se déconnecter") }}</span>
   </button>

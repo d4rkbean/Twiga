@@ -1,8 +1,9 @@
+{% from "_macros/brand.html" import mascot %}
 {% if transaction is none %}
 <div id="transaction-card" class="w-full max-w-sm lg:max-w-[600px] flex flex-col gap-3">
   <div class="pelage-zone bg-container rounded-xl shadow-sm p-8 flex flex-col items-center gap-3 text-center">
     <input type="hidden" id="nav-history" value="{{ history }}" />
-    <h2 class="text-2xl font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" class="flex-shrink-0" style="height:28px;width:auto;" /> {{ _("Twiga a tout brouté !") }}</h2>
+    <h2 class="text-2xl font-bold text-primary">{{ mascot(size=28) }} {{ _("Twiga a tout brouté !") }}</h2>
     <p class="text-secondary">{{ _("La savane est propre.") }}</p>
   </div>
   {% if history %}
@@ -81,7 +82,7 @@
         name="label"
         value="{{ transaction.label or transaction.raw_label }}"
         required
-        class="text-2xl font-bold text-primary bg-transparent border-0 border-b border-border focus:outline-none focus:border-accent px-0 py-1 w-full"
+        class="text-2xl font-bold text-primary bg-transparent border-0 border-b border-field focus:outline-none focus:border-accent px-0 py-1 w-full"
       />
       {% if transaction.label and transaction.raw_label and transaction.label != transaction.raw_label %}
       <p class="text-xs text-secondary break-words">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>

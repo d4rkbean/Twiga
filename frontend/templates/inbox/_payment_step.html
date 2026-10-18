@@ -23,7 +23,7 @@
     {% for code, meta in payment_methods.items() %}
     <button
       type="button"
-      class="min-h-[50px] rounded-xl border {{ 'border-2 border-accent text-accent' if code == suggested_payment_method else 'border-border text-primary' }} bg-container font-medium flex flex-col items-center justify-center gap-0.5 px-1 text-center text-xs active:bg-page"
+      class="min-h-[50px] rounded-xl border {{ 'border-2 border-accent-ink text-accent-ink' if code == suggested_payment_method else 'border-border text-primary' }} bg-container font-medium flex flex-col items-center justify-center gap-0.5 px-1 text-center text-xs active:bg-page"
       hx-post="/transactions/{{ transaction.id }}/finalize/{{ category.id }}"
       hx-vals='{"payment_method": "{{ code }}"}'
       hx-include="#simplified-label, #nav-history"

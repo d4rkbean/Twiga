@@ -8,7 +8,7 @@
      voir _sidebar.html) et non plus une étape intermédiaire du rituel :
      d'où le titre, et le pied qui mène au détail par catégorie et au
      rituel, au lieu d'un simple bouton « Fermer ». #}
-  <h1 class="text-2xl font-bold text-primary">{{ icon('calendar-event', size=24) }} {% trans current_month_label=current_month_label %}Mon mois — {{ current_month_label }}{% endtrans %}</h1>
+  <h1 class="text-page-title">{{ icon('calendar-event', size=24) }} {% trans current_month_label=current_month_label %}Mon mois — {{ current_month_label }}{% endtrans %}</h1>
 
   {% if entry %}
   {# Le plan et sa consommation, aux deux mêmes niveaux de zoom que l'écran
@@ -44,7 +44,7 @@
       {% endif %}
       <div class="h-2 rounded-full bg-page overflow-hidden">
         <div
-          class="h-full rounded-full {{ 'bg-danger' if pillar.ratio > 80 else 'bg-warning' if pillar.ratio > 60 else 'bg-success' }}"
+          class="h-full rounded-full {{ 'bg-danger' if pillar.ratio > 80 else 'bg-warning-gauge' if pillar.ratio > 60 else 'bg-success' }}"
           style="width: {{ pillar.bar_width }}%;"
         ></div>
       </div>
@@ -61,7 +61,7 @@
           </div>
           <div class="h-1 rounded-full bg-page overflow-hidden">
             <div
-              class="h-full rounded-full {{ 'bg-danger' if ligne.percentage > 100 else 'bg-warning' if ligne.percentage > 80 else 'bg-success' }}"
+              class="h-full rounded-full {{ 'bg-danger' if ligne.percentage > 100 else 'bg-warning-gauge' if ligne.percentage > 80 else 'bg-success' }}"
               style="width: {{ ligne.bar_width }}%;"
             ></div>
           </div>

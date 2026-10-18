@@ -56,7 +56,7 @@
       {% else %}
       <p class="text-sm text-secondary">
         {{ icon('info-circle', size=16) }} {% trans period_label=period_label %}Ressources de {{ period_label }} non définies.{% endtrans %}
-        <a href="/cap" class="text-accent font-medium">{{ _("Fixer le cap du mois →") }}</a>
+        <a href="/cap" class="text-primary font-medium">{{ _("Fixer le cap du mois →") }}</a>
         {{ _("pour les poser, ou répartissez librement ci-dessous.") }}
       </p>
       {% endif %}
@@ -69,7 +69,7 @@
           x-model.number="savingsWithdrawal"
           value="{% if savings_withdrawal %}{{ '%.2f' % savings_withdrawal }}{% endif %}"
           placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-          class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-page text-primary px-3"
+          class="w-28 text-right min-h-[50px] rounded-xl border border-field bg-page text-primary px-3"
         />
       </label>
       <p class="text-sm font-medium text-primary border-t border-border pt-2" x-show="available" style="display: none;">
@@ -89,7 +89,7 @@
           x-model.number="amounts[{{ category.id }}]"
           value="{% if existing is not none %}{{ '%.2f' % existing }}{% endif %}"
           placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-          class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+          class="w-28 text-right min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
         />
         <span
           class="text-xs text-secondary w-10 text-right flex-shrink-0"

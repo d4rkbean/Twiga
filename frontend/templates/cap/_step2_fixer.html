@@ -1,8 +1,9 @@
+{% from "_macros/brand.html" import mascot %}
 {% include "cap/_progress_dots.html" %}
 
 {% if first_use %}
 <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-2 text-center">
-  <p class="text-lg font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:20px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Bienvenue dans Le Cap !") }}</p>
+  <p class="text-lg font-bold text-primary">{{ mascot(size=20) }} {{ _("Bienvenue dans Le Cap !") }}</p>
   <p class="text-sm text-secondary">
     {{ _("Chaque mois, prenez 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
   </p>
@@ -105,7 +106,7 @@
       <span class="text-xs text-secondary">{{ icon('currency-euro', size=14) }} {{ _("Ressources du mois") }}</span>
       <input
         type="number" step="0.01" name="planned_income" x-model.number="income"
-        class="min-h-[50px] rounded-xl border border-border bg-page text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-page text-primary px-3"
       />
     </label>
 
@@ -169,7 +170,7 @@
         aria-label="Enveloppe {{ g.label }}"
         :value="totalGroupe('{{ code }}').toFixed(2)"
         @change="repartir('{{ code }}', Number($event.target.value) || 0)"
-        class="w-28 min-h-[40px] rounded-lg border border-border bg-container text-primary px-2 text-right font-semibold tabular-nums"
+        class="w-28 min-h-[40px] rounded-lg border border-field bg-container text-primary px-2 text-right font-semibold tabular-nums"
       />
     </div>
 
@@ -187,7 +188,7 @@
             type="number" step="0.01" inputmode="decimal"
             name="amount_{{ l.category.id }}"
             x-model.number="groupes['{{ code }}'].lignes[{{ loop.index0 }}].montant"
-            class="w-24 min-h-[40px] rounded-lg border border-border bg-page text-primary px-2 text-right tabular-nums"
+            class="w-24 min-h-[40px] rounded-lg border border-field bg-page text-primary px-2 text-right tabular-nums"
           />
         </span>
       </label>
@@ -196,7 +197,7 @@
         <button
           type="button"
           @click="reinitialiser('{{ code }}')"
-          class="text-xs text-accent font-medium min-h-[36px]"
+          class="text-xs text-primary font-medium min-h-[36px]"
         >
           {{ icon('clipboard-copy', size=14) }} {% trans previous_month_label=previous_month_label %}Reprendre {{ previous_month_label }}{% endtrans %}
         </button>
@@ -213,7 +214,7 @@
     </span>
     <input
       type="number" step="0.01" name="planned_imprevu" x-model.number="imprevu"
-      class="w-28 min-h-[40px] rounded-lg border border-border bg-page text-primary px-2 text-right font-semibold tabular-nums"
+      class="w-28 min-h-[40px] rounded-lg border border-field bg-page text-primary px-2 text-right font-semibold tabular-nums"
     />
   </label>
 
@@ -224,7 +225,7 @@
     </span>
     <input
       type="number" step="0.01" name="savings_withdrawal" x-model.number="prelevement"
-      class="w-28 min-h-[40px] rounded-lg border border-border bg-page text-primary px-2 text-right font-semibold tabular-nums"
+      class="w-28 min-h-[40px] rounded-lg border border-field bg-page text-primary px-2 text-right font-semibold tabular-nums"
     />
   </label>
 
@@ -253,7 +254,7 @@
       name="intention" rows="3" maxlength="500"
       @input="intentionLength = $event.target.value.length"
       placeholder="{{ _("Ce mois-ci, nous voulons...") }}"
-      class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"
+      class="rounded-xl border border-field bg-page text-primary px-3 py-2 text-sm"
     ></textarea>
     <span class="text-xs text-secondary text-right" x-text="intentionLength + ' / 500'"></span>
   </label>

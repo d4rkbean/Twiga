@@ -1,3 +1,4 @@
+{% from "_macros/brand.html" import mascot %}
 <script>
   // "Décalage période" : le serveur ne connaît le réglage QUE via le
   // paramètre ?shift_income=1 (jamais le localStorage lui-même). Tourne au
@@ -98,7 +99,7 @@
   <!-- SCORE TWIGA — exclusif à cette appli, aucun équivalent Finary. -->
   <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2 mt-4">
     <div class="flex items-center justify-between">
-      <span class="text-sm font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Score Twiga :") }} <span id="twiga-score-value">0</span> / 100</span>
+      <span class="text-sm font-bold text-primary">{{ mascot(size=16) }} {{ _("Score Twiga :") }} <span id="twiga-score-value">0</span> / 100</span>
     </div>
     <div class="w-full h-3 rounded-full bg-page overflow-hidden print-score-track">
       <div id="twiga-score-bar" class="h-full bg-accent transition-all duration-[900ms] ease-out" style="width: 0%"></div>
@@ -111,7 +112,7 @@
 
   {% if not has_any_data %}
   <div class="bg-container rounded-xl shadow-sm p-8 flex flex-col items-center gap-2 text-center mt-4">
-    <p><img src="/static/icons/twiga-logo.svg" alt="" style="height:40px;width:auto;display:inline-block;vertical-align:-3px" /></p>
+    <p>{{ mascot(size=40) }}</p>
     <p class="text-primary font-medium">{{ _("Twiga ne trouve rien sur cette période.") }}</p>
     <p class="text-sm text-secondary">{{ _("Essaie une autre période, ou importe des opérations depuis Paramètres.") }}</p>
     <a href="/imports/new" class="mt-2 min-h-[46px] px-4 rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
@@ -203,7 +204,7 @@
             hx-get="/reports/transactions?{{ report_qs }}&type=expense"
             hx-target="#report-tx-list-expense"
             hx-swap="outerHTML"
-            class="text-sm text-accent font-medium mb-2"
+            class="text-sm text-primary font-medium mb-2"
           >{{ icon('arrow-narrow-left') }} {{ _("Retour") }}</button>
           <p class="text-sm font-semibold text-primary mb-1">{{ row.name }}</p>
           {% for sub in row.subcategories %}
@@ -245,7 +246,7 @@
       hx-trigger="load"
       hx-swap="outerHTML"
     >
-      <p class="text-sm text-secondary text-center py-4"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga cherche…") }}</p>
+      <p class="text-sm text-secondary text-center py-4">{{ mascot(size=16) }} {{ _("Twiga cherche…") }}</p>
     </div>
   </div>
 
@@ -310,7 +311,7 @@
             hx-get="/reports/transactions?{{ report_qs }}&type=income"
             hx-target="#report-tx-list-income"
             hx-swap="outerHTML"
-            class="text-sm text-accent font-medium mb-2"
+            class="text-sm text-primary font-medium mb-2"
           >{{ icon('arrow-narrow-left') }} {{ _("Retour") }}</button>
           <p class="text-sm font-semibold text-primary mb-1">{{ row.name }}</p>
           {% for sub in row.subcategories %}
@@ -352,7 +353,7 @@
       hx-trigger="load"
       hx-swap="outerHTML"
     >
-      <p class="text-sm text-secondary text-center py-4"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga cherche…") }}</p>
+      <p class="text-sm text-secondary text-center py-4">{{ mascot(size=16) }} {{ _("Twiga cherche…") }}</p>
     </div>
   </div>
 
@@ -454,7 +455,7 @@
       </div>
       <div class="w-full h-2 rounded-full bg-page overflow-hidden">
         <div
-          class="h-full {{ 'bg-danger' if item.percentage > 90 else ('bg-warning' if item.percentage >= 75 else 'bg-success') }}"
+          class="h-full {{ 'bg-danger' if item.percentage > 90 else ('bg-warning-gauge' if item.percentage >= 75 else 'bg-success') }}"
           style="width: {{ item.bar_width }}%"
         ></div>
       </div>
@@ -520,7 +521,7 @@
         </div>
         <div class="w-full h-2 rounded-full bg-page overflow-hidden">
           <div
-            class="h-full {{ 'bg-danger' if pillar.bar_width >= 100 else ('bg-warning' if pillar.bar_width >= 80 else 'bg-success') }}"
+            class="h-full {{ 'bg-danger' if pillar.bar_width >= 100 else ('bg-warning-gauge' if pillar.bar_width >= 80 else 'bg-success') }}"
             style="width: {{ pillar.bar_width }}%"
           ></div>
         </div>
@@ -548,7 +549,7 @@
     </div>
     {% endif %}
     {% else %}
-    <p class="text-sm text-secondary text-center py-4">{% trans cap_month_label=cap_month_label %}Aucun cap fixé pour {{ cap_month_label }}.{% endtrans %} <a href="/cap" class="text-accent font-medium">{{ icon('arrow-narrow-right') }} {{ _("Fixer le cap") }}</a></p>
+    <p class="text-sm text-secondary text-center py-4">{% trans cap_month_label=cap_month_label %}Aucun cap fixé pour {{ cap_month_label }}.{% endtrans %} <a href="/cap" class="text-primary font-medium">{{ icon('arrow-narrow-right') }} {{ _("Fixer le cap") }}</a></p>
     {% endif %}
 
     {% if cap_history %}
@@ -666,7 +667,7 @@
 
   <!-- EN-TÊTE D'IMPRESSION -->
   <div class="hidden print:block print-report-header">
-    <h1 class="text-xl font-bold"><img src="/static/icons/twiga-logo.svg" alt="" style="height:20px;width:auto;display:inline-block;vertical-align:-3px" /> {% trans period_bar_label=period_bar_label %}TWIGA — Rapport {{ period_bar_label }}{% endtrans %}</h1>
+    <h1 class="text-xl">{{ mascot(size=20) }} {% trans period_bar_label=period_bar_label %}TWIGA — Rapport {{ period_bar_label }}{% endtrans %}</h1>
   </div>
 
 </div>
@@ -678,11 +679,13 @@
       var value = rootStyles.getPropertyValue(name).trim();
       return value || fallback;
     };
-    var colorSuccess = cssColor("--color-success", "#16a34a");
-    var colorDanger = cssColor("--color-danger", "#dc2626");
-    var colorAccent = cssColor("--color-accent", "#d4a96a");
+    var colorSuccess = cssColor("--color-success", "#13703a");
+    var colorDanger = cssColor("--color-danger", "#c81e1e");
+    // Courbes de total (résultat cumulé, patrimoine) : l'encre, pas l'ambre —
+    // l'ambre ne sert jamais de couleur de série.
+    var colorTotal = cssColor("--color-primary", "#111827");
     var colorSecondary = cssColor("--color-secondary", "#6b7280");
-    var colorBorder = cssColor("--color-border", "#e5e7eb");
+    var colorBorder = cssColor("--color-border", "#e7e2da");
 
     Chart.defaults.color = colorSecondary;
     Chart.defaults.borderColor = colorBorder;
@@ -774,8 +777,8 @@
             { type: "bar", label: "Recettes", data: cashflowIncome, backgroundColor: incomeColors, order: 2 },
             { type: "bar", label: {{ _("Dépenses") | tojson }}, data: cashflowExpense.map(function (v) { return -v; }), backgroundColor: expenseColors, order: 2 },
             {
-              type: "line", label: {{ _("Résultat cumulé") | tojson }}, data: netCumulative, borderColor: colorAccent,
-              backgroundColor: colorAccent, tension: 0.3, order: 1, pointRadius: 2, yAxisID: "y1",
+              type: "line", label: {{ _("Résultat cumulé") | tojson }}, data: netCumulative, borderColor: colorTotal,
+              backgroundColor: colorTotal, tension: 0.3, order: 1, pointRadius: 2, yAxisID: "y1",
             },
           ],
         },
@@ -847,7 +850,12 @@
         },
       });
     };
-    var palette = ["#1e40af", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
+    // Palette de données : huit teintes lues dans design-system.css
+    // (--color-chart-1 à 8), sans ambre ni vert/rouge de verdict. Les replis
+    // sont les mêmes valeurs, au cas où la feuille de style manquerait.
+    var palette = ["#2563eb", "#0d9488", "#9333ea", "#db2777", "#65a30d", "#ea580c", "#0891b2", "#64748b"].map(function (fallback, index) {
+      return cssColor("--color-chart-" + (index + 1), fallback);
+    });
     var colorsFor = function (n) {
       return Array.from({ length: n }, function (_, i) { return palette[i % palette.length]; });
     };
@@ -882,8 +890,8 @@
       datasets.push({
         label: "Total patrimoine",
         data: netWorthTotals,
-        borderColor: colorAccent,
-        backgroundColor: colorAccent,
+        borderColor: colorTotal,
+        backgroundColor: colorTotal,
         tension: 0.2,
         pointRadius: 0,
         borderWidth: 3,

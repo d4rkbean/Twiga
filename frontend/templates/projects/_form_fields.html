@@ -6,7 +6,7 @@
     name="name"
     required
     value="{{ project.name if project else '' }}"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   />
 </label>
 <label class="flex flex-col gap-1">
@@ -17,7 +17,7 @@
     name="target_amount"
     required
     value="{{ '%.2f' % project.target_amount if project else '' }}"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   />
 </label>
 <label class="flex flex-col gap-1">
@@ -27,7 +27,7 @@
     name="target_date"
     required
     value="{{ project.target_date.isoformat() if project else '' }}"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   />
 </label>
 <label class="flex flex-col gap-1">
@@ -37,7 +37,7 @@
     inputmode="decimal"
     name="current_amount"
     value="{{ '%.2f' % project.current_amount if project else '0' }}"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   />
 </label>
 {% endmacro %}
@@ -59,7 +59,7 @@
         name="amount"
         required
         placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
     </label>
     <label class="flex flex-col gap-1">
@@ -68,7 +68,7 @@
         type="text"
         name="note"
         placeholder="{{ _("Ex : Billets avion") }}"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
     </label>
     <div class="flex flex-col gap-2">

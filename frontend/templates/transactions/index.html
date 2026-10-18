@@ -20,13 +20,13 @@
        plutôt que de rester épinglé en entier à l'écran. -->
   <div class="flex flex-col gap-2 lg:static lg:order-2 lg:w-[340px] xl:w-[420px] lg:flex-shrink-0 lg:h-[calc(100vh-64px)] lg:overflow-y-auto lg:pl-4 lg:border-l lg:border-border lg:pb-4">
     <div class="sticky top-14 z-20 bg-page px-4 pb-2 flex items-center justify-between gap-2 border-b border-border lg:static lg:z-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:border-b-0">
-      <h1 class="text-2xl font-bold text-primary">{{ _("Opérations") }}</h1>
+      <h1 class="text-page-title">{{ _("Opérations") }}</h1>
       <button
         type="button"
         hx-get="/transactions/new"
         hx-target="#transaction-detail-content"
         hx-swap="innerHTML"
-        class="text-sm text-accent font-medium"
+        class="text-sm text-primary font-medium"
       >
         {{ _("+ Nouvelle opération") }}
       </button>
@@ -47,14 +47,14 @@
           name="f_date_from"
           value="{{ date_from }}"
           aria-label="{{ _("Du") }}"
-          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+          class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-2 text-sm"
         />
         <input
           type="date"
           name="f_date_to"
           value="{{ date_to }}"
           aria-label="{{ _("Au") }}"
-          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+          class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-2 text-sm"
         />
       </div>
 
@@ -63,7 +63,7 @@
         name="f_search"
         value="{{ search }}"
         placeholder="{{ _("Rechercher un libellé...") }}"
-        class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[46px] rounded-xl border border-field bg-container text-primary px-3"
       />
 
       <div class="grid grid-cols-2 gap-2">
@@ -73,7 +73,7 @@
           name="f_amount_min"
           value="{{ amount_min }}"
           placeholder="{{ _("Montant min") }}"
-          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+          class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
         />
         <input
           type="text"
@@ -81,7 +81,7 @@
           name="f_amount_max"
           value="{{ amount_max }}"
           placeholder="{{ _("Montant max") }}"
-          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+          class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
         />
       </div>
 
@@ -93,7 +93,7 @@
           hx-swap="outerHTML"
           hx-trigger="change"
           hx-on:change="document.getElementById('f_subcategory-select').value = ''"
-          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+          class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
         >
           <option value="">{{ _("Toutes les catégories") }}</option>
           <option value="uncategorized" {% if category_filter == "uncategorized" %}selected{% endif %}>
@@ -113,7 +113,7 @@
       <button
         type="button"
         @click="advancedOpen = !advancedOpen"
-        class="text-sm text-accent font-medium text-left"
+        class="text-sm text-primary font-medium text-left"
       >
         <span x-text="advancedOpen ? '{{ _("− de critères") | jsq }}' : '{{ _("+ de critères") | jsq }}'"></span>
       </button>
@@ -122,7 +122,7 @@
         <div class="grid grid-cols-2 gap-2">
           <select
             name="f_account"
-            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+            class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
           >
             <option value="">{{ _("Tous les comptes") }}</option>
             {% for account in accounts %}
@@ -133,7 +133,7 @@
           </select>
           <select
             name="f_payment_method"
-            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+            class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
           >
             <option value="">{{ _("Tout mode de paiement") }}</option>
             {% for code, meta in payment_methods.items() %}
@@ -146,7 +146,7 @@
         <div class="grid grid-cols-2 gap-2">
           <select
             name="f_type"
-            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+            class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
           >
             <option value="">{{ _("Tous types") }}</option>
             <option value="income" {% if type_filter == "income" %}selected{% endif %}>{{ _("Recettes") }}</option>
@@ -155,7 +155,7 @@
           </select>
           <select
             name="f_sort"
-            class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+            class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
           >
             <option value="date_desc" {% if sort_filter == "date_desc" %}selected{% endif %}>{{ _("Date (récent d'abord)") }}</option>
             <option value="date_asc" {% if sort_filter == "date_asc" %}selected{% endif %}>{{ _("Date (ancien d'abord)") }}</option>
@@ -180,7 +180,7 @@
           id="f_page_size"
           name="f_page_size"
           onchange="window.onPageSizeChange(this.value)"
-          class="min-h-[36px] rounded-xl border border-border bg-container text-primary px-2 text-sm"
+          class="min-h-[36px] rounded-xl border border-field bg-container text-primary px-2 text-sm"
         >
           {% for size in allowed_page_sizes %}
           <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>{{ size }}</option>

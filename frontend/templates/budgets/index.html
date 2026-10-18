@@ -4,7 +4,7 @@
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto">
-  <h1 class="text-2xl font-bold text-primary">{{ _("Budgets") }}</h1>
+  <h1 class="text-page-title">{{ _("Budgets") }}</h1>
 
   <form
     id="budgets-filters"
@@ -16,7 +16,7 @@
   >
     <select
       name="month"
-      class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      class="flex-1 min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
     >
       {% for index, name in month_options %}
       <option value="{{ index }}" {% if index == month %}selected{% endif %}>{{ name }}</option>
@@ -24,7 +24,7 @@
     </select>
     <select
       name="year"
-      class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      class="flex-1 min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
     >
       {% for y in years %}
       <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>

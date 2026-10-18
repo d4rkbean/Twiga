@@ -8,7 +8,7 @@
   <input type="hidden" name="page" value="{{ page }}" />
   <button
     type="submit"
-    class="w-full min-h-[50px] rounded-xl bg-success text-on-accent font-semibold"
+    class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
   >
     {{ icon('check') }} {% trans v=category.icon or "", name=category.name %}Confirmer {{ v }} {{ name }}{% endtrans %}
   </button>

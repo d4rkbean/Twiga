@@ -180,7 +180,7 @@
         <select
           id="bulk-category"
           name="category_id"
-          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-1 text-xs"
+          class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-1 text-xs"
         >
           <option value="" selected disabled>{{ _("Catégorie...") }}</option>
           {% for category in categories %}
@@ -193,7 +193,7 @@
         <select
           id="bulk-payment-method"
           name="payment_method"
-          class="w-full min-h-[46px] rounded-xl border border-border bg-container text-primary px-1 text-xs"
+          class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-1 text-xs"
         >
           <option value="">{{ _("Paiement...") }}</option>
           {% for code, meta in payment_methods.items() %}

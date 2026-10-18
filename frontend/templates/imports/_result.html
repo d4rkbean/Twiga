@@ -1,5 +1,6 @@
+{% from "_macros/brand.html" import mascot %}
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-3 text-center">
-  <h2 class="text-2xl font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:28px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga a tout avalé !") }}</h2>
+  <h2 class="text-2xl font-bold text-primary">{{ mascot(size=28) }} {{ _("Twiga a tout avalé !") }}</h2>
   <p class="text-secondary">{{ _("Import terminé.") }}</p>
   <p class="text-secondary">{{ icon('circle-check', size=16) }} {% trans imported_count=imported_count %}{{ imported_count }} opération(s) importée(s).{% endtrans %}</p>
   {% if duplicate_count %}

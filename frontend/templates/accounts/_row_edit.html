@@ -12,9 +12,9 @@
     required
     autofocus
     placeholder="{{ _("Nom du compte") }}"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
   />
-  <select name="type" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
+  <select name="type" class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3">
     {% for code, meta in account_types.items() %}
     <option value="{{ code }}" {% if account.type == code %}selected{% endif %}>{{ meta.icon }} {{ meta.label }}</option>
     {% endfor %}
@@ -26,7 +26,7 @@
       inputmode="decimal"
       name="initial_balance"
       value="{{ account.balance }}"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
     />
   </label>
   <label class="flex items-center justify-between gap-2 min-h-[50px]">
@@ -35,14 +35,14 @@
       type="color"
       name="color"
       value="{{ account.color or '#d4a96a' }}"
-      class="h-10 w-16 rounded-lg border border-border bg-container"
+      class="h-10 w-16 rounded-lg border border-field bg-container"
     />
   </label>
   <textarea
     name="notes"
     rows="2"
     placeholder="{{ _("Notes (optionnel)") }}"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 py-2"
+    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3 py-2"
   >{{ account.notes or "" }}</textarea>
   <div class="flex gap-2">
     <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
