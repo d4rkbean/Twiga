@@ -108,7 +108,7 @@
 <div class="flex flex-col gap-5 min-w-0">
 {% include "cap/_progress_dots.html" %}
 {% if first_use %}
-<div class="card card-amber flex items-start gap-3 p-4 lg:p-5">
+<div class="card card-amber flex items-start gap-3">
   {{ mascot(size=36) }}
   <div class="flex flex-col gap-1">
     <p class="text-section-title">{{ _("Bienvenue dans Le Cap !") }}</p>
@@ -122,7 +122,7 @@
   hx-post="/cap/save"
   hx-target="#cap-wizard"
   hx-swap="innerHTML"
-  class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-5"
+  class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5"
 >
   <h2 class="text-section-title">{% trans current_month_label=current_month_label %}Fixer le cap de {{ current_month_label }}{% endtrans %}</h2>
 
@@ -337,7 +337,7 @@
    épargne qui reste et alerte si on répartit plus que les ressources ; puis la
    comparaison avec le mois écoulé, pilier par pilier. #}
 <aside class="flex flex-col gap-5 lg:sticky lg:top-20" aria-label="{{ _("Le plan en direct") }}">
-  <section class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3" aria-labelledby="cap-live-title">
+  <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3" aria-labelledby="cap-live-title">
     <h2 id="cap-live-title" class="text-section-title">{% trans current_month_label=current_month_label %}{{ current_month_label }}, en direct{% endtrans %}</h2>
     <dl class="flex flex-col text-sm">
       <div class="flex items-baseline justify-between gap-3 min-h-[34px]">
@@ -377,7 +377,7 @@
     </div>
   </section>
 
-  <section class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4" aria-labelledby="cap-previous-title">
+  <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4" aria-labelledby="cap-previous-title">
     <div class="flex flex-col gap-1">
       <h2 id="cap-previous-title" class="text-section-title">{% trans previous_month_label=previous_month_label %}{{ previous_month_label }}, pilier par pilier{% endtrans %}</h2>
       <p class="text-xs text-secondary">{{ _("Ce que le mois écoulé a vraiment coûté, rapporté au plan que tu fixes.") }}</p>

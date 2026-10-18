@@ -9,7 +9,7 @@
 {%- if code == "income" %}{{ icon('currency-euro', size=18) }}{% elif code == "savings" %}{{ icon('pig-money', size=18) }}{% else %}{{ pillar_icon(code) }}{% endif -%}
 {%- endmacro %}
 
-<section aria-labelledby="bilan-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4">
+<section aria-labelledby="bilan-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4">
   <h2 id="bilan-title" class="text-section-title">{% trans previous_month_label=previous_month_label %}Bilan {{ previous_month_label }}{% endtrans %}</h2>
 
   {# Les lignes Essentiel et Choix se déplient sur leurs catégories : « a
@@ -120,7 +120,7 @@
   hx-post="/cap/step2"
   hx-target="#cap-wizard"
   hx-swap="innerHTML"
-  class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4"
+  class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4"
 >
   <div class="flex flex-col gap-1">
     <h2 class="text-section-title">{% trans previous_month_label=previous_month_label %}Un mot sur {{ previous_month_label }}{% endtrans %}</h2>

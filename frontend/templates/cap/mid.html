@@ -55,7 +55,7 @@
   </div>
 
   {% if entry.intention %}
-  <figure class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-1">
+  <figure class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-1">
     <blockquote class="text-primary italic text-lg">« {{ entry.intention }} »</blockquote>
     <figcaption class="text-xs text-secondary">{{ _("L'intention du mois, fixée dans") }} <a href="/cap" class="font-medium text-primary underline">{{ _("Le Cap") }}</a></figcaption>
   </figure>
