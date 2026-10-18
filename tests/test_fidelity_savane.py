@@ -3,6 +3,9 @@
 Bulk processing: the filter panel (confidence chips with counters, account and
 suggested-category filters), grouping of similar labels, "show the next ones",
 the filing / sending-back actions and the bulk panel.
+
+Operations: the filter bar and its drawn menus, the selection bar, the detail
+panel (read view, edit form, quick gestures), the ticket detail.
 """
 
 import re
@@ -324,3 +327,162 @@ def test_every_action_answers_with_the_out_of_band_fragments(clients):
         for marker in ('id="backlog-chips"', 'id="backlog-visible"', 'id="backlog-sync"', 'id="backlog-last-d"'):
             assert marker in html
         assert 'hx-swap-oob="true"' in html
+
+
+# --- Operations -------------------------------------------------------------
+
+
+def _operation(clients, **query) -> str:
+    return clients["admin"].get("/transactions/list", params=query).text
+
+
+def test_operations_screen_draws_every_control(clients):
+    html = _operation(clients)
+    assert "<select" not in html
+    for marker in (
+        'id="transactions-filters"',
+        'id="f_page_size"',
+        'id="all-selected-ids-inputs"',
+        'name="f_date_from"',
+        'name="f_date_to"',
+        'name="f_amount_min"',
+        'name="f_amount_max"',
+        'name="f_category"',
+        'name="f_account"',
+        'name="f_payment_method"',
+        'name="f_sort"',
+        'name="f_search"',
+    ):
+        assert marker in html, marker
+    for text in ("+ de critères", "Nouvelle opération", "Réinitialiser les filtres", "Tout sélectionner"):
+        assert text in html, text
+
+
+def test_operations_summary_sits_under_the_title_and_follows_the_filters(clients):
+    page = _operation(clients)
+    assert page.count('id="operations-summary"') == 1
+    assert "hx-swap-oob" not in page.split('id="operations-summary"')[1].split(">")[0]
+    fragment = clients["admin"].get("/transactions/list/content?f_type=income", headers=HTMX).text
+    assert 'id="operations-summary"' in fragment
+    assert 'hx-swap-oob="true"' in fragment.split('id="operations-summary"')[1].split(">")[0]
+
+
+def test_operations_list_has_the_selection_bar_with_every_bulk_action(clients):
+    html = clients["admin"].get("/transactions/list/content", headers=HTMX).text
+    for url in (
+        "/transactions/bulk-apply",
+        "/transactions/bulk-mark-transfer",
+        "/transactions/bulk-unmark-transfer",
+        "/transactions/bulk-mark-unexpected",
+        "/transactions/bulk-unvalidate",
+        "/transactions/bulk-delete",
+    ):
+        assert url in html, url
+    assert "Retirer virement" in html
+    assert "<select" not in html
+
+
+def test_operations_page_size_menu_is_drawn_and_read_by_the_form(clients):
+    fragment = clients["admin"].get("/transactions/list/content?f_page_size=50", headers=HTMX).text
+    assert "Afficher : 25 par page" in fragment
+    page = _operation(clients, f_page_size=50)
+    assert 'id="f_page_size"' in page
+
+
+def test_operation_detail_is_a_read_view_with_quick_gestures(clients):
+    with pending("Quokka bakery", raw="CARTE QUOKKA BAKERY") as (row,):
+        html = clients["admin"].get(f"/transactions/{row}/detail", headers=HTMX).text
+        assert "Quokka bakery" in html
+        assert "CARTE QUOKKA BAKERY" in html  # the bank label
+        for text in ("Libellé bancaire", "Dépense imprévue", "Détail du ticket", "Changer la catégorie", "Modifier l'opération"):
+            assert text in html, text
+        assert "À trier" in html  # no category yet
+        assert "Ranger dans La Savane" in html  # still pending
+        assert "<select" not in html
+        assert "text-danger" in html  # the negative amount, in its verdict colour
+        assert f"/transactions/{row}/set-unexpected" in html
+
+
+def test_operation_edit_form_is_drawn_and_keeps_its_field_names(clients):
+    with pending("Quokka bakery") as (row,):
+        html = clients["admin"].get(f"/transactions/{row}/edit", headers=HTMX).text
+        assert "<select" not in html
+        for name in ('name="label"', 'name="category_id"', 'name="payment_method"', 'name="account_id"',
+                     'name="is_transfer"', 'name="is_unexpected"', 'name="amount"', 'name="date"', 'name="note"'):
+            assert name in html, name
+        assert "Inverser le signe" in html
+        assert "Enregistrer" in html
+
+
+def test_new_operation_form_is_drawn(clients):
+    html = clients["admin"].get("/transactions/new", headers=HTMX).text
+    assert "<select" not in html
+    assert "Ajouter l'opération" in html and 'name="category_id"' in html
+
+
+def test_flipping_the_unexpected_switch_saves_at_once_and_refreshes_the_panel(clients):
+    with pending("Quokka bakery") as (row,):
+        response = clients["admin"].post(f"/transactions/{row}/set-unexpected", data={"value": "1"}, headers=HTMX)
+        assert response.status_code == 200
+        with SessionLocal() as db:
+            assert db.get(Transaction, row).is_unexpected is True
+        # The panel is replaced out of band, with the switch now on.
+        assert 'id="transaction-detail-content" hx-swap-oob="innerHTML"' in response.text
+        assert 'aria-checked="true"' in response.text
+        clients["admin"].post(f"/transactions/{row}/set-unexpected", data={"value": "0"}, headers=HTMX)
+        with SessionLocal() as db:
+            assert db.get(Transaction, row).is_unexpected is False
+
+
+def test_the_note_is_saved_when_the_field_changes(clients):
+    with pending("Quokka bakery") as (row,):
+        clients["admin"].post(f"/transactions/{row}/set-note", data={"note": "Pierre me doit 5 euros"}, headers=HTMX)
+        with SessionLocal() as db:
+            assert db.get(Transaction, row).note == "Pierre me doit 5 euros"
+
+
+def test_changing_the_category_from_the_panel_files_the_operation(clients, demo):
+    with pending("Quokka bakery") as (row,):
+        response = clients["admin"].post(
+            f"/transactions/{row}/set-category", data={"category_id": demo["subcategory_id"]}, headers=HTMX
+        )
+        with SessionLocal() as db:
+            transaction = db.get(Transaction, row)
+            assert transaction.category_id == demo["subcategory_id"] and transaction.validated
+        assert "Test food › Test groceries" in response.text  # the panel shows the new path
+        assert "Ranger dans La Savane" not in response.text.split('id="transaction-detail-content"')[1]
+
+
+def test_saving_the_edit_form_shows_the_read_view_again(clients, demo):
+    with pending("Quokka bakery") as (row,):
+        response = clients["admin"].post(
+            f"/transactions/{row}/update",
+            data={"label": "Quokka bakery 2", "amount": "-7,50", "date": "2000-01-02", "account_id": demo["account_id"],
+                  "category_id": "", "payment_method": "", "note": ""},
+            headers=HTMX,
+        )
+        assert "Opération « Quokka bakery 2 » enregistrée." in response.text
+        assert 'id="transaction-detail-content" hx-swap-oob="innerHTML"' in response.text
+        with SessionLocal() as db:
+            assert db.get(Transaction, row).amount == Decimal("-7.50")
+
+
+def test_deleting_an_operation_empties_the_panel(clients):
+    row = _new_pending("Quokka bakery")
+    response = clients["admin"].post(f"/transactions/{row}/delete", headers=HTMX)
+    assert "Choisis une opération pour voir son détail." in response.text
+    with SessionLocal() as db:
+        assert db.get(Transaction, row) is None
+    backlog._cache["items"] = None
+
+
+def test_removing_the_ticket_detail_keeps_the_operation(clients):
+    with pending("Quokka bakery") as (row,):
+        clients["admin"].post(f"/transactions/receipts/{row}/items/add", data={"label": "Lait", "amount": "1,20"}, headers=HTMX)
+        with SessionLocal() as db:
+            assert len(crud.get_receipt_items(db, row)) == 1
+        response = clients["admin"].post(f"/transactions/receipts/{row}/clear", headers=HTMX)
+        assert response.status_code == 200
+        with SessionLocal() as db:
+            assert crud.get_receipt_items(db, row) == []
+            assert db.get(Transaction, row) is not None

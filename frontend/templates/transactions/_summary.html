@@ -1,0 +1,7 @@
+{# "Net", not "Balance": this is the SUM of the listed operations
+   (get_transactions_total_amount), not an account balance — it ignores opening
+   balances. #}
+<p id="operations-summary" class="text-secondary" {% if not initial_page %}hx-swap-oob="true"{% endif %}>
+  {% trans total=total, v="s" if total != 1 else "", Total="Net" if not type_filter else "Total" %}{{ total }} opération{{ v }} · {{ Total }}{% endtrans %}
+  <strong class="amount-blur font-semibold text-primary tabular-nums">{{ "+" if total_amount > 0 else "" }}{{ total_amount | eur }}</strong>
+</p>

@@ -59,3 +59,9 @@ def format_short_date_as(value: date, number_format: str) -> str:
     if number_format == "en-US":
         return value.strftime("%m/%d")
     return value.strftime("%d/%m")
+
+
+def format_plain_amount(value: Decimal) -> str:
+    """Amount for an input field: no currency, the decimal mark of the chosen format (54,10 or 54.10)."""
+    text = f"{value.quantize(Decimal('0.01')):.2f}"
+    return text.replace(".", ",") if current_format() == "fr" else text

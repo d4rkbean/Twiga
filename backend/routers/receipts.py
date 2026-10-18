@@ -139,6 +139,14 @@ def update_receipt_item_route(
     return _render_section(request, db, item.transaction)
 
 
+@router.post("/{transaction_id}/clear", response_class=HTMLResponse)
+def clear_receipt_route(request: Request, transaction_id: int, db: Session = Depends(get_db)):
+    """"Remove the detail": every line of the ticket goes, the operation stays."""
+    transaction = _get_transaction_or_404(db, transaction_id)
+    crud.delete_receipt_items_for_transaction(db, transaction_id)
+    return _render_section(request, db, transaction)
+
+
 @router.post("/items/{item_id}/delete", response_class=HTMLResponse)
 def delete_receipt_item_route(request: Request, item_id: int, db: Session = Depends(get_db)):
     item = db.get(ReceiptItem, item_id)

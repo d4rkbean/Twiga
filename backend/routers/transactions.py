@@ -622,6 +622,7 @@ def transactions_list(
         "accounts": crud.list_accounts(db),
         "filter_parent": filter_parent,
         "filter_subcategories": filter_subcategories,
+        "initial_page": True,
         **_build_list_context(db, filters),  # inclut déjà "categories" et "payment_methods"
     }
     return templates.TemplateResponse("transactions/index.html", context)
@@ -637,6 +638,75 @@ def transactions_list_content(
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
+def _render_detail(request: Request, db: Session, transaction: Transaction, filters: ListFilters, template: str) -> str:
+    """The detail panel of an operation as HTML: its read view, or its edit form."""
+    top_level_categories = crud.get_top_level_categories(db)
+    receipt_items = crud.get_receipt_items(db, transaction.id)
+    context = {
+        "request": request,
+        "transaction": transaction,
+        "accounts": crud.list_accounts(db),
+        "parent_categories": top_level_categories,
+        "filter_qs": _build_filter_qs(filters),
+        "payment_methods": crud.get_payment_methods_dict(db),
+        # Ticket detail (transactions/_receipt.html), shown in the same panel
+        # — see routers/receipts.py for its actions (upload, lines).
+        "receipt_items": receipt_items,
+        "receipt_groups": group_items_by_family(receipt_items),
+        "receipt_families": RECEIPT_FAMILIES,
+        "raw_extracted_text": None,
+    }
+    return templates.get_template(template).render(context)
+
+
+def _list_response(
+    request: Request,
+    db: Session,
+    filters: ListFilters,
+    success_message: str | None = None,
+    detail: "Transaction | str | None" = None,
+):
+    """The refreshed list and, out of band, the detail panel.
+
+    `detail` is the operation whose read view replaces the panel, "empty" for
+    the placeholder (the operation is gone), or None to leave the panel alone.
+    """
+    context = {"request": request, **_build_list_context(db, filters)}
+    if success_message:
+        context["success_message"] = success_message
+    if detail == "empty":
+        context["detail_html"] = templates.get_template("transactions/_detail_empty.html").render(
+            {"request": request}
+        )
+    elif detail is not None:
+        context["detail_html"] = _render_detail(request, db, detail, filters, "transactions/_detail.html")
+    return templates.TemplateResponse("transactions/_content.html", context)
+
+
+def _get_transaction(db: Session, transaction_id: int) -> Transaction:
+    transaction = db.get(Transaction, transaction_id)
+    if transaction is None:
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
+    return transaction
+
+
+def _update_fields(db: Session, transaction: Transaction, **changes) -> Transaction:
+    """crud.update_transaction with only some fields changed: the others keep their value."""
+    values = dict(
+        label=transaction.label,
+        category=db.get(Category, transaction.category_id) if transaction.category_id else None,
+        amount=transaction.amount,
+        transaction_date=transaction.date,
+        account=transaction.account,
+        is_transfer=transaction.is_transfer,
+        payment_method=transaction.payment_method,
+        note=transaction.note,
+        is_unexpected=transaction.is_unexpected,
+    )
+    values.update(changes)
+    return crud.update_transaction(db, transaction, **values)
+
+
 @router.get("/new", response_class=HTMLResponse)
 def new_transaction_form(
     request: Request,
@@ -647,13 +717,6 @@ def new_transaction_form(
         "request": request,
         "accounts": crud.list_accounts(db),
         "parent_categories": crud.get_top_level_categories(db),
-        "current_parent_id": None,
-        "parent": None,
-        "subcategories": [],
-        "selected_category_id": None,
-        "field_name": "category_id",
-        "element_id": "subcategory-select",
-        "allow_empty": False,
         "filter_qs": _build_filter_qs(filters),
         "today": date.today().isoformat(),
         "payment_methods": crud.get_payment_methods_dict(db),
@@ -680,7 +743,7 @@ def create_transaction(
     if account is None:
         raise HTTPException(status_code=404, detail=_t("Compte introuvable"))
 
-    crud.create_manual_transaction(
+    created = crud.create_manual_transaction(
         db,
         label=label.strip(),
         category=category,
@@ -691,10 +754,7 @@ def create_transaction(
         payment_method=payment_method if payment_method in crud.get_payment_methods_dict(db) else None,
         note=note,
     )
-
-    context = {"request": request, **_build_list_context(db, filters)}
-    context["success_message"] = _t("Opération ajoutée")
-    return templates.TemplateResponse("transactions/_content.html", context)
+    return _list_response(request, db, filters, _t("Opération ajoutée"), detail=created)
 
 
 @router.get("/{transaction_id}/detail", response_class=HTMLResponse)
@@ -704,37 +764,19 @@ def transaction_detail(
     filters: ListFilters = Depends(_get_list_filters),
     db: Session = Depends(get_db),
 ):
-    transaction = db.get(Transaction, transaction_id)
-    if transaction is None:
-        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
+    transaction = _get_transaction(db, transaction_id)
+    return HTMLResponse(_render_detail(request, db, transaction, filters, "transactions/_detail.html"))
 
-    current_parent = crud.resolve_top_level_category(transaction.category)
-    subcategories = crud.get_child_categories(db, current_parent.id) if current_parent else []
-    top_level_categories = crud.get_top_level_categories(db)
-    receipt_items = crud.get_receipt_items(db, transaction.id)
 
-    context = {
-        "request": request,
-        "transaction": transaction,
-        "accounts": crud.list_accounts(db),
-        "parent_categories": top_level_categories,
-        "current_parent_id": current_parent.id if current_parent else None,
-        "parent": current_parent,
-        "subcategories": subcategories,
-        "selected_category_id": transaction.category_id,
-        "field_name": "category_id",
-        "element_id": "subcategory-select",
-        "allow_empty": False,
-        "filter_qs": _build_filter_qs(filters),
-        "payment_methods": crud.get_payment_methods_dict(db),
-        # Détail du ticket (transactions/_receipt.html), inclus dans ce même
-        # modal — voir routers/receipts.py pour les actions (upload, lignes).
-        "receipt_items": receipt_items,
-        "receipt_groups": group_items_by_family(receipt_items),
-        "receipt_families": RECEIPT_FAMILIES,
-        "raw_extracted_text": None,
-    }
-    return templates.TemplateResponse("transactions/_detail.html", context)
+@router.get("/{transaction_id}/edit", response_class=HTMLResponse)
+def transaction_edit_form(
+    request: Request,
+    transaction_id: int,
+    filters: ListFilters = Depends(_get_list_filters),
+    db: Session = Depends(get_db),
+):
+    transaction = _get_transaction(db, transaction_id)
+    return HTMLResponse(_render_detail(request, db, transaction, filters, "transactions/_edit.html"))
 
 
 @router.get("/subcategories", response_class=HTMLResponse)
@@ -747,10 +789,9 @@ def category_subcategories(
     allow_empty: bool = False,
     db: Session = Depends(get_db),
 ):
-    # Le modal d'édition envoie "parent_category_id" (nom de son propre
-    # select) ; le filtre de la liste envoie "f_category" (pour rester
-    # cohérent avec le reste du système de filtres ListFilters). Les deux
-    # sont acceptés ici plutôt que d'imposer un seul nom aux deux appelants.
+    # The edit modal sent "parent_category_id" (the name of its own select);
+    # the list filter sent "f_category". Both are still accepted here: the
+    # sub-category choice of the bulk panel of La Savane uses this fragment.
     raw_parent_id = parent_category_id or f_category
     parent = None
     if raw_parent_id and raw_parent_id != "uncategorized":
@@ -785,10 +826,7 @@ def update_transaction_detail(
     filters: ListFilters = Depends(_get_list_filters),
     db: Session = Depends(get_db),
 ):
-    transaction = db.get(Transaction, transaction_id)
-    if transaction is None:
-        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
-
+    transaction = _get_transaction(db, transaction_id)
     category = db.get(Category, int(category_id)) if category_id else None
     account = db.get(Account, int(account_id))
     if account is None:
@@ -802,27 +840,71 @@ def update_transaction_detail(
         amount=_parse_signed_amount(amount),
         transaction_date=date.fromisoformat(transaction_date),
         account=account,
-        # Case à cocher HTML : présente uniquement quand cochée.
+        # HTML checkbox: present only when ticked.
         is_transfer=is_transfer is not None,
         payment_method=payment_method if payment_method in crud.get_payment_methods_dict(db) else None,
         note=note,
         is_unexpected=is_unexpected is not None,
     )
+    return _list_response(
+        request, db, filters, _t("Opération « %(label)s » enregistrée.") % {"label": transaction.label},
+        detail=transaction,
+    )
 
-    context = {"request": request, **_build_list_context(db, filters)}
-    return templates.TemplateResponse("transactions/_content.html", context)
+
+@router.post("/{transaction_id}/set-unexpected", response_class=HTMLResponse)
+def set_unexpected(
+    request: Request,
+    transaction_id: int,
+    value: str = Form(""),
+    filters: ListFilters = Depends(_get_list_filters),
+    db: Session = Depends(get_db),
+):
+    """The "Unexpected expense" switch of the detail panel: saved as soon as it is flipped."""
+    transaction = _get_transaction(db, transaction_id)
+    _update_fields(db, transaction, is_unexpected=value == "1")
+    return _list_response(request, db, filters, detail=transaction)
+
+
+@router.post("/{transaction_id}/set-note", response_class=HTMLResponse)
+def set_note(
+    request: Request,
+    transaction_id: int,
+    note: str = Form(""),
+    filters: ListFilters = Depends(_get_list_filters),
+    db: Session = Depends(get_db),
+):
+    """The note field of the detail panel: saved when the field loses focus."""
+    transaction = _get_transaction(db, transaction_id)
+    _update_fields(db, transaction, note=note)
+    return _list_response(request, db, filters)
+
+
+@router.post("/{transaction_id}/set-category", response_class=HTMLResponse)
+def set_category(
+    request: Request,
+    transaction_id: int,
+    category_id: str = Form(""),
+    filters: ListFilters = Depends(_get_list_filters),
+    db: Session = Depends(get_db),
+):
+    """"Change the category" of the detail panel: one pick, saved at once."""
+    transaction = _get_transaction(db, transaction_id)
+    category = db.get(Category, int(category_id)) if category_id else None
+    if category_id and category is None:
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
+    _update_fields(db, transaction, category=category)
+    return _list_response(request, db, filters, detail=transaction)
 
 
 @router.post("/{transaction_id}/mark-unexpected", response_class=HTMLResponse)
 def mark_unexpected(transaction_id: int, db: Session = Depends(get_db)):
-    # Bouton "🆘 Marquer comme imprévu" (La Savane, toast auto-disparaissant
-    # — voir inbox/_unexpected_toast.html) : la transaction est déjà
-    # enregistrée à ce stade (le tap arrive APRÈS l'avancée vers la carte
-    # suivante), donc pas de contexte de carte à re-rendre ici, juste l'état
-    # à poser. hx-swap="none" côté template, aucun contenu à renvoyer.
-    transaction = db.get(Transaction, transaction_id)
-    if transaction is None:
-        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
+    # "Mark as unexpected" button (La Savane, self-dismissing toast — see
+    # inbox/_unexpected_toast.html): the transaction is already saved at this
+    # point (the tap comes AFTER the move to the next card), so there is no
+    # card context to render here, just the state to set. hx-swap="none" on
+    # the template side, nothing to send back.
+    transaction = _get_transaction(db, transaction_id)
     crud.mark_transaction_unexpected(db, transaction)
     return HTMLResponse(content="", status_code=200)
 
@@ -834,14 +916,9 @@ def unvalidate_transaction_detail(
     filters: ListFilters = Depends(_get_list_filters),
     db: Session = Depends(get_db),
 ):
-    transaction = db.get(Transaction, transaction_id)
-    if transaction is None:
-        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
-
+    transaction = _get_transaction(db, transaction_id)
     crud.unvalidate_transaction(db, transaction)
-
-    context = {"request": request, **_build_list_context(db, filters)}
-    return templates.TemplateResponse("transactions/_content.html", context)
+    return _list_response(request, db, filters, detail=transaction)
 
 
 @router.post("/{transaction_id}/delete", response_class=HTMLResponse)
@@ -851,14 +928,9 @@ def delete_transaction_detail(
     filters: ListFilters = Depends(_get_list_filters),
     db: Session = Depends(get_db),
 ):
-    transaction = db.get(Transaction, transaction_id)
-    if transaction is None:
-        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
-
+    transaction = _get_transaction(db, transaction_id)
     crud.delete_transaction(db, transaction)
-
-    context = {"request": request, **_build_list_context(db, filters)}
-    return templates.TemplateResponse("transactions/_content.html", context)
+    return _list_response(request, db, filters, detail="empty")
 
 
 @router.post("/bulk-apply", response_class=HTMLResponse)
