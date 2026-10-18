@@ -251,9 +251,29 @@ Content is constrained to `max-w-lg` (32rem) for forms and panels, `max-w-sm` (2
 
 **The 50px Rule.** Everything you tap is at least 50px tall: buttons, navigation rows, list entries. Input fields go down to 46px, never below. This is a product constraint, not an aesthetic preference: categorization is done with the thumb, on the go.
 
+**The Density Never Touches the 50px Rule.** Density (below) changes air, never size: the text keeps its size, and everything you tap stays at least 50px tall in Compact exactly as in Airy. Only rows nobody touches (`--row-static`) may go lower.
+
 **The Balanced Columns Rule.** When cards of very different heights share a page (Settings), do not use a grid: it aligns by rows and leaves two columns half empty next to a column three screens tall. `.settings-columns` (CSS columns: 2 from `lg`, 3 from `xl`, `break-inside: avoid`) fills top to bottom and balances itself; the order of the markup groups the cards by purpose.
 
 **The Single Breakpoint Rule.** The switch from mobile to desktop happens at `lg` and nowhere else. `sm` and `md` only adjust internal details (card padding, the orientation of a button group), never the navigation structure.
+
+### Density
+
+A per-account display preference (Mon profil, Paramètres > Préférences), saved on the account and mirrored in the `twiga_density` cookie, and rendered by the server as `<html data-density="compact|normal|comfortable">`. Seven CSS variables in `design-system.css` change with it; the components read them, the templates never hard-code the spacing they cover.
+
+| Variable | Compact | Normal | Airy (`comfortable`) | Used for |
+| --- | --- | --- | --- | --- |
+| `--space-card` | 12px (16px from `lg`) | 16px (24px from `lg`) | 24px (32px from `lg`) | padding of `.card` and panels |
+| `--space-block` | 10px | 16px | 24px | gap between the blocks of a page |
+| `--space-list` | 8px | 12px | 18px | gap between list items and grid cells |
+| `--row-pad` | 4px | 8px | 14px | vertical padding of a row or a group header |
+| `--row-touch` | 50px | 56px | 68px | minimum height of an Operations row (tappable) |
+| `--row-list` | 50px | 50px | 62px | minimum height of a tappable list row (Panorama) |
+| `--row-static` | 34px | 44px | 56px | height of a row nobody taps |
+
+Compact shows more lines on screen, Airy gives more breathing room. What does not move, in any density: the font sizes, the 50px height of buttons, checkboxes and tappable rows (`--row-touch` and `--row-list` never go below 50px), colors, order and components. The selector is the attribute alone (`[data-density="..."]`), so the preview of the preference screen can set its own density on a small element. `/design-system` has a "Densité" button that cycles the whole page through the three and a section that shows them side by side.
+
+The theme follows the same path: the server renders `class="dark"` on `<html>` for "dark", nothing for "light", and only "system" is left to the browser (`prefers-color-scheme`, followed live by the head script). So there is no flash on load.
 
 ## Elevation & Depth
 
@@ -310,7 +330,7 @@ Borders are 1px, in `border`, on all surfaces. The only deliberate exception is 
 - **Title field:** a distinctive variant: a field with no background or border, underlined by a simple 1px line that turns amber on focus, and typeset like a title (24px, 700). Used to rename a transaction label without ever feeling like filling in a form.
 
 ### Choice cards
-- **Usage:** a choice among a few options that are compared at a glance (language, number and date format in Settings > Preferences); beyond five options, or for a binary setting, use a field or a checkbox.
+- **Usage:** a choice among a few options that are compared at a glance (language, number and date format, interface, theme and density in Settings > Preferences and Mon profil; a choice that is not available yet, such as "L'autre voie", is shown disabled with a "Bientôt" hint); beyond five options, or for a binary setting, use a field or a checkbox.
 - **Style:** 50px minimum height, 12px radius, 1px Hairline border, White Surface background; content stacks (title in `font-medium`, example or hint in faded 12px).
 - **Selected:** Giraffe Amber border and inner line plus a 12% amber background: the state reads from shape, not from color alone.
 - **Radio:** visually hidden (`.sr-only`) but never removed: the whole card is clickable, the keyboard keeps working, and the focus ring (2px amber) sits on the card (`:has(input:focus-visible)`).

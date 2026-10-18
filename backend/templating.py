@@ -14,7 +14,7 @@ from backend.category_icons import get_category_icon, get_category_icon_name
 from backend.crud import resolve_category_pillar, resolve_transaction_pillar
 from backend.icons import available as icon_names, icon
 from backend.formatting import format_amount, format_amount_as, format_date, format_date_as
-from backend import i18n
+from backend import i18n, preferences
 from backend.models import Account
 from backend.payment_methods import get_payment_method_icon_name, get_payment_method_label
 from backend.pillars import PILLAR_ORDER, PILLARS, get_pillar_label
@@ -238,6 +238,10 @@ templates.env.globals["zero_eur"] = lambda: format_amount(Decimal("0"))
 templates.env.globals["default_format_for"] = i18n.default_format_for
 templates.env.globals["LANGUAGES"] = i18n.LANGUAGES
 templates.env.globals["FORMATS"] = i18n.FORMATS
+templates.env.globals["current_ui_variant"] = preferences.current_ui_variant
+templates.env.globals["current_theme"] = preferences.current_theme
+templates.env.globals["current_density"] = preferences.current_density
+templates.env.globals["other_way_enabled"] = preferences.other_way_enabled
 
 
 def tour_context(request) -> dict:

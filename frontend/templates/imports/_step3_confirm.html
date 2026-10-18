@@ -1,6 +1,6 @@
 {% from "imports/_stepper.html" import stepper, scene %}
 {{ stepper(3, _("Colonnes") if format == "csv" else _("Aperçu")) }}
-<div class="card flex flex-col gap-4 lg:p-6" x-data="{ count: {{ unique_count }}, busy: false }">
+<div class="card flex flex-col gap-4" x-data="{ count: {{ unique_count }}, busy: false }">
   {% set summary %}{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s){% endtrans %}{% endset %}
   {{ scene(_("Tout est prêt."), summary) }}
 

@@ -60,7 +60,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
     {% include "accounts/_content.html" %}
 
-    <aside class="card flex flex-col gap-3 lg:p-5">
+    <aside class="card flex flex-col gap-3">
       <h2 class="text-section-title flex items-center gap-2">{{ icon('repeat', size=20) }} {{ _("Détecter les virements internes") }}</h2>
       <p class="text-sm text-secondary">
         {{ _("Recherche, sur tout l'historique, des paires de transactions qui se ressemblent comme un virement interne entre deux de tes comptes (montant opposé, ± 3 jours, ± 1 € de tolérance).") }}

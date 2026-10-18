@@ -19,12 +19,12 @@
     </div>
 
     <aside class="hidden lg:flex flex-col gap-4">
-      <section class="card flex flex-col gap-2 lg:p-5">
+      <section class="card flex flex-col gap-2">
         <h2 class="text-section-title">{{ _("Fichier") }}</h2>
         <p id="import-file-name" class="text-sm text-secondary" data-empty="{{ _("Aucun fichier choisi.") }}">{{ _("Aucun fichier choisi.") }}</p>
         <p class="text-xs text-secondary">{{ _("Formats reconnus : QIF (export HomeBank), CSV de la plupart des banques, OFX. Les doublons sont détectés sur la date, le montant et le libellé.") }}</p>
       </section>
-      <section class="card flex flex-col gap-1 lg:p-5">
+      <section class="card flex flex-col gap-1">
         <h2 class="text-section-title mb-1">{{ _("Ce que Twiga vérifie") }}</h2>
         <ul class="flex flex-col divide-y divide-border">
           <li class="flex items-start gap-3 py-3 text-sm"><span class="mt-0.5 text-secondary">{{ icon('clipboard-copy', size=18) }}</span><span>{{ _("Doublons : même date, même montant, même libellé") }}</span></li>

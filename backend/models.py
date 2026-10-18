@@ -398,6 +398,13 @@ class User(Base):
     # number_format NULL = celui de la langue choisie.
     language: Mapped[str] = mapped_column(String(5), default="fr", server_default="fr")
     number_format: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # Display preferences (see backend/preferences.py): interface variant
+    # ("classic" / "other_way"), theme ("light" / "system" / "dark") and
+    # density ("compact" / "normal" / "comfortable"). The server defaults keep
+    # existing accounts on the current look.
+    ui_variant: Mapped[str] = mapped_column(String(20), default="classic", server_default="classic")
+    theme: Mapped[str] = mapped_column(String(10), default="system", server_default="system")
+    density: Mapped[str] = mapped_column(String(12), default="normal", server_default="normal")
 
 
 class RecurringPattern(Base):

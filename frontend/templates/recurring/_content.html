@@ -7,7 +7,7 @@
   {% endif %}
 
   {% for group in recurring_duplicate_groups %}
-  <div class="card flex flex-col gap-3 sm:flex-row sm:items-center lg:p-5">
+  <div class="card flex flex-col gap-3 sm:flex-row sm:items-center">
     <span class="hidden sm:flex w-10 h-10 shrink-0 rounded-full bg-sunken items-center justify-center text-secondary">{{ icon('repeat', size=18) }}</span>
     <p class="text-sm text-primary flex-1 min-w-0">
       {% trans group=group | length %}Ces {{ group }} entrées semblent être le même abonnement :{% endtrans %}
@@ -30,7 +30,7 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
   {% for item in recurring_patterns %}
   {% set effective_state = "ignored" if item.status == "ignored" else ("inactive" if item.activity_status == "inactive" else ("seen" if item.seen_this_month else "pending")) %}
-  <div class="card flex flex-col gap-3 lg:p-5">
+  <div class="card flex flex-col gap-3">
     <div class="flex items-start gap-3">
       <span class="w-10 h-10 shrink-0 rounded-full bg-sunken flex items-center justify-center text-secondary">{{ icon('repeat', size=18) }}</span>
       <div class="flex-1 min-w-0 flex flex-col">

@@ -28,7 +28,7 @@
          de reset du formulaire au succès (contrairement au mot de passe) —
          les champs doivent garder les valeurs qui viennent d'être
          enregistrées, pas revenir à un état "vide". -->
-    <section class="card flex flex-col gap-4 lg:p-6">
+    <section class="card flex flex-col gap-4">
       <h2 class="text-section-title">{{ _("Informations") }}</h2>
       <form
         hx-post="/profile/update"
@@ -61,7 +61,7 @@
     <!-- Changement de mot de passe : réutilise TEL QUEL /settings/change-password
          (même endpoint que Paramètres > Sécurité — auto-service, n'importe
          quel rôle peut changer le sien, voir backend/auth.py). -->
-    <section class="card flex flex-col gap-4 lg:p-6">
+    <section class="card flex flex-col gap-4">
       <h2 class="text-section-title">{{ _("Changer le mot de passe") }}</h2>
       <form
         hx-post="/settings/change-password"
@@ -97,5 +97,15 @@
       </form>
     </section>
   </div>
+
+  <!-- Affichage : interface, thème, densité. S'enregistre au clic (voir
+       _display_preferences.html), comme la langue. -->
+  <section class="card flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <h2 class="text-section-title">{{ _("Affichage") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Comment Twiga se présente pour toi, sur tous tes appareils.") }}</p>
+    </div>
+    {% include "_display_preferences.html" %}
+  </section>
 </main>
 {% endblock %}

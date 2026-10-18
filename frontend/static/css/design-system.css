@@ -514,9 +514,9 @@
     background-color: var(--color-container);
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
-    padding: 1rem;
+    padding: var(--space-card);
   }
-  .card-compact { padding: 0.75rem; }
+  .card-compact { padding: calc(var(--space-card) * 0.75); }
   /* Fond ambré très dilué plutôt qu'un liseré latéral de 4px : le liseré
      est l'anti-motif "side-tab", signalé par le détecteur du projet. */
   .card-amber {
@@ -741,4 +741,117 @@
    sont pas touchées, et rien en mode clair. */
 .dark .twiga-mascot {
   filter: drop-shadow(0 0 1px #f0e2c8) drop-shadow(0 0 1px #f0e2c8);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DENSITÉ — Compact / Normal / Aéré (préférence d'affichage par compte,
+   portée par <html data-density="...">, voir backend/preferences.py).
+
+   Seul l'AIR change : marges internes des cartes, écart entre blocs et entre
+   éléments de liste, hauteur des lignes. Ne bougent JAMAIS, quelle que soit
+   la densité :
+   - la taille du texte ;
+   - la hauteur des éléments touchables (50px minimum : un bouton, une case,
+     une ligne qu'on touche). Les variables --row-touch et --row-list sont
+     donc des hauteurs MINIMALES de lignes cliquables, jamais sous 50px ;
+     seules les lignes qui ne se touchent pas (--row-static) descendent plus bas.
+
+     --space-card    marge interne d'une carte ou d'un panneau
+     --space-block   écart entre blocs d'une page
+     --space-list    écart entre éléments d'une liste ou d'une grille
+     --row-pad       marge verticale d'une ligne ou d'un en-tête de groupe
+     --row-touch     hauteur minimale d'une ligne d'opération (cliquable)
+     --row-list      hauteur minimale d'une ligne de liste cliquable
+     --row-static    hauteur d'une ligne qui ne se touche pas
+
+   Le sélecteur par attribut (sans « html ») vaut aussi pour l'aperçu des
+   préférences, qui pose son propre data-density.
+   ═══════════════════════════════════════════════════════════════════ */
+:root,
+[data-density="normal"] {
+  --space-card: 1rem;
+  --space-block: 1rem;
+  --space-list: 0.75rem;
+  --row-pad: 0.5rem;
+  --row-touch: 56px;
+  --row-list: 50px;
+  --row-static: 44px;
+}
+[data-density="compact"] {
+  --space-card: 0.75rem;
+  --space-block: 0.625rem;
+  --space-list: 0.5rem;
+  --row-pad: 0.25rem;
+  --row-touch: 50px;
+  --row-list: 50px;
+  --row-static: 34px;
+}
+[data-density="comfortable"] {
+  --space-card: 1.5rem;
+  --space-block: 1.5rem;
+  --space-list: 1.125rem;
+  --row-pad: 0.875rem;
+  --row-touch: 68px;
+  --row-list: 62px;
+  --row-static: 56px;
+}
+@media (min-width: 1024px) {
+  :root,
+  [data-density="normal"] { --space-card: 1.5rem; }
+  [data-density="compact"] { --space-card: 1rem; }
+  [data-density="comfortable"] { --space-card: 2rem; }
+}
+
+/* Aperçu miniature des préférences d'affichage (profil, Paramètres) : une
+   fausse page qui prend le thème et la densité choisis avant même
+   l'enregistrement. Elle pose sa propre classe .dark et son propre
+   data-density, donc les variables ci-dessus et les jetons de couleur
+   résolvent à l'intérieur. Les hauteurs sont celles de la vraie page, à
+   40 % : on compare l'air, pas les pixels. */
+.pref-preview {
+  background: var(--color-page);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-block) * 0.6);
+}
+.pref-preview-card {
+  background: var(--color-container);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  padding: calc(var(--space-card) * 0.6);
+  display: flex;
+  flex-direction: column;
+}
+.pref-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: calc(var(--row-static) * 0.55);
+  border-bottom: 1px solid var(--color-border);
+}
+.pref-preview-row:last-child { border-bottom: 0; }
+.pref-preview-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-accent); flex-shrink: 0; }
+.pref-preview-bar { height: 0.375rem; border-radius: 9999px; background: var(--color-border-strong); }
+
+/* Aperçu en thème clair : quand la page est en sombre, les jetons de <html>
+   sont sombres ; l'aperçu redéfinit ici, avec leurs valeurs claires, ceux
+   qu'il utilise. Mêmes valeurs que le bloc @theme en haut de ce fichier. */
+.pref-preview.pref-light {
+  --color-page: #faf8f5;
+  --color-container: #ffffff;
+  --color-primary: #111827;
+  --color-border: #e7e2da;
+  --color-border-strong: #d6cfc4;
+  --color-accent: #d4a96a;
+  --shadow-sm: 0 1px 2px rgb(60 40 20 / 0.06);
+}
+
+/* Choix indisponible (« L'autre voie », pas encore développée). */
+.choice-card:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

@@ -12,7 +12,7 @@
    (le <dialog> en bas, même mécanisme HTMX qu'avant) ; la colonne de filtres
    fixe de droite a disparu : les critères se lisent d'un coup d'œil au-dessus
    de la liste. Pas de lg:pt- : <body> réserve déjà l'en-tête (voir base.html). #}
-<main class="flex flex-col gap-4 max-w-lg mx-auto px-4 pb-6 overflow-x-clip lg:max-w-none lg:mx-0 lg:px-8 lg:overflow-x-visible">
+<main class="flex flex-col gap-[var(--space-block)] max-w-lg mx-auto px-4 pb-6 overflow-x-clip lg:max-w-none lg:mx-0 lg:px-8 lg:overflow-x-visible">
   {# « Exporter » : CSV des opérations qui correspondent aux filtres en
      cours. L'adresse se complète au clic avec les champs du formulaire de
      filtres (mêmes noms f_*), comme l'export des Rapports ; secondaire, car

@@ -10,7 +10,7 @@
 
   {% set current = get_current_user(request) %}
   {% for user in users %}
-  <div class="card flex flex-col gap-4 lg:p-5">
+  <div class="card flex flex-col gap-4">
     <div class="flex items-center gap-3">
       <span class="w-10 h-10 shrink-0 rounded-full bg-accent-soft text-accent-ink text-xs font-semibold flex items-center justify-center">{{ user_initials(user) }}</span>
       <div class="flex flex-col min-w-0 flex-1">

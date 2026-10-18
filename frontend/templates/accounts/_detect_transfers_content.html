@@ -14,7 +14,7 @@
   {% endif %}
 
   {% for pair in pairs %}
-  <div data-pair class="card flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+  <div data-pair class="card flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
     <div class="flex flex-col gap-1 min-w-0">
       <p class="text-sm font-semibold text-primary flex items-center gap-2">
         {{ icon('repeat', size=16) }} {{ pair.negative.account.name }} {{ icon('arrow-narrow-right', size=14) }} {{ pair.positive.account.name }}
