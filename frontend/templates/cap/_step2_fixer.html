@@ -1,12 +1,16 @@
 {% from "_macros/brand.html" import mascot %}
+{% from "_macros/pillar_icon.html" import pillar_icon %}
 {% include "cap/_progress_dots.html" %}
 
 {% if first_use %}
-<div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-2 text-center">
-  <p class="text-lg font-bold text-primary">{{ mascot(size=20) }} {{ _("Bienvenue dans Le Cap !") }}</p>
-  <p class="text-sm text-secondary">
-    {{ _("Chaque mois, prenez 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
-  </p>
+<div class="card card-amber flex items-start gap-3 p-4 lg:p-5">
+  {{ mascot(size=36) }}
+  <div class="flex flex-col gap-1">
+    <p class="text-section-title">{{ _("Bienvenue dans Le Cap !") }}</p>
+    <p class="text-sm text-primary">
+      {{ _("Chaque mois, prenez 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
+    </p>
+  </div>
 </div>
 {% endif %}
 
@@ -30,7 +34,7 @@
   hx-post="/cap/save"
   hx-target="#cap-wizard"
   hx-swap="innerHTML"
-  class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4"
+  class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-5"
   x-data="{
     income: {{ prefill_income }},
     imprevu: {{ '%.2f' % prefill_imprevu }},
@@ -87,11 +91,11 @@
          par un prélèvement assumé n'est pas une alerte. */
     get savings() { return this.income - this.totalDepenses },
     get couvert() { return this.income + (Number(this.prelevement) || 0) - this.totalDepenses },
-    fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' },
+    fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('-', '−') + ' €' },
     intentionLength: 0,
   }"
 >
-  <h2 class="text-lg font-bold text-primary flex items-center gap-2">{{ icon('target') }}{% trans current_month_label=current_month_label %}Fixer le cap de {{ current_month_label }}{% endtrans %}</h2>
+  <h2 class="text-section-title">{% trans current_month_label=current_month_label %}Fixer le cap de {{ current_month_label }}{% endtrans %}</h2>
 
   {# Ressources du mois. Le champ est toujours saisissable — c'est sa valeur,
      et elle seule, que le suivi comparera aux dépenses. Ce qui change selon
@@ -102,23 +106,23 @@
      automatique ne distingue de façon fiable un virement de fin de mois qui
      finance le mois suivant d'un rajout fait pour le mois courant. #}
   <div class="flex flex-col gap-2">
-    <label class="flex flex-col gap-1">
-      <span class="text-xs text-secondary">{{ icon('currency-euro', size=14) }} {{ _("Ressources du mois") }}</span>
+    <label class="flex flex-col gap-1.5">
+      <span class="form-label">{{ _("Ressources du mois") }}</span>
       <input
         type="number" step="0.01" name="planned_income" x-model.number="income"
-        class="min-h-[50px] rounded-xl border border-field bg-page text-primary px-3"
+        class="amount-blur input-base tabular-nums"
       />
     </label>
 
     {% if income_source == "virements" %}
     {% if virements %}
-    <div class="rounded-xl border border-border overflow-hidden">
-      <p class="text-xs text-secondary px-3 py-2 bg-page">
+    <div class="flex flex-col">
+      <p class="text-xs text-secondary pb-2">
         {% trans current_month_label=current_month_label %}Cochez les virements qui financent {{ current_month_label }}{% endtrans %}
       </p>
-      <div class="flex flex-col divide-y divide-border max-h-64 overflow-y-auto">
+      <div class="flex flex-col max-h-64 overflow-y-auto border-t border-border">
         {% for v in virements %}
-        <label class="flex items-center gap-3 px-3 py-2 min-h-[46px] cursor-pointer">
+        <label class="flex items-center gap-3 min-h-[50px] border-b border-border cursor-pointer">
           <input
             type="checkbox"
             value="{{ '%.2f' % v.amount }}"
@@ -150,113 +154,126 @@
     {% endif %}
   </div>
 
-  {% for g in groupes %}
-  {% set code = g.code %}
-  <div class="rounded-xl border border-border overflow-hidden">
-    <div class="flex items-center gap-2 px-3 py-2 bg-page">
-      <button
-        type="button"
-        @click="ouverts['{{ code }}'] = !ouverts['{{ code }}']"
-        class="flex items-center gap-2 text-sm font-semibold text-primary min-h-[40px] flex-1 text-left"
-        :aria-expanded="ouverts['{{ code }}'] ? 'true' : 'false'"
-      >
-        {{ icon('home' if code == 'essentiel' else 'star', size=16) }}
-        {{ g.label }}
-        <span class="text-xs font-normal text-secondary">{% trans categories=g.categories | length, categories2='s' if g.categories | length > 1 else '' %}{{ categories }} catégorie{{ categories2 }}{% endtrans %}</span>
-        <span class="text-secondary ml-auto" x-text="ouverts['{{ code }}'] ? '▾' : '▸'">▸</span>
-      </button>
-      <input
-        type="number" step="0.01" inputmode="decimal"
-        aria-label="Enveloppe {{ g.label }}"
-        :value="totalGroupe('{{ code }}').toFixed(2)"
-        @change="repartir('{{ code }}', Number($event.target.value) || 0)"
-        class="w-28 min-h-[40px] rounded-lg border border-field bg-container text-primary px-2 text-right font-semibold tabular-nums"
-      />
-    </div>
-
-    <div x-show="ouverts['{{ code }}']" style="display: none;" class="flex flex-col divide-y divide-border">
-      {% for l in g.categories %}
-      <label class="flex items-center justify-between gap-2 px-3 py-2">
-        <span class="text-sm text-primary min-w-0 truncate">
-          {{ l.category.icon or icon('tag', size=14) }} {{ l.category.name | category_display }}
-        </span>
-        <span class="flex items-center gap-2 flex-shrink-0">
-          <span class="text-xs text-secondary whitespace-nowrap" title="{{ _("Dépense habituelle, médiane des 3 derniers mois") }}">
-            {% if l.typical %}~ {{ l.typical | eur }}{% endif %}
-          </span>
-          <input
-            type="number" step="0.01" inputmode="decimal"
-            name="amount_{{ l.category.id }}"
-            x-model.number="groupes['{{ code }}'].lignes[{{ loop.index0 }}].montant"
-            class="w-24 min-h-[40px] rounded-lg border border-field bg-page text-primary px-2 text-right tabular-nums"
-          />
-        </span>
-      </label>
-      {% endfor %}
-      <div class="flex items-center justify-between gap-2 px-3 py-2">
+  {# Les piliers : des sections à plat, séparées par un filet (une carte
+     dans une carte n'a pas sa place ici). L'enveloppe se règle en tête de
+     section, le détail par catégorie se déplie dessous. #}
+  <div class="flex flex-col">
+    {% for g in groupes %}
+    {% set code = g.code %}
+    <div class="border-t border-border">
+      <div class="flex items-center gap-2 py-1">
         <button
           type="button"
-          @click="reinitialiser('{{ code }}')"
-          class="text-xs text-primary font-medium min-h-[36px]"
+          @click="ouverts['{{ code }}'] = !ouverts['{{ code }}']"
+          class="flex items-center gap-2 text-sm font-semibold text-primary min-h-[50px] flex-1 min-w-0 text-left"
+          :aria-expanded="ouverts['{{ code }}'] ? 'true' : 'false'"
         >
-          {{ icon('clipboard-copy', size=14) }} {% trans previous_month_label=previous_month_label %}Reprendre {{ previous_month_label }}{% endtrans %}
+          <span class="text-secondary flex-shrink-0 transition-transform" :class="ouverts['{{ code }}'] ? 'rotate-90' : ''">{{ icon('chevron-right', size=16) }}</span>
+          {{ pillar_icon(code, size=16) }}
+          <span class="truncate">{{ g.label }}</span>
+          <span class="text-xs font-normal text-secondary whitespace-nowrap">{% trans categories=g.categories | length, categories2='s' if g.categories | length > 1 else '' %}{{ categories }} catégorie{{ categories2 }}{% endtrans %}</span>
         </button>
-        <span class="text-xs text-secondary tabular-nums" x-text="'Total : ' + fmt(totalGroupe('{{ code }}'))"></span>
+        <input
+          type="number" step="0.01" inputmode="decimal"
+          aria-label="{{ _("Enveloppe") }} {{ g.label }}"
+          :value="totalGroupe('{{ code }}').toFixed(2)"
+          @change="repartir('{{ code }}', Number($event.target.value) || 0)"
+          class="amount-blur input-base w-28 text-right font-semibold tabular-nums flex-shrink-0"
+        />
+      </div>
+
+      <div x-show="ouverts['{{ code }}']" style="display: none;" class="flex flex-col pl-6 pb-2">
+        {% for l in g.categories %}
+        <label class="flex items-center justify-between gap-2 min-h-[50px] border-t border-border">
+          <span class="text-sm text-primary min-w-0 truncate">
+            {{ l.category.icon or icon('tag', size=14) }} {{ l.category.name | category_display }}
+          </span>
+          <span class="flex items-center gap-2 flex-shrink-0">
+            <span class="amount-blur text-xs text-secondary whitespace-nowrap" title="{{ _("Dépense habituelle, médiane des 3 derniers mois") }}">
+              {% if l.typical %}~ {{ l.typical | eur }}{% endif %}
+            </span>
+            <input
+              type="number" step="0.01" inputmode="decimal"
+              name="amount_{{ l.category.id }}"
+              x-model.number="groupes['{{ code }}'].lignes[{{ loop.index0 }}].montant"
+              class="amount-blur input-base w-24 px-2 text-right tabular-nums"
+            />
+          </span>
+        </label>
+        {% endfor %}
+        <div class="flex items-center justify-between gap-2 border-t border-border">
+          <button
+            type="button"
+            @click="reinitialiser('{{ code }}')"
+            class="min-h-[50px] inline-flex items-center gap-1.5 text-xs text-primary font-medium"
+          >
+            {{ icon('clipboard-copy', size=14) }} {% trans previous_month_label=previous_month_label %}Reprendre {{ previous_month_label }}{% endtrans %}
+          </button>
+          <span class="amount-blur text-xs text-secondary tabular-nums" x-text="'{{ _("Total :") | jsq }} ' + fmt(totalGroupe('{{ code }}'))"></span>
+        </div>
       </div>
     </div>
+    {% endfor %}
+
+    <label class="flex items-center justify-between gap-3 min-h-[56px] border-t border-border">
+      <span class="text-sm text-primary flex items-start gap-2">
+        {{ pillar_icon("imprevu", size=16) }}
+        <span>
+          {{ _("Imprévus") }}
+          <span class="block text-xs text-secondary">{{ _("Une réserve, sans détail — un imprévu n'a pas de catégorie prévue") }}</span>
+        </span>
+      </span>
+      <input
+        type="number" step="0.01" name="planned_imprevu" x-model.number="imprevu"
+        class="amount-blur input-base w-28 text-right font-semibold tabular-nums flex-shrink-0"
+      />
+    </label>
+
+    <label class="flex items-center justify-between gap-3 min-h-[56px] border-t border-border">
+      <span class="text-sm text-primary flex items-start gap-2">
+        {{ icon('pig-money', size=16) }}
+        <span>
+          {{ _("Prélèvement sur épargne") }}
+          <span class="block text-xs text-secondary">{{ _("Ce que vous sortez de l'épargne pour financer ce mois") }}</span>
+        </span>
+      </span>
+      <input
+        type="number" step="0.01" name="savings_withdrawal" x-model.number="prelevement"
+        class="amount-blur input-base w-28 text-right font-semibold tabular-nums flex-shrink-0"
+      />
+    </label>
   </div>
-  {% endfor %}
 
-  <label class="flex items-center justify-between gap-2 min-h-[46px] rounded-xl border border-border px-3">
-    <span class="text-sm text-primary">
-      {{ icon('urgent', size=16) }} {{ _("Imprévus") }}
-      <span class="block text-xs text-secondary">{{ _("Une réserve, sans détail — un imprévu n'a pas de catégorie prévue") }}</span>
-    </span>
-    <input
-      type="number" step="0.01" name="planned_imprevu" x-model.number="imprevu"
-      class="w-28 min-h-[40px] rounded-lg border border-field bg-page text-primary px-2 text-right font-semibold tabular-nums"
-    />
-  </label>
-
-  <label class="flex items-center justify-between gap-2 min-h-[46px] rounded-xl border border-border px-3">
-    <span class="text-sm text-primary">
-      {{ icon('pig-money', size=16) }} {{ _("Prélèvement sur épargne") }}
-      <span class="block text-xs text-secondary">{{ _("Ce que vous sortez de l'épargne pour financer ce mois") }}</span>
-    </span>
-    <input
-      type="number" step="0.01" name="savings_withdrawal" x-model.number="prelevement"
-      class="w-28 min-h-[40px] rounded-lg border border-field bg-page text-primary px-2 text-right font-semibold tabular-nums"
-    />
-  </label>
-
-  <div class="border-t border-border pt-3 flex items-center justify-between">
-    <span class="text-sm font-semibold text-primary">{{ icon('pig-money', size=16) }} {{ _("Épargne prévue") }}</span>
-    <span
-      class="text-lg font-bold tabular-nums"
-      :class="savings >= 0 ? 'text-success' : 'text-danger'"
-      x-text="fmt(savings)"
-    ></span>
+  <div class="border-t border-border pt-4 flex flex-col gap-2">
+    <div class="flex items-baseline justify-between gap-3">
+      <span class="text-sm font-semibold text-primary">{{ _("Épargne prévue") }}</span>
+      <span
+        class="amount-blur text-amount-large tabular-nums"
+        :class="savings >= 0 ? 'text-primary' : 'text-danger'"
+        x-text="fmt(savings)"
+      ></span>
+    </div>
+    {# L'alerte porte sur la trésorerie, pas sur l'épargne : puiser dans
+       l'épargne quand on l'a décidé n'est pas une erreur, c'est le but du
+       champ ci-dessus. Le message change donc selon que le déficit est couvert
+       ou non. #}
+    <p x-show="savings < 0 && couvert >= 0" style="display: none;" class="alert alert-neutral">
+      {{ icon('info-circle', size=18) }} <span>{{ _("Déficit couvert par le prélèvement sur épargne.") }}</span>
+    </p>
+    <p x-show="couvert < 0" style="display: none;" class="alert alert-danger font-medium">
+      {{ icon('alert-triangle', size=18) }} <span>{{ _("Dépenses supérieures aux revenus") }} <span x-show="prelevement > 0">{{ _("et au prélèvement") }}</span> !</span>
+    </p>
   </div>
-  {# L'alerte porte sur la trésorerie, pas sur l'épargne : puiser dans
-     l'épargne quand on l'a décidé n'est pas une erreur, c'est le but du
-     champ ci-dessus. Le message change donc selon que le déficit est couvert
-     ou non. #}
-  <p x-show="savings < 0 && couvert >= 0" style="display: none;" class="text-sm text-secondary">
-    {{ icon('info-circle', size=16) }} {{ _("Déficit couvert par le prélèvement sur épargne.") }}
-  </p>
-  <p x-show="couvert < 0" style="display: none;" class="text-sm text-danger font-medium">
-    {{ icon('alert-triangle', size=16) }} {{ _("Dépenses supérieures aux revenus") }} <span x-show="prelevement > 0">{{ _("et au prélèvement") }}</span> !
-  </p>
 
-  <label class="flex flex-col gap-1 mt-2">
-    <span class="text-sm font-semibold text-primary">{{ icon('writing', size=16) }} {% trans current_month_label=current_month_label %}Notre intention pour {{ current_month_label }} :{% endtrans %}</span>
+  <label class="flex flex-col gap-1.5">
+    <span class="text-sm font-semibold text-primary">{% trans current_month_label=current_month_label %}Notre intention pour {{ current_month_label }} :{% endtrans %}</span>
     <textarea
       name="intention" rows="3" maxlength="500"
       @input="intentionLength = $event.target.value.length"
       placeholder="{{ _("Ce mois-ci, nous voulons...") }}"
-      class="rounded-xl border border-field bg-page text-primary px-3 py-2 text-sm"
+      class="rounded-xl border border-field bg-container text-primary px-3 py-2 text-sm"
     ></textarea>
-    <span class="text-xs text-secondary text-right" x-text="intentionLength + ' / 500'"></span>
+    <span class="text-xs text-secondary text-right tabular-nums" x-text="intentionLength + ' / 500'"></span>
   </label>
 
   {# Réponses de réflexion saisies à l'étape 1, transmises telles quelles
@@ -267,17 +284,19 @@
   <input type="hidden" name="reflection_proud" value="{{ reflection_proud | default('') }}" />
   <input type="hidden" name="reflection_worked_well" value="{{ reflection_worked_well | default('') }}" />
 
-  <div class="flex gap-2 mt-2">
+  <div class="flex flex-wrap items-center justify-between gap-2">
     {% if not first_use %}
     <button
       type="button"
       hx-post="/cap/step1" hx-target="#cap-wizard" hx-swap="innerHTML"
-      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      class="btn btn-secondary"
     >
       {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
     </button>
+    {% else %}
+    <span></span>
     {% endif %}
-    <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+    <button type="submit" class="btn btn-primary">
       {{ _("Fixer le cap") }} {{ icon('arrow-narrow-right') }}
     </button>
   </div>

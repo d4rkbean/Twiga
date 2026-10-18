@@ -1,5 +1,11 @@
-<div class="flex items-center justify-center gap-2" aria-hidden="true">
-  {% for step in [1, 2, 3] %}
-  <span class="w-2.5 h-2.5 rounded-full {{ 'bg-accent' if step <= current_step else 'bg-border' }}"></span>
+{# Les trois étapes du rituel, nommées : un segment par étape, rempli jusqu'à
+   l'étape en cours. Le trait fin est de l'ambre-encre (jamais l'aplat) et
+   l'étape en cours se lit aussi à la graisse du libellé. #}
+<ol class="grid grid-cols-3 gap-2" aria-label="{{ _("Étapes du rituel") }}">
+  {% for step, label in ((1, _("1. Bilan")), (2, _("2. Fixer le cap")), (3, _("3. Le cap est fixé"))) %}
+  <li {% if step == current_step %}aria-current="step"{% endif %} class="flex flex-col gap-1.5">
+    <span class="h-1 rounded-full {{ 'bg-accent-ink' if step <= current_step else 'bg-border' }}"></span>
+    <span class="text-xs {{ 'font-semibold text-accent-ink' if step == current_step else 'font-medium text-secondary' }}">{{ label }}</span>
+  </li>
   {% endfor %}
-</div>
+</ol>
