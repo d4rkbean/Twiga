@@ -23,7 +23,7 @@
       <div x-data="{ mode: 'view' }" class="px-4 lg:px-6 py-2 border-t border-border">
         <!-- Vue normale -->
         <div x-show="mode === 'view'" class="flex items-center gap-3">
-          <span class="w-10 h-10 shrink-0 rounded-full bg-sunken flex items-center justify-center text-lg">{{ pm.icon }}</span>
+          <span class="w-10 h-10 shrink-0 rounded-full bg-sunken text-secondary flex items-center justify-center">{{ icon(get_payment_method_icon_name(pm.name), size=18) }}</span>
           <span class="flex-1 min-w-0 truncate text-primary font-medium">{{ pm.name | pm_label }}</span>
           <button
             type="button"
@@ -86,7 +86,7 @@
           style="display: none;"
           class="flex items-center gap-2"
         >
-          <span class="flex-1 min-w-0 truncate text-sm text-primary">{% trans icon=pm.icon, name=pm.name | pm_label %}Supprimer {{ icon }} {{ name }} ?{% endtrans %}</span>
+          <span class="flex-1 min-w-0 truncate text-sm text-primary">{% trans icon="", name=pm.name | pm_label %}Supprimer {{ icon }} {{ name }} ?{% endtrans %}</span>
           <button type="submit" class="btn btn-danger shrink-0 px-4">
             {{ _("Oui") }}
           </button>
