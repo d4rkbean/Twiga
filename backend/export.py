@@ -3,8 +3,9 @@ import io
 from datetime import datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
+from backend import crud
 from backend.models import (
     Account,
     Budget,
@@ -276,16 +277,11 @@ def _category_and_subcategory_names(category: Category | None) -> tuple[str, str
     return category.name, ""
 
 
-def build_transactions_csv(db: Session) -> str:
-    stmt = (
-        select(Transaction)
-        .options(
-            selectinload(Transaction.account),
-            selectinload(Transaction.category).selectinload(Category.parent),
-        )
-        .order_by(Transaction.date, Transaction.id)
-    )
-    transactions = db.execute(stmt).scalars().all()
+def build_transactions_csv(db: Session, **filters) -> str:
+    # `filters` : ceux de la liste Opérations (voir crud.list_all_transactions).
+    # Sans filtre, toutes les opérations. Montants bruts (str(Decimal)) : le
+    # tiret est le « - » ASCII, jamais le vrai signe moins de l'affichage.
+    transactions = crud.list_all_transactions(db, **filters)
 
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=";")

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend import export, restore
 from backend.database import SessionLocal, get_db
+from backend.routers.transactions import ListFilters, _get_list_filters, list_filter_kwargs
 from backend.templating import templates
 
 router = APIRouter(prefix="/export", tags=["export"])
@@ -41,8 +42,13 @@ def export_json(db: Session = Depends(get_db)):
 
 
 @router.get("/transactions.csv")
-def export_transactions_csv(db: Session = Depends(get_db)):
-    csv_content = export.build_transactions_csv(db)
+def export_transactions_csv(
+    filters: ListFilters = Depends(_get_list_filters), db: Session = Depends(get_db)
+):
+    # Même filtres que la liste Opérations (paramètres f_*) : le bouton
+    # « Exporter » de la page passe ceux en cours. Sans paramètre, toutes les
+    # opérations, comme avant.
+    csv_content = export.build_transactions_csv(db, **list_filter_kwargs(filters))
     filename = f"twiga-operations-{date.today().isoformat()}.csv"
     # BOM UTF-8 pour qu'Excel détecte correctement l'encodage des accents.
     return Response(

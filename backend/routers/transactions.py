@@ -504,7 +504,12 @@ def _build_filter_qs(filters: ListFilters) -> str:
     return urlencode(params)
 
 
-def _build_list_context(db: Session, filters: ListFilters) -> dict:
+def list_filter_kwargs(filters: ListFilters) -> dict:
+    """The filters of the list as keyword arguments for the crud queries.
+
+    Shared by the list itself and by the CSV export of the "Exporter" button,
+    so that both always designate the same operations.
+    """
     start = date.fromisoformat(filters.date_from) if filters.date_from else None
     end = date.fromisoformat(filters.date_to) if filters.date_to else None
 
@@ -524,18 +529,10 @@ def _build_list_context(db: Session, filters: ListFilters) -> dict:
     # "transfer" était silencieusement perdu ici (seuls income/expense
     # passaient), rendant le filtre "Virements" du formulaire inopérant.
     type_filter = filters.type if filters.type in ("income", "expense", "transfer") else None
-    page = max(filters.page or 1, 1)
-    sort = (
-        filters.sort
-        if filters.sort in ("date_desc", "date_asc", "amount_desc", "amount_asc")
-        else "date_desc"
-    )
     amount_min = _parse_signed_amount(filters.amount_min) if filters.amount_min else None
     amount_max = _parse_signed_amount(filters.amount_max) if filters.amount_max else None
-    parsed_page_size = _parse_int(filters.page_size)
-    page_size = parsed_page_size if parsed_page_size in ALLOWED_PAGE_SIZES else DEFAULT_PAGE_SIZE
 
-    shared_filter_kwargs = dict(
+    return dict(
         account_id=_parse_int(filters.account),
         category_id=parsed_category_id,
         category_exact=category_exact,
@@ -548,6 +545,19 @@ def _build_list_context(db: Session, filters: ListFilters) -> dict:
         amount_max=amount_max,
         payment_method=filters.payment_method or None,
     )
+
+
+def _build_list_context(db: Session, filters: ListFilters) -> dict:
+    page = max(filters.page or 1, 1)
+    sort = (
+        filters.sort
+        if filters.sort in ("date_desc", "date_asc", "amount_desc", "amount_asc")
+        else "date_desc"
+    )
+    parsed_page_size = _parse_int(filters.page_size)
+    page_size = parsed_page_size if parsed_page_size in ALLOWED_PAGE_SIZES else DEFAULT_PAGE_SIZE
+
+    shared_filter_kwargs = list_filter_kwargs(filters)
 
     transactions, total = crud.list_transactions(
         db, page=page, page_size=page_size, sort=sort, **shared_filter_kwargs

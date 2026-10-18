@@ -132,3 +132,71 @@ def test_finalize_without_the_field_leaves_the_flag_alone(clients, demo):
             assert db.get(Transaction, pending).is_unexpected is True
     finally:
         _delete(pending)
+
+
+# --- 2. Operations: the "Exporter" button -----------------------------------
+
+
+def _csv_rows(response) -> list[list[str]]:
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    lines = response.text.lstrip("﻿").splitlines()
+    return [line.split(";") for line in lines]
+
+
+def test_operations_page_has_a_secondary_export_button(clients):
+    html = clients["admin"].get("/transactions/list").text
+    assert 'id="transactions-export"' in html
+    assert 'href="/export/transactions.csv' in html
+    # It reads the filter form at click time and is not amber.
+    assert "new FormData(document.getElementById('transactions-filters'))" in html
+    export_tag = html.split('id="transactions-export"')[1].split(">")[0]
+    assert "btn-primary" not in export_tag
+
+
+def test_export_without_filters_keeps_every_operation(clients):
+    rows = _csv_rows(clients["admin"].get("/export/transactions.csv"))
+    assert rows[0][:4] == ["date", "libelle_simplifie", "libelle_brut", "montant"]
+    labels = {row[1] for row in rows[1:]}
+    assert {"Salary", "Rent", "Supermarket", "Transfer in"} <= labels
+
+
+def test_export_only_contains_the_filtered_operations(clients):
+    rows = _csv_rows(
+        clients["admin"].get("/export/transactions.csv?f_search=rent&f_type=expense")
+    )
+    body = rows[1:]
+    assert body, "the filter must keep the rent operations"
+    assert {row[1] for row in body} == {"Rent"}
+    # The same filters designate the same operations in the list.
+    listing = clients["admin"].get(
+        "/transactions/list/content?f_search=rent&f_type=expense",
+        headers={"HX-Request": "true"},
+    ).text
+    assert "Rent" in listing and "Salary" not in listing
+
+
+def test_export_follows_the_type_amount_and_account_filters(clients, demo):
+    transfers = _csv_rows(clients["admin"].get("/export/transactions.csv?f_type=transfer"))
+    assert {row[1] for row in transfers[1:]} == {"Transfer out", "Transfer in"}
+    # Amount filters compare the absolute value, like the list does.
+    big = _csv_rows(clients["admin"].get("/export/transactions.csv?f_type=transfer&f_amount_min=400"))
+    assert len(big) == 1
+    small = _csv_rows(clients["admin"].get("/export/transactions.csv?f_type=transfer&f_amount_max=400"))
+    assert {row[1] for row in small[1:]} == {"Transfer out", "Transfer in"}
+    one_account = _csv_rows(
+        clients["admin"].get(f"/export/transactions.csv?f_account={demo['account_id']}&f_search=salary")
+    )
+    assert {row[1] for row in one_account[1:]} == {"Salary"}
+    assert {row[6] for row in one_account[1:]} == {"Checking account"}
+
+
+def test_export_amounts_use_the_ascii_hyphen(clients):
+    response = clients["admin"].get("/export/transactions.csv?f_search=rent")
+    assert "-750.00" in response.text
+    assert "−" not in response.text  # the typographic minus is for the screen only
+
+
+def test_export_with_no_match_is_just_the_header(clients):
+    rows = _csv_rows(clients["admin"].get("/export/transactions.csv?f_search=zzzzznomatch"))
+    assert len(rows) == 1
