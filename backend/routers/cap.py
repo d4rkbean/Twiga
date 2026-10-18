@@ -377,10 +377,10 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
         status_message = _t("%(label)s presque épuisé !") % {"label": worst_label}
     elif worst_ratio >= 75:
         status = "warning"
-        status_message = _t("Surveillez %(label)s dans les prochaines semaines.") % {"label": worst_label}
+        status_message = _t("Surveille %(label)s dans les prochaines semaines.") % {"label": worst_label}
     else:
         status = "success"
-        status_message = _t("Le cap tient ! Continuez comme ça.")
+        status_message = _t("Le cap tient ! Continue comme ça.")
 
     # Le rythme du mois : la part du mois écoulée, repère des jauges.
     days_in_month = end.day

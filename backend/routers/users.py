@@ -130,7 +130,7 @@ def remove_user(request: Request, user_id: int, db: Session = Depends(get_db)):
     current_user = auth.get_current_user(request)
     context = {"request": request, **_list_context(db)}
     if current_user is not None and current_user.id == user_id:
-        context["error"] = _t("Impossible de supprimer votre propre compte.")
+        context["error"] = _t("Impossible de supprimer ton propre compte.")
         return templates.TemplateResponse("users/_content.html", context, status_code=400)
     if target.role == "admin" and _active_admin_count(db, exclude_id=user_id) == 0:
         context["error"] = _t("Impossible : il doit rester au moins un administrateur actif.")

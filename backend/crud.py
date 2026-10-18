@@ -1569,7 +1569,7 @@ INCOME_SOURCES: list[tuple[str, str, str]] = [
     (
         "virements",
         lazy_gettext("Les virements reçus sur un compte"),
-        lazy_gettext("Un pot commun alimenté par virement — vous cochez ceux qui financent ce mois."),
+        lazy_gettext("Un pot commun alimenté par virement — tu coches ceux qui financent ce mois."),
     ),
     ("fixe", lazy_gettext("Un montant fixe"), lazy_gettext("Enveloppe décidée à l'avance, revenu irrégulier.")),
 ]

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 17:49+0000\n"
+"POT-Creation-Date: 2026-10-18 17:57+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -311,7 +311,7 @@ msgstr ""
 msgid "(sans libellé)"
 msgstr ""
 
-msgid "(vous)"
+msgid "(toi)"
 msgstr ""
 
 msgid "+ de critères"
@@ -573,7 +573,7 @@ msgid "Aucun doublon détecté."
 msgstr ""
 
 msgid ""
-"Aucun détail de ticket sur les 12 derniers mois. Importez la facture PDF "
+"Aucun détail de ticket sur les 12 derniers mois. Importe la facture PDF "
 "d'une course depuis le détail de l'opération pour alimenter ce rapport."
 msgstr ""
 
@@ -615,7 +615,7 @@ msgid "Aucune catégorie disponible."
 msgstr ""
 
 msgid ""
-"Aucune catégorie disponible. Importez des données ou créez-en depuis les "
+"Aucune catégorie disponible. Importe des données ou crée-en depuis les "
 "Paramètres."
 msgstr ""
 
@@ -831,7 +831,7 @@ msgstr ""
 msgid "Ce que tu gères, et comment ton instance Twiga est réglée."
 msgstr ""
 
-msgid "Ce que vous sortez de l'épargne pour financer ce mois"
+msgid "Ce que tu sors de l'épargne pour financer ce mois"
 msgstr ""
 
 #, python-format
@@ -856,7 +856,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"Chaque mois, prenez 5 minutes à deux pour faire le bilan et fixer "
+"Chaque mois, prends 5 minutes à deux pour faire le bilan et fixer "
 "ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci."
 msgstr ""
 
@@ -879,8 +879,8 @@ msgid "Choisir une catégorie..."
 msgstr ""
 
 msgid ""
-"Choisissez un compte existant, ou importez d'abord un fichier QIF pour en"
-" créer un."
+"Choisis un compte existant, ou importe d'abord un fichier QIF pour en "
+"créer un."
 msgstr ""
 
 msgid "Choix"
@@ -902,7 +902,7 @@ msgid "Cinéma et spectacles"
 msgstr ""
 
 #, python-format
-msgid "Cochez les virements qui financent %(current_month_label)s"
+msgid "Coche les virements qui financent %(current_month_label)s"
 msgstr ""
 
 msgid "Coiffeur et beauté"
@@ -1452,7 +1452,7 @@ msgstr ""
 msgid "Impossible : il doit rester au moins un administrateur actif."
 msgstr ""
 
-msgid "Impossible de supprimer votre propre compte."
+msgid "Impossible de supprimer ton propre compte."
 msgstr ""
 
 msgid "Imprimer"
@@ -1532,7 +1532,7 @@ msgstr ""
 msgid "La girafe est fière de toi !"
 msgstr ""
 
-msgid "La girafe veille sur votre route."
+msgid "La girafe veille sur ta route."
 msgstr ""
 
 msgid "La savane est propre."
@@ -1558,7 +1558,7 @@ msgstr ""
 msgid "Le cap est fixé !"
 msgstr ""
 
-msgid "Le cap tient ! Continuez comme ça."
+msgid "Le cap tient ! Continue comme ça."
 msgstr ""
 
 msgid "Le changement s'applique immédiatement."
@@ -2479,7 +2479,7 @@ msgid "Streaming et TV"
 msgstr ""
 
 msgid ""
-"Suggestions basées sur la similarité avec vos transactions déjà "
+"Suggestions basées sur la similarité avec tes transactions déjà "
 "catégorisées, triées par confiance décroissante."
 msgstr ""
 
@@ -2545,7 +2545,7 @@ msgid "Surgelés"
 msgstr ""
 
 #, python-format
-msgid "Surveillez %(label)s dans les prochaines semaines."
+msgid "Surveille %(label)s dans les prochaines semaines."
 msgstr ""
 
 msgid "Sécurité"
@@ -2594,6 +2594,9 @@ msgid "Terminé"
 msgstr ""
 
 msgid "Tes règles de rangement, appliquées d'office"
+msgstr ""
+
+msgid "Tes réponses sont conservées jusqu'à « Fixer le cap »."
 msgstr ""
 
 msgid "Tester"
@@ -2845,11 +2848,11 @@ msgstr ""
 msgid "Un mot sur %(previous_month_label)s"
 msgstr ""
 
-msgid "Un nouveau mois commence — Fixez le cap ensemble !"
+msgid "Un nouveau mois commence — Fixe le cap ensemble !"
 msgstr ""
 
 msgid ""
-"Un pot commun alimenté par virement — vous cochez ceux qui financent ce "
+"Un pot commun alimenté par virement — tu coches ceux qui financent ce "
 "mois."
 msgstr ""
 
@@ -2942,9 +2945,6 @@ msgstr ""
 msgid "Voir tous les projets →"
 msgstr ""
 
-msgid "Vos réponses sont conservées jusqu'à « Fixer le cap »."
-msgstr ""
-
 msgid "Vérification"
 msgstr ""
 
@@ -2960,10 +2960,10 @@ msgstr ""
 msgid "Vêtements et jouets"
 msgstr ""
 
-msgid "Y a-t-il une dépense dont vous n'êtes pas fiers ?"
+msgid "Y a-t-il une dépense dont tu es particulièrement content(e) ?"
 msgstr ""
 
-msgid "Y a-t-il une dépense dont vous êtes particulièrement contents ?"
+msgid "Y a-t-il une dépense dont tu n'es pas fier(e) ?"
 msgstr ""
 
 msgid "atteint"
@@ -3023,7 +3023,7 @@ msgstr ""
 
 msgid ""
 "le détail existant. Pour un ticket papier (photo), pas d'extraction "
-"automatique possible : ajoutez les lignes à la main ci-dessous."
+"automatique possible : ajoute les lignes à la main ci-dessous."
 msgstr ""
 
 msgid "les plus utilisées d'abord"
@@ -3055,7 +3055,7 @@ msgstr ""
 msgid "pour %(days_left)s jour%(v)s"
 msgstr ""
 
-msgid "pour les poser, ou répartissez librement ci-dessous."
+msgid "pour les poser, ou répartis librement ci-dessous."
 msgstr ""
 
 msgid "presque atteint"
@@ -3231,7 +3231,7 @@ msgstr ""
 msgid "— le montant fixé dans Le Cap."
 msgstr ""
 
-msgid "— proposé d'après votre réglage, tant que le cap du mois n'est pas fixé."
+msgid "— proposé d'après ton réglage, tant que le cap du mois n'est pas fixé."
 msgstr ""
 
 #, python-format

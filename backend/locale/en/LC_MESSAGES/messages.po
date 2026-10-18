@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 17:49+0000\n"
+"POT-Creation-Date: 2026-10-18 17:57+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -12,7 +12,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.16.0\n"
+"Generated-By: Babel 2.18.0\n"
 
 msgid " du total"
 msgstr " of total"
@@ -290,7 +290,7 @@ msgstr "(discounts, vouchers or credit notes not counted in the lines)"
 msgid "(sans libellé)"
 msgstr "(no label)"
 
-msgid "(vous)"
+msgid "(toi)"
 msgstr "(you)"
 
 msgid "+ de critères"
@@ -545,7 +545,7 @@ msgstr "No account found in the file."
 msgid "Aucun doublon détecté."
 msgstr "No duplicates detected."
 
-msgid "Aucun détail de ticket sur les 12 derniers mois. Importez la facture PDF d'une course depuis le détail de l'opération pour alimenter ce rapport."
+msgid "Aucun détail de ticket sur les 12 derniers mois. Importe la facture PDF d'une course depuis le détail de l'opération pour alimenter ce rapport."
 msgstr "No receipt details in the last 12 months. Import the PDF invoice of a grocery shop from the transaction details to feed this report."
 
 msgid "Aucun fichier choisi."
@@ -583,7 +583,7 @@ msgstr "No alerts"
 msgid "Aucune catégorie disponible."
 msgstr "No category available."
 
-msgid "Aucune catégorie disponible. Importez des données ou créez-en depuis les Paramètres."
+msgid "Aucune catégorie disponible. Importe des données ou crée-en depuis les Paramètres."
 msgstr "No category available. Import data or create some from Settings."
 
 msgid "Aucune catégorie pour l'instant."
@@ -791,7 +791,7 @@ msgstr "What each role allows"
 msgid "Ce que tu gères, et comment ton instance Twiga est réglée."
 msgstr "What you manage, and how your Twiga instance is set up."
 
-msgid "Ce que vous sortez de l'épargne pour financer ce mois"
+msgid "Ce que tu sors de l'épargne pour financer ce mois"
 msgstr "What you take out of savings to fund this month"
 
 #, python-format
@@ -813,7 +813,7 @@ msgstr "Change the password"
 msgid "Chaque catégorie compte dans un pilier du Cap. Une sous-catégorie hérite de sa catégorie, sauf si tu lui en donnes un autre."
 msgstr "Every category counts toward a Cap pillar. A subcategory inherits from its category, unless you give it another one."
 
-msgid "Chaque mois, prenez 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci."
+msgid "Chaque mois, prends 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci."
 msgstr "Every month, take 5 minutes together to review the month and set the budget cap for the coming one. Let's start with this month."
 
 msgid "Chaque nouvelle opération y attend une catégorie, une carte à la fois."
@@ -834,7 +834,7 @@ msgstr "Choose the file"
 msgid "Choisir une catégorie..."
 msgstr "Choose a category..."
 
-msgid "Choisissez un compte existant, ou importez d'abord un fichier QIF pour en créer un."
+msgid "Choisis un compte existant, ou importe d'abord un fichier QIF pour en créer un."
 msgstr "Choose an existing account, or import a QIF file first to create one."
 
 msgid "Choix"
@@ -856,7 +856,7 @@ msgid "Cinéma et spectacles"
 msgstr "Cinema and shows"
 
 #, python-format
-msgid "Cochez les virements qui financent %(current_month_label)s"
+msgid "Coche les virements qui financent %(current_month_label)s"
 msgstr "Tick the transfers that fund %(current_month_label)s"
 
 msgid "Coiffeur et beauté"
@@ -1387,7 +1387,7 @@ msgstr "Import a statement"
 msgid "Impossible : il doit rester au moins un administrateur actif."
 msgstr "Not possible: at least one active administrator must remain."
 
-msgid "Impossible de supprimer votre propre compte."
+msgid "Impossible de supprimer ton propre compte."
 msgstr "You cannot delete your own account."
 
 msgid "Imprimer"
@@ -1467,7 +1467,7 @@ msgstr "La Savane — Twiga"
 msgid "La girafe est fière de toi !"
 msgstr "The giraffe is proud of you!"
 
-msgid "La girafe veille sur votre route."
+msgid "La girafe veille sur ta route."
 msgstr "The giraffe watches over your journey."
 
 msgid "La savane est propre."
@@ -1491,7 +1491,7 @@ msgstr "Panorama shows where your money goes. My month is where you run Le Cap (
 msgid "Le cap est fixé !"
 msgstr "The cap is set!"
 
-msgid "Le cap tient ! Continuez comme ça."
+msgid "Le cap tient ! Continue comme ça."
 msgstr "The course holds! Keep it up."
 
 msgid "Le changement s'applique immédiatement."
@@ -2387,7 +2387,7 @@ msgstr "Sports"
 msgid "Streaming et TV"
 msgstr "Streaming and TV"
 
-msgid "Suggestions basées sur la similarité avec vos transactions déjà catégorisées, triées par confiance décroissante."
+msgid "Suggestions basées sur la similarité avec tes transactions déjà catégorisées, triées par confiance décroissante."
 msgstr "Suggestions based on the similarity with your already categorized transactions, sorted by decreasing confidence."
 
 msgid "Suivant"
@@ -2448,7 +2448,7 @@ msgid "Surgelés"
 msgstr "Frozen food"
 
 #, python-format
-msgid "Surveillez %(label)s dans les prochaines semaines."
+msgid "Surveille %(label)s dans les prochaines semaines."
 msgstr "Keep an eye on %(label)s over the coming weeks."
 
 msgid "Sécurité"
@@ -2495,6 +2495,9 @@ msgstr "Done"
 
 msgid "Tes règles de rangement, appliquées d'office"
 msgstr "Your sorting rules, applied automatically"
+
+msgid "Tes réponses sont conservées jusqu'à « Fixer le cap »."
+msgstr "Your answers are kept until \"Set the course\"."
 
 msgid "Tester"
 msgstr "Test"
@@ -2731,10 +2734,10 @@ msgstr "A fixed amount"
 msgid "Un mot sur %(previous_month_label)s"
 msgstr "A word about %(previous_month_label)s"
 
-msgid "Un nouveau mois commence — Fixez le cap ensemble !"
+msgid "Un nouveau mois commence — Fixe le cap ensemble !"
 msgstr "A new month begins — set the cap together!"
 
-msgid "Un pot commun alimenté par virement — vous cochez ceux qui financent ce mois."
+msgid "Un pot commun alimenté par virement — tu coches ceux qui financent ce mois."
 msgstr "A shared pot fed by transfers — you tick the ones that fund this month."
 
 #, python-format
@@ -2824,9 +2827,6 @@ msgstr "Voir loin. Voir juste."
 msgid "Voir tous les projets →"
 msgstr "See all projects →"
 
-msgid "Vos réponses sont conservées jusqu'à « Fixer le cap »."
-msgstr "Your answers are kept until \"Set the course\"."
-
 msgid "Vérification"
 msgstr "Review"
 
@@ -2842,11 +2842,11 @@ msgstr "Clothing"
 msgid "Vêtements et jouets"
 msgstr "Clothes and toys"
 
-msgid "Y a-t-il une dépense dont vous n'êtes pas fiers ?"
-msgstr "Is there an expense you're not proud of?"
-
-msgid "Y a-t-il une dépense dont vous êtes particulièrement contents ?"
+msgid "Y a-t-il une dépense dont tu es particulièrement content(e) ?"
 msgstr "Is there an expense you're particularly happy about?"
+
+msgid "Y a-t-il une dépense dont tu n'es pas fier(e) ?"
+msgstr "Is there an expense you're not proud of?"
 
 msgid "atteint"
 msgstr "reached"
@@ -2903,7 +2903,7 @@ msgstr "uncertain"
 msgid "le %(date)s"
 msgstr "on %(date)s"
 
-msgid "le détail existant. Pour un ticket papier (photo), pas d'extraction automatique possible : ajoutez les lignes à la main ci-dessous."
+msgid "le détail existant. Pour un ticket papier (photo), pas d'extraction automatique possible : ajoute les lignes à la main ci-dessous."
 msgstr "the existing detail. For a paper receipt (photo), automatic extraction is not possible: add the lines by hand below."
 
 msgid "les plus utilisées d'abord"
@@ -2935,7 +2935,7 @@ msgstr "per page"
 msgid "pour %(days_left)s jour%(v)s"
 msgstr "for %(days_left)s day%(v)s"
 
-msgid "pour les poser, ou répartissez librement ci-dessous."
+msgid "pour les poser, ou répartis librement ci-dessous."
 msgstr "to set them, or distribute freely below."
 
 msgid "presque atteint"
@@ -3109,7 +3109,7 @@ msgstr "— choose —"
 msgid "— le montant fixé dans Le Cap."
 msgstr "— the amount set in Le Cap."
 
-msgid "— proposé d'après votre réglage, tant que le cap du mois n'est pas fixé."
+msgid "— proposé d'après ton réglage, tant que le cap du mois n'est pas fixé."
 msgstr "— suggested from your setting, until the month's cap is set."
 
 #, python-format

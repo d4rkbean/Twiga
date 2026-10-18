@@ -123,9 +123,9 @@
 >
   <div class="flex flex-col gap-1">
     <h2 class="text-section-title">{% trans previous_month_label=previous_month_label %}Un mot sur {{ previous_month_label }}{% endtrans %}</h2>
-    <p class="text-sm text-secondary">{{ _("Vos réponses sont conservées jusqu'à « Fixer le cap ».") }}</p>
+    <p class="text-sm text-secondary">{{ _("Tes réponses sont conservées jusqu'à « Fixer le cap ».") }}</p>
   </div>
-  {% for field, question in (("reflection_unexpected", _("Quels ont été nos imprévus ? Étaient-ils évitables ?")), ("reflection_regret", _("Y a-t-il une dépense dont vous n'êtes pas fiers ?")), ("reflection_proud", _("Y a-t-il une dépense dont vous êtes particulièrement contents ?")), ("reflection_worked_well", _("Qu'est-ce qui a bien fonctionné ce mois ?"))) %}
+  {% for field, question in (("reflection_unexpected", _("Quels ont été nos imprévus ? Étaient-ils évitables ?")), ("reflection_regret", _("Y a-t-il une dépense dont tu n'es pas fier(e) ?")), ("reflection_proud", _("Y a-t-il une dépense dont tu es particulièrement content(e) ?")), ("reflection_worked_well", _("Qu'est-ce qui a bien fonctionné ce mois ?"))) %}
   <label class="flex flex-col gap-1.5">
     <span class="text-sm font-semibold text-primary">{{ question }}</span>
     <textarea name="{{ field }}" rows="2" class="rounded-xl border border-field bg-container text-primary px-3 py-2 text-sm"></textarea>
