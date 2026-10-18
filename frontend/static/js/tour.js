@@ -4,53 +4,17 @@
   var COMPLETED_KEY = "twiga_tour_completed";
   var STEP_KEY = "twiga_tour_step";
 
-  // Les textes (titre, contenu) ne sont PAS ici : ils viennent du serveur, déjà
-  // traduits, via data-texts sur la racine de _tour.html (clé = id de l'étape).
-  // Cinq étapes, sans changement de page : la visite raconte la boucle
-  // importer → catégoriser → piloter, puis les raccourcis. Les cibles
-  // (en-tête, navigation) existent sur toutes les pages. skipImport :
-  // étape retirée pour un rôle sans droit d'import ou une base déjà remplie
-  // (voir tour_context dans backend/templating.py).
-  // position: côté de la bulle par rapport à la cible ("top"/"bottom", ou
-  // "center" pour les étapes sans cible).
-  var STEPS = [
-    {
-      id: "welcome",
-      icon: "compass",
-      target: null,
-      position: "center",
-    },
-    {
-      id: "import",
-      icon: "file-import",
-      skipImport: true,
-      target: "#tour-import",
-      position: "bottom",
-    },
-    {
-      id: "nav-savane",
-      icon: "inbox",
-      target: "#tour-nav-savane",
-      altTarget: "#tour-sidebar-savane",
-      position: "top",
-      altPosition: "right",
-    },
-    {
-      id: "nav-dashboard",
-      icon: "chart-bar",
-      target: "#tour-nav-dashboard",
-      altTarget: "#tour-sidebar-dashboard",
-      position: "top",
-      altPosition: "right",
-    },
-    {
-      id: "search-icon",
-      icon: "search",
-      target: "#tour-search-icon",
-      altTarget: "#tour-desktop-search",
-      position: "bottom",
-    },
-  ];
+  // Aucune étape n'est écrite ici : la visite de chaque interface (_tour.html,
+  // other_way/_tour.html) fournit les siennes en JSON dans data-steps sur la
+  // racine de _tour_ui.html, textes déjà traduits compris. Une étape :
+  //   id, icon, title, text
+  //   target       sélecteur CSS de l'élément à entourer (null : bulle centrée)
+  //   altTarget    cible de repli quand target est caché (autre point de rupture)
+  //   position     côté de la bulle par rapport à la cible ("top", "bottom",
+  //                "left", "right", ou "center" pour les étapes sans cible)
+  //   altPosition  position avec altTarget
+  //   skipImport   étape retirée pour un rôle sans droit d'import ou une base
+  //                déjà remplie (voir tour_context dans backend/templating.py)
 
   function getStepIndex() {
     var raw = localStorage.getItem(STEP_KEY);
@@ -151,7 +115,7 @@
       hasTarget: false,
       bubbleStyle: "top: -9999px; left: -9999px;",
       spotlightStyle: "top: -9999px; left: -9999px; width: 0; height: 0;",
-      steps: STEPS,
+      steps: [],
       tracked: false,
       progressTemplate: "{step} / {total}",
 
@@ -195,16 +159,14 @@
         // comme les textes des étapes.
         this.progressTemplate = dataset.progressLabel || this.progressTemplate;
         var skipImport = dataset.skipImport === "true";
-        var texts = {};
+        var steps = [];
         try {
-          texts = JSON.parse(dataset.texts || "{}");
+          steps = JSON.parse(dataset.steps || "[]");
         } catch (error) {
-          texts = {};
+          steps = [];
         }
-        this.steps = STEPS.filter(function (step) {
+        this.steps = steps.filter(function (step) {
           return !(step.skipImport && skipImport);
-        }).map(function (step) {
-          return Object.assign({}, step, texts[step.id] || { title: "", text: "" });
         });
 
         // Délai de sécurité : laisse le temps au DOM (et à d'éventuels
