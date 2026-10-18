@@ -1,10 +1,11 @@
-<button
-  type="button"
-  id="add-subcategory-{{ parent.id }}"
-  hx-get="/categories/{{ parent.id }}/add-subcategory-form"
-  hx-target="#add-subcategory-{{ parent.id }}"
-  hx-swap="outerHTML"
-  class="min-h-[50px] pl-6 rounded-xl border border-dashed border-border text-secondary font-medium text-left"
->
-  {{ _("+ Ajouter une sous-catégorie") }}
-</button>
+<div id="add-subcategory-{{ parent.id }}" class="px-4 lg:px-6 pl-8 lg:pl-14 py-3 border-t border-border bg-sunken/30">
+  <button
+    type="button"
+    hx-get="/categories/{{ parent.id }}/add-subcategory-form"
+    hx-target="#add-subcategory-{{ parent.id }}"
+    hx-swap="outerHTML"
+    class="btn rounded-xl border border-dashed border-border-strong text-secondary w-full lg:w-auto lg:px-6"
+  >
+    {{ icon('plus', size=16) }} {{ _("Ajouter une sous-catégorie") }}
+  </button>
+</div>

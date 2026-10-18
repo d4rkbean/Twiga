@@ -1,45 +1,56 @@
 {% macro fields(project=None) %}
-<label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">{{ _("Nom du projet") }}</span>
+<label class="form-group">
+  <span class="form-label">{{ _("Nom du projet") }}</span>
   <input
     type="text"
     name="name"
     required
     value="{{ project.name if project else '' }}"
-    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+    class="input-base"
   />
 </label>
-<label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">{{ _("Montant cible") }}</span>
+<label class="form-group">
+  <span class="form-label">{{ _("Montant cible") }}</span>
   <input
     type="text"
     inputmode="decimal"
     name="target_amount"
     required
     value="{{ '%.2f' % project.target_amount if project else '' }}"
-    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+    class="input-base"
   />
 </label>
-<label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">{{ _("Date cible") }}</span>
+<label class="form-group">
+  <span class="form-label">{{ _("Date cible") }}</span>
   <input
     type="date"
     name="target_date"
     required
     value="{{ project.target_date.isoformat() if project else '' }}"
-    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+    class="input-base"
   />
 </label>
-<label class="flex flex-col gap-1">
-  <span class="text-sm text-secondary">{{ _("Montant déjà épargné") }}</span>
+<label class="form-group">
+  <span class="form-label">{{ _("Montant déjà épargné") }}</span>
   <input
     type="text"
     inputmode="decimal"
     name="current_amount"
     value="{{ '%.2f' % project.current_amount if project else '0' }}"
-    class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+    class="input-base"
   />
 </label>
+{% endmacro %}
+
+{# Boutons d'une boîte de dialogue : l'action en ambre plein, Annuler en
+   secondaire. Ces dialogues sont ouverts un à la fois, l'ambre reste rare. #}
+{% macro dialog_actions(label) %}
+<div class="flex flex-col gap-2">
+  <button type="submit" class="btn btn-primary">{{ label }}</button>
+  <button type="button" onclick="this.closest('dialog').close()" class="btn btn-secondary border-border-strong">
+    {{ _("Annuler") }}
+  </button>
+</div>
 {% endmacro %}
 
 {% macro movement_dialog(project, action, title, button_label) %}
@@ -50,39 +61,28 @@
     hx-swap="innerHTML"
     class="flex flex-col gap-4 p-6"
   >
-    <h2 class="text-xl font-bold text-primary">{{ title }} — {{ project.name }}</h2>
-    <label class="flex flex-col gap-1">
-      <span class="text-sm text-secondary">{{ _("Montant") }}</span>
+    <h2 class="text-section-title">{{ title }} — {{ project.name }}</h2>
+    <label class="form-group">
+      <span class="form-label">{{ _("Montant") }}</span>
       <input
         type="text"
         inputmode="decimal"
         name="amount"
         required
         placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+        class="input-base"
       />
     </label>
-    <label class="flex flex-col gap-1">
-      <span class="text-sm text-secondary">{{ _("Note (optionnel)") }}</span>
+    <label class="form-group">
+      <span class="form-label">{{ _("Note (optionnel)") }}</span>
       <input
         type="text"
         name="note"
         placeholder="{{ _("Ex : Billets avion") }}"
-        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+        class="input-base"
       />
     </label>
-    <div class="flex flex-col gap-2">
-      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        {{ button_label }}
-      </button>
-      <button
-        type="button"
-        onclick="this.closest('dialog').close()"
-        class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
-      >
-        {{ _("Annuler") }}
-      </button>
-    </div>
+    {{ dialog_actions(button_label) }}
   </form>
 </dialog>
 {% endmacro %}

@@ -1,105 +1,145 @@
 {% extends "base.html" %}
+{% from "_macros/page.html" import page_header %}
 
 {% block title %}{{ _("Modes de paiement — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-page-title">{{ _("Modes de paiement") }}</h1>
-    <a href="/settings" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
-  </div>
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+  {{ page_header(
+    _("Modes de paiement"),
+    subtitle=_("Ils servent à la fin du parcours de La Savane, aux filtres d'Opérations, aux règles et aux chèques."),
+    back_href="/settings",
+    back_label=_("Paramètres"),
+  ) }}
 
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">{{ _("Ajouter") }}</h2>
-    <form method="post" action="/payment-methods/create" class="flex flex-col gap-2">
-      <div class="flex gap-2">
-        <input name="icon" placeholder="💳" maxlength="10" class="w-16 min-h-[50px] rounded-xl border border-field bg-container text-primary px-3 text-center" />
-        <input name="name" placeholder="{{ _("Nom") }}" required class="flex-1 min-h-[50px] rounded-xl border border-field bg-container text-primary px-3" />
-      </div>
-      <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">{{ _("Ajouter") }}</button>
-    </form>
-  </div>
-
-  <div class="flex flex-col gap-2">
-    {% for pm in methods %}
-    <div x-data="{ mode: 'view' }" class="bg-container rounded-xl shadow-sm p-2">
-      <!-- Vue normale -->
-      <div x-show="mode === 'view'" class="flex items-center gap-2">
-        <span class="w-10 flex-shrink-0 text-center text-lg">{{ pm.icon }}</span>
-        <span class="flex-1 min-w-0 truncate text-primary font-medium">{{ pm.name | pm_label }}</span>
-        <button
-          type="button"
-          @click="mode = 'edit'"
-          aria-label="{{ _("Modifier") }}"
-          class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-primary flex items-center justify-center"
-        >
-          {{ icon('edit', size=16) }}
-        </button>
-        <button
-          type="button"
-          @click="mode = 'confirm'"
-          aria-label="{{ _("Supprimer") }}"
-          class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-danger flex items-center justify-center"
-        >
-          {{ icon('trash', size=16) }}
-        </button>
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4 lg:gap-6 items-start">
+    <section class="card p-0 overflow-hidden flex flex-col">
+      <div class="flex items-baseline justify-between gap-2 px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
+        <h2 class="text-section-title">{{ _("Modes de paiement") }}</h2>
+        <p class="text-xs text-secondary">{% trans count=methods | length %}{{ count }} modes{% endtrans %}</p>
       </div>
 
-      <!-- Édition inline -->
-      <form
-        method="post"
-        action="/payment-methods/{{ pm.id }}/update"
-        x-show="mode === 'edit'"
-        style="display: none;"
-        class="flex items-center gap-2"
-      >
-        <input
-          name="icon"
-          value="{{ pm.icon }}"
-          maxlength="10"
-          class="w-12 flex-shrink-0 min-h-[50px] rounded-xl border border-field bg-container text-primary px-1 text-center"
-        />
-        <input
-          name="name"
-          value="{{ pm.name }}"
-          required
-          class="flex-1 min-w-0 min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-        />
-        <button type="submit" aria-label="{{ _("Enregistrer") }}" class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
-          {{ icon('check', size=16) }}
-        </button>
-        <button
-          type="button"
-          @click="mode = 'view'"
-          aria-label="{{ _("Annuler") }}"
-          class="w-[50px] h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-secondary flex items-center justify-center"
-        >
-          {{ icon('x', size=16) }}
-        </button>
-      </form>
+      {% for pm in methods %}
+      <div x-data="{ mode: 'view' }" class="px-4 lg:px-6 py-2 border-t border-border">
+        <!-- Vue normale -->
+        <div x-show="mode === 'view'" class="flex items-center gap-3">
+          <span class="w-10 h-10 shrink-0 rounded-full bg-sunken text-secondary flex items-center justify-center">{{ icon(get_payment_method_icon_name(pm.name), size=18) }}</span>
+          <span class="flex-1 min-w-0 truncate text-primary font-medium">{{ pm.name | pm_label }}</span>
+          <button
+            type="button"
+            @click="mode = 'edit'"
+            aria-label="{{ _("Modifier") }}"
+            class="w-[50px] h-[50px] shrink-0 rounded-xl text-secondary flex items-center justify-center hover:bg-sunken"
+          >
+            {{ icon('pencil', size=18) }}
+          </button>
+          <button
+            type="button"
+            @click="mode = 'confirm'"
+            aria-label="{{ _("Supprimer") }}"
+            class="w-[50px] h-[50px] shrink-0 rounded-xl text-secondary flex items-center justify-center hover:bg-sunken"
+          >
+            {{ icon('trash', size=18) }}
+          </button>
+        </div>
 
-      <!-- Confirmation de suppression inline -->
-      <form
-        method="post"
-        action="/payment-methods/{{ pm.id }}/delete"
-        x-show="mode === 'confirm'"
-        style="display: none;"
-        class="flex items-center gap-2"
-      >
-        <span class="flex-1 min-w-0 truncate text-sm text-danger">{% trans icon=pm.icon, name=pm.name | pm_label %}Supprimer {{ icon }} {{ name }} ?{% endtrans %}</span>
-        <button type="submit" class="min-h-[50px] flex-shrink-0 rounded-xl bg-danger text-white font-medium px-4">
-          {{ _("Oui") }}
-        </button>
+        <!-- Édition inline -->
+        <form
+          method="post"
+          action="/payment-methods/{{ pm.id }}/update"
+          x-show="mode === 'edit'"
+          style="display: none;"
+          class="flex items-center gap-2"
+        >
+          <input
+            name="icon"
+            value="{{ pm.icon }}"
+            maxlength="10"
+            aria-label="{{ _("Icône") }}"
+            class="input-base w-14 shrink-0 px-1 text-center"
+          />
+          <input
+            name="name"
+            value="{{ pm.name }}"
+            required
+            aria-label="{{ _("Nom") }}"
+            class="input-base flex-1 min-w-0"
+          />
+          <button type="submit" aria-label="{{ _("Enregistrer") }}" class="btn btn-primary w-[50px] px-0 shrink-0">
+            {{ icon('check', size=18) }}
+          </button>
+          <button
+            type="button"
+            @click="mode = 'view'"
+            aria-label="{{ _("Annuler") }}"
+            class="btn btn-secondary border-border-strong w-[50px] px-0 shrink-0"
+          >
+            {{ icon('x', size=18) }}
+          </button>
+        </form>
+
+        <!-- Confirmation de suppression inline -->
+        <form
+          method="post"
+          action="/payment-methods/{{ pm.id }}/delete"
+          x-show="mode === 'confirm'"
+          style="display: none;"
+          class="flex items-center gap-2"
+        >
+          <span class="flex-1 min-w-0 truncate text-sm text-primary">{% trans icon="", name=pm.name | pm_label %}Supprimer {{ icon }} {{ name }} ?{% endtrans %}</span>
+          <button type="submit" class="btn btn-danger shrink-0 px-4">
+            {{ _("Oui") }}
+          </button>
+          <button
+            type="button"
+            @click="mode = 'view'"
+            class="btn btn-secondary border-border-strong shrink-0 px-4"
+          >
+            {{ _("Non") }}
+          </button>
+        </form>
+      </div>
+      {% else %}
+      <p class="text-sm text-secondary text-center px-4 pb-6">{{ _("Aucun mode de paiement pour l'instant.") }}</p>
+      {% endfor %}
+    </section>
+
+    <div class="flex flex-col gap-4">
+      <section class="card flex flex-col gap-3 lg:p-5">
+        <h2 class="text-section-title">{{ _("Ajouter") }}</h2>
+        <form method="post" action="/payment-methods/create" class="flex flex-col gap-3">
+          <div class="flex gap-2">
+            <label class="form-group w-20 shrink-0">
+              <span class="form-label">{{ _("Icône") }}</span>
+              <input name="icon" placeholder="💳" maxlength="10" class="input-base px-1 text-center" />
+            </label>
+            <label class="form-group flex-1 min-w-0">
+              <span class="form-label">{{ _("Nom") }}</span>
+              <input name="name" placeholder="{{ _("Nom") }}" required class="input-base" />
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</button>
+        </form>
+      </section>
+
+      <section class="card flex flex-col gap-3 lg:p-5">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-section-title">{{ _("Opérations sans mode de paiement") }}</h2>
+          <p class="text-sm text-secondary">{{ _("Twiga devine le mode de paiement d'après le libellé : CB, chèque, virement, prélèvement, espèces.") }}</p>
+        </div>
         <button
           type="button"
-          @click="mode = 'view'"
-          class="min-h-[50px] flex-shrink-0 rounded-xl bg-container border border-border text-primary font-medium px-4"
+          hx-post="/settings/detect-payment-methods"
+          hx-target="#detect-payment-result"
+          hx-swap="innerHTML"
+          hx-confirm="{{ _("Détecter automatiquement le mode de paiement des opérations qui n'en ont pas encore, à partir de leur libellé ?") }}"
+          class="btn btn-secondary border-border-strong"
         >
-          {{ _("Non") }}
+          {{ icon('search', size=18) }} {{ _("Détecter les modes de paiement manquants") }}
         </button>
-      </form>
+        <div id="detect-payment-result"></div>
+      </section>
     </div>
-    {% endfor %}
   </div>
 </main>
 {% endblock %}

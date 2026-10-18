@@ -3,10 +3,32 @@
 {% block title %}{{ _("Importer un fichier — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
-<main class="min-h-screen flex items-start justify-center p-4">
-  <h1 class="sr-only">{{ _("Importer un fichier") }}</h1>
-  <div id="import-wizard" class="w-full max-w-md mt-8">
-    {% include "imports/_step1_file.html" %}
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+  <div class="flex flex-col gap-1">
+    <h1 class="text-page-title">{{ _("Importer un relevé") }}</h1>
+    <p class="text-sm text-secondary">{{ _("QIF, CSV ou OFX. Tout reste sur ton serveur.") }}</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
+    <div id="import-wizard" class="flex flex-col gap-4 min-w-0">
+      {% include "imports/_step1_file.html" %}
+    </div>
+
+    <aside class="hidden lg:flex flex-col gap-4">
+      <section class="card flex flex-col gap-2 lg:p-5">
+        <h2 class="text-section-title">{{ _("Fichier") }}</h2>
+        <p id="import-file-name" class="text-sm text-secondary" data-empty="{{ _("Aucun fichier choisi.") }}">{{ _("Aucun fichier choisi.") }}</p>
+        <p class="text-xs text-secondary">{{ _("Formats reconnus : QIF (export HomeBank), CSV de la plupart des banques, OFX. Les doublons sont détectés sur la date, le montant et le libellé.") }}</p>
+      </section>
+      <section class="card flex flex-col gap-1 lg:p-5">
+        <h2 class="text-section-title mb-1">{{ _("Ce que Twiga vérifie") }}</h2>
+        <ul class="flex flex-col divide-y divide-border">
+          <li class="flex items-start gap-3 py-3 text-sm"><span class="mt-0.5 text-secondary">{{ icon('clipboard-copy', size=18) }}</span><span>{{ _("Doublons : même date, même montant, même libellé") }}</span></li>
+          <li class="flex items-start gap-3 py-3 text-sm"><span class="mt-0.5 text-secondary">{{ icon('tool', size=18) }}</span><span>{{ _("Tes règles de rangement, appliquées d'office") }}</span></li>
+          <li class="flex items-start gap-3 py-3 text-sm"><span class="mt-0.5 text-secondary">{{ icon('building-bank', size=18) }}</span><span>{{ _("Virements internes et chèques, rapprochés tout seuls") }}</span></li>
+        </ul>
+      </section>
+    </aside>
   </div>
 </main>
 {% endblock %}

@@ -285,3 +285,8 @@ templates.env.globals["get_pillar_icon"] = get_pillar_icon
 templates.env.globals["get_pillar_label"] = get_pillar_label
 templates.env.globals["resolve_category_pillar"] = resolve_category_pillar
 templates.env.globals["resolve_transaction_pillar"] = resolve_transaction_pillar
+
+
+def flash_html(kind: str, message: str) -> str:
+    """Feedback fragment returned by an HTMX action, see frontend/templates/_flash.html."""
+    return templates.get_template("_flash.html").render(kind=kind, message=message)

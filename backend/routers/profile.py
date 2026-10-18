@@ -2,12 +2,11 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from markupsafe import escape
 from sqlalchemy.orm import Session
 
 from backend import auth, crud, i18n
 from backend.database import get_db
-from backend.templating import templates
+from backend.templating import flash_html, templates
 from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -38,18 +37,15 @@ def update_profile(
     # via Paramètres > Utilisateurs (backend/routers/users.py).
     current_user = auth.get_current_user(request)
     if not auth.AUTH_ENABLED or current_user is None:
-        return HTMLResponse(_t('<p class="text-sm text-danger py-2">Authentification désactivée.</p>'), status_code=400)
+        return HTMLResponse(flash_html("error", _t("Authentification désactivée.")), status_code=400)
 
     error = crud.update_user_profile(db, current_user.id, display_name, username)
     if error:
-        # error peut embarquer le nom d'utilisateur SAISI (voir
-        # crud.update_user_profile) : contrairement aux routes qui passent
-        # par templates.TemplateResponse (auto-échappement Jinja), cette
-        # réponse est un HTMLResponse construit à la main -> échappement
-        # manuel obligatoire, sinon un nom d'utilisateur contenant du HTML
-        # s'exécuterait tel quel dans la page (XSS).
-        return HTMLResponse(f'<p class="text-sm text-danger py-2">{escape(error)}</p>', status_code=400)
-    return HTMLResponse(_t('<p class="text-sm text-success py-2">✓ Profil mis à jour.</p>'))
+        # error may embed the username the user TYPED (see
+        # crud.update_user_profile): it goes through the _flash.html fragment,
+        # whose Jinja autoescape keeps any HTML in it inert (no XSS).
+        return HTMLResponse(flash_html("error", error), status_code=400)
+    return HTMLResponse(flash_html("success", _t("✓ Profil mis à jour.")))
 
 
 @router.post("/tour-seen", status_code=204)
