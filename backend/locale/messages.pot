@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 16:54+0000\n"
+"POT-Creation-Date: 2026-10-18 17:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -82,6 +82,10 @@ msgstr ""
 
 #, python-format
 msgid "%(excluded_count)s opération(s) exclue(s) volontairement."
+msgstr ""
+
+#, python-format
+msgid "%(id)s art."
 msgstr ""
 
 #, python-format
@@ -256,16 +260,10 @@ msgstr ""
 msgid "(vous)"
 msgstr ""
 
-msgid "+ Ajouter une ligne"
-msgstr ""
-
 msgid "+ Ajouter une sous-catégorie"
 msgstr ""
 
 msgid "+ Nouveau"
-msgstr ""
-
-msgid "+ Nouvelle opération"
 msgstr ""
 
 msgid "+ de critères"
@@ -405,6 +403,9 @@ msgid "Ajouter un utilisateur"
 msgstr ""
 
 msgid "Ajouter une catégorie"
+msgstr ""
+
+msgid "Ajouter une ligne"
 msgstr ""
 
 msgid "Ajouter une règle"
@@ -735,9 +736,6 @@ msgstr ""
 msgid "Catégorisation en masse"
 msgstr ""
 
-msgid "Catégorisation en masse — Twiga 🦒"
-msgstr ""
-
 msgid "Catégorisé en"
 msgstr ""
 
@@ -856,6 +854,9 @@ msgid "Comptes existants"
 msgstr ""
 
 msgid "Comptes — Twiga 🦒"
+msgstr ""
+
+msgid "Confiance de la suggestion"
 msgstr ""
 
 msgid "Confirmer"
@@ -1158,6 +1159,12 @@ msgstr ""
 msgid "Fichier QIF, CSV ou OFX"
 msgstr ""
 
+msgid "Filtres"
+msgstr ""
+
+msgid "Fixer Le Cap"
+msgstr ""
+
 msgid "Fixer le cap"
 msgstr ""
 
@@ -1277,6 +1284,9 @@ msgstr ""
 msgid "Importer un fichier — Twiga 🦒"
 msgstr ""
 
+msgid "Importer un relevé"
+msgstr ""
+
 msgid "Importez d'abord un fichier"
 msgstr ""
 
@@ -1345,7 +1355,7 @@ msgstr ""
 msgid "La Savane vide"
 msgstr ""
 
-msgid "La Savane — Twiga 🦒"
+msgid "La Savane — Twiga"
 msgstr ""
 
 msgid "La girafe veille sur votre route."
@@ -1733,7 +1743,7 @@ msgstr ""
 msgid "Opérations suspectes"
 msgstr ""
 
-msgid "Opérations — Twiga 🦒"
+msgid "Opérations — Twiga"
 msgstr ""
 
 msgid "Oui"
@@ -1887,6 +1897,9 @@ msgid "Raccourcis clavier"
 msgstr ""
 
 msgid "Rafraîchir"
+msgstr ""
+
+msgid "Ranger"
 msgstr ""
 
 msgid "Rapport Twiga"
@@ -2059,6 +2072,9 @@ msgid "Réessayer"
 msgstr ""
 
 msgid "Réinitialiser"
+msgstr ""
+
+msgid "Réinitialiser les filtres"
 msgstr ""
 
 msgid "Réinitialiser les piliers"
@@ -2319,14 +2335,14 @@ msgstr ""
 msgid "Tous les comptes"
 msgstr ""
 
-msgid "Tous types"
-msgstr ""
-
 msgid "Tout commence par un relevé bancaire : QIF, CSV ou OFX."
 msgstr ""
 
 #, python-format
 msgid "Tout confirmer (%(pairs)s)"
+msgstr ""
+
+msgid "Tout ignorer"
 msgstr ""
 
 msgid "Tout mode de paiement"
@@ -2346,6 +2362,9 @@ msgstr ""
 msgid "Tout valider &gt; 90%%"
 msgstr ""
 
+msgid "Toutes"
+msgstr ""
+
 #, python-format
 msgid "Toutes les %(penses)s"
 msgstr ""
@@ -2354,6 +2373,12 @@ msgid "Toutes les catégories"
 msgstr ""
 
 msgid "Toutes les sous-catégories"
+msgstr ""
+
+msgid "Traitement en masse"
+msgstr ""
+
+msgid "Traitement en masse — Twiga"
 msgstr ""
 
 msgid "Traiter normalement"
@@ -2386,6 +2411,9 @@ msgid "Transports en commun"
 msgstr ""
 
 msgid "Travaux et entretien"
+msgstr ""
+
+msgid "Tri"
 msgstr ""
 
 msgid "Trimestre"
@@ -2436,6 +2464,9 @@ msgid "Twiga, les yeux fermés de plaisir, une branche feuillue dans la bouche"
 msgstr ""
 
 msgid "Twiga, repue, un relevé encore visible en bosse dans le cou"
+msgstr ""
+
+msgid "Type"
 msgstr ""
 
 msgid "Téléphone mobile"
@@ -2518,6 +2549,9 @@ msgstr ""
 msgid "Visite guidée"
 msgstr ""
 
+msgid "Voir Mon mois"
+msgstr ""
+
 msgid "Voir le diagnostic de solde"
 msgstr ""
 
@@ -2525,6 +2559,9 @@ msgid "Voir le détail →"
 msgstr ""
 
 msgid "Voir le rapport complet"
+msgstr ""
+
+msgid "Voir les alertes budget masquées"
 msgstr ""
 
 msgid "Voir loin. Voir juste."
@@ -2586,6 +2623,9 @@ msgstr ""
 msgid "ex. Jean Dupont"
 msgstr ""
 
+msgid "incertaine"
+msgstr ""
+
 #, python-format
 msgid "le %(date)s"
 msgstr ""
@@ -2611,10 +2651,16 @@ msgstr ""
 msgid "pour les poser, ou répartissez librement ci-dessous."
 msgstr ""
 
+msgid "probable"
+msgstr ""
+
 msgid "remplace"
 msgstr ""
 
 msgid "suivants viendront alimenter un compte déjà existant."
+msgstr ""
+
+msgid "sûre"
 msgstr ""
 
 msgid "transactions sélectionnées"
@@ -2624,16 +2670,12 @@ msgstr ""
 msgid "vs %(year_ago_label)s :"
 msgstr ""
 
-#, python-format
-msgid "· %(size)s %(id)s art."
+#, python-brace-format
+msgid "{name} : dépassé ! ({spent} / {budget})"
 msgstr ""
 
-#, python-format
-msgid "· %(size)s Imprévu"
-msgstr ""
-
-#, python-format
-msgid "· %(size)s Virement"
+#, python-brace-format, python-format
+msgid "{name} : {pct}%% consommé ({spent} / {budget})"
 msgstr ""
 
 #, python-format
@@ -2646,7 +2688,13 @@ msgstr ""
 msgid "À propos de Twiga"
 msgstr ""
 
+msgid "À trier"
+msgstr ""
+
 msgid "Écart"
+msgstr ""
+
+msgid "Écarter"
 msgstr ""
 
 msgid "Échap"
@@ -2771,14 +2819,7 @@ msgstr ""
 msgid "− de critères"
 msgstr ""
 
-msgid "⏭️ Passer"
-msgstr ""
-
 msgid "▼ voir comptes"
-msgstr ""
-
-#, python-brace-format, python-format
-msgid "⚠️ {name} : {pct}%% consommé ({spent} / {budget})"
 msgstr ""
 
 #, python-format
@@ -2792,9 +2833,6 @@ msgstr ""
 msgid "✓ %(n)s transaction mise à jour</p>"
 msgstr ""
 
-msgid "️ Traitement en masse"
-msgstr ""
-
 #, python-format
 msgid "🆘 %(n)s opération marquée comme imprévu"
 msgstr ""
@@ -2803,15 +2841,8 @@ msgstr ""
 msgid "📥 %(n)s opération remise dans La Savane"
 msgstr ""
 
-msgid "🔔 Voir les alertes budget masquées"
-msgstr ""
-
 #, python-format
 msgid "🔴 %(label)s presque épuisé à mi-mois !"
-msgstr ""
-
-#, python-brace-format
-msgid "🚨 {name} : dépassé ! ({spent} / {budget})"
 msgstr ""
 
 #, python-format
