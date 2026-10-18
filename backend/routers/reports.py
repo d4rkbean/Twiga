@@ -23,7 +23,7 @@ from backend.dates import (
     year_label,
     year_range,
 )
-from backend.formatting import format_amount, format_date
+from backend.formatting import format_amount_for_export, format_date
 from backend.templating import category_display_filter, templates
 from backend.i18n import gettext as _t
 
@@ -800,21 +800,21 @@ def export_report_csv(
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow([_t("Rapport Twiga"), context["period_bar_label"]])
     writer.writerow([])
-    writer.writerow([_t("Recettes"), format_amount(context["income_total"])])
-    writer.writerow([_t("Dépenses"), format_amount(context["expense_total"])])
-    writer.writerow([_t("Résultat"), format_amount(context["result_total"])])
+    writer.writerow([_t("Recettes"), format_amount_for_export(context["income_total"])])
+    writer.writerow([_t("Dépenses"), format_amount_for_export(context["expense_total"])])
+    writer.writerow([_t("Résultat"), format_amount_for_export(context["result_total"])])
     writer.writerow([_t("Taux d'épargne"), f"{context['savings_rate']} %"])
     writer.writerow([_t("Score Twiga"), f"{context['twiga_score']['score']} / 100"])
     writer.writerow([])
     writer.writerow([_t("Dépenses par catégorie"), _t("Montant"), "%" + _t(" du total"), _t("Évolution vs période précédente")])
     for row in context["expense_rows"]:
         change = f"{row['change']} %" if row["change"] is not None else ""
-        writer.writerow([row["name"], format_amount(row["amount"]), f"{row['percent_of_total']} %", change])
+        writer.writerow([row["name"], format_amount_for_export(row["amount"]), f"{row['percent_of_total']} %", change])
     writer.writerow([])
     writer.writerow([_t("Recettes par catégorie"), _t("Montant"), "%" + _t(" du total"), _t("Évolution vs période précédente")])
     for row in context["income_rows"]:
         change = f"{row['change']} %" if row["change"] is not None else ""
-        writer.writerow([row["name"], format_amount(row["amount"]), f"{row['percent_of_total']} %", change])
+        writer.writerow([row["name"], format_amount_for_export(row["amount"]), f"{row['percent_of_total']} %", change])
 
     filename = f"twiga-rapport-{period.start.isoformat()}-{period.end.isoformat()}.csv"
     return Response(

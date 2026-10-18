@@ -4,17 +4,24 @@ from decimal import Decimal
 from backend.i18n import current_format
 
 _THIN_SPACE = " "
+# Vrai signe moins, de la largeur du « + » : le trait d'union est trop court et
+# fait lire « -48,00 € » comme un tiret.
+_MINUS = "\u2212"
 
 
 def format_amount(value: Decimal) -> str:
+    """Amount for the screen (filter `eur`): typographic minus sign."""
     return format_amount_as(value, current_format())
 
 
-def format_amount_as(value: Decimal, number_format: str) -> str:
+def format_amount_for_export(value: Decimal) -> str:
+    """Same text for a file a spreadsheet will read: plain ASCII hyphen-minus."""
+    return format_amount_as(value, current_format(), ascii_minus=True)
+
+
+def format_amount_as(value: Decimal, number_format: str, ascii_minus: bool = False) -> str:
     quantized = value.quantize(Decimal("0.01"))
-    # Vrai signe moins (U+2212), de la largeur du « + » : le trait d'union
-    # est trop court et fait lire « -48,00 € » comme un tiret.
-    sign = "\u2212" if quantized < 0 else ""
+    sign = ("-" if ascii_minus else _MINUS) if quantized < 0 else ""
     integer_part, _, decimal_part = f"{abs(quantized):.2f}".partition(".")
 
     groups = []
