@@ -27,6 +27,7 @@
 <div
   x-data="twigaTour()"
   data-texts="{{ tour_texts | tojson | forceescape }}"
+  data-progress-label="{{ _("Étape {step} sur {total}") }}"
   data-tracked="{{ 'true' if tour.tracked else 'false' }}"
   data-pending="{{ 'true' if tour.pending else 'false' }}"
   data-skip-import="{{ 'true' if tour.skip_import else 'false' }}"
