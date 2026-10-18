@@ -4,6 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader
 from markupsafe import Markup
 from sqlalchemy import select
 from sqlalchemy.orm import object_session
@@ -189,28 +190,6 @@ def static_url(path: str) -> str:
     return f"{path}?v={ASSET_VERSION}"
 
 
-templates = Jinja2Templates(directory=BASE_DIR / "frontend" / "templates")
-templates.env.filters["eur"] = format_amount
-templates.env.filters["fr_date"] = format_date
-templates.env.filters["tojson"] = tojson_filter
-templates.env.filters["category_color"] = category_color_filter
-templates.env.filters["category_display"] = category_display_filter
-templates.env.filters["account_color"] = account_color_filter
-templates.env.filters["receipt_family_display"] = receipt_family_display
-templates.env.globals["get_category_icon"] = get_category_icon
-templates.env.globals["get_category_icon_name"] = get_category_icon_name
-templates.env.globals["get_payment_method_icon_name"] = get_payment_method_icon_name
-templates.env.filters["pm_label"] = get_payment_method_label
-templates.env.globals["account_types"] = ACCOUNT_TYPES
-templates.env.globals["get_current_user"] = get_current_user
-
-# Traduction : jinja2.ext.i18n + gettext/ngettext lus dans la langue de la
-# requête (backend/i18n.py). newstyle=True permet {{ _("Bonjour %(nom)s", nom=x) }}
-# et les blocs {% trans %}.
-templates.env.add_extension("jinja2.ext.i18n")
-templates.env.install_gettext_callables(i18n.gettext, i18n.ngettext, newstyle=True)
-
-
 def jsq_filter(value) -> str:
     # Texte traduit à placer dans une chaîne JS entre apostrophes, elle-même
     # dans un attribut HTML (Alpine : :aria-label="x ? '...' : '...'"). Renvoie
@@ -219,29 +198,12 @@ def jsq_filter(value) -> str:
     return str(value).replace("\\", "\\\\").replace("'", "\\'")
 
 
-templates.env.filters["jsq"] = jsq_filter
-templates.env.globals["current_language"] = i18n.current_language
-templates.env.globals["current_format"] = i18n.current_format
-templates.env.globals["number_locale"] = i18n.number_locale
-
-
 def format_preview(number_format: str) -> str:
     # Exemple affiché sur chaque carte du sélecteur de format (Paramètres >
     # Préférences) : la même date et le même montant rendus dans chaque format.
     from datetime import date
 
     return f"{format_date_as(date(2026, 12, 31), number_format)} · {format_amount_as(Decimal('1234.56'), number_format)}"
-
-
-templates.env.globals["format_preview"] = format_preview
-templates.env.globals["zero_eur"] = lambda: format_amount(Decimal("0"))
-templates.env.globals["default_format_for"] = i18n.default_format_for
-templates.env.globals["LANGUAGES"] = i18n.LANGUAGES
-templates.env.globals["FORMATS"] = i18n.FORMATS
-templates.env.globals["current_ui_variant"] = preferences.current_ui_variant
-templates.env.globals["current_theme"] = preferences.current_theme
-templates.env.globals["current_density"] = preferences.current_density
-templates.env.globals["other_way_enabled"] = preferences.other_way_enabled
 
 
 def tour_context(request) -> dict:
@@ -266,21 +228,116 @@ def tour_context(request) -> dict:
     return {"tracked": True, "pending": pending, "skip_import": skip_import}
 
 
-templates.env.globals["tour_context"] = tour_context
-templates.env.globals["get_account_type_icon"] = get_account_type_icon
-templates.env.globals["get_account_type_label"] = get_account_type_label
-templates.env.globals["user_display_name"] = user_display_name
-templates.env.globals["user_initials"] = user_initials
-templates.env.globals["user_role_label"] = user_role_label
-templates.env.globals["static_url"] = static_url
-# Jeu d'icônes au trait vendorisé (voir backend/icons.py) : {{ icon("wallet") }}
-templates.env.globals["icon"] = icon
-templates.env.globals["icon_names"] = icon_names
-templates.env.globals["PILLARS"] = PILLARS
-templates.env.globals["PILLAR_ORDER"] = PILLAR_ORDER
-templates.env.globals["get_pillar_label"] = get_pillar_label
-templates.env.globals["resolve_category_pillar"] = resolve_category_pillar
-templates.env.globals["resolve_transaction_pillar"] = resolve_transaction_pillar
+def configure_environment(env: Environment) -> Environment:
+    """Filters, globals and the translation extension, shared by both interfaces.
+
+    Called once per Jinja environment (the Classic one and the other way's):
+    a filter added here exists in both, so a template never depends on which
+    interface renders it.
+    """
+    env.filters["eur"] = format_amount
+    env.filters["fr_date"] = format_date
+    env.filters["tojson"] = tojson_filter
+    env.filters["category_color"] = category_color_filter
+    env.filters["category_display"] = category_display_filter
+    env.filters["account_color"] = account_color_filter
+    env.filters["receipt_family_display"] = receipt_family_display
+    env.filters["pm_label"] = get_payment_method_label
+    env.filters["jsq"] = jsq_filter
+    env.globals["get_category_icon"] = get_category_icon
+    env.globals["get_category_icon_name"] = get_category_icon_name
+    env.globals["get_payment_method_icon_name"] = get_payment_method_icon_name
+    env.globals["account_types"] = ACCOUNT_TYPES
+    env.globals["get_current_user"] = get_current_user
+
+    # Traduction : jinja2.ext.i18n + gettext/ngettext lus dans la langue de la
+    # requête (backend/i18n.py). newstyle=True permet {{ _("Bonjour %(nom)s", nom=x) }}
+    # et les blocs {% trans %}.
+    env.add_extension("jinja2.ext.i18n")
+    env.install_gettext_callables(i18n.gettext, i18n.ngettext, newstyle=True)
+
+    env.globals["current_language"] = i18n.current_language
+    env.globals["current_format"] = i18n.current_format
+    env.globals["number_locale"] = i18n.number_locale
+    env.globals["format_preview"] = format_preview
+    env.globals["zero_eur"] = lambda: format_amount(Decimal("0"))
+    env.globals["default_format_for"] = i18n.default_format_for
+    env.globals["LANGUAGES"] = i18n.LANGUAGES
+    env.globals["FORMATS"] = i18n.FORMATS
+    env.globals["current_ui_variant"] = preferences.current_ui_variant
+    env.globals["current_theme"] = preferences.current_theme
+    env.globals["current_density"] = preferences.current_density
+    env.globals["other_way_enabled"] = preferences.other_way_enabled
+    env.globals["tour_context"] = tour_context
+    env.globals["get_account_type_icon"] = get_account_type_icon
+    env.globals["get_account_type_label"] = get_account_type_label
+    env.globals["user_display_name"] = user_display_name
+    env.globals["user_initials"] = user_initials
+    env.globals["user_role_label"] = user_role_label
+    env.globals["static_url"] = static_url
+    # Jeu d'icônes au trait vendorisé (voir backend/icons.py) : {{ icon("wallet") }}
+    env.globals["icon"] = icon
+    env.globals["icon_names"] = icon_names
+    env.globals["PILLARS"] = PILLARS
+    env.globals["PILLAR_ORDER"] = PILLAR_ORDER
+    env.globals["get_pillar_label"] = get_pillar_label
+    env.globals["resolve_category_pillar"] = resolve_category_pillar
+    env.globals["resolve_transaction_pillar"] = resolve_transaction_pillar
+    return env
+
+
+TEMPLATES_DIR = BASE_DIR / "frontend" / "templates"
+OTHER_WAY_DIR = TEMPLATES_DIR / "other_way"
+
+
+def _make_templates(*directories: Path) -> Jinja2Templates:
+    loader = ChoiceLoader([FileSystemLoader(directory) for directory in directories])
+    return Jinja2Templates(env=configure_environment(Environment(loader=loader, autoescape=True)))
+
+
+class VariantTemplates:
+    """The two interfaces behind one `templates` object.
+
+    Classic looks templates up in `frontend/templates/`; the other way looks in
+    `frontend/templates/other_way/` first and falls back on the same folder, so
+    a template that `other_way/` does not override is the Classic one (the
+    other way is complete from its first day, screens are replaced one by one).
+    The routers keep calling `templates.TemplateResponse(name, context)`: the
+    variant of the request (`request.state.ui_variant`, set by
+    LocaleMiddleware) picks the environment. Fragments built in Python
+    (`flash_html`) have no request at hand and read the ContextVar instead.
+    """
+
+    def __init__(self) -> None:
+        self.classic = _make_templates(TEMPLATES_DIR)
+        self.other_way = _make_templates(OTHER_WAY_DIR, TEMPLATES_DIR)
+
+    @property
+    def env(self) -> Environment:
+        # The Classic environment: kept for code that touches `templates.env`.
+        return self.classic.env
+
+    def for_variant(self, variant: str | None) -> Jinja2Templates:
+        return self.other_way if variant == "other_way" else self.classic
+
+    def get_template(self, name: str):
+        return self.for_variant(preferences.current_ui_variant()).env.get_template(name)
+
+    def TemplateResponse(self, *args, **kwargs):
+        if args and isinstance(args[0], str):
+            context = args[1] if len(args) > 1 else kwargs.get("context") or {}
+            request = context.get("request")
+        elif args:
+            request = args[0]
+        else:
+            request = kwargs.get("request") or (kwargs.get("context") or {}).get("request")
+        variant = getattr(getattr(request, "state", None), "ui_variant", None)
+        if variant is None:
+            variant = preferences.current_ui_variant()
+        return self.for_variant(variant).TemplateResponse(*args, **kwargs)
+
+
+templates = VariantTemplates()
 
 
 def flash_html(kind: str, message: str) -> str:
