@@ -24,7 +24,7 @@
     </div>
 
     <div class="flex flex-col gap-4 lg:order-last order-first">
-      <section class="card flex flex-col gap-4 lg:p-5">
+      <section class="card flex flex-col gap-4">
         <h2 class="text-section-title">{{ _("Ajouter un utilisateur") }}</h2>
         <form
           hx-post="/users/create"
@@ -67,7 +67,7 @@
         </form>
       </section>
 
-      <section class="card flex flex-col gap-3 lg:p-5">
+      <section class="card flex flex-col gap-3">
         <h2 class="text-section-title">{{ _("Ce que permet chaque rôle") }}</h2>
         <dl class="flex flex-col gap-3 text-sm">
           <div><dt class="font-semibold text-primary">{{ _("Administrateur") }}</dt><dd class="text-secondary">{{ _("Tout : import, suppression, utilisateurs, réglages.") }}</dd></div>

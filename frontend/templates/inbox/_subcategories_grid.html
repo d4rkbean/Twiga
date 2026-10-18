@@ -1,6 +1,6 @@
 {# Même grille que _categories_grid.html : le chiffre à gauche est le raccourci
    clavier (« 1 » = la catégorie elle-même, puis les sous-catégories). #}
-<div class="category-suggestion flex flex-col gap-3">
+<div class="category-suggestion flex flex-col gap-[var(--space-list)]">
   <button
     type="button"
     id="inbox-back-to-categories-btn"
@@ -18,7 +18,7 @@
       {{ category.name }}
     </span> :
   </p>
-  <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+  <div class="grid grid-cols-2 lg:grid-cols-3 gap-[var(--space-list)]">
     <button
       type="button"
       class="shortcut-category-btn btn btn-secondary justify-start px-3 text-left min-w-0"
