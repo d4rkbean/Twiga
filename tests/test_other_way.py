@@ -366,3 +366,19 @@ def test_switching_the_interface_reloads_the_page(clients, demo, monkeypatch):
 
     assert changed.headers["HX-Refresh"] == "true"
     assert "HX-Refresh" not in same.headers
+
+
+def test_the_shell_renders_without_an_account(monkeypatch):
+    # Authentication disabled: no user on the request. The avatar menu is gone,
+    # the theme stays one tap away, and nothing is hidden (everything is allowed).
+    from types import SimpleNamespace
+
+    request = SimpleNamespace(url=SimpleNamespace(path="/settings"), state=SimpleNamespace())
+    env = templates.other_way.env
+    bar = env.get_template("other_way/_topbar.html").render(request=request)
+    bottom = env.get_template("other_way/_bottom_nav.html").render(request=request)
+
+    assert 'id="tour-b-avatar"' not in bar and "toggleTheme()" in bar
+    assert 'id="tour-b-help"' in bar
+    assert 'href="/users"' in bar and 'href="/imports/new"' in bar
+    assert current_in(bottom) == ["Plus"]
