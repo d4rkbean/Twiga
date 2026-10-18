@@ -64,6 +64,31 @@ def _build_card_context(db: Session, transaction: Transaction | None) -> dict:
     return context
 
 
+# Nombre de lignes de la liste « À suivre » : le début de la file, pas la file
+# entière (La Savane peut compter des centaines d'opérations).
+UPCOMING_LIMIT = 8
+
+
+def _build_upcoming_context(db: Session, current: Transaction | None) -> dict:
+    # La liste « À suivre » à côté de la carte : les prochaines opérations de
+    # la file, dans l'ordre exact où La Savane les présente (même requête que
+    # la carte courante), avec la catégorie qu'elle leur proposerait.
+    upcoming = crud.get_upcoming_pending_transactions(db, UPCOMING_LIMIT)
+    suggestions = crud.suggest_categories_for_transactions(db, upcoming)
+    return {
+        "upcoming": [
+            {
+                "transaction": transaction,
+                "category": suggestions[transaction.id]["category"]
+                if transaction.id in suggestions
+                else None,
+            }
+            for transaction in upcoming
+        ],
+        "current_id": current.id if current is not None else None,
+    }
+
+
 def _render_next_card(
     request: Request,
     db: Session,
@@ -75,6 +100,7 @@ def _render_next_card(
     pending_count = crud.count_pending_transactions(db)
     context = {
         "request": request,
+        **_build_upcoming_context(db, transaction),
         "history": _history_csv(history),
         "pending_count": pending_count,
         "giraffe_scale": _giraffe_scale(pending_count),
@@ -160,6 +186,7 @@ def inbox(request: Request, db: Session = Depends(get_db)):
         # jamais l'AppState de _build_routine_banner_context — voir
         # inbox/_le_cap_midmonth_banner.html.
         "show_le_cap_midmonth_banner": today.day == 15,
+        **_build_upcoming_context(db, transaction),
         **_build_card_context(db, transaction),
         **_build_routine_banner_context(db),
         **_build_budget_alerts_context(db),
@@ -182,8 +209,12 @@ def _categorize_and_advance(
     label: str | None,
     history: str | None,
     payment_method: str | None = None,
+    is_unexpected: bool | None = None,
 ):
-    crud.categorize_transaction(db, transaction, category, label=label, payment_method=payment_method)
+    crud.categorize_transaction(
+        db, transaction, category, label=label, payment_method=payment_method,
+        is_unexpected=is_unexpected,
+    )
     rule_suggestion = crud.maybe_rule_suggestion(db, transaction, category)
     new_history = _parse_history(history) + [transaction.id]
     next_transaction = crud.get_next_pending_transaction(db)
@@ -281,10 +312,13 @@ def finalize_categorization(
     payment_method: str | None = Form(None),
     label: str | None = Form(None),
     history: str | None = Form(None),
+    unexpected: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
     # Étape terminale de l'étape mode de paiement (facultative) : tap sur un
     # mode de paiement OU sur "Passer" (payment_method absent dans ce cas).
+    # `unexpected` : la bascule « Imprévu » de la carte (champ caché, "1" quand
+    # elle est enfoncée, vide sinon) ; absent = la carte ne la portait pas.
     transaction = db.get(Transaction, transaction_id)
     if transaction is None or transaction.validated:
         raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
@@ -294,7 +328,10 @@ def finalize_categorization(
         raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
 
     payment = payment_method if payment_method in crud.get_payment_methods_dict(db) else None
-    return _categorize_and_advance(request, db, transaction, category, label, history, payment)
+    return _categorize_and_advance(
+        request, db, transaction, category, label, history, payment,
+        is_unexpected=None if unexpected is None else bool(unexpected),
+    )
 
 
 @router.post("/{transaction_id}/skip", response_class=HTMLResponse)

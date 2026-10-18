@@ -6,6 +6,7 @@
   //   1-9         : catégorie par position (voir .shortcut-category-btn)
   //   Entrée      : valider la catégorie proposée
   //   Échap       : retour aux catégories
+  //   i           : bascule « Imprévu » (s'ajoute à la décision)
   // Fichier statique dédié (jamais passé par Jinja, aucune donnée dynamique
   // à embarquer) : ne peut pas souffrir du souci d'échappement qui a cassé
   // un <script> inline plus tôt dans ce projet. Chaque élément est requêté
@@ -40,6 +41,9 @@
     } else if (event.key === "Escape") {
       event.preventDefault();
       clickById("inbox-back-to-categories-btn");
+    } else if (event.key === "i" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      clickById("inbox-unexpected-btn");
     } else if (event.key >= "1" && event.key <= "9") {
       var buttons = document.querySelectorAll(".shortcut-category-btn");
       var index = parseInt(event.key, 10) - 1;

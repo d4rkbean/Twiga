@@ -145,7 +145,7 @@
       <div class="flex flex-col gap-2">
         <p class="text-sm font-semibold text-primary flex items-center gap-2">{{ icon('keyboard') }}{{ _("Raccourcis clavier") }}</p>
         <!-- Raccourcis vérifiés dans le code réel (frontend/static/js/
-             inbox-shortcuts.js pour →/←/1-9/Entrée/Échap, _header.html pour
+             inbox-shortcuts.js pour →/←/1-9/Entrée/Échap/i, _header.html pour
              Ctrl+K) — pas une liste inventée, elle doit rester exacte. -->
         {% set shortcuts = [
           ("Ctrl+K", _("Recherche globale")),
@@ -154,6 +154,7 @@
           ("1-9", _("Sélectionner catégorie")),
           (_("Entrée"), _("Valider catégorie")),
           (_("Échap"), _("Annuler / Retour")),
+          ("I", _("Marquer comme imprévu")),
         ] %}
         <div class="bg-page rounded-xl border border-border divide-y divide-border overflow-hidden">
           {% for key, label in shortcuts %}
