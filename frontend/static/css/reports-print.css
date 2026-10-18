@@ -101,7 +101,7 @@ main {
 .print-report-header {
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #d4a96a;
+  border-bottom: 2px solid var(--color-accent);
 }
 
 /* Les graphiques Chart.js (canvas) doivent rester lisibles et ne jamais se

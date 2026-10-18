@@ -10,26 +10,97 @@
 @source "../js";
 @source "../sw.js";
 
+/* Police d'affichage : Bricolage Grotesque (SIL OFL 1.1, voir
+   frontend/static/fonts/OFL.txt), servie par l'application elle-même, jamais
+   par un CDN. Deux graisses seulement (700, 800), sous-ensemble latin +
+   latin-1 + € et −, fixées au corps optique 32 : ~18 Ko chacune. Réservée aux
+   titres de page, aux titres de section et aux répliques de la girafe ; tout
+   le reste reste en police système (--font-sans, inchangée). */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/bricolage-grotesque-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/static/fonts/bricolage-grotesque-800.woff2") format("woff2");
+}
+
 @theme {
-  --color-page: #f9f9f9;
+  --color-page: #faf8f5;
   --color-container: #ffffff;
+  --color-sunken: #f3f0eb;  /* creux : rails, zones en retrait, cases */
   --color-primary: #111827;
   --color-secondary: #585e6a;  /* assombri : le motif de fond passe
      derrière ce texte et lui mangeait du contraste (4,04:1 à 10 %
-     d'opacité, sous le seuil de 4,5). Tient 4,64:1 sur la plaque la plus
-     sombre du pelage à 22 %, et 6,51:1 sur les cartes blanches. */
-  --color-border: #e5e7eb;
+     d'opacité, sous le seuil de 4,5). Tient plus de 4,5:1 sur la plaque la
+     plus sombre du pelage à 22 %, et 6,5:1 sur les cartes blanches. */
+  --color-border: #e7e2da;
+  --color-border-strong: #d6cfc4;
+  /* Contour des champs de saisie : 3,4:1 sur la surface, le seuil de 3:1
+     qu'exige WCAG 1.4.11 pour qu'un champ se distingue de son fond. */
+  --color-field: #848a94;
   /* Palette "girafe" : tan/ambre (couleur des taches) comme accent, brun
      foncé comme couleur de texte/premier plan sur cet accent — le brun a
-     bien plus de contraste que du blanc sur un ambre aussi clair. Valeurs
-     identiques en clair et en sombre (un ton moyen comme #D4A96A se lit bien
-     sur les deux fonds), donc pas besoin de les redéfinir dans .dark
-     ci-dessous. */
+     bien plus de contraste que du blanc sur un ambre aussi clair.
+     L'ambre est RARE : action principale et état actif, rien d'autre.
+       accent        aplat de l'action principale (identique clair/sombre)
+       accent-hover  son survol
+       on-accent     texte et icônes posés sur l'aplat
+       accent-ink    l'ambre quand il sert de TEXTE ou de trait fin (état
+                     actif, anneau de focus) : #d4a96a sur fond clair ne tient
+                     que 2:1, ce brun-ambre tient 5,3:1
+       accent-soft   fond d'un état actif (pastille, ligne de menu) */
   --color-accent: #d4a96a;
-  --color-on-accent: #5c3d1e;
-  --color-success: #16a34a;
-  --color-warning: #f59e0b;
-  --color-danger: #dc2626;
+  --color-accent-hover: #c99a58;
+  --color-on-accent: #4a2f12;
+  --color-accent-ink: #8a5a1f;
+  --color-accent-soft: #f7efe3;
+  /* Verdicts : une couleur de texte et un fond doux par verdict. Le feu
+     tricolore ne désigne qu'un verdict calculé (signe d'un montant, seuil
+     franchi) et se double toujours d'un mot. warning-gauge est l'orange vif
+     des jauges (un aplat, pas un texte : #f59e0b ne tient pas 4,5:1). */
+  --color-success: #13703a;
+  --color-success-soft: #eaf6ee;
+  --color-warning: #a14a07;
+  --color-warning-gauge: #f59e0b;
+  --color-warning-soft: #fdf3e3;
+  --color-danger: #c81e1e;
+  --color-danger-soft: #fdecec;
+  --color-info: #1d4ed8;
+  --color-info-soft: #eef3fd;
+
+  /* Palette de données des graphiques (séries, parts) : huit teintes sans
+     ambre ni vert/rouge de verdict, lues en JavaScript par cssColor(). */
+  --color-chart-1: #2563eb;
+  --color-chart-2: #0d9488;
+  --color-chart-3: #9333ea;
+  --color-chart-4: #db2777;
+  --color-chart-5: #65a30d;
+  --color-chart-6: #ea580c;
+  --color-chart-7: #0891b2;
+  --color-chart-8: #64748b;
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Un seul rayon, 12px (rounded-xl). */
+  --radius-xl: 12px;
+  /* Deux niveaux d'ombre, teintés brun plutôt que noir : repos (cartes) et
+     flottant (menus, boîtes de dialogue, panneaux). shadow-sm et shadow-lg
+     de Tailwind pointent dessus : les gabarits n'ont rien à changer. */
+  --shadow-sm: 0 1px 2px rgb(60 40 20 / 0.06);
+  --shadow-lg: 0 12px 24px -6px rgb(60 40 20 / 0.16);
+
+  /* Mouvement : une seule courbe (arrivée vive, fin douce) et trois durées. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
 }
 
 /* Mode sombre : bascule via la classe .dark posée sur <html> (gérée par le
@@ -61,6 +132,23 @@
   --color-success: #22c55e;
   --color-warning: #fbbf24;
   --color-danger: #f87171;
+
+  /* PROVISOIRE : jetons nés avec l'identité claire (lot 1). Chacun reprend la
+     valeur sombre existante la plus proche, pour que le mode sombre actuel
+     reste inchangé en attendant la palette « sombre chaude ». À remplacer
+     par ses vraies valeurs au lot du thème sombre. */
+  --color-sunken: #0f172a;                       /* = page */
+  --color-border-strong: #334155;                /* = border */
+  --color-field: #334155;                        /* = border (les champs n'avaient que cette bordure) */
+  --color-accent-hover: #d4a96a;                 /* = accent */
+  --color-accent-ink: #d4a96a;                   /* = accent (texte actif d'avant) */
+  --color-accent-soft: color-mix(in srgb, #d4a96a 10%, #1e293b);  /* = l'ancien bg-accent/10 sur container */
+  --color-success-soft: color-mix(in srgb, #22c55e 12%, #1e293b);
+  --color-warning-gauge: #fbbf24;                /* = warning */
+  --color-warning-soft: color-mix(in srgb, #fbbf24 14%, #1e293b);
+  --color-danger-soft: color-mix(in srgb, #f87171 10%, #1e293b);
+  --color-info: #93c5fd;
+  --color-info-soft: color-mix(in srgb, #93c5fd 12%, #1e293b);
 }
 
 @layer base {
@@ -117,8 +205,39 @@
      produirait un halo disgracieux à chaque tap sur mobile. outline-offset
      positif pour ne jamais chevaucher le texte/l'icône du contrôle. */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-accent-ink);
     outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 40%, var(--color-container));
+    color: var(--color-on-accent);
+  }
+
+  /* Titres de page et de section : Bricolage Grotesque 800, serré de 2 %.
+     Une classe de graisse posée sur le titre (font-bold...) reste prioritaire. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* Les boîtes de dialogue modales se centrent par margin:auto (feuille de
+     style du navigateur) ; le preflight Tailwind remet toutes les marges à 0
+     et les collait en haut à gauche de l'écran. Les utilitaires (lg:m-0 du
+     panneau latéral des opérations...) restent prioritaires. */
+  dialog {
+    margin: auto;
+  }
+
+  /* La girafe en ligne (macro mascot, _macros/brand.html) : le preflight
+     Tailwind pose display:block sur les <svg>, ce qui renverrait le texte
+     voisin à la ligne. Même correctif que .twiga-icon plus bas. */
+  .twiga-mascot {
+    display: inline-block;
+    vertical-align: -0.2em;
+    flex-shrink: 0;
   }
 
   /* Pendant la requête HTMX déclenchée par l'élément (classe ajoutée
@@ -139,6 +258,55 @@
   .htmx-added,
   .htmx-settling {
     opacity: 0;
+  }
+
+  /* Mouvement : fondu + léger glissé, 0,3 s, courbe --ease-out. Réservé à
+     ceux qui n'ont pas demandé moins d'animation : sans cette préférence, ni
+     la page, ni les contenus insérés, ni l'indicateur d'envoi ne glissent
+     (le fondu d'opacité ci-dessus, lui, reste). */
+  @keyframes twiga-rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Entrée de page : les enfants directs de <main>, pas <main> lui-même —
+       une transformation sur <main> ferait de lui le repère de ses
+       descendants en position:fixed pendant l'animation (barre d'actions de
+       la catégorisation en masse). Les éléments fixes eux-mêmes en sont
+       exclus. */
+    main > :not(.fixed):not(dialog) {
+      animation: twiga-rise var(--duration-slow) var(--ease-out) both;
+    }
+
+    /* Contenu inséré par htmx (swap) : même glissé que l'entrée de page. */
+    .htmx-added,
+    .htmx-settling {
+      transform: translateY(8px);
+    }
+
+    * {
+      transition-timing-function: var(--ease-out);
+    }
+
+    /* Indicateur d'envoi (« Twiga tend le cou… » pendant un import) : il
+       apparaît en glissant au lieu de surgir. htmx pose lui-même opacity 0/1
+       et sa propre transition en 200 ms ; le sélecteur à trois classes
+       l'emporte sur le sien, quel que soit l'ordre de chargement. */
+    .htmx-indicator {
+      transform: translateY(6px);
+    }
+    body .htmx-request .htmx-indicator,
+    body .htmx-request.htmx-indicator {
+      transform: none;
+      transition: opacity var(--duration-slow) var(--ease-out), transform var(--duration-slow) var(--ease-out);
+    }
   }
 
   /* Mode confidentialité (case à cocher Paramètres + bouton 👁️ de
@@ -278,6 +446,14 @@
     color: var(--color-on-accent);
     font-weight: 600;
   }
+  /* Survol : l'ambre se fonce d'un cran (accent-hover) ; le filtre de
+     luminosité commun à tous les boutons serait un second assombrissement. */
+  @media (hover: hover) {
+    .btn-primary:not(:disabled):hover {
+      background-color: var(--color-accent-hover);
+      filter: none;
+    }
+  }
   .btn-secondary {
     background-color: var(--color-container);
     border-color: var(--color-border);
@@ -294,7 +470,7 @@
   }
   .btn-ghost { background-color: transparent; color: var(--color-primary); }
   @media (hover: hover) {
-    .btn-ghost:hover { background-color: var(--color-page); }
+    .btn-ghost:hover { background-color: var(--color-sunken); }
   }
 
   /* ---------- CHAMPS ---------- */
@@ -302,7 +478,7 @@
     min-height: 50px;
     width: 100%;
     border-radius: 12px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-field);
     background-color: var(--color-container);
     color: var(--color-primary);
     padding-inline: 0.75rem;
@@ -321,14 +497,14 @@
   .card {
     background-color: var(--color-container);
     border-radius: 12px;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+    box-shadow: var(--shadow-sm);
     padding: 1rem;
   }
   .card-compact { padding: 0.75rem; }
   /* Fond ambré très dilué plutôt qu'un liseré latéral de 4px : le liseré
      est l'anti-motif "side-tab", signalé par le détecteur du projet. */
   .card-amber {
-    background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-container));
+    background-color: var(--color-accent-soft);
   }
 
   /* ---------- BADGES ---------- */
@@ -344,17 +520,17 @@
   }
   .badge-positive {
     color: var(--color-success);
-    background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
+    background-color: var(--color-success-soft);
   }
   .badge-negative {
     color: var(--color-danger);
-    background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    background-color: var(--color-danger-soft);
   }
   .badge-warning {
     color: var(--color-warning);
-    background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    background-color: var(--color-warning-soft);
   }
-  .badge-neutral { color: var(--color-secondary); background-color: var(--color-page); }
+  .badge-neutral { color: var(--color-secondary); background-color: var(--color-sunken); }
   .badge-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
 
   /* ---------- ALERTES ---------- */
@@ -370,21 +546,47 @@
   }
   .alert-success {
     border-color: var(--color-success);
-    background-color: color-mix(in srgb, var(--color-success) 10%, var(--color-container));
+    background-color: var(--color-success-soft);
   }
   .alert-warning {
     border-color: var(--color-warning);
-    background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-container));
+    background-color: var(--color-warning-soft);
   }
   .alert-danger {
     border-color: var(--color-danger);
-    background-color: color-mix(in srgb, var(--color-danger) 10%, var(--color-container));
+    background-color: var(--color-danger-soft);
   }
-  .alert-neutral { background-color: var(--color-page); }
+  .alert-neutral { background-color: var(--color-sunken); }
 
   /* ---------- TYPOGRAPHIE ---------- */
-  .text-page-title { font-size: 1.5rem; font-weight: 700; line-height: 1.25; color: var(--color-primary); }
-  .text-section-title { font-size: 1.125rem; font-weight: 600; line-height: 1.4; color: var(--color-primary); }
+  .text-page-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--color-primary);
+  }
+  @media (min-width: 1024px) {
+    .text-page-title { font-size: 2.125rem; line-height: 1.1; }
+  }
+  .text-section-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: var(--color-primary);
+  }
+  /* Réplique de la girafe (macro mascot_line) : même police, un cran de plus. */
+  .text-replique {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--color-primary);
+  }
   .text-card-title { font-size: 1rem; font-weight: 500; line-height: 1.4; color: var(--color-primary); }
   .text-body { font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--color-primary); }
   .text-small { font-size: 0.75rem; line-height: 1.4; color: var(--color-secondary); }
@@ -399,12 +601,12 @@
     width: 100%;
     height: 0.5rem;
     border-radius: 9999px;
-    background-color: var(--color-page);
+    background-color: var(--color-sunken);
     overflow: hidden;
   }
   .progress-fill { height: 100%; border-radius: 9999px; }
   .progress-green { background-color: var(--color-success); }
-  .progress-orange { background-color: var(--color-warning); }
+  .progress-orange { background-color: var(--color-warning-gauge); }
   .progress-red { background-color: var(--color-danger); }
   .progress-amber { background-color: var(--color-accent); }
 
@@ -426,7 +628,7 @@
     .table-row:hover { background-color: var(--color-page); }
   }
   .table-row-selected {
-    background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    background-color: var(--color-accent-soft);
   }
 }
 
@@ -485,13 +687,13 @@
 }
 
 .choice-card:has(input:checked) {
-  border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-container));
-  box-shadow: inset 0 0 0 1px var(--color-accent);
+  border-color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--color-accent-ink);
 }
 
 .choice-card:has(input:focus-visible) {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-accent-ink);
   outline-offset: 2px;
 }
 
