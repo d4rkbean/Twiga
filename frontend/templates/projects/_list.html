@@ -42,7 +42,7 @@
   {% for item in items %}
   {% set shortfall = [item.project.target_amount - item.project.current_amount, 0] | max %}
   {% set ring_color = ["text-chart-1", "text-chart-2", "text-chart-3", "text-chart-4", "text-chart-5", "text-chart-6", "text-chart-7", "text-chart-8"][loop.index0 % 8] %}
-  <div id="project-card-{{ item.project.id }}" class="card flex flex-col gap-4 lg:p-6 transition-shadow">
+  <div id="project-card-{{ item.project.id }}" class="card flex flex-col gap-4 transition-shadow">
     <div class="flex items-center gap-4">
       <svg class="shrink-0 {{ ring_color }}" width="100" height="100" viewBox="0 0 100 100" role="img"
            aria-label="{% trans pct=item.percentage_display %}{{ pct }} % de l'objectif{% endtrans %}">
@@ -151,7 +151,7 @@
   {% endfor %}
 {% endfor %}
 {% if ns.all %}
-<section class="card flex flex-col gap-3 lg:p-6" x-data="{ only: null }">
+<section class="card flex flex-col gap-3" x-data="{ only: null }">
   <div class="flex items-baseline justify-between gap-2">
     <h2 class="text-section-title">{{ _("Historique") }}</h2>
     <p class="text-xs text-secondary">{{ _("entrées et sorties") }}</p>

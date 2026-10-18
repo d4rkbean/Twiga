@@ -83,7 +83,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
     {% include "rules/_content.html" %}
 
-    <aside class="card flex flex-col gap-3 lg:p-5 lg:order-last order-first">
+    <aside class="card flex flex-col gap-3 lg:order-last order-first">
       <h2 class="text-section-title flex items-center gap-2">{{ icon('tool', size=20) }} {{ _("Tester une règle") }}</h2>
       <form hx-post="/rules/test" hx-target="#rule-test-result" hx-swap="innerHTML" class="flex flex-col gap-2">
         <input

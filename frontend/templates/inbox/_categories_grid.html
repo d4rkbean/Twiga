@@ -1,7 +1,7 @@
 {# Une pastille de la couleur de la catégorie plutôt que son pictogramme : la
    couleur est la même partout dans l'app (listes, rapports), et le chiffre
    à gauche (dès sm) est le raccourci clavier. #}
-<div id="tour-category-buttons" class="category-suggestion grid grid-cols-2 lg:grid-cols-3 gap-3">
+<div id="tour-category-buttons" class="category-suggestion grid grid-cols-2 lg:grid-cols-3 gap-[var(--space-list)]">
   {% for category in categories %}
   <button
     type="button"
