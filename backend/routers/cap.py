@@ -124,7 +124,17 @@ def _fixer_context(db: Session, current_month_start: date) -> dict:
         previous_entry.planned_imprevu if previous_entry is not None else Decimal("0.00")
     )
 
+    # Le réel du mois écoulé par pilier : sert la comparaison du panneau « en
+    # direct » (cap/_step2_fixer.html), calculée dans le navigateur. En float
+    # pour passer en JSON : ces montants n'y servent qu'à l'affichage.
+    previous_start, previous_end = month_range(previous_month_start.year, previous_month_start.month)
+    previous_actuals = {
+        code: float(amount)
+        for code, amount in crud.get_pillar_actuals(db, previous_start, previous_end).items()
+    }
+
     return {
+        "previous_actuals": previous_actuals,
         "current_month_label": month_label(current_month_start.year, current_month_start.month),
         "previous_month_label": month_label(previous_month_start.year, previous_month_start.month),
         "prefill_income": prefill_income,

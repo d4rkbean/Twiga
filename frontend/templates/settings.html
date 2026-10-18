@@ -327,6 +327,36 @@
 
       <!-- Données — sauvegarde et restauration. L'import est dans l'en-tête. -->
       <section x-show="tab === 'data'" style="display: none;" class="flex flex-col gap-4">
+        {# Sauvegarde : la même que l'export JSON complet (c'est elle que la
+           restauration relit), téléchargée tout de suite ; l'appli ne retient que
+           la date. Réservée à l'admin, comme l'écriture en général. #}
+        {% if not auth_enabled or is_admin %}
+        <div class="card flex flex-col gap-3 lg:p-6">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-section-title">{{ _("Sauvegarde") }}</h2>
+            <p class="text-sm text-secondary">{{ _("Une sauvegarde complète, au même format que l'export JSON : c'est celle que la restauration relit. Le fichier est téléchargé, rien n'est gardé sur le serveur.") }}</p>
+          </div>
+          <div
+            id="last-backup"
+            hx-get="/export/backup/status"
+            hx-trigger="backup-saved"
+            hx-swap="innerHTML"
+          >
+            {% include "export/_backup_status.html" %}
+          </div>
+          <form
+            id="backup-form"
+            method="post"
+            action="/export/backup"
+            onsubmit="setTimeout(function () { htmx.trigger('#last-backup', 'backup-saved'); }, 1500)"
+          >
+            <button type="submit" class="btn btn-secondary border-border-strong w-full sm:w-auto sm:px-6">
+              {{ icon('device-floppy', size=18) }} {{ _("Sauvegarder maintenant") }}
+            </button>
+          </form>
+        </div>
+        {% endif %}
+
         <div class="card flex flex-col gap-3 lg:p-6">
           <div class="flex flex-col gap-1">
             <h2 class="text-section-title">{{ _("Exporter") }}</h2>

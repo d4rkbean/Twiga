@@ -213,7 +213,7 @@
             id="inbox-swipe-validate-btn"
             class="hidden"
             hx-post="/transactions/{{ transaction.id }}/finalize/{{ suggested_category.id }}"
-            hx-include="#simplified-label, #nav-history"
+            hx-include="#simplified-label, #nav-history, #inbox-unexpected"
             hx-target="#transaction-card"
             hx-swap="outerHTML"
           >
@@ -243,7 +243,11 @@
        à côte (« Valider » est l'unique action principale de l'écran).
        « Passer » reste ciblé par le swipe gauche (onEnd() ci-dessus clique
        sur ce même id) et par la touche → du clavier. -->
-  <div class="flex gap-2">
+  <div class="flex gap-2" x-data="{ unexpected: {{ 'true' if transaction.is_unexpected else 'false' }} }">
+    {# « Imprévu » : bascule qui s'ajoute à la décision (la catégorie reste
+       celle qu'on choisit). Son état voyage dans ce champ caché, repris par
+       les boutons qui enregistrent (/finalize), quelle que soit l'étape. #}
+    <input type="hidden" id="inbox-unexpected" name="unexpected" :value="unexpected ? '1' : ''" />
     {% if history %}
     <button
       type="button"
@@ -267,6 +271,16 @@
       hx-swap="outerHTML"
     >
       {{ _("Passer") }} {{ icon('arrow-narrow-right') }}
+    </button>
+    <button
+      type="button"
+      id="inbox-unexpected-btn"
+      @click="unexpected = !unexpected"
+      :aria-pressed="unexpected"
+      class="btn btn-secondary flex-1 aria-pressed:bg-accent-soft aria-pressed:border-accent-ink aria-pressed:text-accent-ink aria-pressed:font-semibold"
+    >
+      {{ icon('urgent') }} {{ _("Imprévu") }}
+      <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">I</kbd>
     </button>
   </div>
 </div>

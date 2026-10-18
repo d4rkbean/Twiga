@@ -178,8 +178,8 @@
 
   <div class="flex flex-col gap-5 lg:grid lg:grid-cols-12 lg:items-stretch">
 
-    {# Flux sur 12 mois : la courbe suit la PÉRIODE filtrée, les budgets à
-       risque à droite suivent le MOIS CIVIL en cours (un budget est un
+    {# Flux sur 12 mois : la courbe suit la PÉRIODE filtrée, les enveloppes
+       à droite suivent le MOIS CIVIL en cours (un budget est un
        engagement mensuel) ; le mois est rappelé dans leur titre pour que
        l'écart avec le reste de la page soit explicite. #}
     <section aria-labelledby="trend-title" class="lg:col-span-8 bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
@@ -203,31 +203,49 @@
       </div>
     </section>
 
-    <section id="tour-budget-section" aria-labelledby="risk-title" class="lg:col-span-4 bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4">
+    {# Enveloppes : chaque budget du mois civil en cours (suit le compte choisi),
+       avec ce qu'il deviendrait « avec le tri » — les opérations encore dans
+       La Savane que celle-ci proposerait dans cette catégorie. Remplace
+       l'ancienne carte « Budgets à risque » : une seule carte pour les
+       budgets. La barre porte le dépensé (couleur du verdict), puis en gris
+       ce qui attend d'être trié ; le verdict est toujours doublé d'un mot. #}
+    <section id="tour-budget-section" aria-labelledby="envelopes-title" class="lg:col-span-4 bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3">
-        <h2 id="risk-title" class="text-section-title">{{ _("Budgets à risque") }}</h2>
+        <h2 id="envelopes-title" class="text-section-title">{{ _("Enveloppes") }} <span class="text-xs font-normal text-secondary">· {{ budget_month_label }}</span></h2>
         <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Mon mois") }} {{ icon('arrow-right', size=16) }}</a>
       </div>
-      {% if budgets_at_risk %}
-      <p class="text-xs text-secondary -mt-3">{{ budget_month_label }}</p>
-      {% for item in budgets_at_risk %}
+      {% if envelopes %}
+      {% for item in envelopes %}
+      {% set spent_pct = item.percentage | round | int %}
+      {% set projected_pct = item.projected_percentage | round | int %}
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-3">
           <span class="flex-shrink-0 w-9 h-9 rounded-full bg-sunken flex items-center justify-center text-secondary">{{ item.category.icon or icon('tag', size=18) }}</span>
           <span class="flex-1 min-w-0 font-semibold text-primary truncate">{{ item.category.name | category_display }}</span>
           <span class="amount-blur text-sm tabular-nums flex-shrink-0 text-primary">{{ item.spent | eur }} <span class="text-secondary">/ {{ item.budget | eur }}</span></span>
         </div>
-        <div class="progress-base" role="img" aria-label="{% trans percentage=item.percentage | round | int %}{{ percentage }} % consommé{% endtrans %}">
+        <div class="progress-base flex" role="img" aria-label="{% trans percentage=spent_pct %}{{ percentage }} % consommé{% endtrans %}">
           <div class="progress-fill {{ gauge_fill(item.percentage) }}" style="width: {{ item.bar_width }}%;"></div>
+          {% if item.pending_width %}
+          <div class="h-full bg-border-strong" style="width: {{ item.pending_width }}%;"></div>
+          {% endif %}
         </div>
-        <p class="flex flex-wrap gap-x-3 text-xs">
-          <span class="text-secondary tabular-nums">{% trans percentage=item.percentage | round | int %}{{ percentage }} % consommé{% endtrans %}</span>
-          <span class="font-semibold {{ gauge_tone(item.percentage) }}">{{ gauge_word(item.percentage) }}</span>
+        <p class="flex flex-wrap justify-between gap-x-3 text-xs">
+          <span class="text-secondary tabular-nums">
+            {% trans percentage=spent_pct %}{{ percentage }} % consommé{% endtrans %}
+            {% if item.pending %}· <span class="amount-blur">{% trans amount=item.pending | eur %}{{ amount }} à trier{% endtrans %}</span>{% endif %}
+          </span>
+          {% if item.pending %}
+          <span class="ml-auto text-right font-semibold tabular-nums {{ gauge_tone(item.projected_percentage) }}">{% trans percentage=projected_pct %}Avec le tri : {{ percentage }} %{% endtrans %} · {{ gauge_word(item.projected_percentage) }}</span>
+          {% else %}
+          <span class="ml-auto text-right font-semibold {{ gauge_tone(item.percentage) }}">{{ gauge_word(item.percentage) }}</span>
+          {% endif %}
         </p>
       </div>
       {% endfor %}
       {% else %}
-      <p class="text-sm text-secondary">{{ _("Aucun budget au-delà de 75 %% sur cette période.") }}</p>
+      <p class="text-sm text-secondary">{{ _("Aucun budget n'est fixé pour ce mois.") }}</p>
+      <a href="/budgets" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Fixer les budgets") }} {{ icon('arrow-right', size=16) }}</a>
       {% endif %}
     </section>
 
@@ -441,7 +459,7 @@
       // (épinglée / réduite / masquée), qui modifie le padding gauche du
       // <body>. Mesuré : conteneur revenu à 1005 px alors que le canvas
       // restait à 1164 — soit 160 px de graphique débordant sous la colonne
-      // colonne « Budgets à risque », courbe et libellés d'axe par-dessus.
+      // colonne « Enveloppes », courbe et libellés d'axe par-dessus.
       //
       // On surveille donc nous-mêmes le conteneur. Le test d'identité évite
       // qu'un observateur survivant ne redimensionne un graphique déjà
