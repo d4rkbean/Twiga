@@ -464,6 +464,7 @@ def _build_report_context(
         cap_actuals = crud.get_pillar_actuals(db, cap_month_start, cap_today, parsed_account_id)
         cap_pillar_bars = [
             {
+                "key": key,
                 "icon": icon,
                 "name": name,
                 "planned": planned,
