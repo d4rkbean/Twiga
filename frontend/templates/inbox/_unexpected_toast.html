@@ -1,4 +1,4 @@
-<!-- Toast auto-disparaissant "{{ icon('urgent') }} Marquer comme imprévu" ("Le Cap") : posé
+<!-- Toast auto-disparaissant « Marquer comme imprévu » ("Le Cap") : posé
      APRÈS que la transaction ait déjà été enregistrée et que la carte
      suivante soit affichée (voir _categorize_and_advance dans
      routers/transactions.py, just_categorized_id) — zéro tap obligatoire,
@@ -6,7 +6,8 @@
      Cible OOB toujours présente dans le DOM (incluse aussi dans
      inbox/index.html) même sans transaction ciblée, sinon le swap OOB posé
      par _render_next_card (voir _counter.html pour le même principe) n'a
-     rien à remplacer. -->
+     rien à remplacer. Bouton secondaire (l'action principale de l'écran est
+     « Valider ») : l'ombre flottante suffit à le détacher de la carte. -->
 <div id="inbox-unexpected-toast" {% if oob %}hx-swap-oob="true"{% endif %}>
   {% if just_categorized_id %}
   <div
@@ -21,7 +22,7 @@
       hx-post="/transactions/{{ just_categorized_id }}/mark-unexpected"
       hx-swap="none"
       @click="show = false"
-      class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold shadow-lg px-4 flex items-center gap-2 whitespace-nowrap"
+      class="btn btn-secondary shadow-lg px-4 whitespace-nowrap"
     >
       {{ icon('urgent') }} {{ _("Marquer comme imprévu") }}
     </button>
