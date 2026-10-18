@@ -75,3 +75,60 @@
     width: calc(100vw - 2rem);
   }
 }
+
+/* « Non merci » : l'action de repli du popup, sans contour (la suggestion
+   n'a qu'une action, « Créer la règle », en bouton secondaire). */
+.rule-suggestion-btn-ghost {
+  flex: 1;
+  min-height: 50px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-secondary);
+  border-radius: 0.75rem;
+  font-weight: 500;
+}
+
+.rule-suggestion-btn-ghost:hover {
+  background: var(--color-sunken);
+}
+
+/* Indication d'un raccourci clavier (La Savane, desktop) : une touche
+   dessinée en petit, posée à côté du libellé de l'action. Purement
+   indicative (aria-hidden côté gabarit) ; les raccourcis eux-mêmes vivent
+   dans inbox-shortcuts.js. Les jetons gardent le contraste dans les deux
+   thèmes ; ce n'est jamais un contrôle. */
+/* Cases à cocher et boutons radio : l'ambre foncé de l'état actif plutôt que
+   le bleu natif du navigateur (listes d'opérations et de traitement en masse). */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-accent-ink);
+}
+
+@layer components {
+  /* En @layer components, comme .btn : une feuille hors couche battrait les
+     utilitaires (hidden, sm:inline-flex) qui règlent son affichage. */
+  .kbd-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.375rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 0.375rem;
+    background: var(--color-container);
+    color: var(--color-secondary);
+    font-family: ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* Sur l'aplat ambré de « Valider », la touche reprend le ton du bouton. */
+  .btn-primary .kbd-hint {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--color-on-accent) 45%, transparent);
+    color: var(--color-on-accent);
+  }
+}

@@ -1,5 +1,5 @@
 {% if pending_count > 0 and budget_alerts %}
-<div id="budget-alerts" class="w-full max-w-sm flex flex-col gap-2"></div>
+<div id="budget-alerts" class="w-full flex flex-col gap-2 empty:hidden"></div>
 <script>
   (function () {
     var alerts = {{ budget_alerts | tojson | safe }};
@@ -60,8 +60,8 @@
         if (dismissedCount > 0) {
           var reveal = document.createElement("button");
           reveal.type = "button";
-          reveal.className = "text-xs text-secondary underline self-center min-h-[32px]";
-          reveal.textContent = {{ _("🔔 Voir les alertes budget masquées") | tojson }};
+          reveal.className = "btn btn-ghost text-secondary text-xs self-center";
+          reveal.innerHTML = {{ icon('bell') | tojson }} + " " + {{ _("Voir les alertes budget masquées") | tojson }};
           reveal.addEventListener("click", revealAllForThisMonth);
           container.appendChild(reveal);
         }
@@ -74,25 +74,31 @@
       shown.forEach(function (alert) {
         var danger = alert.percentage >= 100;
         var row = document.createElement("div");
-        row.className =
-          "bg-container rounded-xl shadow-sm p-3 flex items-center gap-2 border-l-4 " +
-          (danger ? "border-danger" : "border-warning");
+        // Verdict calculé (seuil franchi) : fond doux + contour de la couleur
+        // du verdict, et le message dit toujours le mot (« dépassé » ou le
+        // pourcentage). Plus de liseré latéral.
+        row.className = "alert items-center " + (danger ? "alert-danger" : "alert-warning");
+
+        var icon = document.createElement("span");
+        icon.className = danger ? "text-danger" : "text-warning";
+        icon.innerHTML = {{ icon('alert-triangle') | tojson }};
 
         var text = document.createElement("p");
-        text.className = "text-sm flex-1 " + (danger ? "text-danger" : "text-warning");
+        text.className = "text-sm flex-1 font-medium text-primary";
         text.textContent = danger
-          ? fill({{ _("🚨 {name} : dépassé ! ({spent} / {budget})") | tojson }}, alert)
-          : fill({{ _("⚠️ {name} : {pct}%% consommé ({spent} / {budget})") | tojson }}, alert);
+          ? fill({{ _("{name} : dépassé ! ({spent} / {budget})") | tojson }}, alert)
+          : fill({{ _("{name} : {pct}%% consommé ({spent} / {budget})") | tojson }}, alert);
 
         var closeBtn = document.createElement("button");
         closeBtn.type = "button";
         closeBtn.setAttribute("aria-label", {{ _("Ignorer cette alerte") | tojson }});
-        closeBtn.className = "text-secondary text-lg leading-none flex-shrink-0 w-11 h-11 flex items-center justify-center";
-        closeBtn.textContent = "✕";
+        closeBtn.className = "btn btn-ghost w-[50px] px-0 -my-2 -mr-2 text-secondary flex-shrink-0";
+        closeBtn.innerHTML = {{ icon('x') | tojson }};
         closeBtn.addEventListener("click", function () {
           dismiss(alert.category_id);
         });
 
+        row.appendChild(icon);
         row.appendChild(text);
         row.appendChild(closeBtn);
         container.appendChild(row);
@@ -108,8 +114,8 @@
 
       var dismissAll = document.createElement("button");
       dismissAll.type = "button";
-      dismissAll.className = "text-xs text-secondary underline self-center min-h-[32px]";
-      dismissAll.textContent = "Tout ignorer";
+      dismissAll.className = "btn btn-ghost text-secondary text-xs self-center";
+      dismissAll.textContent = {{ _("Tout ignorer") | tojson }};
       dismissAll.addEventListener("click", function () {
         alerts.forEach(function (a) {
           localStorage.setItem(keyFor(a.category_id), "true");

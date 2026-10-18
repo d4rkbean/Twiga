@@ -1,34 +1,35 @@
 {% if show_routine_banner %}
-<div id="routine-banner" class="w-full max-w-sm bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-2 border-2 border-accent">
+{# Bilan du mois, une fois par mois. Une surface ordinaire (pas de bordure
+   ambrée) : l'action principale de l'écran est « Valider » sur la carte, donc
+   ici « Aller à La Savane » est un bouton secondaire. #}
+<div id="routine-banner" class="w-full bg-container rounded-xl shadow-sm p-4 md:p-5 flex flex-col gap-3">
   <div class="flex items-start justify-between gap-2">
-    <h2 class="text-lg font-bold text-primary">{% trans routine_month_label=routine_month_label %}Bonjour — {{ routine_month_label }}{% endtrans %}</h2>
+    <h2 class="text-section-title">{% trans routine_month_label=routine_month_label %}Bonjour — {{ routine_month_label }}{% endtrans %}</h2>
     <button
       type="button"
       hx-post="/transactions/routine/dismiss"
       hx-target="#routine-banner"
       hx-swap="delete"
-      class="text-secondary text-xl leading-none"
+      class="btn btn-ghost w-[50px] px-0 -mt-3 -mr-3 text-secondary flex-shrink-0"
       aria-label="{{ _("Fermer") }}"
     >
       {{ icon('x') }}
     </button>
   </div>
 
-  <p class="text-sm text-primary">{{ icon('inbox') }} {% trans pending_count=pending_count, v="s" if pending_count != 1 else "" %}{{ pending_count }} opération{{ v }} à vérifier{% endtrans %}</p>
-  <p class="text-sm text-primary">{{ icon('currency-euro') }} {% trans routine_budget_percent=routine_budget_percent %}Budget consommé à {{ routine_budget_percent }} %{% endtrans %}</p>
-  <p class="text-sm text-primary">
-    {{ icon('repeat') }} {% trans routine_subscription_count=routine_subscription_count, v="s" if routine_subscription_count != 1 else "" %}{{ routine_subscription_count }} abonnement{{ v }} détecté{{ v }}{% endtrans %}
-  </p>
-  <p class="text-sm text-primary">
-    {{ icon('target') }} {% trans v="+" if routine_project_savings > 0 else "", routine_project_savings=routine_project_savings | eur %}Projets : {{ v }}{{ routine_project_savings }} ce mois{% endtrans %}
-  </p>
+  <ul class="flex flex-col gap-2 text-sm text-primary -mt-1">
+    <li class="flex items-center gap-2">{{ icon('inbox') }} {% trans pending_count=pending_count, v="s" if pending_count != 1 else "" %}{{ pending_count }} opération{{ v }} à vérifier{% endtrans %}</li>
+    <li class="flex items-center gap-2">{{ icon('currency-euro') }} {% trans routine_budget_percent=routine_budget_percent %}Budget consommé à {{ routine_budget_percent }} %{% endtrans %}</li>
+    <li class="flex items-center gap-2">{{ icon('repeat') }} {% trans routine_subscription_count=routine_subscription_count, v="s" if routine_subscription_count != 1 else "" %}{{ routine_subscription_count }} abonnement{{ v }} détecté{{ v }}{% endtrans %}</li>
+    <li class="flex items-center gap-2">{{ icon('target') }} <span class="amount-blur">{% trans v="+" if routine_project_savings > 0 else "", routine_project_savings=routine_project_savings | eur %}Projets : {{ v }}{{ routine_project_savings }} ce mois{% endtrans %}</span></li>
+  </ul>
 
   <button
     type="button"
     hx-post="/transactions/routine/dismiss"
     hx-target="#routine-banner"
     hx-swap="delete"
-    class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold mt-1"
+    class="btn btn-secondary"
   >
     {{ _("Aller à La Savane") }} {{ icon('arrow-narrow-right') }}
   </button>

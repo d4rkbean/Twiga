@@ -1,17 +1,30 @@
-{% from "_macros/brand.html" import mascot %}
+{% from "_macros/brand.html" import mascot, mascot_line %}
 {% if transaction is none %}
-<div id="transaction-card" class="w-full max-w-sm lg:max-w-[600px] flex flex-col gap-3">
-  <div class="pelage-zone bg-container rounded-xl shadow-sm p-8 flex flex-col items-center gap-3 text-center">
-    <input type="hidden" id="nav-history" value="{{ history }}" />
-    <h2 class="text-2xl font-bold text-primary">{{ mascot(size=28) }} {{ _("Twiga a tout brouté !") }}</h2>
-    <p class="text-secondary">{{ _("La savane est propre.") }}</p>
+{# Savane vide : la girafe rassasiée et trois suites possibles. « Voir Mon
+   mois » est l'action principale de l'écran ; les deux autres sont des gestes
+   de plus tard. #}
+<div id="transaction-card" class="w-full flex flex-col gap-3">
+  <input type="hidden" id="nav-history" value="{{ history }}" />
+  <div class="bg-container rounded-xl shadow-sm overflow-hidden flex flex-col sm:flex-row">
+    <div class="bg-accent-soft flex items-end justify-center pt-6 sm:w-[200px] sm:flex-shrink-0">
+      {{ mascot('done', 150) }}
+    </div>
+    <div class="flex flex-col gap-2 p-5 md:p-6 sm:flex-1 sm:justify-center">
+      <h2 class="text-replique">{{ mascot_line('done') }}</h2>
+      <p class="text-sm text-secondary">{{ _("La savane est propre.") }}</p>
+      <div class="flex flex-col gap-2 pt-3">
+        <a href="/cap/mid" class="btn btn-primary">{{ _("Voir Mon mois") }}</a>
+        <a href="/cap" class="btn btn-secondary">{{ _("Fixer Le Cap") }}</a>
+        <a href="/imports" class="btn btn-secondary">{{ _("Importer un relevé") }}</a>
+      </div>
+    </div>
   </div>
   {% if history %}
-  <div class="flex flex-col sm:flex-row gap-2">
+  <div class="flex">
     <button
       type="button"
       id="inbox-previous-btn"
-      class="w-full sm:w-auto min-h-[50px] px-6 rounded-xl bg-container border border-border text-primary font-medium"
+      class="btn btn-secondary w-full sm:w-auto"
       hx-post="/transactions/undo"
       hx-vals='{"history": "{{ history }}"}'
       hx-target="#transaction-card"
@@ -24,27 +37,37 @@
 </div>
 {% else %}
 {% set confidence = suggestion_confidence | default(none) %}
-{% set card_border_class = 'border-border' %}
+{# Verdict de la suggestion : toujours un mot avec le pourcentage (feu
+   tricolore). La bordure de la carte, elle, ne porte plus ce verdict : elle
+   ne dit que le compte (seule bordure épaisse qui porte une information,
+   voir DESIGN.md). #}
+{% set confidence_badge = 'badge-neutral' %}
+{% set confidence_word = '' %}
 {% if confidence is not none %}
   {% if confidence >= 85 %}
-    {% set card_border_class = 'border-success' %}
+    {% set confidence_badge = 'badge-positive' %}
+    {% set confidence_word = _("sûre") %}
   {% elif confidence >= 70 %}
-    {% set card_border_class = 'border-warning' %}
+    {% set confidence_badge = 'badge-warning' %}
+    {% set confidence_word = _("probable") %}
   {% else %}
-    {% set card_border_class = 'border-danger' %}
+    {% set confidence_badge = 'badge-negative' %}
+    {% set confidence_word = _("incertaine") %}
   {% endif %}
 {% endif %}
-<!-- #transaction-card est maintenant le conteneur EXTÉRIEUR (carte visuelle
-     + rangée de boutons en dessous), pas la carte elle-même : ça permet aux
-     boutons Précédente/Passer de vivre hors de la carte (voir plus bas) sans
-     rien changer aux hx-target="#transaction-card" existants ailleurs dans
-     ce fichier (mark-transfer, undo, finalize du mode de paiement...) — un
-     swap outerHTML sur cet id remplace tout le bloc, boutons compris. Le
-     geste de swipe (x-data, touch handlers) reste sur la carte visuelle
-     UNIQUEMENT : les boutons en dessous ne doivent pas s'envoler avec elle. -->
-<div id="transaction-card" class="w-full max-w-sm lg:max-w-[600px] flex flex-col gap-3">
+<!-- #transaction-card est le conteneur EXTÉRIEUR (carte visuelle + rangée de
+     boutons en dessous), pas la carte elle-même : ça permet aux boutons
+     Précédente/Passer de vivre hors de la carte sans rien changer aux
+     hx-target="#transaction-card" existants ailleurs dans ce fichier
+     (mark-transfer, undo, finalize du mode de paiement...) — un swap
+     outerHTML sur cet id remplace tout le bloc, boutons compris. Le geste de
+     swipe (x-data, touch handlers) reste sur la carte visuelle UNIQUEMENT :
+     les boutons en dessous ne doivent pas s'envoler avec elle. -->
+<div id="transaction-card" class="w-full flex flex-col gap-3">
+  {# Deux niveaux : l'enveloppe porte le geste (x-data, :style de
+     translation, qui réécrit tout l'attribut style) et la carte porte la
+     couleur du compte dans son propre style statique. #}
   <div
-    class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-6 border-2 {{ card_border_class }}"
     x-data="{
       dragX: 0,
       dragging: false,
@@ -74,35 +97,52 @@
     @touchend="onEnd()"
     :style="'transform: translateX(' + dragX + 'px) rotate(' + (dragX / 20) + 'deg); transition: ' + (dragging ? 'none' : 'transform 0.3s ease') + ';'"
   >
+  <div
+    class="bg-container rounded-xl shadow-sm p-5 md:p-6 flex flex-col gap-5 border-2"
+    style="border-color: {{ transaction.account | account_color }};"
+  >
     <input type="hidden" id="nav-history" value="{{ history }}" />
     <div class="flex flex-col gap-1">
-      <input
-        type="text"
-        id="simplified-label"
-        name="label"
-        value="{{ transaction.label or transaction.raw_label }}"
-        required
-        class="text-2xl font-bold text-primary bg-transparent border-0 border-b border-field focus:outline-none focus:border-accent px-0 py-1 w-full"
-      />
+      <p class="flex items-center gap-2 text-xs text-secondary">
+        <span class="inline-block w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ transaction.account | account_color }};"></span>
+        <span class="truncate">{{ transaction.account.name }}</span>
+        <span aria-hidden="true">·</span>
+        <span class="whitespace-nowrap">{{ transaction.date | fr_date }}</span>
+      </p>
+      {# Le libellé se lit comme un titre mais reste un champ : le crayon dit
+         qu'on peut le renommer. Corps réduit en mobile pour qu'un libellé de
+         vingt-cinq caractères tienne sur une ligne ; pr-8 réserve la place
+         du crayon. #}
+      <div class="relative">
+        <input
+          type="text"
+          id="simplified-label"
+          name="label"
+          value="{{ transaction.label or transaction.raw_label }}"
+          required
+          aria-label="{{ _("Libellé simplifié") }}"
+          class="w-full min-h-[46px] bg-transparent border-0 border-b border-field text-xl lg:text-2xl font-bold text-primary pl-0 pr-8 py-1.5 focus:border-accent-ink focus-visible:outline-none"
+        />
+        <span class="absolute right-1 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">{{ icon('pencil', size=18) }}</span>
+      </div>
       {% if transaction.label and transaction.raw_label and transaction.label != transaction.raw_label %}
-      <p class="text-xs text-secondary break-words">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>
+      <p class="text-xs text-secondary break-words font-mono">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>
       {% endif %}
-      <p class="amount-blur text-3xl font-extrabold {{ 'text-success' if transaction.amount > 0 else ('text-danger' if transaction.amount < 0 else 'text-primary') }}">
+      <p class="amount-blur text-3xl font-extrabold tabular-nums text-primary pt-2">
         {{ "+" if transaction.amount > 0 else "" }}{{ transaction.amount | eur }}
       </p>
-      <p class="text-sm text-secondary">{{ transaction.date | fr_date }} · {{ transaction.account.name }}</p>
     </div>
 
     <div x-data="{ transferDismissed: {{ 'false' if possible_transfer else 'true' }} }">
       {% if possible_transfer %}
-      <div x-show="!transferDismissed" class="flex flex-col gap-3 rounded-xl border-2 border-warning bg-container p-3">
-        <p class="text-sm text-warning font-medium">
+      <div x-show="!transferDismissed" class="alert alert-warning flex-col gap-3">
+        <p class="font-medium">
           {{ icon('alert-triangle') }} {{ _("Possible virement interne — compte destinataire pas encore importé ?") }}
         </p>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 w-full">
           <button
             type="button"
-            class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
+            class="btn btn-primary"
             hx-post="/transactions/{{ transaction.id }}/mark-transfer"
             hx-include="#simplified-label, #nav-history"
             hx-target="#transaction-card"
@@ -113,7 +153,7 @@
           <button
             type="button"
             @click="transferDismissed = true"
-            class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+            class="btn btn-secondary"
           >
             {{ icon('inbox') }} {{ _("Traiter normalement") }}
           </button>
@@ -126,40 +166,35 @@
         {% set top_level = suggested_category.parent if suggested_category.parent else suggested_category %}
         {% set subcategory_name = suggested_category.name if suggested_category.parent else none %}
         <div class="category-suggestion flex flex-col gap-3">
-          <div class="flex flex-col gap-1">
-            <p class="text-sm text-secondary">{{ _("Catégorie proposée :") }}</p>
-            <span class="flex items-center gap-1 text-sm flex-wrap">
-              <span
-                class="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                style="background-color: {{ suggested_category.id | category_color }}"
-              ></span>
-              <span class="text-primary font-medium">
-                {{ get_category_icon(top_level.name) }}
-                {{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}
-              </span>
+          <div class="flex flex-col gap-1.5">
+            <p class="form-label">{{ _("Catégorie proposée :") }}</p>
+            <div class="flex items-center justify-between gap-2">
+              <p class="flex items-center gap-2 text-base font-medium text-primary min-w-0">
+                <span
+                  class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  style="background-color: {{ suggested_category.id | category_color }}"
+                ></span>
+                <span class="truncate">{{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}</span>
+              </p>
               {% if confidence is not none %}
-              <span
-                class="{{ 'text-success' if confidence >= 85 else ('text-warning' if confidence >= 70 else 'text-danger') }} font-semibold"
-              >
-                {{ confidence }}%
-                {{ icon('circle-check', size=16) if confidence >= 85 else icon('alert-triangle', size=16) }}
-              </span>
+              <span class="badge {{ confidence_badge }} flex-shrink-0">{{ confidence }} % · {{ confidence_word }}</span>
               {% endif %}
-            </span>
+            </div>
             {% if suggestion_based_on %}
-            <p class="text-xs text-secondary">{% trans suggestion_based_on=suggestion_based_on %}Basé sur : "{{ suggestion_based_on }}"{% endtrans %}</p>
+            <p class="text-xs text-secondary break-words">{% trans suggestion_based_on=suggestion_based_on %}Basé sur : "{{ suggestion_based_on }}"{% endtrans %}</p>
             {% endif %}
           </div>
           <button
             type="button"
             id="inbox-validate-btn"
-            class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
+            class="btn btn-primary w-full"
             hx-post="/transactions/{{ transaction.id }}/select-category/{{ suggested_category.id }}"
             hx-include="#simplified-label, #nav-history"
             hx-target=".category-suggestion"
             hx-swap="outerHTML"
           >
             {{ icon('circle-check') }} {{ _("Valider") }}
+            <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Entrée") }}</kbd>
           </button>
           <!-- Bouton dédié au swipe droite, cible directement /finalize plutôt
                que /select-category : ce dernier n'avance jamais la carte lui-
@@ -171,7 +206,7 @@
                c'est déjà ce que fait le choix "(général)" de la grille de
                sous-catégories) et remplace #transaction-card directement :
                swipe = validation immédiate avec la suggestion, sans mode de
-               paiement ni sous-catégorie — le tap sur "{{ icon('circle-check') }} Valider" garde lui
+               paiement ni sous-catégorie — le tap sur « Valider » garde lui
                le parcours détaillé complet. -->
           <button
             type="button"
@@ -182,17 +217,18 @@
             hx-target="#transaction-card"
             hx-swap="outerHTML"
           >
-            {{ icon('circle-check') }} {{ _("Valider (swipe)") }}
+            {{ _("Valider (swipe)") }}
           </button>
           <button
             type="button"
             id="inbox-back-to-categories-btn"
-            class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+            class="btn btn-secondary w-full"
             hx-get="/transactions/{{ transaction.id }}/categories"
             hx-target=".category-suggestion"
             hx-swap="outerHTML"
           >
             {{ icon('edit') }} {{ _("Changer") }}
+            <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Échap") }}</kbd>
           </button>
         </div>
         {% else %}
@@ -201,19 +237,18 @@
       </div>
     </div>
   </div>
+  </div>
 
-  <!-- Boutons hors de la carte, comme demandé : Précédente (contour) et
-       Passer (accent — le ton doré/ambre de cette app, voir --color-accent)
-       pleine largeur empilés sur mobile, côte à côte largeur automatique à
-       partir de sm (640px). "Passer" reste ciblé par le swipe gauche
-       (onEnd() ci-dessus clique sur ce même id), maintenant visible en plus
-       du geste plutôt que caché derrière lui. -->
-  <div class="flex flex-col sm:flex-row gap-2">
+  <!-- Boutons hors de la carte : Précédente et Passer, deux secondaires côte
+       à côte (« Valider » est l'unique action principale de l'écran).
+       « Passer » reste ciblé par le swipe gauche (onEnd() ci-dessus clique
+       sur ce même id) et par la touche → du clavier. -->
+  <div class="flex gap-2">
     {% if history %}
     <button
       type="button"
       id="inbox-previous-btn"
-      class="w-full sm:w-auto min-h-[50px] px-6 rounded-xl bg-container border border-border text-primary font-medium"
+      class="btn btn-secondary flex-1"
       hx-post="/transactions/undo"
       hx-vals='{"history": "{{ history }}"}'
       hx-target="#transaction-card"
@@ -225,13 +260,13 @@
     <button
       type="button"
       id="inbox-skip-btn"
-      class="w-full sm:w-auto min-h-[50px] px-6 rounded-xl bg-accent text-on-accent font-semibold"
+      class="btn btn-secondary flex-1"
       hx-post="/transactions/{{ transaction.id }}/skip"
       hx-include="#simplified-label, #nav-history"
       hx-target="#transaction-card"
       hx-swap="outerHTML"
     >
-      {{ _("⏭️ Passer") }}
+      {{ _("Passer") }} {{ icon('arrow-narrow-right') }}
     </button>
   </div>
 </div>

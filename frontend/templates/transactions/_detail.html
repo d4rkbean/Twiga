@@ -5,33 +5,68 @@
   hx-on:htmx:after-request="if(event.target === this && event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
   class="flex flex-col gap-4 p-6"
 >
-  <h2 class="text-xl font-bold text-primary">{{ _("Modifier l'opération") }}</h2>
+  <div class="flex flex-col gap-1">
+    <p class="text-small">{{ transaction.date | fr_date }} · {{ transaction.account.name }}</p>
+    <h2 class="text-section-title">{{ _("Modifier l'opération") }}</h2>
+  </div>
 
-  <div class="flex flex-col gap-2 rounded-xl border-2 border-accent p-3">
-    <label class="flex flex-col gap-1">
-      <span class="text-sm font-semibold text-primary flex items-center gap-1" >{{ icon('edit', size=16) }}{{ _("Libellé simplifié") }}</span>
-      <input
-        type="text"
-        name="label"
-        required
-        value="{{ transaction.label }}"
-        class="text-lg font-medium min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-      />
-    </label>
+  <div class="form-group">
+    <label for="detail-label" class="form-label flex items-center gap-1">{{ icon('edit', size=14) }}{{ _("Libellé simplifié") }}</label>
+    <input
+      type="text"
+      id="detail-label"
+      name="label"
+      required
+      value="{{ transaction.label }}"
+      class="input-base text-base font-medium"
+    />
     {% if transaction.raw_label != transaction.label %}
-    <p class="text-xs text-secondary break-words">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>
+    <p class="input-hint break-words font-mono">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>
     {% endif %}
   </div>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Catégorie") }}</span>
+  <label class="form-group">
+    <span class="form-label">{{ _("Montant") }}</span>
+    <div class="flex gap-2">
+      <button
+        type="button"
+        aria-label="{{ _("Inverser le signe (dépense / recette)") }}"
+        onclick="var i=this.nextElementSibling; var v=i.value.trim(); i.value = v.startsWith('-') ? v.slice(1) : ('-' + v); i.focus();"
+        class="btn btn-secondary w-14 flex-shrink-0 px-0 text-xl font-semibold"
+      >
+        ±
+      </button>
+      <input
+        type="text"
+        inputmode="decimal"
+        name="amount"
+        required
+        value="{{ '%.2f' % transaction.amount }}"
+        class="input-base flex-1 min-w-0 tabular-nums"
+      />
+    </div>
+  </label>
+
+  <label class="form-group">
+    <span class="form-label">{{ _("Date") }}</span>
+    <input
+      type="date"
+      name="date"
+      required
+      value="{{ transaction.date.isoformat() }}"
+      class="input-base"
+    />
+  </label>
+
+  <label class="form-group">
+    <span class="form-label">{{ _("Catégorie") }}</span>
     <select
       name="parent_category_id"
       hx-get="/transactions/subcategories"
       hx-target="#subcategory-select"
       hx-swap="outerHTML"
       hx-trigger="change"
-      class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+      class="input-base"
     >
       <option value="">{{ _("Non catégorisé") }}</option>
       {% for category in parent_categories %}
@@ -42,17 +77,14 @@
     </select>
   </label>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Sous-catégorie") }}</span>
+  <label class="form-group">
+    <span class="form-label">{{ _("Sous-catégorie") }}</span>
     {% include "transactions/_subcategory_select.html" %}
   </label>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Mode de paiement") }}</span>
-    <select
-      name="payment_method"
-      class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-    >
+  <label class="form-group">
+    <span class="form-label">{{ _("Mode de paiement") }}</span>
+    <select name="payment_method" class="input-base">
       <option value="" {% if not transaction.payment_method %}selected{% endif %}>{{ _("— (non défini)") }}</option>
       {% for code, meta in payment_methods.items() %}
       <option value="{{ code }}" {% if transaction.payment_method == code %}selected{% endif %}>
@@ -62,13 +94,9 @@
     </select>
   </label>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Compte") }}</span>
-    <select
-      name="account_id"
-      required
-      class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-    >
+  <label class="form-group">
+    <span class="form-label">{{ _("Compte") }}</span>
+    <select name="account_id" required class="input-base">
       {% for account in accounts %}
       <option value="{{ account.id }}" {% if account.id == transaction.account_id %}selected{% endif %}>
         {{ account.name }}
@@ -77,77 +105,35 @@
     </select>
   </label>
 
-  <label class="flex items-center gap-2 min-h-[50px]">
-    <input
-      type="checkbox"
-      name="is_transfer"
-      {% if transaction.is_transfer %}checked{% endif %}
-      class="w-5 h-5"
-    />
-    <span class="text-sm text-primary flex items-center gap-1" >{{ icon('repeat', size=16) }}{{ _("Virement interne entre comptes") }}</span>
-  </label>
+  <div class="flex flex-col">
+    <label class="flex items-center gap-3 min-h-[50px] cursor-pointer">
+      <input type="checkbox" name="is_transfer" {% if transaction.is_transfer %}checked{% endif %} class="w-5 h-5" />
+      <span class="text-sm text-primary flex items-center gap-1.5">{{ icon('repeat', size=16) }}{{ _("Virement interne entre comptes") }}</span>
+    </label>
+    <label class="flex items-center gap-3 min-h-[50px] cursor-pointer">
+      <input type="checkbox" name="is_unexpected" {% if transaction.is_unexpected %}checked{% endif %} class="w-5 h-5" />
+      <span class="text-sm text-primary flex items-center gap-1.5">{{ icon('urgent', size=16) }}{{ _("Dépense imprévue") }}</span>
+    </label>
+  </div>
 
-  <label class="flex items-center gap-2 min-h-[50px]">
-    <input
-      type="checkbox"
-      name="is_unexpected"
-      {% if transaction.is_unexpected %}checked{% endif %}
-      class="w-5 h-5"
-    />
-    <span class="text-sm text-primary flex items-center gap-1" >{{ icon('urgent', size=16) }}{{ _("Dépense imprévue") }}</span>
-  </label>
-
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Montant") }}</span>
-    <div class="flex gap-2">
-      <button
-        type="button"
-        aria-label="{{ _("Inverser le signe (dépense / recette)") }}"
-        onclick="var i=this.nextElementSibling; var v=i.value.trim(); i.value = v.startsWith('-') ? v.slice(1) : ('-' + v); i.focus();"
-        class="min-h-[50px] w-14 flex-shrink-0 rounded-xl border border-border bg-container text-primary text-2xl font-bold"
-      >
-        ±
-      </button>
-      <input
-        type="text"
-        inputmode="decimal"
-        name="amount"
-        required
-        value="{{ '%.2f' % transaction.amount }}"
-        class="flex-1 min-w-0 min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-      />
-    </div>
-  </label>
-
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Date") }}</span>
-    <input
-      type="date"
-      name="date"
-      required
-      value="{{ transaction.date.isoformat() }}"
-      class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-    />
-  </label>
-
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary flex items-center gap-1" >{{ icon('note', size=16) }}{{ _("Note") }}</span>
+  <label class="form-group">
+    <span class="form-label flex items-center gap-1">{{ icon('note', size=14) }}{{ _("Note") }}</span>
     <textarea
       name="note"
       rows="2"
       placeholder="{{ _("Remboursement Pierre...") }}"
-      class="rounded-xl border border-field bg-container text-primary px-3 py-2"
+      class="input-base py-2"
     >{{ transaction.note or "" }}</textarea>
   </label>
 
   <div class="flex flex-col gap-2">
-    <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+    <button type="submit" class="btn btn-primary">
       {{ _("Enregistrer") }}
     </button>
     <button
       type="button"
       onclick="this.closest('dialog').close()"
-      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      class="btn btn-secondary"
     >
       {{ _("Annuler") }}
     </button>
@@ -164,12 +150,9 @@
   hx-target="#transactions-content"
   hx-swap="innerHTML"
   hx-on:htmx:after-request="if(event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
-  class="px-6"
+  class="px-6 pt-4"
 >
-  <button
-    type="submit"
-    class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium w-full"
-  >
+  <button type="submit" class="btn btn-secondary w-full">
     {{ icon('arrow-back-up') }} {{ _("Remettre dans La Savane (non validée)") }}
   </button>
 </form>
@@ -183,7 +166,7 @@
   hx-on:htmx:after-request="if(event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
   class="px-6 pb-6 pt-2"
 >
-  <button type="submit" class="min-h-[50px] rounded-xl text-danger font-medium w-full">
+  <button type="submit" class="btn btn-ghost w-full text-danger">
     {{ icon('trash') }} {{ _("Supprimer cette transaction") }}
   </button>
 </form>
