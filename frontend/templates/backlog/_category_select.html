@@ -1,13 +1,14 @@
-<div class="flex flex-col gap-2">
+<div class="flex flex-col gap-2 w-full">
   <select
     name="category_id"
     required
     autofocus
+    aria-label="{{ _("Choisir une catégorie...") }}"
     hx-get="/backlog/{{ transaction.id }}/category-confirm?page={{ page }}"
     hx-target="#backlog-confirm-{{ transaction.id }}"
     hx-swap="innerHTML"
     hx-trigger="change"
-    class="w-full min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+    class="input-base"
   >
     <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
     {% for parent in categories %}
