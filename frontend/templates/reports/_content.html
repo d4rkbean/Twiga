@@ -180,7 +180,7 @@
 
   {# CASHFLOW — toujours visible, 12 mois glissants jusqu'au mois en cours,
      indépendant de l'onglet de détail actif ci-dessous. #}
-  <section aria-labelledby="cashflow-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-2">
+  <section aria-labelledby="cashflow-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-2">
     <h2 id="cashflow-title" class="text-section-title">{{ _("Flux financier — 12 derniers mois") }}</h2>
     <div class="h-64 lg:h-[360px]">
       <canvas id="report-cashflow-chart" role="img" aria-label="{{ _("Recettes, dépenses et résultat cumulé sur les douze derniers mois") }}"></canvas>
@@ -209,7 +209,7 @@
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4"
+    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4"
   >
     {% if expense_rows %}
     <div class="flex flex-col lg:flex-row gap-5 lg:items-start">
@@ -249,7 +249,7 @@
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4"
+    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4"
   >
     {% if income_rows %}
     <div class="flex flex-col lg:flex-row gap-5 lg:items-start">
@@ -289,7 +289,7 @@
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3"
+    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3"
   >
     <p class="text-sm font-semibold text-primary">{{ period_bar_label }}</p>
     <div class="flex flex-col gap-2">
@@ -364,7 +364,7 @@
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4"
+    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4"
   >
     {% if budget_progress %}
     {% for item in budget_progress %}
@@ -397,7 +397,7 @@
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3"
+    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3"
   >
     {% if net_worth_points %}
     <p class="flex items-center gap-1.5 text-sm font-medium text-primary">
@@ -422,7 +422,7 @@
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4"
+    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4"
   >
     {% if cap_entry %}
     <div class="flex flex-col gap-3">
@@ -504,7 +504,7 @@
     x-transition:enter="transition ease-out duration-200"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4"
+    class="report-tab-panel bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4"
   >
     {% if receipt_report.family_rows %}
     <div class="flex flex-col gap-1">

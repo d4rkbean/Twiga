@@ -37,7 +37,7 @@
          prélèvement sur épargne, qui n'a aucune raison de disparaître. Avec la
          stratégie « virements », la proposition vaut 0 tant que le cap du mois
          n'a pas été fixé — les virements se cochent dans le rituel. #}
-      <div class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+      <div class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
         {# Même nombre que le rituel : cette page et Le Cap éditent le même
            plan, elles ne peuvent pas proposer deux bases de répartition. #}
         {% if month_resources %}
@@ -96,7 +96,7 @@
         {% endfor %}
       </div>
 
-      <div class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-5">
+      <div class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5">
         {% for group in groups %}
         <section aria-labelledby="group-{{ group.code }}" class="flex flex-col">
           <h2 id="group-{{ group.code }}" class="text-section-title pb-1">{{ group.label }}</h2>
@@ -142,7 +142,7 @@
 
     {% if categories %}
     <aside class="lg:sticky lg:top-4 flex flex-col gap-3">
-      <div class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+      <div class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
         <div class="flex items-baseline justify-between gap-3">
           <span class="text-sm text-secondary">{{ _("Total budgété") }}</span>
           <span class="amount-blur text-sm font-semibold tabular-nums text-primary" x-text="available ? fmt(total) + ' (' + totalPct.toFixed(0) + ' %)' : fmt(total)"></span>
