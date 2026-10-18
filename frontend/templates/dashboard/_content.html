@@ -66,6 +66,14 @@
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('wallet', size=14) }} {{ _("Solde total") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(total_balance) }}</p>
       <p class="text-xs text-secondary">{% trans count=accounts_count, v="s" if accounts_count > 1 else "" %}{{ count }} compte{{ v }}{% endtrans %}</p>
+      {# Déplie le détail par compte (la carte « Comptes » plus bas, repliée par
+         défaut : la liste complète prenait trop de place en permanence).
+         `showAccounts` vit sur <main> (index.html). #}
+      <button type="button" @click="showAccounts = !showAccounts" :aria-expanded="showAccounts ? 'true' : 'false'" aria-controls="dashboard-accounts" class="min-h-[50px] -mb-3 inline-flex items-center gap-1 text-xs font-semibold text-primary text-left">
+        <span x-show="!showAccounts">{{ _("Voir les comptes") }}</span>
+        <span x-show="showAccounts" style="display: none;">{{ _("Masquer les comptes") }}</span>
+        <span class="transition-transform" :class="showAccounts ? 'rotate-180' : ''">{{ icon('chevron-down', size=14) }}</span>
+      </button>
     </div>
     <div class="bg-container p-4 flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('trending-up', size=14) }} {{ _("Recettes") }}</p>
@@ -90,19 +98,82 @@
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ savings_rate | string | replace("-", "−") }} %</p>
       <p class="text-xs text-secondary">{{ _("du revenu") }}</p>
     </div>
+    {# Alertes : les opérations qui attendent encore dans La Savane. #}
     {% if pending_count %}
     <a href="/transactions/inbox" class="bg-container p-4 flex flex-col gap-0.5 min-h-[50px] hover:bg-sunken">
       <span class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('inbox', size=14) }} {{ _("À trier") }}</span>
       <span class="text-xl font-bold tabular-nums text-primary">{{ pending_count }}</span>
-      <span class="flex items-center gap-1 text-xs font-semibold text-primary">{{ _("Ranger maintenant") }} {{ icon('arrow-right', size=14) }}</span>
+      <span class="text-xs text-secondary">{% trans v="s" if pending_count > 1 else "" %}opération{{ v }} en attente{% endtrans %}</span>
+      <span class="flex items-center gap-1 text-xs font-semibold text-primary">{{ _("Traiter →") }}</span>
     </a>
     {% else %}
     <div class="bg-container p-4 flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('inbox', size=14) }} {{ _("À trier") }}</p>
       <p class="text-xl font-bold tabular-nums text-primary">0</p>
-      <p class="text-xs text-secondary">{{ _("Tout est rangé") }}</p>
+      <p class="text-xs text-secondary">{{ _("Aucune alerte") }}</p>
     </div>
     {% endif %}
+  </div>
+
+  {# Le mois civil en cours et l'état du plan : toujours le mois d'AUJOURD'HUI,
+     quelle que soit la période choisie (« Mois dernier », « 90 J »…), et
+     indépendants du compte. Deux cartes discrètes, rafraîchies avec le
+     fragment (la case « Décaler recettes » s'applique aux recettes du mois). #}
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section id="panorama-ce-mois" aria-labelledby="this-month-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+      <h2 id="this-month-title" class="text-section-title">{{ _("Ce mois") }}</h2>
+      <dl class="grid grid-cols-3 gap-3">
+        <div class="flex flex-col gap-0.5">
+          <dt class="text-xs font-medium text-secondary">{{ _("Recettes") }}</dt>
+          <dd class="amount-blur font-bold tabular-nums text-primary">{{ signed(row1_income, plus=true) }}</dd>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <dt class="text-xs font-medium text-secondary">{{ _("Dépenses") }}</dt>
+          <dd class="amount-blur font-bold tabular-nums text-primary">{{ signed(-row1_expense) }}</dd>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <dt class="text-xs font-medium text-secondary">{{ _("Résultat") }}</dt>
+          <dd class="amount-blur font-bold tabular-nums {{ 'text-success' if row1_result > 0 else ('text-danger' if row1_result < 0 else 'text-primary') }}">{{ signed(row1_result, plus=true) }}</dd>
+          {% if row1_result != 0 %}
+          <dd class="text-xs font-medium {{ 'text-success' if row1_result > 0 else 'text-danger' }}">{{ _("excédent") if row1_result > 0 else _("déficit") }}</dd>
+          {% endif %}
+        </div>
+      </dl>
+    </section>
+
+    <section id="panorama-plan" aria-labelledby="plan-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="plan-title" class="text-section-title">{{ _("Mon mois") }}</h2>
+        <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">
+          {% if cap_entry %}{{ _("Voir le détail →") }}{% else %}{{ _("Fixer le cap →") }}{% endif %}
+        </a>
+      </div>
+      {% if budget_danger_count %}
+      <p class="text-sm font-semibold text-danger">{% trans v="s" if budget_danger_count > 1 else "" %}{{ budget_danger_count }} budget{{ v }} dépassé{{ v }}{% endtrans %}</p>
+      {% elif cap_savings_so_far is not none %}
+      <p class="amount-blur text-sm text-primary"><span class="font-bold tabular-nums">{{ signed(cap_savings_so_far, plus=true) }}</span> <span class="text-secondary">{{ _("épargnés à date") }}</span></p>
+      {% elif budget_defined_count %}
+      <p class="text-sm font-semibold text-success">{% trans v="s" if budget_ok_count > 1 else "" %}{{ budget_ok_count }} budget{{ v }} sous contrôle{% endtrans %}</p>
+      {% else %}
+      <p class="text-sm text-secondary">{{ _("Plan non fixé") }}</p>
+      {% endif %}
+
+      {% if cap_pillar_progress %}
+      <div class="flex flex-col gap-2">
+        {% for pillar in cap_pillar_progress %}
+        <div class="flex items-center gap-3">
+          <span class="w-20 flex-shrink-0 text-xs text-secondary truncate">{{ pillar.label }}</span>
+          <div class="progress-base"><div class="progress-fill {{ gauge_fill(pillar.ratio) }}" style="width: {{ pillar.ratio }}%;"></div></div>
+          <span class="w-24 flex-shrink-0 text-xs font-semibold text-right {{ gauge_tone(pillar.ratio) }}">{{ gauge_word(pillar.ratio) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% elif budget_defined_count %}
+      <p class="text-xs text-secondary tabular-nums">
+        {% trans ok=budget_ok_count, warning=budget_warning_count, danger=budget_danger_count %}{{ ok }} dans la cible · {{ warning }} à surveiller · {{ danger }} dépassés{% endtrans %}
+      </p>
+      {% endif %}
+    </section>
   </div>
 
   <div class="flex flex-col gap-5 lg:grid lg:grid-cols-12 lg:items-stretch">
@@ -116,6 +187,7 @@
         <h2 id="trend-title" class="text-section-title">{{ _("Flux sur 12 mois") }}</h2>
         <a href="/reports" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Rapports") }} {{ icon('arrow-right', size=16) }}</a>
       </div>
+      <p class="text-xs text-secondary -mt-2">{% trans period_label=period_label %}12 mois jusqu'à {{ period_label }}{% endtrans %}</p>
       <div role="group" aria-label="{{ _("Mode d'affichage du graphique") }}" class="flex gap-2">
         {% for mode, label in (("expense", _("Dépenses")), ("income", _("Recettes")), ("both", _("Les deux"))) %}
         <button

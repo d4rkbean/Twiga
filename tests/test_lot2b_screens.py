@@ -71,3 +71,36 @@ def test_cap_steps_are_named(clients):
     html = clients["admin"].get("/cap").text
     assert "Étapes du rituel" in html
     assert 'aria-current="step"' in html
+
+
+def test_panorama_keeps_the_four_functions_of_the_old_header_tiles(clients):
+    html = clients["admin"].get("/dashboard").text
+    # 1. The foldable account detail of the balance ("Voir les comptes").
+    assert 'aria-controls="dashboard-accounts"' in html
+    assert 'id="dashboard-accounts"' in html
+    assert "Voir les comptes" in html
+    # 2. The current civil month, whatever the chosen period.
+    assert 'id="panorama-ce-mois"' in html
+    assert "Ce mois" in html
+    # 3. The state of the month's plan, and its link to Mon mois.
+    assert 'id="panorama-plan"' in html
+    assert "Fixer le cap →" in html or "Voir le détail →" in html
+    assert 'href="/cap/mid"' in html
+    # 4. The alerts: operations waiting in La Savane, and the way to treat them.
+    assert "en attente" in html
+    assert "Traiter →" in html
+    assert 'href="/transactions/inbox"' in html
+
+
+def test_panorama_this_month_ignores_the_chosen_period(clients):
+    admin = clients["admin"]
+    current = admin.get("/dashboard/content", headers={"HX-Request": "true"}).text
+    previous = admin.get(
+        "/dashboard/content", params={"period": "mois-dernier"}, headers={"HX-Request": "true"}
+    ).text
+
+    def this_month(html):
+        start = html.index('id="panorama-ce-mois"')
+        return html[start:html.index("</section>", start)]
+
+    assert this_month(current) == this_month(previous)

@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-5 px-4 pb-4 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+<main x-data="{ showAccounts: false }" class="flex flex-col gap-5 px-4 pb-4 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
 
   <header class="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between lg:gap-x-6">
     <div>
@@ -113,7 +113,7 @@
      propre échéance. Ils vivent donc hors du fragment rechargé par les
      filtres. #}
   <div class="grid gap-5 lg:grid-cols-2 lg:items-start">
-    <section aria-labelledby="dashboard-accounts-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+    <section id="dashboard-accounts" x-show="showAccounts" x-transition style="display: none;" aria-labelledby="dashboard-accounts-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
       <div class="flex items-center justify-between gap-3">
         <h2 id="dashboard-accounts-title" class="text-section-title">{{ _("Comptes") }}</h2>
         <a href="/transactions/list" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">
@@ -147,7 +147,7 @@
       {% endif %}
     </section>
 
-    <section aria-labelledby="dashboard-projects-title" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
+    <section aria-labelledby="dashboard-projects-title" :class="showAccounts ? '' : 'lg:col-span-2'" class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3">
       <div class="flex items-center justify-between gap-3">
         <h2 id="dashboard-projects-title" class="text-section-title">{{ _("Projets") }}</h2>
         <a href="/projects" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">
