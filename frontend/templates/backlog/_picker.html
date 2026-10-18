@@ -1,0 +1,46 @@
+{#
+  The "choose a category" list: every category an operation can be filed in,
+  as "Parent › Child" (a parent that has sub-categories is also offered on its
+  own, as "(general)"). Clicking a line calls choose() of the Alpine component
+  (backlog.js): it files the row at once, or keeps the category for the
+  selection, depending on what opened the panel.
+#}
+{% macro picker_list(parent_categories) -%}
+<div class="max-h-[340px] overflow-y-auto rounded-xl border border-border">
+  {% for parent in parent_categories %}
+  {% set color = parent.id | category_color %}
+  {% if parent.children %}
+  <button
+    type="button"
+    data-path="{{ parent.name }}"
+    @click="choose({{ parent.id }}, $el.dataset.path)"
+    class="flex w-full min-h-[50px] items-center gap-2.5 border-b border-border px-3.5 text-left text-sm last:border-b-0"
+  >
+    <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ color }}" aria-hidden="true"></span>
+    {% trans name=parent.name %}{{ name }} (général){% endtrans %}
+  </button>
+  {% for child in parent.children %}
+  <button
+    type="button"
+    data-path="{{ parent.name }} › {{ child.name }}"
+    @click="choose({{ child.id }}, $el.dataset.path)"
+    class="flex w-full min-h-[50px] items-center gap-2.5 border-b border-border px-3.5 text-left text-sm last:border-b-0"
+  >
+    <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ color }}" aria-hidden="true"></span>
+    {{ parent.name }} › {{ child.name }}
+  </button>
+  {% endfor %}
+  {% else %}
+  <button
+    type="button"
+    data-path="{{ parent.name }}"
+    @click="choose({{ parent.id }}, $el.dataset.path)"
+    class="flex w-full min-h-[50px] items-center gap-2.5 border-b border-border px-3.5 text-left text-sm last:border-b-0"
+  >
+    <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ color }}" aria-hidden="true"></span>
+    {{ parent.name }}
+  </button>
+  {% endif %}
+  {% endfor %}
+</div>
+{%- endmacro %}

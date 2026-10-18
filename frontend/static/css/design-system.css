@@ -509,6 +509,31 @@
   .form-label { font-size: 0.75rem; font-weight: 500; color: var(--color-secondary); }
   .form-section { display: flex; flex-direction: column; gap: 0.75rem; }
 
+  /* Case à cocher de la créa : 22 px, coins de 6, ambre doux coché avec la
+     coche brune. Posée dans une cible de 50 px (le label ou le bouton qui
+     l'entoure), jamais seule. */
+  .check-box {
+    appearance: none;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    border-radius: 6px;
+    border: 1.5px solid var(--color-field);
+    background-color: var(--color-container);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 14px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast), border-color var(--duration-fast);
+  }
+  .check-box:checked {
+    border-color: var(--color-accent-ink);
+    background-color: var(--color-accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a2f12' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5l10 -10'/%3E%3C/svg%3E");
+  }
+  .check-box:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
+
   /* ---------- CARTES ---------- */
   .card {
     background-color: var(--color-container);
