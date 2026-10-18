@@ -1,21 +1,24 @@
+{# Une pastille de la couleur de la catégorie plutôt que son pictogramme : la
+   couleur est la même partout dans l'app (listes, rapports), et le chiffre
+   à gauche (dès sm) est le raccourci clavier. #}
 <div id="tour-category-buttons" class="category-suggestion grid grid-cols-2 lg:grid-cols-3 gap-3">
   {% for category in categories %}
   <button
     type="button"
-    class="shortcut-category-btn min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center gap-2 px-3 text-center active:bg-page"
+    class="shortcut-category-btn btn btn-secondary justify-start px-3 text-left min-w-0"
     hx-post="/transactions/{{ transaction.id }}/select-category/{{ category.id }}"
     hx-include="#simplified-label, #nav-history"
     hx-target=".category-suggestion"
     hx-swap="outerHTML"
   >
     {% if loop.index <= 9 %}
-    <span class="hidden sm:flex items-center justify-center w-5 h-5 rounded-full bg-page text-secondary text-xs font-semibold flex-shrink-0">{{ loop.index }}</span>
+    <span class="kbd-hint hidden sm:inline-flex" aria-hidden="true">{{ loop.index }}</span>
     {% endif %}
-    <span>{{ get_category_icon(category.name) }}</span>
-    <span>{{ category.name }}</span>
+    <span class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {{ category.id | category_color }}" aria-hidden="true"></span>
+    <span class="truncate">{{ category.name }}</span>
   </button>
   {% else %}
-  <p class="col-span-2 text-sm text-secondary text-center">
+  <p class="col-span-2 lg:col-span-3 text-sm text-secondary text-center">
     {{ _("Aucune catégorie disponible. Importez des données ou créez-en depuis les Paramètres.") }}
   </p>
   {% endfor %}
