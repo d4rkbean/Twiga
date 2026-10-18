@@ -262,8 +262,8 @@ msgstr "... and %(duplicates)s more group%(duplicates2)s"
 msgid "... et %(unusual)s autre%(unusual2)s"
 msgstr "... and %(unusual)s more"
 
-msgid "... et {n} autre{s} budget{s} à surveiller → <a href=\"/budgets\" class=\"text-accent font-medium\">Voir les budgets</a>"
-msgstr "... and {n} more budget{s} to watch → <a href=\"/budgets\" class=\"text-accent font-medium\">See budgets</a>"
+msgid "... et {n} autre{s} budget{s} à surveiller → <a href=\"/budgets\" class=\"text-primary font-medium\">Voir les budgets</a>"
+msgstr "... and {n} more budget{s} to watch → <a href=\"/budgets\" class=\"text-primary font-medium\">See budgets</a>"
 
 msgid "1 an"
 msgstr "1 yr"
@@ -2482,9 +2482,6 @@ msgstr "override"
 msgid "par page"
 msgstr "per page"
 
-msgid "pelage"
-msgstr "coat"
-
 msgid "pour les poser, ou répartissez librement ci-dessous."
 msgstr "to set them, or distribute freely below."
 
@@ -2718,3 +2715,18 @@ msgid "✓ %(n)s transaction mise à jour</p>"
 msgid_plural "✓ %(n)s transactions mises à jour</p>"
 msgstr[0] "✓ %(n)s transaction updated</p>"
 msgstr[1] "✓ %(n)s transactions updated</p>"
+
+msgid "Twiga regarde au loin, une boussole devant elle"
+msgstr "Twiga looks into the distance, a compass in front of her"
+
+msgid "Twiga, la girafe de l'application"
+msgstr "Twiga, the app's giraffe"
+
+msgid "Twiga, le cou étiré très haut, les yeux levés vers une feuille"
+msgstr "Twiga, her neck stretched very high, eyes on a leaf"
+
+msgid "Twiga, les yeux fermés de plaisir, une branche feuillue dans la bouche"
+msgstr "Twiga, eyes closed in delight, a leafy branch in her mouth"
+
+msgid "Twiga, repue, un relevé encore visible en bosse dans le cou"
+msgstr "Twiga, full, a statement still showing as a bump in her neck"

@@ -1,0 +1,159 @@
+{#
+  Identité de marque : la girafe et les icônes de navigation, en SVG en ligne.
+
+    {% from "_macros/brand.html" import mascot, mascot_line, nav_icon %}
+
+  mascot(state, size, label, cls)
+    state  default   le logo (tête et cou)
+           done      « Twiga a tout brouté ! »   La Savane vidée
+           waiting   « Twiga tend le cou… »      import en cours
+           swallowed « Twiga a tout avalé ! »    import terminé
+           cap       « Le cap est fixé ! »       Le Cap validé
+    size   largeur en pixels ; la hauteur suit le cadre de la scène (200x200
+           pour le logo, 200x240 pour les quatre scènes)
+    label  vrai : le dessin porte un role="img" et une description traduite ;
+           faux (défaut) : décoratif, aria-hidden, le texte voisin dit déjà
+           tout. À mettre à vrai quand la girafe est seule sur la ligne.
+    cls    classes ajoutées sur le <svg>
+
+  Les formes viennent des planches validées (rendu « Fidèle ») et du logo
+  twiga-logo.svg : mêmes ellipses, mêmes lunettes rondes, mêmes couleurs.
+  Seuls bougent les yeux, la bouche, le cou et un accessoire par scène. Les
+  couleurs sont des constantes de marque, identiques en clair et en sombre
+  (comme le fichier du logo) : ce ne sont pas des jetons de thème.
+
+  Le favicon et l'icône d'application restent des fichiers (static/icons/).
+#}
+{% macro mascot(state="default", size=48, label=false, cls="") -%}
+{%- set tall = state != "default" -%}
+{%- set descriptions = {
+  "default": _("Twiga, la girafe de l'application"),
+  "done": _("Twiga, les yeux fermés de plaisir, une branche feuillue dans la bouche"),
+  "waiting": _("Twiga, le cou étiré très haut, les yeux levés vers une feuille"),
+  "swallowed": _("Twiga, repue, un relevé encore visible en bosse dans le cou"),
+  "cap": _("Twiga regarde au loin, une boussole devant elle"),
+} -%}
+<svg xmlns="http://www.w3.org/2000/svg" class="twiga-mascot {{ cls }}" viewBox="0 0 200 {{ 240 if tall else 200 }}" width="{{ size }}" height="{{ (size * 1.2) | round | int if tall else size }}"
+  {%- if label %} role="img" aria-label="{{ descriptions[state] }}"{% else %} aria-hidden="true"{% endif %}>
+{% if state == 'default' %}
+    <rect x="80" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" />
+    <circle cx="84.5" cy="10" r="7.5" fill="#8B6914" />
+    <rect x="111" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" />
+    <circle cx="115.5" cy="10" r="7.5" fill="#8B6914" />
+    <ellipse cx="54" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(-35 54 46)" />
+    <ellipse cx="146" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(35 146 46)" />
+    <rect x="74" y="92" width="52" height="112" rx="22" fill="#D4A96A" />
+    <ellipse cx="88" cy="132" rx="10" ry="8" fill="#8B6914" />
+    <ellipse cx="116" cy="152" rx="9" ry="11" fill="#8B6914" />
+    <ellipse cx="86" cy="176" rx="8" ry="7" fill="#8B6914" />
+    <ellipse cx="114" cy="190" rx="7" ry="6" fill="#8B6914" />
+    <ellipse cx="100" cy="72" rx="46" ry="56" fill="#D4A96A" />
+    <ellipse cx="100" cy="102" rx="21" ry="16" fill="#E8CE9E" />
+    <line x1="63" y1="61" x2="52" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+    <line x1="137" y1="61" x2="148" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+    <circle cx="78" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" />
+    <circle cx="122" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" />
+    <line x1="95" y1="66" x2="105" y2="66" stroke="#5C3D1E" stroke-width="5" />
+    <circle cx="78" cy="66" r="4.5" fill="#3D2B14" />
+    <circle cx="122" cy="66" r="4.5" fill="#3D2B14" />
+    <circle cx="91" cy="106" r="3" fill="#5C3D1E" />
+    <circle cx="109" cy="106" r="3" fill="#5C3D1E" />
+    <path d="M91,116 Q100,122 109,116" stroke="#5C3D1E" stroke-width="3" fill="none" stroke-linecap="round" />
+{% elif state == 'done' %}
+    <ellipse cx="30" cy="150" rx="11" ry="6" fill="#5fa777" transform="rotate(-30 30 150)" /><ellipse cx="170" cy="60" rx="11" ry="6" fill="#2f8f55" transform="rotate(25 170 60)" /><ellipse cx="164" cy="196" rx="9" ry="5" fill="#13703a" transform="rotate(-50 164 196)" />
+    <rect x="74" y="92" width="52" height="170" rx="22" fill="#D4A96A" />
+    <ellipse cx="88" cy="140" rx="10" ry="8" fill="#8B6914" /><ellipse cx="116" cy="162" rx="9" ry="11" fill="#8B6914" /><ellipse cx="86" cy="190" rx="8" ry="7" fill="#8B6914" /><ellipse cx="114" cy="214" rx="8" ry="7" fill="#8B6914" />
+    <rect x="80" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="84.5" cy="10" r="7.5" fill="#8B6914" /><rect x="111" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="115.5" cy="10" r="7.5" fill="#8B6914" />
+    <ellipse cx="54" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(-35 54 46)" /><ellipse cx="146" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(35 146 46)" />
+    <ellipse cx="100" cy="72" rx="46" ry="56" fill="#D4A96A" />
+    <circle cx="66" cy="94" r="6" fill="#E9A07A" opacity="0.55" /><circle cx="134" cy="94" r="6" fill="#E9A07A" opacity="0.55" />
+    <ellipse cx="100" cy="102" rx="21" ry="16" fill="#E8CE9E" />
+    <line x1="63" y1="61" x2="52" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" /><line x1="137" y1="61" x2="148" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+    <circle cx="78" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><circle cx="122" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><line x1="95" y1="66" x2="105" y2="66" stroke="#5C3D1E" stroke-width="5" />
+    <path d="M70,69 Q78,60 86,69" stroke="#3D2B14" stroke-width="4" fill="none" stroke-linecap="round" /><path d="M114,69 Q122,60 130,69" stroke="#3D2B14" stroke-width="4" fill="none" stroke-linecap="round" />
+    <circle cx="91" cy="106" r="3" fill="#5C3D1E" /><circle cx="109" cy="106" r="3" fill="#5C3D1E" />
+    <path d="M90,113 Q100,121 110,113" stroke="#5C3D1E" stroke-width="3" fill="none" stroke-linecap="round" />
+    <path d="M107,115 Q130,110 156,121" stroke="#13703a" stroke-width="3.5" fill="none" stroke-linecap="round" />
+    <ellipse cx="128" cy="106" rx="10" ry="5.5" fill="#2f8f55" transform="rotate(-32 128 106)" /><ellipse cx="144" cy="109" rx="10" ry="5.5" fill="#13703a" transform="rotate(-20 144 109)" /><ellipse cx="136" cy="123" rx="9" ry="5" fill="#5fa777" transform="rotate(28 136 123)" /><ellipse cx="156" cy="127" rx="9" ry="5" fill="#2f8f55" transform="rotate(34 156 127)" />
+{% elif state == 'waiting' %}
+    <path d="M200,6 Q176,8 160,22" stroke="#6b4a24" stroke-width="4" fill="none" stroke-linecap="round" />
+    <ellipse cx="158" cy="26" rx="12" ry="6.5" fill="#2f8f55" transform="rotate(-36 158 26)" /><ellipse cx="180" cy="20" rx="10" ry="5.5" fill="#13703a" transform="rotate(30 180 20)" />
+    <path d="M52,120 v26 M52,164 v16 M148,134 v26 M148,178 v16" stroke="#b0803f" stroke-width="3" stroke-linecap="round" fill="none" />
+    <g transform="translate(30 6) scale(0.7)">
+    <rect x="74" y="92" width="52" height="300" rx="22" fill="#D4A96A" />
+    <ellipse cx="88" cy="136" rx="10" ry="8" fill="#8B6914" /><ellipse cx="116" cy="160" rx="9" ry="11" fill="#8B6914" /><ellipse cx="86" cy="188" rx="8" ry="7" fill="#8B6914" /><ellipse cx="114" cy="214" rx="8" ry="9" fill="#8B6914" /><ellipse cx="88" cy="242" rx="9" ry="7" fill="#8B6914" /><ellipse cx="114" cy="268" rx="8" ry="10" fill="#8B6914" /><ellipse cx="88" cy="296" rx="9" ry="7" fill="#8B6914" /><ellipse cx="114" cy="322" rx="8" ry="8" fill="#8B6914" />
+    <rect x="80" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="84.5" cy="10" r="7.5" fill="#8B6914" /><rect x="111" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="115.5" cy="10" r="7.5" fill="#8B6914" />
+    <ellipse cx="54" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(-35 54 46)" /><ellipse cx="146" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(35 146 46)" />
+    <ellipse cx="100" cy="72" rx="46" ry="56" fill="#D4A96A" /><ellipse cx="100" cy="102" rx="21" ry="16" fill="#E8CE9E" />
+    <line x1="63" y1="61" x2="52" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" /><line x1="137" y1="61" x2="148" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+    <circle cx="78" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><circle cx="122" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><line x1="95" y1="66" x2="105" y2="66" stroke="#5C3D1E" stroke-width="5" />
+    <circle cx="82" cy="58" r="4.5" fill="#3D2B14" /><circle cx="126" cy="58" r="4.5" fill="#3D2B14" />
+    <circle cx="91" cy="106" r="3" fill="#5C3D1E" /><circle cx="109" cy="106" r="3" fill="#5C3D1E" />
+    <path d="M93,117 L107,117" stroke="#5C3D1E" stroke-width="3" fill="none" stroke-linecap="round" />
+    <path d="M166,52 q9,13 0,19 q-9,-6 0,-19 z" fill="#9ec9e8" />
+    </g>
+{% elif state == 'swallowed' %}
+    <rect x="74" y="92" width="52" height="170" rx="22" fill="#D4A96A" />
+    <rect x="58" y="150" width="84" height="64" rx="18" fill="#D4A96A" />
+    <rect x="78" y="161" width="44" height="42" rx="4" fill="none" stroke="#b0803f" stroke-width="2.5" stroke-dasharray="5 4" />
+    <path d="M86,174 h28 M86,183 h28 M86,192 h18" stroke="#b0803f" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <ellipse cx="88" cy="134" rx="9" ry="7" fill="#8B6914" /><ellipse cx="68" cy="170" rx="5" ry="7" fill="#8B6914" /><ellipse cx="132" cy="196" rx="5" ry="7" fill="#8B6914" /><ellipse cx="112" cy="228" rx="8" ry="7" fill="#8B6914" />
+    <rect x="80" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="84.5" cy="10" r="7.5" fill="#8B6914" /><rect x="111" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="115.5" cy="10" r="7.5" fill="#8B6914" />
+    <ellipse cx="54" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(-35 54 46)" /><ellipse cx="146" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(35 146 46)" />
+    <ellipse cx="100" cy="72" rx="46" ry="56" fill="#D4A96A" />
+    <circle cx="66" cy="94" r="6" fill="#E9A07A" opacity="0.55" /><circle cx="134" cy="94" r="6" fill="#E9A07A" opacity="0.55" />
+    <ellipse cx="100" cy="102" rx="21" ry="16" fill="#E8CE9E" />
+    <line x1="63" y1="61" x2="52" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" /><line x1="137" y1="61" x2="148" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+    <circle cx="78" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><circle cx="122" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><line x1="95" y1="66" x2="105" y2="66" stroke="#5C3D1E" stroke-width="5" />
+    <path d="M70,64 Q78,73 86,64" stroke="#3D2B14" stroke-width="4" fill="none" stroke-linecap="round" /><path d="M114,64 Q122,73 130,64" stroke="#3D2B14" stroke-width="4" fill="none" stroke-linecap="round" />
+    <circle cx="91" cy="106" r="3" fill="#5C3D1E" /><circle cx="109" cy="106" r="3" fill="#5C3D1E" />
+    <path d="M90,113 Q100,120 110,113" stroke="#5C3D1E" stroke-width="3" fill="none" stroke-linecap="round" />
+    <path d="M95,117 Q100,129 105,117 Z" fill="#e07a6a" />
+{% elif state == 'cap' %}
+    <path d="M22,232 Q44,176 26,124" stroke="#b0803f" stroke-width="3.5" stroke-dasharray="1 9" stroke-linecap="round" fill="none" />
+    <polygon points="30,84 33.5,96 46,100 33.5,104 30,116 26.5,104 14,100 26.5,96" fill="#b0803f" />
+    <rect x="74" y="92" width="52" height="170" rx="22" fill="#D4A96A" />
+    <ellipse cx="88" cy="140" rx="10" ry="8" fill="#8B6914" /><ellipse cx="112" cy="160" rx="8" ry="9" fill="#8B6914" /><ellipse cx="86" cy="190" rx="8" ry="7" fill="#8B6914" /><ellipse cx="94" cy="222" rx="8" ry="7" fill="#8B6914" />
+    <rect x="80" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="84.5" cy="10" r="7.5" fill="#8B6914" /><rect x="111" y="8" width="9" height="26" rx="4.5" fill="#D4A96A" /><circle cx="115.5" cy="10" r="7.5" fill="#8B6914" />
+    <ellipse cx="54" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(-35 54 46)" /><ellipse cx="146" cy="46" rx="15" ry="23" fill="#D4A96A" transform="rotate(35 146 46)" />
+    <ellipse cx="100" cy="72" rx="46" ry="56" fill="#D4A96A" /><ellipse cx="100" cy="102" rx="21" ry="16" fill="#E8CE9E" />
+    <line x1="63" y1="61" x2="52" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" /><line x1="137" y1="61" x2="148" y2="55" stroke="#5C3D1E" stroke-width="4" stroke-linecap="round" />
+    <circle cx="78" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><circle cx="122" cy="66" r="17" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" /><line x1="95" y1="66" x2="105" y2="66" stroke="#5C3D1E" stroke-width="5" />
+    <circle cx="84" cy="64" r="4.5" fill="#3D2B14" /><circle cx="128" cy="64" r="4.5" fill="#3D2B14" />
+    <circle cx="91" cy="106" r="3" fill="#5C3D1E" /><circle cx="109" cy="106" r="3" fill="#5C3D1E" />
+    <path d="M91,116 Q100,122 109,116" stroke="#5C3D1E" stroke-width="3" fill="none" stroke-linecap="round" />
+    <circle cx="150" cy="190" r="32" fill="#FDF8EF" stroke="#5C3D1E" stroke-width="5" />
+    <path d="M150,163 v6 M150,211 v6 M123,190 h6 M171,190 h6" stroke="#5C3D1E" stroke-width="3" stroke-linecap="round" fill="none" />
+    <g transform="rotate(38 150 190)">
+    <polygon points="150,168 157,190 143,190" fill="#c2562b" /><polygon points="150,212 157,190 143,190" fill="#5C3D1E" />
+    </g>
+    <circle cx="150" cy="190" r="3" fill="#FDF8EF" />
+{% endif %}
+</svg>
+{%- endmacro %}
+
+{# Réplique de la girafe pour un état, à poser à côté du dessin dans une
+   police d'affichage (classe font-display). Les textes de « default » et des
+   quatre scènes sont ceux déjà utilisés dans l'application. #}
+{% macro mascot_line(state="default") -%}
+{%- if state == "done" -%}{{ _("Twiga a tout brouté !") }}
+{%- elif state == "waiting" -%}{{ _("Twiga tend le cou...") }}
+{%- elif state == "swallowed" -%}{{ _("Twiga a tout avalé !") }}
+{%- elif state == "cap" -%}{{ _("Le cap est fixé !") }}
+{%- else -%}{{ _("Twiga") }}{%- endif -%}
+{%- endmacro %}
+
+{# Icônes de la navigation principale, partagées par la barre latérale
+   (_sidebar.html) et la barre du bas mobile (_nav.html). Un seul système au
+   trait : viewBox 24x24, trait de 2, extrémités et jointures arrondies,
+   currentColor. Noms : savane, panorama, operations, month, projects. #}
+{% macro nav_icon(name, size=20) -%}
+<svg xmlns="http://www.w3.org/2000/svg" class="twiga-icon" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == "savane" %}<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+{%- elif name == "panorama" %}<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+{%- elif name == "operations" %}<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>
+{%- elif name == "month" %}<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+{%- elif name == "projects" %}<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}
