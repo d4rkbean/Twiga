@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 18:17+0000\n"
+"POT-Creation-Date: 2026-10-18 19:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -419,6 +419,9 @@ msgstr "On-site activities"
 msgid "Administrateur"
 msgstr "Administrator"
 
+msgid "Affichage"
+msgstr "Display"
+
 msgid "Afficher :"
 msgstr "Show:"
 
@@ -683,6 +686,9 @@ msgstr "Other taxes"
 msgid "Avec suggestion &gt; 90%%"
 msgstr "With suggestion &gt; 90%%"
 
+msgid "Aéré"
+msgstr "Airy"
+
 msgid "Aïe, trop de feuilles mangées ce mois-ci !"
 msgstr "Ouch, too many leaves eaten this month!"
 
@@ -714,6 +720,9 @@ msgstr "Based on the"
 
 msgid "Bien-être"
 msgstr "Wellness"
+
+msgid "Bientôt"
+msgstr "Coming soon"
 
 msgid "Bienvenue dans Le Cap !"
 msgstr "Welcome to Le Cap!"
@@ -894,6 +903,12 @@ msgstr "Checks & pending payments — Twiga"
 msgid "Cinéma et spectacles"
 msgstr "Cinema and shows"
 
+msgid "Clair"
+msgstr "Light"
+
+msgid "Classique"
+msgstr "Classic"
+
 #, python-format
 msgid "Coche les virements qui financent %(current_month_label)s"
 msgstr "Tick the transfers that fund %(current_month_label)s"
@@ -912,6 +927,12 @@ msgstr "Amount column"
 
 msgid "Colonnes"
 msgstr "Columns"
+
+msgid "Comment Twiga se présente pour toi, sur tous tes appareils."
+msgstr "How Twiga looks for you, on all your devices."
+
+msgid "Compact"
+msgstr "Compact"
 
 msgid "Compte"
 msgstr "Account"
@@ -1048,6 +1069,9 @@ msgstr "Invalid date: %(raw)r"
 #, python-format
 msgid "Date invalide : %(raw)r (format attendu %(format)s)"
 msgstr "Invalid date: %(raw)r (expected format %(format)s)"
+
+msgid "Densité"
+msgstr "Density"
 
 msgid "Dentiste et optique"
 msgstr "Dentist and optician"
@@ -1470,6 +1494,9 @@ msgstr "Private instance, hosted at your place."
 msgid "Intention"
 msgstr "Intention"
 
+msgid "Interface"
+msgstr "Interface"
+
 msgid "International"
 msgstr "International"
 
@@ -1488,11 +1515,20 @@ msgstr "Games and hobbies"
 msgid "L'Imprévu (une réserve sans détail) et l'Épargne se fixent dans"
 msgstr "The Unexpected reserve (no detail) and Savings are set in"
 
+msgid "L'autre voie"
+msgstr "The other way"
+
 msgid "L'icône en forme d'œil masque les montants."
 msgstr "The eye icon hides the amounts."
 
 msgid "L'intention du mois, fixée dans"
 msgstr "This month's intention, set in"
+
+msgid "L'interface que tu connais."
+msgstr "The interface you know."
+
+msgid "L'équilibre habituel"
+msgstr "The usual balance"
 
 msgid "La Savane"
 msgstr "La Savane"
@@ -1559,6 +1595,9 @@ msgstr "The salary received at the end of the previous month funds the current m
 
 msgid "Le salaire tombe en fin de mois et finance le mois suivant."
 msgstr "The salary arrives at the end of the month and funds the next one."
+
+msgid "Le texte et les boutons gardent leur taille : seul l'espace entre les éléments change."
+msgstr "Text and buttons keep their size: only the space between elements changes."
 
 #, python-format
 msgid "Le total dépasse les ressources de %(period_label)s"
@@ -1690,6 +1729,9 @@ msgstr "Hide amounts"
 
 msgid "Masquer les montants sensibles"
 msgstr "Hide sensitive amounts"
+
+msgid "Masquer les montants à l'ouverture"
+msgstr "Hide amounts when opening"
 
 msgid "Masquer les sous-catégories"
 msgstr "Hide subcategories"
@@ -1880,6 +1922,9 @@ msgstr "Not itemized"
 msgid "Non merci"
 msgstr "No thanks"
 
+msgid "Normal"
+msgstr "Normal"
+
 msgid "Note"
 msgstr "Note"
 
@@ -2021,6 +2066,12 @@ msgstr "Plan not set"
 
 msgid "Plus bas :"
 msgstr "Lowest:"
+
+msgid "Plus d'air entre les éléments"
+msgstr "More room between elements"
+
+msgid "Plus de lignes à l'écran"
+msgstr "More lines on screen"
 
 msgid "Plus haut :"
 msgstr "Highest:"
@@ -2416,6 +2467,9 @@ msgstr "Total balance"
 msgid "Soldes, types et réglages de chaque compte"
 msgstr "Balances, types and settings of each account"
 
+msgid "Sombre"
+msgstr "Dark"
+
 msgid "Somme des opérations importées"
 msgstr "Sum of imported transactions"
 
@@ -2443,6 +2497,9 @@ msgstr "Streaming and TV"
 
 msgid "Suggestions basées sur la similarité avec tes transactions déjà catégorisées, triées par confiance décroissante."
 msgstr "Suggestions based on the similarity with your already categorized transactions, sorted by decreasing confidence."
+
+msgid "Suit ton appareil"
+msgstr "Follows your device"
 
 msgid "Suivant"
 msgstr "Next"
@@ -2498,12 +2555,18 @@ msgstr "Delete the user %(username)s? This cannot be undone."
 msgid "Sur %(income_reference)s prévus — %(income_actual)s encaissés à ce jour"
 msgstr "Out of %(income_reference)s planned — %(income_actual)s received so far"
 
+msgid "Sur cet appareil seulement."
+msgstr "On this device only."
+
 msgid "Surgelés"
 msgstr "Frozen food"
 
 #, python-format
 msgid "Surveille %(label)s dans les prochaines semaines."
 msgstr "Keep an eye on %(label)s over the coming weeks."
+
+msgid "Système"
+msgstr "System"
 
 msgid "Sécurité"
 msgstr "Security"
@@ -2597,6 +2660,12 @@ msgstr "Total income"
 
 msgid "Total économisé sur la période"
 msgstr "Total saved over the period"
+
+msgid "Toujours clair"
+msgstr "Always light"
+
+msgid "Toujours sombre"
+msgstr "Always dark"
 
 msgid "Tous"
 msgstr "All"
@@ -2794,6 +2863,9 @@ msgstr "A shared pot fed by transfers — you tick the ones that fund this month
 #, python-format
 msgid "Un utilisateur \"%(username)s\" existe déjà."
 msgstr "A user \"%(username)s\" already exists."
+
+msgid "Une autre façon de parcourir Twiga."
+msgstr "Another way to move around Twiga."
 
 msgid "Une réserve, sans détail — un imprévu n'a pas de catégorie prévue"
 msgstr "A reserve, without detail — an unexpected expense has no planned category"
