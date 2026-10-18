@@ -104,6 +104,24 @@ docker compose up --build -d
 
 Alembic migrations are applied automatically on restart.
 
+## Development
+
+Only Docker is needed: the tools run in throwaway containers, nothing is
+installed on your machine.
+
+```bash
+tools/css.sh build   # recompile frontend/static/vendor/tailwind.min.css
+tools/css.sh watch   # same, on every change to a template or design-system.css
+tools/test.sh        # run the test suite (pytest)
+```
+
+The page only serves the compiled `tailwind.min.css`, which is versioned:
+recompile and commit it after changing `design-system.css` or adding a utility
+class to a template. `tools/test.sh` starts a throwaway PostgreSQL database
+(the `db-test` service, `test` profile of `docker-compose.yml`), builds its
+schema with the Alembic migrations, and checks that every page answers for
+each role. It never touches your data or the running application.
+
 ## License
 
 Code under the [MIT](LICENSE) license. See `LICENSES.md` for the audit of
