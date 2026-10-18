@@ -1,0 +1,9 @@
+{# Date de la dernière sauvegarde complète (voir routers/export.py, /backup) :
+   rafraîchi par HTMX quelques instants après le téléchargement. #}
+<p class="text-sm font-medium text-primary">
+  {% if last_backup_at %}
+  {% trans date=last_backup_at | fr_date, time=last_backup_at.strftime("%H:%M") %}Dernière sauvegarde : le {{ date }} à {{ time }}{% endtrans %}
+  {% else %}
+  {{ _("Aucune sauvegarde pour l'instant") }}
+  {% endif %}
+</p>

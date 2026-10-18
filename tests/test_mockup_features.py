@@ -3,7 +3,7 @@
 card, the live panel of Le Cap and the "Save now" backup.
 """
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from backend import crud
@@ -297,3 +297,70 @@ def test_cap_fixer_form_fields_are_unchanged(clients):
     for name in ("planned_income", "planned_imprevu", "savings_withdrawal", "intention", "amount_"):
         assert f'name="{name}' in form
     assert html.count("btn-primary") <= 1
+
+
+# --- 5. Settings: "Sauvegarder maintenant" -----------------------------------
+
+
+def _set_last_backup(value):
+    from backend.models import AppState
+
+    with SessionLocal() as db:
+        state = crud.get_or_create_app_state(db)
+        state.last_backup_at = value
+        db.commit()
+        assert db.get(AppState, 1).last_backup_at == value
+
+
+def test_settings_data_section_shows_when_no_backup_was_made(clients):
+    _set_last_backup(None)
+    html = clients["admin"].get("/settings").text
+    assert "Sauvegarder maintenant" in html
+    assert "Aucune sauvegarde pour l'instant" in html
+    assert 'action="/export/backup"' in html
+    # A secondary action: the only amber button of the screen is not this one.
+    button = html.split('id="backup-form"')[1].split("</form>")[0]
+    assert "btn-secondary" in button and "btn-primary" not in button
+
+
+def test_backup_downloads_the_full_export_and_records_the_date(clients):
+    _set_last_backup(None)
+    response = clients["admin"].post("/export/backup")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    assert "attachment" in response.headers["content-disposition"]
+    backup = response.json()
+    # The very same document as the full JSON export, the one restore reads.
+    reference = clients["admin"].get("/export/json").json()
+    assert backup.keys() == reference.keys()
+    assert len(backup["transactions"]) == len(reference["transactions"])
+
+    from backend.models import AppState
+
+    with SessionLocal() as db:
+        saved = db.get(AppState, 1).last_backup_at
+    assert saved is not None
+    assert (datetime.now() - saved).total_seconds() < 60
+
+    status = clients["admin"].get("/export/backup/status").text
+    assert "Dernière sauvegarde : le " in status
+    assert saved.strftime("%d/%m/%Y") in status
+    assert f" à {saved.strftime('%H:%M')}" in status
+    assert "Aucune sauvegarde" not in status
+    assert "Dernière sauvegarde" in clients["admin"].get("/settings").text
+
+
+def test_backup_is_refused_to_non_admins_and_leaves_the_date_alone(clients):
+    _set_last_backup(None)
+    for role in ("editor", "viewer"):
+        assert clients[role].post("/export/backup").status_code == 403
+    assert clients["anonymous"].post("/export/backup").status_code in (303, 401, 403)
+    from backend.models import AppState
+
+    with SessionLocal() as db:
+        assert db.get(AppState, 1).last_backup_at is None
+
+
+def test_settings_hide_the_backup_button_from_non_admins(clients):
+    for role in ("editor", "viewer"):
+        assert "Sauvegarder maintenant" not in clients[role].get("/settings").text
