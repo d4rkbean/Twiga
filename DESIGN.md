@@ -313,7 +313,7 @@ Every amount carries a static `.amount-blur` class set by the template; only the
 - **Do** draw new icons as line SVGs, 24×24 `viewBox`, `stroke-width: 2`, `currentColor`, to stay consistent with the existing set.
 - **Do** color an amount by its sign (green positive, red negative) and a gauge by its threshold (≥ 75% watch, ≥ 90% exceeded).
 - **Do** put `.amount-blur` on every new displayed amount, no exception: an amount that escapes privacy mode is a functional defect.
-- **Do** recompile `frontend/static/vendor/tailwind.min.css` after any change to `design-system.css` or any new utility class added in a template: that compiled file is what gets served, not the source.
+- **Do** recompile `frontend/static/vendor/tailwind.min.css` after any change to `design-system.css` or any new utility class added in a template, with `tools/css.sh build` (`tools/css.sh watch` while iterating): that compiled file is what gets served, not the source.
 
 ### Don't:
 - **Don't** make Twiga look like a dark "data" dashboard: black background, saturated neons, sparklines everywhere, cockpit density. Dark mode exists for night-time comfort; it is not the identity of the product.
