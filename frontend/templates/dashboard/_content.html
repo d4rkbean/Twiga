@@ -77,8 +77,10 @@
     </div>
     <div class="bg-container p-4 flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('scale', size=14) }} {{ _("Résultat") }}</p>
-      <p class="amount-blur text-xl font-bold tabular-nums {{ 'text-success' if result_total >= 0 else 'text-danger' }}">{{ signed(result_total, plus=true) }}</p>
-      <p class="text-xs font-medium {{ 'text-success' if result_total >= 0 else 'text-danger' }}">{{ _("excédent") if result_total >= 0 else _("déficit") }}</p>
+      <p class="amount-blur text-xl font-bold tabular-nums {{ 'text-success' if result_total > 0 else ('text-danger' if result_total < 0 else 'text-primary') }}">{{ signed(result_total, plus=true) }}</p>
+      {% if result_total != 0 %}
+      <p class="text-xs font-medium {{ 'text-success' if result_total > 0 else 'text-danger' }}">{{ _("excédent") if result_total > 0 else _("déficit") }}</p>
+      {% endif %}
     </div>
     {# Taux d'épargne dérivé de income_total/result_total déjà en contexte :
        aucune requête supplémentaire. #}
