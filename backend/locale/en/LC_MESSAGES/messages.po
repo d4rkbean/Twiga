@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 18:17+0000\n"
+"POT-Creation-Date: 2026-10-18 18:59+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -32,6 +32,10 @@ msgstr "\"%(name)s\" is used by"
 #, python-format
 msgid "%(account_from)s %(size)s %(account_to)s : %(count)s virement%(v)s ("
 msgstr "%(account_from)s %(size)s %(account_to)s: %(count)s transfer%(v)s ("
+
+#, python-format
+msgid "%(amount)s à trier"
+msgstr "%(amount)s to sort"
 
 #, python-format
 msgid "%(budget_danger_count)s budget%(v)s dépassé%(v)s"
@@ -82,6 +86,12 @@ msgid "%(count)s paiements"
 msgstr "%(count)s payments"
 
 #, python-format
+msgid "%(count)s restante"
+msgid_plural "%(count)s restantes"
+msgstr[0] "%(count)s left"
+msgstr[1] "%(count)s left"
+
+#, python-format
 msgid "%(count)s sous-catégorie"
 msgid_plural "%(count)s sous-catégories"
 msgstr[0] "%(count)s subcategory"
@@ -94,6 +104,10 @@ msgstr "%(current)s of %(target)s"
 #, python-format
 msgid "%(current_month_label)s · jour %(day)s sur %(days)s"
 msgstr "%(current_month_label)s · day %(day)s of %(days)s"
+
+#, python-format
+msgid "%(current_month_label)s, en direct"
+msgstr "%(current_month_label)s, live"
 
 #, python-format
 msgid "%(date)s · %(count)s occurrences"
@@ -228,6 +242,10 @@ msgstr "%(percentage)s %% used"
 #, python-format
 msgid "%(period)s : le foyer a reçu %(income)s et dépensé %(expense)s, soit un résultat de %(result)s."
 msgstr "%(period)s: the household received %(income)s and spent %(expense)s, a result of %(result)s."
+
+#, python-format
+msgid "%(previous_month_label)s, pilier par pilier"
+msgstr "%(previous_month_label)s, pillar by pillar"
 
 #, python-format
 msgid "%(recurring_active_count)s abonnement%(v)s détecté%(v)s · Total mensuel estimé :"
@@ -554,15 +572,14 @@ msgstr "To"
 msgid "Aucun abonnement récurrent détecté pour l'instant."
 msgstr "No recurring subscription detected yet."
 
-#, python-format
-msgid "Aucun budget au-delà de 75 %% sur cette période."
-msgstr "No budget above 75 %% over this period."
-
 msgid "Aucun budget défini"
 msgstr "No budget set"
 
 msgid "Aucun budget défini pour cette période."
 msgstr "No budget set for this period."
+
+msgid "Aucun budget n'est fixé pour ce mois."
+msgstr "No budget is set for this month."
 
 #, python-format
 msgid "Aucun cap fixé pour %(cap_month_label)s."
@@ -649,6 +666,9 @@ msgstr "No rule matches this label."
 msgid "Aucune règle pour l'instant. Ajoutes-en une ci-dessus, ou valide des transactions dans La Savane pour qu'une règle te soit proposée automatiquement."
 msgstr "No rule yet. Add one above, or validate transactions in La Savane so that a rule is suggested to you automatically."
 
+msgid "Aucune sauvegarde pour l'instant"
+msgstr "No backup yet"
+
 msgid "Aucune suggestion"
 msgstr "No suggestions"
 
@@ -678,6 +698,10 @@ msgstr "Other income"
 
 msgid "Autres taxes"
 msgstr "Other taxes"
+
+#, python-format
+msgid "Avec le tri : %(percentage)s %%"
+msgstr "With sorting: %(percentage)s %%"
 
 #, python-format
 msgid "Avec suggestion &gt; 90%%"
@@ -752,9 +776,6 @@ msgstr "Budgets"
 msgid "Budgets %(budget_points)s/40 · Résultat %(result_points)s/30 · Catégorisation %(categorized_points)s/20 · Projets %(project_points)s/10"
 msgstr "Budgets %(budget_points)s/40 · Result %(result_points)s/30 · Categorization %(categorized_points)s/20 · Projects %(project_points)s/10"
 
-msgid "Budgets à risque"
-msgstr "Budgets at risk"
-
 msgid "Budgets — Twiga"
 msgstr "Budgets — Twiga"
 
@@ -823,6 +844,9 @@ msgstr "This month, we want..."
 
 msgid "Ce que Twiga vérifie"
 msgstr "What Twiga checks"
+
+msgid "Ce que le mois écoulé a vraiment coûté, rapporté au plan que tu fixes."
+msgstr "What the past month really cost, compared with the plan you are setting."
 
 msgid "Ce que permet chaque rôle"
 msgstr "What each role allows"
@@ -1055,6 +1079,10 @@ msgstr "Dentist and optician"
 msgid "Dernière fois :"
 msgstr "Last time:"
 
+#, python-format
+msgid "Dernière sauvegarde : le %(date)s à %(time)s"
+msgstr "Last backup: %(date)s at %(time)s"
+
 msgid "Destinataire / motif (optionnel)"
 msgstr "Payee / reason (optional)"
 
@@ -1223,6 +1251,9 @@ msgstr "Envelope"
 msgid "Enveloppe décidée à l'avance, revenu irrégulier."
 msgstr "Envelope decided in advance, irregular income."
 
+msgid "Enveloppes"
+msgstr "Envelopes"
+
 msgid "Erreur d'import"
 msgstr "Import error"
 
@@ -1299,6 +1330,9 @@ msgstr "Set the month's cap →"
 
 msgid "Fixer le cap →"
 msgstr "Set the cap →"
+
+msgid "Fixer les budgets"
+msgstr "Set the budgets"
 
 #, python-format
 msgid "Flux financier — %(period_label)s"
@@ -1547,6 +1581,9 @@ msgstr "The new password must be at least 8 characters long."
 
 msgid "Le pilier de chaque catégorie se règle dans"
 msgstr "Each category's pillar is set in"
+
+msgid "Le plan en direct"
+msgstr "The plan, live"
 
 msgid "Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes."
 msgstr "The monthly ritual, kakeibo method: three steps, five minutes."
@@ -2266,6 +2303,12 @@ msgstr "Replay the guided tour"
 msgid "Revoir le cap du mois"
 msgstr "Review the month's cap"
 
+msgid "Rien de prévu pour l'instant."
+msgstr "Nothing planned yet."
+
+msgid "Rien à suivre : La Savane est vide."
+msgstr "Nothing next: La Savane is empty."
+
 msgid "Rubriques des paramètres"
 msgstr "Settings sections"
 
@@ -2367,6 +2410,12 @@ msgstr "Without suggestion"
 
 msgid "Santé"
 msgstr "Health"
+
+msgid "Sauvegarde"
+msgstr "Backup"
+
+msgid "Sauvegarder maintenant"
+msgstr "Back up now"
 
 msgid "Savane"
 msgstr "Savane"
@@ -2595,6 +2644,9 @@ msgstr "Total net worth"
 msgid "Total recettes"
 msgstr "Total income"
 
+msgid "Total réparti"
+msgstr "Total allocated"
+
 msgid "Total économisé sur la période"
 msgstr "Total saved over the period"
 
@@ -2715,6 +2767,9 @@ msgstr "Too many attempts. Try again in a few minutes."
 msgid "Tu importes tes relevés toi-même : personne d'autre n'a accès à tes comptes."
 msgstr "You import your statements yourself: nobody else has access to your accounts."
 
+msgid "Tu répartis plus que tes ressources."
+msgstr "You are allocating more than your resources."
+
 msgid "Tu tiens le bon bout !"
 msgstr "You're on the right track!"
 
@@ -2797,6 +2852,9 @@ msgstr "A user \"%(username)s\" already exists."
 
 msgid "Une réserve, sans détail — un imprévu n'a pas de catégorie prévue"
 msgstr "A reserve, without detail — an unexpected expense has no planned category"
+
+msgid "Une sauvegarde complète, au même format que l'export JSON : c'est celle que la restauration relit. Le fichier est téléchargé, rien n'est gardé sur le serveur."
+msgstr "A complete backup, in the same format as the JSON export: it is the one the restore reads. The file is downloaded, nothing is kept on the server."
 
 msgid "Utilisateur introuvable"
 msgstr "User not found"
@@ -2916,6 +2974,9 @@ msgstr "on target"
 
 msgid "dont le ticket a été importé — les autres n'apparaissent pas ici. Montants"
 msgstr "whose receipt was imported — the others don't appear here. Amounts"
+
+msgid "du plan"
+msgstr "of the plan"
 
 msgid "du revenu"
 msgstr "of income"
@@ -3047,6 +3108,9 @@ msgstr "So far, <strong class=\"font-bold\">%(count)s transaction%(v)s</strong> 
 msgid "À propos de Twiga"
 msgstr "About Twiga"
 
+msgid "À suivre"
+msgstr "Up next"
+
 msgid "À trier"
 msgstr "To sort"
 
@@ -3083,6 +3147,9 @@ msgstr "Monthly savings"
 
 msgid "Épargne prévue"
 msgstr "Planned savings"
+
+msgid "Épargne qui reste"
+msgstr "Savings left"
 
 msgid "Épargne visée"
 msgstr "Savings target"
