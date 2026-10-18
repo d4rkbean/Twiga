@@ -465,16 +465,15 @@ def _build_report_context(
         cap_pillar_bars = [
             {
                 "key": key,
-                "icon": icon,
                 "name": name,
                 "planned": planned,
                 "actual": cap_actuals[key],
                 "bar_width": min(round(cap_actuals[key] / planned * 100), 100) if planned else 0,
             }
-            for key, icon, name, planned in [
-                ("essentiel", "🏠", _t("Essentiel"), cap_entry.planned_essentiel),
-                ("choix", "🌟", _t("Choix"), cap_entry.planned_choix),
-                ("imprevu", "🆘", _t("Imprévus"), cap_entry.planned_imprevu),
+            for key, name, planned in [
+                ("essentiel", _t("Essentiel"), cap_entry.planned_essentiel),
+                ("choix", _t("Choix"), cap_entry.planned_choix),
+                ("imprevu", _t("Imprévus"), cap_entry.planned_imprevu),
             ]
         ]
     cap_unexpected = crud.get_unexpected_transactions(db, cap_month_start, cap_today)

@@ -2,9 +2,9 @@
     the server by backend/templating.py:flash_html().
       kind     "success" (setting saved) or "error" (refusal, invalid input)
       message  the text, already translated
-    The text always carries the verdict ("✓ Réglage enregistré", "Mot de passe
-    actuel incorrect"): the colour alone does not say it. #}
+    The text always carries the verdict ("Réglage enregistré", "Mot de passe
+    actuel incorrect"): the colour and the icon alone do not say it. #}
 <p
   role="{{ 'alert' if kind == 'error' else 'status' }}"
-  class="text-sm py-2 {{ 'text-danger' if kind == 'error' else 'text-success' }}"
->{{ message }}</p>
+  class="flex items-center gap-2 text-sm py-2 {{ 'text-danger' if kind == 'error' else 'text-success' }}"
+>{{ icon('circle-x' if kind == 'error' else 'circle-check', size=16) }}<span>{{ message }}</span></p>

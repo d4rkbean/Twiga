@@ -7,6 +7,7 @@ from starlette.responses import RedirectResponse, Response
 from backend import auth
 from backend.database import SessionLocal
 from backend.i18n import gettext as _t
+from backend.templating import flash_html
 
 _PUBLIC_PATHS = {"/login", "/health"}
 _PUBLIC_PREFIXES = ("/static/",)
@@ -66,7 +67,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         message = _t("Action réservée à un rôle supérieur.")
         if request.headers.get("HX-Request") == "true":
             return Response(
-                content=f'<p class="text-sm text-danger py-2">🔒 {message}</p>',
+                content=flash_html("error", message),
                 status_code=403,
                 media_type="text/html",
             )

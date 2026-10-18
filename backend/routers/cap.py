@@ -27,12 +27,12 @@ def _bilan_context(db: Session, month_start: date) -> dict:
     # quoi ? » sans quitter l'écran.
     detail = crud.get_month_detail_by_pillar(db, start, end)
     lines = []
-    for key, icon, name, real in [
-        ("income", "💰", _t("Revenus"), real_income),
-        ("essentiel", "🏠", _t("Essentiel"), real_pillars["essentiel"]),
-        ("choix", "🌟", _t("Choix"), real_pillars["choix"]),
-        ("imprevu", "🆘", _t("Imprévus"), real_pillars["imprevu"]),
-        ("savings", "🐷", _t("Épargne"), real_savings),
+    for key, name, real in [
+        ("income", _t("Revenus"), real_income),
+        ("essentiel", _t("Essentiel"), real_pillars["essentiel"]),
+        ("choix", _t("Choix"), real_pillars["choix"]),
+        ("imprevu", _t("Imprévus"), real_pillars["imprevu"]),
+        ("savings", _t("Épargne"), real_savings),
     ]:
         planned = None
         écart = None
@@ -68,7 +68,6 @@ def _bilan_context(db: Session, month_start: date) -> dict:
                 écart_color = "danger"
         lines.append(
             {
-                "icon": icon,
                 "name": name,
                 "real": real,
                 "planned": planned,
@@ -342,16 +341,15 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
     pillars = []
     worst_ratio = Decimal("0.00")
     worst_label = None
-    for key, icon, name, planned in [
-        ("essentiel", "🏠", _t("Essentiel"), sommes_budgets["essentiel"] or None),
-        ("choix", "🌟", _t("Choix"), sommes_budgets["choix"] or None),
-        ("imprevu", "🆘", _t("Imprévus"), entry.planned_imprevu if entry else None),
+    for key, name, planned in [
+        ("essentiel", _t("Essentiel"), sommes_budgets["essentiel"] or None),
+        ("choix", _t("Choix"), sommes_budgets["choix"] or None),
+        ("imprevu", _t("Imprévus"), entry.planned_imprevu if entry else None),
     ]:
         actual = pillar_actuals[key]
         ratio = (actual / planned * 100) if planned else Decimal("0.00")
         pillars.append(
             {
-                "icon": icon,
                 "name": name,
                 "actual": actual,
                 "planned": planned,

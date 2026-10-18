@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend import crud
 from backend.database import get_db
 from backend.models import Category, Transaction
-from backend.templating import templates
+from backend.templating import flash_html, templates
 from backend.i18n import gettext as _t
 
 logger = logging.getLogger("backend.backlog")
@@ -380,4 +380,4 @@ def create_rule_from_suggestion(
         raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     if keyword.strip():
         crud.create_rule(db, keyword.strip(), category)
-    return HTMLResponse(content=_t('<p class="text-sm text-success py-2">✓ Règle créée</p>'))
+    return HTMLResponse(content=flash_html("success", _t("Règle créée")))
