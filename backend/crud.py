@@ -2168,13 +2168,13 @@ def compute_twiga_score(db: Session, start: date, end: date, account_id: int | N
     total_score = budget_points + result_points + categorized_points + project_points
 
     if total_score >= 90:
-        message = _t("🦒 La girafe est fière de toi !")
+        message = _t("La girafe est fière de toi !")
     elif total_score >= 70:
-        message = _t("🦒 Tu tiens le bon bout !")
+        message = _t("Tu tiens le bon bout !")
     elif total_score >= 50:
-        message = _t("🦒 Twiga tend le cou pour voir mieux...")
+        message = _t("Twiga tend le cou pour voir mieux...")
     else:
-        message = _t("🦒 Aïe, trop de feuilles mangées ce mois-ci !")
+        message = _t("Aïe, trop de feuilles mangées ce mois-ci !")
 
     return {
         "score": total_score,

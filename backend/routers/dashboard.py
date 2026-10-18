@@ -106,6 +106,7 @@ def _build_period_context(
     today: date | None = None,
 ) -> dict:
     today = today or date.today()
+    raw_shift_income = shift_income
 
     # "Décalage recettes" (même logique que la page Rapports) : le salaire
     # perçu fin du mois précédent finance les dépenses du mois sélectionné.
@@ -226,33 +227,15 @@ def _build_period_context(
         "budget_progress": budget_progress[:6],
         "budget_progress_total": budget_progress_total,
         "budgets_at_risk": budgets_at_risk,
+        # Chiffres de la bande du haut qui ne dépendent pas de la période mais
+        # vivent dans le même fragment : le solde, le nombre de comptes et ce
+        # qui attend dans La Savane.
+        "total_balance": crud.get_total_balance(db),
+        "accounts_count": len(crud.list_accounts(db)),
+        "pending_count": crud.count_pending_transactions(db),
+        "today_long": format_date_long(today),
+        **_build_month_overview(db, today, raw_shift_income),
     }
-
-
-def _build_project_summaries(db: Session, today: date) -> tuple[list[dict], int]:
-    # Résumé lecture-seule pour la grille "Projets" du Panorama — pas les
-    # dialogues d'édition/mouvements de la vraie page Projets, juste de quoi
-    # visualiser l'avancement d'un coup d'œil et y renvoyer. Tronqué à 6
-    # (grille compacte 3 colonnes x 2 rangées en desktop), total conservé
-    # pour le lien "Voir tous les projets →".
-    summaries = []
-    for project in crud.list_projects(db):
-        percentage = (
-            min(project.current_amount / project.target_amount * 100, Decimal("100"))
-            if project.target_amount
-            else Decimal("0")
-        )
-        summaries.append(
-            {
-                "project": project,
-                "percentage_display": round(percentage),
-                "bar_width": max(0, min(round(percentage), 100)),
-                "monthly_effort": crud.compute_monthly_effort(
-                    project.target_amount, project.current_amount, project.target_date, today
-                ),
-            }
-        )
-    return summaries[:6], len(summaries)
 
 
 def _build_row1_totals(db: Session, today: date, shift_income: bool) -> tuple[Decimal, Decimal, Decimal]:
@@ -323,6 +306,61 @@ def _build_cap_progress(db: Session, today: date):
     return cap_entry, pillars, savings_so_far
 
 
+def _build_month_overview(db: Session, today: date, shift_income: bool) -> dict:
+    """Ce qui concerne le MOIS CIVIL EN COURS, quelle que soit la période choisie.
+
+    Trois choses, indépendantes des filtres période et compte : les chiffres
+    du mois (le décalage des recettes s'y applique quand il est coché),
+    l'état des budgets du mois et l'avancement du Cap. Rendu dans le fragment
+    #dashboard-content, donc rafraîchi avec lui à chaque changement de filtre
+    (la case « Décaler recettes » en fait partie).
+    """
+    current_month_start, current_month_end = month_range(today.year, today.month)
+    row1_income, row1_expense, row1_result = _build_row1_totals(db, today, shift_income)
+
+    budget_progress = crud.get_budget_progress(db, current_month_start, current_month_end, None)
+    cap_entry, cap_pillar_progress, cap_savings_so_far = _build_cap_progress(db, today)
+    return {
+        "row1_income": row1_income,
+        "row1_expense": row1_expense,
+        "row1_result": row1_result,
+        "budget_ok_count": sum(1 for b in budget_progress if b["percentage"] <= 75),
+        "budget_warning_count": sum(1 for b in budget_progress if 75 < b["percentage"] <= 90),
+        "budget_danger_count": sum(1 for b in budget_progress if b["percentage"] > 90),
+        "budget_defined_count": len(budget_progress),
+        "cap_entry": cap_entry,
+        "cap_pillar_progress": cap_pillar_progress,
+        "cap_savings_so_far": cap_savings_so_far,
+        "cap_month_label": f"{month_names()[today.month - 1]} {today.year}",
+    }
+
+
+def _build_project_summaries(db: Session, today: date) -> tuple[list[dict], int]:
+    # Résumé lecture-seule pour la grille "Projets" du Panorama — pas les
+    # dialogues d'édition/mouvements de la vraie page Projets, juste de quoi
+    # visualiser l'avancement d'un coup d'œil et y renvoyer. Tronqué à 6
+    # (grille compacte 3 colonnes x 2 rangées en desktop), total conservé
+    # pour le lien "Voir tous les projets →".
+    summaries = []
+    for project in crud.list_projects(db):
+        percentage = (
+            min(project.current_amount / project.target_amount * 100, Decimal("100"))
+            if project.target_amount
+            else Decimal("0")
+        )
+        summaries.append(
+            {
+                "project": project,
+                "percentage_display": round(percentage),
+                "bar_width": max(0, min(round(percentage), 100)),
+                "monthly_effort": crud.compute_monthly_effort(
+                    project.target_amount, project.current_amount, project.target_date, today
+                ),
+            }
+        )
+    return summaries[:6], len(summaries)
+
+
 @router.get("", response_class=HTMLResponse)
 def dashboard(
     request: Request,
@@ -340,33 +378,14 @@ def dashboard(
     parsed_account_id = _parse_account_id(account_id)
     parsed_shift_income = shift_income == "1"
 
-    # Cartes "solde par compte" : toujours le mois CIVIL en cours pour
-    # l'évolution, indépendamment de la période sélectionnée dans les
-    # filtres (qui ne s'applique qu'à la section #dashboard-content).
+    # Détail par compte : l'évolution est toujours celle du mois CIVIL en
+    # cours, indépendamment de la période sélectionnée dans les filtres (qui
+    # ne s'applique qu'à la section #dashboard-content).
     current_month_start, current_month_end = month_range(today.year, today.month)
     account_balances = crud.get_account_balances_with_monthly_evolution(
         db, current_month_start, current_month_end
     )
-    # Toujours égal à la somme des soldes réels par compte (voir
-    # crud.get_total_balance) : les virements, correctement appariés ou non,
-    # doivent être comptés ici comme n'importe quelle transaction.
-    total_balance = crud.get_total_balance(db)
     accounts = crud.list_accounts(db)
-
-    # ROW 1 (cartes "situation globale") : toujours le mois civil en cours,
-    # TOUS comptes confondus, indépendamment des filtres période/compte de la
-    # ROW 2 ci-dessous (qui ne pilotent que #dashboard-content) — c'est un
-    # aperçu global, pas une vue filtrée. Le décalage recettes (case ROW 2)
-    # s'y applique quand même : voir _build_row1_totals.
-    row1_income, row1_expense, row1_result = _build_row1_totals(db, today, parsed_shift_income)
-
-    row1_budget_progress = crud.get_budget_progress(db, current_month_start, current_month_end, None)
-    budget_ok_count = sum(1 for b in row1_budget_progress if b["percentage"] <= 75)
-    budget_warning_count = sum(1 for b in row1_budget_progress if 75 < b["percentage"] <= 90)
-    budget_danger_count = sum(1 for b in row1_budget_progress if b["percentage"] > 90)
-
-    pending_count = crud.count_pending_transactions(db)
-
 
     project_summaries, project_summaries_total = _build_project_summaries(db, today)
 
@@ -375,32 +394,13 @@ def dashboard(
         is_calendar_month, parsed_account_id, parsed_shift_income, today,
     )
 
-    # Carte "Le Cap" (ROW 1) : indépendante du décalage recettes (ROW 2), pas
-    # besoin du mécanisme OOB de _ce_mois_card.html/_decision_helper.html —
-    # même principe que les cartes Budgets/Alertes, jamais resynchronisée
-    # séparément.
-    cap_entry, cap_pillar_progress, cap_savings_so_far = _build_cap_progress(db, today)
-
     context = {
         "request": request,
         "account_balances": account_balances,
-        "total_balance": total_balance,
         "accounts": accounts,
         "project_summaries": project_summaries,
         "project_summaries_total": project_summaries_total,
-        "row1_income": row1_income,
-        "row1_expense": row1_expense,
-        "row1_result": row1_result,
-        "budget_ok_count": budget_ok_count,
-        "budget_warning_count": budget_warning_count,
-        "budget_danger_count": budget_danger_count,
-        "budget_defined_count": len(row1_budget_progress),
-        "pending_count": pending_count,
-        "cap_entry": cap_entry,
-        "cap_pillar_progress": cap_pillar_progress,
-        "cap_savings_so_far": cap_savings_so_far,
-        "cap_month_label": f"{month_names()[today.month - 1]} {today.year}",
-        "show_le_cap_banner": today.day == 1 and cap_entry is None,
+        "show_le_cap_banner": today.day == 1 and crud.get_cap_entry_for_month(db, current_month_start) is None,
         "current_month_key": today.strftime("%Y-%m"),
         **content,
     }
@@ -426,41 +426,8 @@ def dashboard_content(
         db, period_key, period_start, period_end, period_label,
         is_calendar_month, _parse_account_id(account_id), parsed_shift_income, today,
     )
-    # La grille Projets fait maintenant partie de _content.html (rangée
-    # budgets+projets) : nécessaire ici aussi, ce partial étant re-rendu seul
-    # à chaque changement de filtre (mois/année/compte) via HTMX.
-    project_summaries, project_summaries_total = _build_project_summaries(db, today)
-
-    # La case "Décaler les recettes" fait partie du même <form> que
-    # mois/année/compte (un seul hx-get sur "change" pour tout le monde),
-    # mais la carte "Ce mois" et l'aide à la décision (ROW 1) vivent en
-    # dehors de #dashboard-content, dans index.html — jamais touchées par ce
-    # partial normalement. Recalculées ici et renvoyées en swap "hors
-    # bande" (hx-swap-oob, voir dashboard/_ce_mois_card.html et
-    # _decision_helper.html) uniquement pour rester synchronisées avec la
-    # case à cocher, qui est la SEULE chose parmi mois/année/compte/décalage
-    # dont ROW 1 doit tenir compte (ROW 1 reste "toujours le mois civil en
-    # cours", indépendante du mois/année/compte sélectionnés).
-    row1_income, row1_expense, row1_result = _build_row1_totals(db, today, parsed_shift_income)
-    pending_count = crud.count_pending_transactions(db)
-
-    # Les objectifs du Cap sont affichés DANS la carte Évolution, qui fait
-    # partie de ce fragment : sans ça, le premier changement de filtre les
-    # ferait disparaître. Ils restent calculés sur le mois civil en cours,
-    # pas sur la période filtrée (voir _build_cap_progress).
-    cap_entry, cap_pillar_progress, cap_savings_so_far = _build_cap_progress(db, today)
-
     context = {
         "request": request,
-        "project_summaries": project_summaries,
-        "project_summaries_total": project_summaries_total,
-        "row1_income": row1_income,
-        "row1_expense": row1_expense,
-        "row1_result": row1_result,
-        "cap_entry": cap_entry,
-        "cap_pillar_progress": cap_pillar_progress,
-        "cap_savings_so_far": cap_savings_so_far,
-        "cap_month_label": f"{month_names()[today.month - 1]} {today.year}",
         "row1_oob": True,
         **content,
     }

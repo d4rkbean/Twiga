@@ -75,7 +75,7 @@
           },
         },
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+          legend: { position: "bottom", labels: { usePointStyle: true, pointStyle: "rectRounded", boxWidth: 10, boxHeight: 10, padding: 14, font: { size: 11 } } },
           tooltip: {
             callbacks: {
               label: function (context) {
