@@ -2450,6 +2450,24 @@ def list_transactions(
     return transactions, total
 
 
+def list_all_transactions(db: Session, **filters) -> list[Transaction]:
+    # Toutes les opérations qui correspondent aux filtres de la liste (mêmes
+    # paramètres que list_transactions, sans pagination ni tri choisi) : sert
+    # l'export CSV du bouton « Exporter » d'Opérations, qui doit contenir
+    # exactement ce que les filtres en cours désignent, pas seulement la page.
+    conditions = _build_transaction_filter_conditions(db, **filters)
+    stmt = (
+        select(Transaction)
+        .options(
+            selectinload(Transaction.account),
+            selectinload(Transaction.category).selectinload(Category.parent),
+        )
+        .where(*conditions)
+        .order_by(Transaction.date, Transaction.id)
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
 def get_transactions_total_amount(
     db: Session,
     *,

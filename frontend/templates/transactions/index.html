@@ -13,17 +13,32 @@
    fixe de droite a disparu : les critères se lisent d'un coup d'œil au-dessus
    de la liste. Pas de lg:pt- : <body> réserve déjà l'en-tête (voir base.html). #}
 <main class="flex flex-col gap-4 max-w-lg mx-auto px-4 pb-6 overflow-x-clip lg:max-w-none lg:mx-0 lg:px-8 lg:overflow-x-visible">
-  <div class="flex items-center justify-between gap-3 pt-2">
+  {# « Exporter » : CSV des opérations qui correspondent aux filtres en
+     cours. L'adresse se complète au clic avec les champs du formulaire de
+     filtres (mêmes noms f_*), comme l'export des Rapports ; secondaire, car
+     l'action principale de l'écran est « Rechercher ». #}
+  <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
     <h1 class="text-page-title">{{ _("Opérations") }}</h1>
-    <button
-      type="button"
-      hx-get="/transactions/new"
-      hx-target="#transaction-detail-content"
-      hx-swap="innerHTML"
-      class="btn btn-secondary flex-shrink-0 px-4"
-    >
-      {{ icon('plus') }} {{ _("Nouvelle opération") }}
-    </button>
+    <div class="flex gap-2">
+      <a
+        id="transactions-export"
+        href="/export/transactions.csv"
+        download
+        onclick="this.href = '/export/transactions.csv?' + new URLSearchParams(new FormData(document.getElementById('transactions-filters'))).toString()"
+        class="btn btn-secondary flex-1 sm:flex-none px-4"
+      >
+        {{ icon('download') }} {{ _("Exporter") }}
+      </a>
+      <button
+        type="button"
+        hx-get="/transactions/new"
+        hx-target="#transaction-detail-content"
+        hx-swap="innerHTML"
+        class="btn btn-secondary flex-1 sm:flex-none px-4"
+      >
+        {{ icon('plus') }} {{ _("Nouvelle opération") }}
+      </button>
+    </div>
   </div>
 
   <form
