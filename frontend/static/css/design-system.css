@@ -485,6 +485,7 @@
     font-size: 0.875rem;
   }
   .input-base::placeholder { color: var(--color-secondary); }
+  .input-base:disabled { opacity: 0.5; color: var(--color-secondary); cursor: not-allowed; }
   .input-error { border-color: var(--color-danger); }
   .input-hint { font-size: 0.75rem; color: var(--color-secondary); }
   .input-message { font-size: 0.75rem; color: var(--color-danger); }
