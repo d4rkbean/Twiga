@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 18:17+0000\n"
+"POT-Creation-Date: 2026-10-18 19:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -442,6 +442,9 @@ msgstr ""
 msgid "Administrateur"
 msgstr ""
 
+msgid "Affichage"
+msgstr ""
+
 msgid "Afficher :"
 msgstr ""
 
@@ -719,6 +722,9 @@ msgstr ""
 msgid "Avec suggestion &gt; 90%%"
 msgstr ""
 
+msgid "Aéré"
+msgstr ""
+
 msgid "Aïe, trop de feuilles mangées ce mois-ci !"
 msgstr ""
 
@@ -749,6 +755,9 @@ msgid "Basé sur les"
 msgstr ""
 
 msgid "Bien-être"
+msgstr ""
+
+msgid "Bientôt"
 msgstr ""
 
 msgid "Bienvenue dans Le Cap !"
@@ -940,6 +949,12 @@ msgstr ""
 msgid "Cinéma et spectacles"
 msgstr ""
 
+msgid "Clair"
+msgstr ""
+
+msgid "Classique"
+msgstr ""
+
 #, python-format
 msgid "Coche les virements qui financent %(current_month_label)s"
 msgstr ""
@@ -957,6 +972,12 @@ msgid "Colonne Montant"
 msgstr ""
 
 msgid "Colonnes"
+msgstr ""
+
+msgid "Comment Twiga se présente pour toi, sur tous tes appareils."
+msgstr ""
+
+msgid "Compact"
 msgstr ""
 
 msgid "Compte"
@@ -1093,6 +1114,9 @@ msgstr ""
 
 #, python-format
 msgid "Date invalide : %(raw)r (format attendu %(format)s)"
+msgstr ""
+
+msgid "Densité"
 msgstr ""
 
 msgid "Dentiste et optique"
@@ -1535,6 +1559,9 @@ msgstr ""
 msgid "Intention"
 msgstr ""
 
+msgid "Interface"
+msgstr ""
+
 msgid "International"
 msgstr ""
 
@@ -1553,10 +1580,19 @@ msgstr ""
 msgid "L'Imprévu (une réserve sans détail) et l'Épargne se fixent dans"
 msgstr ""
 
+msgid "L'autre voie"
+msgstr ""
+
 msgid "L'icône en forme d'œil masque les montants."
 msgstr ""
 
 msgid "L'intention du mois, fixée dans"
+msgstr ""
+
+msgid "L'interface que tu connais."
+msgstr ""
+
+msgid "L'équilibre habituel"
 msgstr ""
 
 msgid "La Savane"
@@ -1628,6 +1664,11 @@ msgid ""
 msgstr ""
 
 msgid "Le salaire tombe en fin de mois et finance le mois suivant."
+msgstr ""
+
+msgid ""
+"Le texte et les boutons gardent leur taille : seul l'espace entre les "
+"éléments change."
 msgstr ""
 
 #, python-format
@@ -1763,6 +1804,9 @@ msgid "Masquer les montants"
 msgstr ""
 
 msgid "Masquer les montants sensibles"
+msgstr ""
+
+msgid "Masquer les montants à l'ouverture"
 msgstr ""
 
 msgid "Masquer les sous-catégories"
@@ -1954,6 +1998,9 @@ msgstr ""
 msgid "Non merci"
 msgstr ""
 
+msgid "Normal"
+msgstr ""
+
 msgid "Note"
 msgstr ""
 
@@ -2097,6 +2144,12 @@ msgid "Plan non fixé"
 msgstr ""
 
 msgid "Plus bas :"
+msgstr ""
+
+msgid "Plus d'air entre les éléments"
+msgstr ""
+
+msgid "Plus de lignes à l'écran"
 msgstr ""
 
 msgid "Plus haut :"
@@ -2507,6 +2560,9 @@ msgstr ""
 msgid "Soldes, types et réglages de chaque compte"
 msgstr ""
 
+msgid "Sombre"
+msgstr ""
+
 msgid "Somme des opérations importées"
 msgstr ""
 
@@ -2535,6 +2591,9 @@ msgstr ""
 msgid ""
 "Suggestions basées sur la similarité avec tes transactions déjà "
 "catégorisées, triées par confiance décroissante."
+msgstr ""
+
+msgid "Suit ton appareil"
 msgstr ""
 
 msgid "Suivant"
@@ -2595,11 +2654,17 @@ msgstr ""
 msgid "Sur %(income_reference)s prévus — %(income_actual)s encaissés à ce jour"
 msgstr ""
 
+msgid "Sur cet appareil seulement."
+msgstr ""
+
 msgid "Surgelés"
 msgstr ""
 
 #, python-format
 msgid "Surveille %(label)s dans les prochaines semaines."
+msgstr ""
+
+msgid "Système"
 msgstr ""
 
 msgid "Sécurité"
@@ -2698,6 +2763,12 @@ msgid "Total recettes"
 msgstr ""
 
 msgid "Total économisé sur la période"
+msgstr ""
+
+msgid "Toujours clair"
+msgstr ""
+
+msgid "Toujours sombre"
 msgstr ""
 
 msgid "Tous"
@@ -2909,6 +2980,9 @@ msgstr ""
 
 #, python-format
 msgid "Un utilisateur \"%(username)s\" existe déjà."
+msgstr ""
+
+msgid "Une autre façon de parcourir Twiga."
 msgstr ""
 
 msgid "Une réserve, sans détail — un imprévu n'a pas de catégorie prévue"
