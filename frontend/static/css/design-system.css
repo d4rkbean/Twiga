@@ -1,4 +1,14 @@
-@import "tailwindcss";
+/* Sources des classes utilitaires, listées une à une plutôt que laissées à la
+   détection automatique de Tailwind : celle-ci lit aussi le CSS compilé
+   (frontend/static/vendor/tailwind.min.css) et la documentation, si bien
+   qu'une classe disparue des gabarits restait dans le fichier compilé build
+   après build. Le HTML produit côté Python (fragments renvoyés par les routes)
+   compte aussi, d'où backend/. Chemins relatifs à ce fichier. */
+@import "tailwindcss" source(none);
+@source "../../templates";
+@source "../../../backend";
+@source "../js";
+@source "../sw.js";
 
 @theme {
   --color-page: #f9f9f9;
