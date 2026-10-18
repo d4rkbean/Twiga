@@ -71,9 +71,12 @@ _UNCATEGORIZED_COLOR = "#9ca3af"
 
 
 def category_color_filter(category_id: int | None) -> str:
+    # A reference to the data-palette token rather than a hex value, so the dot
+    # follows the theme (lighter hues in dark). Only ever used in inline
+    # `style` attributes, where var() resolves.
     if category_id is None:
-        return _UNCATEGORIZED_COLOR
-    return _CATEGORY_PALETTE[category_id % len(_CATEGORY_PALETTE)]
+        return "var(--color-secondary)"
+    return f"var(--color-chart-{category_id % len(_CATEGORY_PALETTE) + 1})"
 
 
 # Pastilles de compte : la palette de données du design system (la même que

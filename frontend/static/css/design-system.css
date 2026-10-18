@@ -74,6 +74,8 @@
   --color-danger-soft: #fdecec;
   --color-info: #1d4ed8;
   --color-info-soft: #eef3fd;
+  /* Voile derrière les feuilles, dialogues et la visite guidée. */
+  --color-scrim: rgb(0 0 0 / 0.5);
 
   /* Palette de données des graphiques (séries, parts) : huit teintes sans
      ambre ni vert/rouge de verdict, lues en JavaScript par cssColor(). */
@@ -122,33 +124,46 @@
      réécriture et rend aussi les contrôles natifs, barres de défilement et
      curseurs de saisie cohérents avec le thème. */
   color-scheme: dark;
-  --color-page: #0f172a;
-  --color-container: #1e293b;
-  --color-primary: #f1f5f9;
-  --color-secondary: #94a3b8;
-  --color-border: #334155;
-  /* Légèrement éclaircies pour rester lisibles sur fond sombre (le vert/
-     orange/rouge du mode clair perdent en contraste sur un fond navy). */
-  --color-success: #22c55e;
-  --color-warning: #fbbf24;
-  --color-danger: #f87171;
-
-  /* PROVISOIRE : jetons nés avec l'identité claire (lot 1). Chacun reprend la
-     valeur sombre existante la plus proche, pour que le mode sombre actuel
-     reste inchangé en attendant la palette « sombre chaude ». À remplacer
-     par ses vraies valeurs au lot du thème sombre. */
-  --color-sunken: #0f172a;                       /* = page */
-  --color-border-strong: #334155;                /* = border */
-  --color-field: #334155;                        /* = border (les champs n'avaient que cette bordure) */
-  --color-accent-hover: #d4a96a;                 /* = accent */
-  --color-accent-ink: #d4a96a;                   /* = accent (texte actif d'avant) */
-  --color-accent-soft: color-mix(in srgb, #d4a96a 10%, #1e293b);  /* = l'ancien bg-accent/10 sur container */
-  --color-success-soft: color-mix(in srgb, #22c55e 12%, #1e293b);
-  --color-warning-gauge: #fbbf24;                /* = warning */
-  --color-warning-soft: color-mix(in srgb, #fbbf24 14%, #1e293b);
-  --color-danger-soft: color-mix(in srgb, #f87171 10%, #1e293b);
-  --color-info: #93c5fd;
-  --color-info-soft: color-mix(in srgb, #93c5fd 12%, #1e293b);
+  /* Palette sombre « chaude » : bruns profonds, jamais de bleu nuit. Pas
+     d'ombre pour l'élévation, c'est la teinte qui la porte : la page, puis
+     la surface plus claire, puis le creux plus sombre. */
+  --color-page: #17130f;
+  --color-container: #211c17;
+  --color-sunken: #120f0c;
+  --color-primary: #efe7da;
+  --color-secondary: #b0a595;
+  --color-border: #463d33;
+  --color-border-strong: #5a4f42;
+  --color-field: #8d8272;
+  /* Ambre : l'aplat reste identique au clair. Texte posé dessus : brun très
+     sombre ; ambre en texte ou en trait fin : plus clair que l'aplat. */
+  --color-accent-hover: #c99a58;
+  --color-on-accent: #2b1a08;
+  --color-accent-ink: #e2bd80;
+  --color-accent-soft: #382a17;
+  /* Verdicts : texte clair sur fond doux sombre de la même teinte. */
+  --color-success: #6fcf93;
+  --color-success-soft: #14301f;
+  --color-warning: #f2a65a;
+  --color-warning-gauge: #f59e0b;
+  --color-warning-soft: #3b2610;
+  --color-danger: #ff8f87;
+  --color-danger-soft: #3f1b19;
+  --color-info: #7fb2f5;
+  --color-info-soft: #172a45;
+  /* Données : teintes éclaircies pour tenir sur la surface sombre. */
+  --color-chart-1: #5b8def;
+  --color-chart-2: #2dc4b0;
+  --color-chart-3: #b77df0;
+  --color-chart-4: #f06aa8;
+  --color-chart-5: #8fcf3a;
+  --color-chart-6: #f28a4a;
+  --color-chart-7: #36bfd8;
+  --color-chart-8: #94a3b8;
+  --color-scrim: rgb(8 6 4 / 0.66);
+  /* Ombres quasi nulles : l'élévation passe par la teinte. */
+  --shadow-sm: 0 0 0 transparent;
+  --shadow-lg: 0 8px 16px -10px rgb(0 0 0 / 0.4);
 }
 
 @layer base {
@@ -460,9 +475,9 @@
     color: var(--color-primary);
   }
   /* Contour et non aplat : il n'existe pas de token de premier plan sur
-     danger, et du blanc sur le rouge clair du thème sombre (#f87171)
+     danger, et du blanc sur le rouge clair du thème sombre (#ff8f87)
      tomberait à 2,3:1. En contour, le rouge sur la surface tient 4,5:1
-     en clair et 5,9:1 en sombre. */
+     en clair et 7:1 en sombre. */
   .btn-danger {
     background-color: var(--color-container);
     border-color: var(--color-danger);
@@ -718,4 +733,12 @@
   .settings-columns {
     column-count: 3;
   }
+}
+
+/* Girafe sur fond sombre : un liseré clair (#f0e2c8) suit la silhouette pour
+   la détacher du brun du fond. Ombre portée sans décalage appliquée au dessin
+   entier, doublée pour qu'un trait d'un pixel reste visible ; les formes ne
+   sont pas touchées, et rien en mode clair. */
+.dark .twiga-mascot {
+  filter: drop-shadow(0 0 1px #f0e2c8) drop-shadow(0 0 1px #f0e2c8);
 }

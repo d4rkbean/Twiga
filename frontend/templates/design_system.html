@@ -31,33 +31,33 @@
 ] %}
 
 {% set tokens = [
-  ("--color-page", "#faf8f5", "#0f172a", "Fond de page"),
-  ("--color-container", "#ffffff", "#1e293b", "Fond des cartes et surfaces"),
-  ("--color-sunken", "#f3f0eb", "#0f172a", "Creux : rails, zones en retrait, survol d'une ligne"),
-  ("--color-primary", "#111827", "#f1f5f9", "Texte principal, montants"),
-  ("--color-secondary", "#585e6a", "#94a3b8", "Métadonnées, libellés discrets"),
-  ("--color-border", "#e7e2da", "#334155", "Toutes les bordures, 1px"),
-  ("--color-border-strong", "#d6cfc4", "#334155", "Bordure d'un contrôle posé sur une surface (boutons secondaires, menus)"),
-  ("--color-field", "#848a94", "#334155", "Contour des champs de saisie (3,4:1 sur la surface)"),
+  ("--color-page", "#faf8f5", "#17130f", "Fond de page"),
+  ("--color-container", "#ffffff", "#211c17", "Fond des cartes et surfaces"),
+  ("--color-sunken", "#f3f0eb", "#120f0c", "Creux : rails, zones en retrait, survol d'une ligne"),
+  ("--color-primary", "#111827", "#efe7da", "Texte principal, montants"),
+  ("--color-secondary", "#585e6a", "#b0a595", "Métadonnées, libellés discrets"),
+  ("--color-border", "#e7e2da", "#463d33", "Toutes les bordures, 1px"),
+  ("--color-border-strong", "#d6cfc4", "#5a4f42", "Bordure d'un contrôle posé sur une surface (boutons secondaires, menus)"),
+  ("--color-field", "#848a94", "#8d8272", "Contour des champs de saisie (3,4:1 sur la surface)"),
   ("--color-accent", "#d4a96a", "#d4a96a", "Ambre girafe — aplat de l'action principale, rien d'autre"),
-  ("--color-accent-hover", "#c99a58", "#d4a96a", "Survol de l'aplat ambre"),
-  ("--color-on-accent", "#4a2f12", "#4a2f12", "Premier plan sur l'ambre"),
-  ("--color-accent-ink", "#8a5a1f", "#d4a96a", "L'ambre en texte ou en trait fin : état actif, anneau de focus"),
-  ("--color-accent-soft", "#f7efe3", "ambre 10 % sur la surface", "Fond d'un état actif (pastille, ligne de menu)"),
-  ("--color-success", "#13703a", "#22c55e", "Montant positif, seuil sain"),
-  ("--color-success-soft", "#eaf6ee", "vert 12 % sur la surface", "Fond d'un verdict positif"),
-  ("--color-warning", "#a14a07", "#fbbf24", "Texte d'un seuil à surveiller"),
-  ("--color-warning-gauge", "#f59e0b", "#fbbf24", "Aplat orange des jauges (jamais du texte)"),
-  ("--color-warning-soft", "#fdf3e3", "orange 14 % sur la surface", "Fond d'un seuil à surveiller"),
-  ("--color-danger", "#c81e1e", "#f87171", "Montant négatif, seuil dépassé, suppression"),
-  ("--color-danger-soft", "#fdecec", "rouge 10 % sur la surface", "Fond d'un verdict négatif"),
-  ("--color-info", "#1d4ed8", "#93c5fd", "Information neutre"),
-  ("--color-info-soft", "#eef3fd", "bleu 12 % sur la surface", "Fond d'une information"),
+  ("--color-accent-hover", "#c99a58", "#c99a58", "Survol de l'aplat ambre"),
+  ("--color-on-accent", "#4a2f12", "#2b1a08", "Premier plan sur l'ambre"),
+  ("--color-accent-ink", "#8a5a1f", "#e2bd80", "L'ambre en texte ou en trait fin : état actif, anneau de focus"),
+  ("--color-accent-soft", "#f7efe3", "#382a17", "Fond d'un état actif (pastille, ligne de menu)"),
+  ("--color-success", "#13703a", "#6fcf93", "Montant positif, seuil sain"),
+  ("--color-success-soft", "#eaf6ee", "#14301f", "Fond d'un verdict positif"),
+  ("--color-warning", "#a14a07", "#f2a65a", "Texte d'un seuil à surveiller"),
+  ("--color-warning-gauge", "#f59e0b", "#f59e0b", "Aplat orange des jauges (jamais du texte)"),
+  ("--color-warning-soft", "#fdf3e3", "#3b2610", "Fond d'un seuil à surveiller"),
+  ("--color-danger", "#c81e1e", "#ff8f87", "Montant négatif, seuil dépassé, suppression"),
+  ("--color-danger-soft", "#fdecec", "#3f1b19", "Fond d'un verdict négatif"),
+  ("--color-info", "#1d4ed8", "#7fb2f5", "Information neutre"),
+  ("--color-info-soft", "#eef3fd", "#172a45", "Fond d'une information"),
 ] %}
 
 {% set chart_tokens = [
-  ("--color-chart-1", "#2563eb"), ("--color-chart-2", "#0d9488"), ("--color-chart-3", "#9333ea"), ("--color-chart-4", "#db2777"),
-  ("--color-chart-5", "#65a30d"), ("--color-chart-6", "#ea580c"), ("--color-chart-7", "#0891b2"), ("--color-chart-8", "#64748b"),
+  ("--color-chart-1", "#2563eb", "#5b8def"), ("--color-chart-2", "#0d9488", "#2dc4b0"), ("--color-chart-3", "#9333ea", "#b77df0"), ("--color-chart-4", "#db2777", "#f06aa8"),
+  ("--color-chart-5", "#65a30d", "#8fcf3a"), ("--color-chart-6", "#ea580c", "#f28a4a"), ("--color-chart-7", "#0891b2", "#36bfd8"), ("--color-chart-8", "#64748b", "#94a3b8"),
 ] %}
 
 {% block content %}
@@ -114,14 +114,14 @@
         <h3 class="text-card-title mt-2">Palette de données</h3>
         <p class="text-small">
           Huit teintes pour les séries et les parts des graphiques, sans ambre ni
-          vert/rouge de verdict, identiques en clair et en sombre. Les scripts de
+          vert/rouge de verdict, éclaircies en sombre (clair · sombre). Les scripts de
           graphiques les lisent par <code>getComputedStyle</code>.
         </p>
         <div class="card card-compact flex flex-wrap gap-3">
-          {% for name, value in chart_tokens %}
+          {% for name, value, value_dark in chart_tokens %}
           <div class="flex items-center gap-2">
             <span class="w-8 h-8 rounded-xl flex-shrink-0" style="background-color: var({{ name }});"></span>
-            <span class="text-small">{{ name[8:] }}<br />{{ value }}</span>
+            <span class="text-small">{{ name[8:] }}<br />{{ value }} · {{ value_dark }}</span>
           </div>
           {% endfor %}
         </div>
@@ -383,7 +383,7 @@
         <h2 class="text-section-title">Modales</h2>
         <p class="text-small">
           Élément <code>&lt;dialog&gt;</code> natif, ouvert et fermé par swap HTMX.
-          Fond <code>backdrop:bg-black/50</code>, ombre flottante (<code>shadow-lg</code>,
+          Fond <code>backdrop:bg-scrim</code>, ombre flottante (<code>shadow-lg</code>,
           brun teinté). Centrage par <code>margin: auto</code>, rétabli dans la couche de base.
         </p>
         <div class="card" style="max-width: 24rem; box-shadow: var(--shadow-lg); padding: 0;">

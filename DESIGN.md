@@ -174,28 +174,28 @@ A semantic palette driven by CSS variables (`@theme` in `design-system.css`), re
 
 ### Primary
 - **Giraffe Amber** (`#d4a96a`, hover `#c99a58`): the color of the spots. A solid fill for one thing only: the primary action button. Identical in light and dark.
-- **Bark Brown** (`#4a2f12`): the foreground on amber, used for the text and icons of primary buttons. Never white.
-- **Amber Ink** (`#8a5a1f`): amber when it has to be text or a fine line (5:1 on the page, where `#d4a96a` only reaches 2:1): the active navigation item, the focus ring, the selected choice card.
-- **Soft Amber** (`#f7efe3`): the background of an active state (navigation pill, user avatar, selected row).
+- **Bark Brown** (`#4a2f12` light / `#2b1a08` dark): the foreground on amber, used for the text and icons of primary buttons. Never white.
+- **Amber Ink** (`#8a5a1f` light / `#e2bd80` dark): amber when it has to be text or a fine line (5:1 on the page, where `#d4a96a` only reaches 2:1): the active navigation item, the focus ring, the selected choice card.
+- **Soft Amber** (`#f7efe3` light / `#382a17` dark): the background of an active state (navigation pill, user avatar, selected row).
 
 ### Neutral
-- **Warm Page** (`#faf8f5` light / `#0f172a` dark): the page background. The sidebar shares it, separated by a hairline.
-- **White Surface** (`#ffffff` light / `#1e293b` dark): cards, fields, dialogs, the bottom bar.
-- **Sunken** (`#f3f0eb`): rails, recessed zones, row hover. Provisional dark value: the page color.
-- **Ink** (`#111827` light / `#f1f5f9` dark): the main text, the amounts and all links.
-- **Faded Ink** (`#585e6a` light / `#94a3b8` dark): labels, metadata, inactive states.
-- **Hairline** (`#e7e2da`) and **Strong Hairline** (`#d6cfc4`): borders (1px) of surfaces, then of controls placed on a surface.
-- **Field Outline** (`#848a94`): the border of text fields, 3.4:1 on the surface (WCAG 1.4.11).
+- **Warm Page** (`#faf8f5` light / `#17130f` dark): the page background. The sidebar shares it, separated by a hairline.
+- **White Surface** (`#ffffff` light / `#211c17` dark): cards, fields, dialogs, the bottom bar. In dark it is lighter than the page: elevation comes from the tint, not from a shadow.
+- **Sunken** (`#f3f0eb` light / `#120f0c` dark): rails, recessed zones, row hover. Darker than the page in dark.
+- **Ink** (`#111827` light / `#efe7da` dark): the main text, the amounts and all links.
+- **Faded Ink** (`#585e6a` light / `#b0a595` dark): labels, metadata, inactive states.
+- **Hairline** (`#e7e2da` / dark `#463d33`) and **Strong Hairline** (`#d6cfc4` / dark `#5a4f42`): borders (1px) of surfaces, then of controls placed on a surface.
+- **Field Outline** (`#848a94` / dark `#8d8272`): the border of text fields, 3.4:1 on the surface (WCAG 1.4.11).
 
 ### Tertiary
-Verdict colors, each with a soft background, lightened in the dark theme (provisional values for the soft ones):
-- **Green** (`#13703a` / `#eaf6ee`; dark `#22c55e`): positive amount, healthy threshold.
-- **Orange** (text `#a14a07`, gauge fill `#f59e0b`, background `#fdf3e3`; dark `#fbbf24`): watch threshold. The gauge fill is a flat bar, never text.
-- **Red** (`#c81e1e` / `#fdecec`; dark `#f87171`): negative amount, exceeded threshold, destructive action.
-- **Blue** (`#1d4ed8` / `#eef3fd`; dark `#93c5fd`): neutral information.
+Verdict colors, each with a soft background, lightened in the dark theme where the soft background becomes a deep tint of the same hue:
+- **Green** (`#13703a` / `#eaf6ee`; dark `#6fcf93` on `#14301f`): positive amount, healthy threshold.
+- **Orange** (text `#a14a07`, gauge fill `#f59e0b`, background `#fdf3e3`; dark text `#f2a65a` on `#3b2610`, gauge fill unchanged): watch threshold. The gauge fill is a flat bar, never text.
+- **Red** (`#c81e1e` / `#fdecec`; dark `#ff8f87` on `#3f1b19`): negative amount, exceeded threshold, destructive action.
+- **Blue** (`#1d4ed8` / `#eef3fd`; dark `#7fb2f5` on `#172a45`): neutral information.
 
 ### Data palette
-Eight series colors for charts and shares, read from CSS variables by the chart scripts (`--color-chart-1` to `8`): `#2563eb #0d9488 #9333ea #db2777 #65a30d #ea580c #0891b2 #64748b`. No amber, no verdict green or red.
+Eight series colors for charts and shares, read from CSS variables by the chart scripts (`--color-chart-1` to `8`): `#2563eb #0d9488 #9333ea #db2777 #65a30d #ea580c #0891b2 #64748b` in light, `#5b8def #2dc4b0 #b77df0 #f06aa8 #8fcf3a #f28a4a #36bfd8 #94a3b8` in dark (3:1 minimum on the dark surface). No amber, no verdict green or red.
 
 ### Named Rules
 
@@ -204,6 +204,9 @@ Eight series colors for charts and shares, read from CSS variables by the chart 
 **The Brown on Amber Rule.** On `accent`, the foreground is always `on-accent` (`#4a2f12`). Never white, never pure black.
 
 **The Traffic Light Rule.** Green / orange / red are only computed verdicts: the sign of an amount, or a threshold being crossed (≥ 75% watch, ≥ 90% exceeded on budget bars). They are never used to categorize or decorate, and always come with a word.
+
+### Giraffe on dark
+In the dark theme the mascot gets a light outline (`#f0e2c8`, a zero-offset double `drop-shadow(0 0 1px)` on the whole drawing, `.dark .twiga-mascot`) so the silhouette detaches from the brown background. The shapes themselves never change.
 
 ## Typography
 
@@ -262,6 +265,8 @@ The system is **almost flat**. Depth comes first from the contrast between the p
 
 ### Named Rules
 
+**Dark elevation.** In the dark theme the shadows are nearly zero (`--shadow-sm` is empty, `--shadow-lg` is a faint 0.4 black): the page is `#17130f`, the surface one step lighter (`#211c17`), the sunken zones one step darker (`#120f0c`), and the 1px borders do the rest.
+
 **The Whispered Shadow Rule.** Two levels, not three. If an element seems to need an intermediate shadow, it lacks a border or a surface contrast, not a shadow.
 
 ## Shapes
@@ -317,7 +322,7 @@ Borders are 1px, in `border`, on all surfaces. The only deliberate exception is 
 - **Icons:** hand-drawn line SVGs, 24×24 `viewBox`, `stroke-width: 2`, rounded caps and joins, `stroke="currentColor"`. A single system, shared between both bars.
 
 ### Dialogs
-A native `<dialog>` element, `backdrop:bg-black/50` backdrop, 12px radius, Overlay shadow, width `calc(100% - 2rem)` capped at `max-w-sm`. Opened and closed by HTMX swap, not by JavaScript state. On large screens, some detail panels switch to a full-height right-hand drawer (380px, rounded corners on the left only) rather than a centered modal.
+A native `<dialog>` element, `backdrop:bg-scrim` backdrop (`--color-scrim`: black at 50% in light, `rgb(8 6 4 / 0.66)` in dark), 12px radius, Overlay shadow, width `calc(100% - 2rem)` capped at `max-w-sm`. Opened and closed by HTMX swap, not by JavaScript state. On large screens, some detail panels switch to a full-height right-hand drawer (380px, rounded corners on the left only) rather than a centered modal.
 
 ### Categorization card (La Savane)
 The signature component of the application and its measure of success: thirty transactions handled in under three minutes. A single centered card, `max-w-sm` on mobile and 600px on desktop, with a 2px border in the account's color. It stacks the editable label (typeset as a title), the raw import label in faded 12px, then the amount in 30px `font-extrabold` colored by its sign. Category selection happens in two steps, category then subcategory.

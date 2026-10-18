@@ -16,7 +16,7 @@
 .twiga-tour-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(17 24 39 / 0.55);
+  background: var(--color-scrim);
   z-index: 9998;
   transition: opacity var(--duration-base) var(--ease-out);
   pointer-events: none;
@@ -37,7 +37,7 @@
   border-radius: 0.75rem;
   outline: 4px solid var(--color-accent);
   outline-offset: 0;
-  box-shadow: 0 0 0 9999px rgb(17 24 39 / 0.55);
+  box-shadow: 0 0 0 9999px var(--color-scrim);
   pointer-events: none;
   transition: top 0.25s var(--ease-out), left 0.25s var(--ease-out), width 0.25s var(--ease-out), height 0.25s var(--ease-out); /* impeccable-disable-line layout-transition: box-shadow-based spotlight mask on a fixed, out-of-flow element — transform:translate() was tried and reverted, it desynced the shadow mask from the outline in practice; see comment above */
 }
