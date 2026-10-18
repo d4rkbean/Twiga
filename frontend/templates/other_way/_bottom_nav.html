@@ -1,0 +1,29 @@
+{% from "other_way/_icons.html" import shell_icon %}
+{% import "other_way/_shell_data.html" as shell with context %}
+{#- La barre du bas de « L'autre voie » (mobile) : les trois destinations et
+    Plus, qui ouvre la feuille du même nom (_more_menu.html). État actif : ambre
+    doux derrière l'icône et texte accent-ink, comme la Classique ; jamais
+    l'aplat ambre, réservé à l'action principale de l'écran. -#}
+{% macro tab(active, label, icon_name) %}
+<span class="rounded-full w-11 h-[26px] flex items-center justify-center {{ 'bg-accent-soft' if active else '' }}">{{ shell_icon(icon_name) }}</span>
+<span>{{ label }}</span>
+{% endmacro %}
+<nav id="tour-b-bottom-nav" aria-label="{{ _("Navigation principale") }}" class="print:hidden lg:hidden fixed bottom-0 inset-x-0 z-10 bg-container border-t border-border flex items-center">
+  {% for destination in shell.destinations %}
+  {% set active = shell.shell_active == destination.key %}
+  <a
+    href="{{ destination.href }}"
+    {% if active %}aria-current="page"{% endif %}
+    class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs {{ 'text-accent-ink font-semibold' if active else 'text-secondary font-medium' }}"
+  >{{ tab(active, destination.label, destination.icon) }}</a>
+  {% endfor %}
+  <button
+    id="tour-b-bottom-plus"
+    type="button"
+    aria-haspopup="dialog"
+    :aria-expanded="shell === 'more'"
+    {% if shell.shell_active == "more" %}aria-current="page"{% endif %}
+    @click="toggleShell('more')"
+    class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs {{ 'text-accent-ink font-semibold' if shell.shell_active == 'more' else 'text-secondary font-medium' }}"
+  >{{ tab(shell.shell_active == "more", _("Plus"), "more") }}</button>
+</nav>

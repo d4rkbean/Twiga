@@ -684,6 +684,12 @@
 .icon-theme-dark { display: none; }
 .dark .icon-theme-light { display: none; }
 .dark .icon-theme-dark { display: inline-block; }
+/* Le nom du thème courant (« Clair » / « Sombre ») dans le menu de l'avatar de
+   « L'autre voie » : même principe que les icônes, deux textes dont le CSS
+   n'affiche que le bon. */
+.theme-label-dark { display: none; }
+.dark .theme-label-light { display: none; }
+.dark .theme-label-dark { display: inline; }
 
 /* Cartes de choix (Paramètres > Préférences : langue, format) : le radio est
    masqué (sr-only) et toute la carte se clique. L'état coché se lit à la

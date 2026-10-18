@@ -83,6 +83,8 @@
        démarre jamais (ni auto, ni relance manuelle). -->
   <script src="{{ static_url('/static/js/tour.js') }}" defer></script>
   <script src="{{ static_url('/static/js/header.js') }}" defer></script>
+  {#- Scripts propres à une interface (other-way.js), avant Alpine pour la même raison que tour.js. -#}
+  {% block shell_head %}{% endblock %}
   <script src="{{ static_url('/static/vendor/alpine.min.js') }}" defer></script>
   {% block extra_head %}{% endblock %}
 </head>
