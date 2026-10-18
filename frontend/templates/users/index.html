@@ -5,8 +5,8 @@
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ icon('users', size=24) }} {{ _("Utilisateurs") }}</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
+    <h1 class="text-page-title">{{ icon('users', size=24) }} {{ _("Utilisateurs") }}</h1>
+    <a href="/settings" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
@@ -25,7 +25,7 @@
         placeholder="{{ _("Nom d'utilisateur") }}"
         autocomplete="off"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
       {% with field_name = "password", field_label = _("Mot de passe"), field_placeholder = _("Mot de passe (8 caractères min.)"), field_autocomplete = "new-password", field_minlength = 8 %}
       {% include "_password_field.html" %}
@@ -33,7 +33,7 @@
       <select
         name="role"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       >
         {% for role in roles %}
         <option value="{{ role }}" {% if role == "viewer" %}selected{% endif %}>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros/brand.html" import mascot, mascot_line %}
 
 {% block title %}Design System — Twiga 🦒{% endblock %}
 
@@ -30,16 +31,33 @@
 ] %}
 
 {% set tokens = [
-  ("--color-page", "#f9f9f9", "#0f172a", "Fond de page"),
+  ("--color-page", "#faf8f5", "#0f172a", "Fond de page"),
   ("--color-container", "#ffffff", "#1e293b", "Fond des cartes et surfaces"),
+  ("--color-sunken", "#f3f0eb", "#0f172a", "Creux : rails, zones en retrait, survol d'une ligne"),
   ("--color-primary", "#111827", "#f1f5f9", "Texte principal, montants"),
   ("--color-secondary", "#585e6a", "#94a3b8", "Métadonnées, libellés discrets"),
-  ("--color-border", "#e5e7eb", "#334155", "Toutes les bordures, 1px"),
-  ("--color-accent", "#d4a96a", "#d4a96a", "Ambre girafe — action principale et état actif"),
-  ("--color-on-accent", "#5c3d1e", "#5c3d1e", "Premier plan sur l'ambre"),
-  ("--color-success", "#16a34a", "#22c55e", "Montant positif, seuil sain"),
-  ("--color-warning", "#f59e0b", "#fbbf24", "Seuil de vigilance"),
-  ("--color-danger", "#dc2626", "#f87171", "Montant négatif, seuil dépassé, suppression"),
+  ("--color-border", "#e7e2da", "#334155", "Toutes les bordures, 1px"),
+  ("--color-border-strong", "#d6cfc4", "#334155", "Bordure d'un contrôle posé sur une surface (boutons secondaires, menus)"),
+  ("--color-field", "#848a94", "#334155", "Contour des champs de saisie (3,4:1 sur la surface)"),
+  ("--color-accent", "#d4a96a", "#d4a96a", "Ambre girafe — aplat de l'action principale, rien d'autre"),
+  ("--color-accent-hover", "#c99a58", "#d4a96a", "Survol de l'aplat ambre"),
+  ("--color-on-accent", "#4a2f12", "#4a2f12", "Premier plan sur l'ambre"),
+  ("--color-accent-ink", "#8a5a1f", "#d4a96a", "L'ambre en texte ou en trait fin : état actif, anneau de focus"),
+  ("--color-accent-soft", "#f7efe3", "ambre 10 % sur la surface", "Fond d'un état actif (pastille, ligne de menu)"),
+  ("--color-success", "#13703a", "#22c55e", "Montant positif, seuil sain"),
+  ("--color-success-soft", "#eaf6ee", "vert 12 % sur la surface", "Fond d'un verdict positif"),
+  ("--color-warning", "#a14a07", "#fbbf24", "Texte d'un seuil à surveiller"),
+  ("--color-warning-gauge", "#f59e0b", "#fbbf24", "Aplat orange des jauges (jamais du texte)"),
+  ("--color-warning-soft", "#fdf3e3", "orange 14 % sur la surface", "Fond d'un seuil à surveiller"),
+  ("--color-danger", "#c81e1e", "#f87171", "Montant négatif, seuil dépassé, suppression"),
+  ("--color-danger-soft", "#fdecec", "rouge 10 % sur la surface", "Fond d'un verdict négatif"),
+  ("--color-info", "#1d4ed8", "#93c5fd", "Information neutre"),
+  ("--color-info-soft", "#eef3fd", "bleu 12 % sur la surface", "Fond d'une information"),
+] %}
+
+{% set chart_tokens = [
+  ("--color-chart-1", "#2563eb"), ("--color-chart-2", "#0d9488"), ("--color-chart-3", "#9333ea"), ("--color-chart-4", "#db2777"),
+  ("--color-chart-5", "#65a30d"), ("--color-chart-6", "#ea580c"), ("--color-chart-7", "#0891b2"), ("--color-chart-8", "#64748b"),
 ] %}
 
 {% block content %}
@@ -67,9 +85,17 @@
       <section id="couleurs" class="flex flex-col gap-3">
         <h2 class="text-section-title">Couleurs</h2>
         <p class="text-small">
-          Dix tokens sémantiques. Aucune couleur en dur dans les gabarits : les
+          Des jetons sémantiques. Aucune couleur en dur dans les gabarits : les
           pastilles ci-dessous utilisent la variable, donc elles changent avec le
-          thème. Les deux valeurs sont indiquées à titre de référence.
+          thème. Les deux valeurs sont indiquées à titre de référence ; les
+          valeurs sombres des jetons nés avec l'identité claire sont
+          provisoires (celles du jeton existant le plus proche).
+        </p>
+        <p class="text-small">
+          <strong>Ambre rare.</strong> Aplat <code>bg-accent</code> : l'action
+          principale (Importer, Valider, Se connecter). Texte et trait fin
+          <code>text-accent-ink</code> : l'état actif. Fond d'état actif
+          <code>bg-accent-soft</code>. Jamais un lien, un graphique ou une décoration.
         </p>
         <div class="flex flex-col gap-2">
           {% for name, light, dark, role in tokens %}
@@ -85,18 +111,36 @@
           </div>
           {% endfor %}
         </div>
+        <h3 class="text-card-title mt-2">Palette de données</h3>
+        <p class="text-small">
+          Huit teintes pour les séries et les parts des graphiques, sans ambre ni
+          vert/rouge de verdict, identiques en clair et en sombre. Les scripts de
+          graphiques les lisent par <code>getComputedStyle</code>.
+        </p>
+        <div class="card card-compact flex flex-wrap gap-3">
+          {% for name, value in chart_tokens %}
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-xl flex-shrink-0" style="background-color: var({{ name }});"></span>
+            <span class="text-small">{{ name[8:] }}<br />{{ value }}</span>
+          </div>
+          {% endfor %}
+        </div>
       </section>
 
       {# ─────────── TYPOGRAPHIE ─────────── #}
       <section id="typographie" class="flex flex-col gap-3">
         <h2 class="text-section-title">Typographie</h2>
         <p class="text-small">
-          Aucune police n'est chargée : pile système, par choix (aucun CDN,
-          rendu instantané). La hiérarchie tient donc à la taille et à la graisse.
+          Une seule police chargée : Bricolage Grotesque 700 et 800 (SIL OFL,
+          servie par l'application, aucun CDN, <code>font-display: swap</code>),
+          pour les titres de page, les titres de section et les répliques de la
+          girafe, à <code>letter-spacing: -0.02em</code>. Tout le reste reste en
+          pile système. La hiérarchie tient à la taille et à la graisse.
         </p>
         <div class="card flex flex-col gap-4">
-          <div><p class="text-page-title">Panorama</p><span class="text-small">.text-page-title — 24px / 700</span></div>
-          <div><p class="text-section-title">Dépenses par catégorie</p><span class="text-small">.text-section-title — 18px / 600</span></div>
+          <div><p class="text-page-title">Panorama</p><span class="text-small">.text-page-title — 28px (34px dès lg) / Bricolage 800</span></div>
+          <div><p class="text-section-title">Dépenses par catégorie</p><span class="text-small">.text-section-title — 18px / Bricolage 800</span></div>
+          <div><p class="text-replique">{{ mascot_line("done") }}</p><span class="text-small">.text-replique — 22px / Bricolage 800 — la voix de la girafe</span></div>
           <div><p class="text-card-title">Alimentation</p><span class="text-small">.text-card-title — 16px / 500</span></div>
           <div><p class="text-body">Les transactions apparaissent ici une fois importées.</p><span class="text-small">.text-body — 14px / 400 — taille de référence de l'app</span></div>
           <div><p class="text-small">04/08/2026 · Crédit Agricole</p><span class="text-small">.text-small — 12px / secondaire</span></div>
@@ -305,8 +349,9 @@
           {% endfor %}
         </div>
         <span class="text-small">
-          Seuils : vert sous 75 %, orange de 75 à 90 %, rouge au-delà. L'ambre est
-          réservé aux piliers du Cap. Hauteur unique de 8px.
+          Seuils : vert sous 75 %, orange de 75 à 90 %, rouge au-delà. L'orange est
+          <code>--color-warning-gauge</code>, un aplat vif ; l'ambre n'est utilisé que
+          pour les piliers du Cap. Hauteur unique de 8px.
         </span>
       </section>
 
@@ -317,16 +362,15 @@
           <div>
             <p class="text-small mb-2">Barre latérale (desktop) — actif / inactif</p>
             <div class="flex flex-col gap-1" style="max-width: 240px;">
-              <span class="min-h-[44px] flex items-center gap-3 rounded-xl px-3 text-sm font-medium"
-                    style="background-color: color-mix(in srgb, var(--color-accent) 10%, transparent); color: var(--color-accent);">◎ Projets</span>
-              <span class="min-h-[44px] flex items-center gap-3 rounded-xl px-3 text-sm font-medium" style="color: var(--color-secondary);">{{ icon('list-details', size=18) }} Opérations</span>
+              <span class="min-h-[50px] flex items-center gap-3 rounded-xl px-3 text-sm font-semibold bg-accent-soft text-accent-ink">{{ icon('target', size=18) }} Projets</span>
+              <span class="min-h-[50px] flex items-center gap-3 rounded-xl px-3 text-sm font-medium text-primary">{{ icon('list-details', size=18) }} Opérations</span>
             </div>
           </div>
           <div>
             <p class="text-small mb-2">Navigation basse (mobile)</p>
             <div class="flex items-center border-t border-border" style="max-width: 360px;">
-              <span class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs font-semibold" style="color: var(--color-accent);">
-                <span class="rounded-full px-3" style="background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);">{{ icon('inbox', size=18) }}</span>La Savane
+              <span class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs font-semibold text-accent-ink">
+                <span class="rounded-full w-11 h-[26px] flex items-center justify-center bg-accent-soft">{{ icon('inbox', size=18) }}</span>La Savane
               </span>
               <span class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs" style="color: var(--color-secondary);"><span class="px-3">{{ icon('chart-bar', size=18) }}</span>Panorama</span>
             </div>
@@ -339,9 +383,10 @@
         <h2 class="text-section-title">Modales</h2>
         <p class="text-small">
           Élément <code>&lt;dialog&gt;</code> natif, ouvert et fermé par swap HTMX.
-          Fond <code>backdrop:bg-black/50</code>, ombre de surimpression.
+          Fond <code>backdrop:bg-black/50</code>, ombre flottante (<code>shadow-lg</code>,
+          brun teinté). Centrage par <code>margin: auto</code>, rétabli dans la couche de base.
         </p>
-        <div class="card" style="max-width: 24rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1); padding: 0;">
+        <div class="card" style="max-width: 24rem; box-shadow: var(--shadow-lg); padding: 0;">
           <div class="p-4"><p class="text-card-title">Supprimer cette opération ?</p><p class="text-small mt-1">Cette action est définitive.</p></div>
           <div class="flex gap-2 p-3 border-t border-border">
             <button type="button" class="btn btn-secondary flex-1">Annuler</button>
@@ -355,8 +400,9 @@
         <h2 class="text-section-title">Graphiques</h2>
         <p class="text-small">
           Chart.js et chartjs-chart-sankey, vendorisés localement. Les couleurs
-          de série sont lues depuis les tokens au moment du rendu, jamais codées
-          en dur, pour suivre le thème.
+          de série viennent de la palette de données (<code>--color-chart-1</code>
+          à <code>8</code>), lues au moment du rendu, jamais codées en dur ni
+          ambrées.
         </p>
         <div class="card flex flex-col gap-2">
           <p class="text-card-title">Conteneur de graphique</p>
@@ -372,9 +418,23 @@
         <h2 class="text-section-title">Thème Girafe</h2>
         <div class="card flex flex-col gap-4">
           <div class="flex items-center gap-4">
-            <img src="/static/icons/twiga-logo.svg" alt="" style="height: 64px;" />
-            <img src="/static/icons/twiga-logo.svg" alt="" style="height: 32px;" />
-            <img src="/static/icons/twiga-logo.svg" alt="" style="height: 20px;" />
+            {{ mascot(size=64, label=true) }}
+            {{ mascot(size=32) }}
+            {{ mascot(size=20) }}
+          </div>
+          <div class="flex flex-col gap-2">
+            <p class="text-small">Cinq états, macro <code>mascot(state, size)</code> (<code>_macros/brand.html</code>) : mêmes formes que le logo, rendu « Fidèle ».</p>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {% for state, where in [("done", "La Savane, tout est traité"), ("waiting", "Import en cours"), ("swallowed", "Import terminé"), ("cap", "Le Cap, dernière étape")] %}
+              <figure class="flex flex-col gap-2 rounded-xl p-3 bg-accent-soft">
+                {{ mascot(state, 140, true) }}
+                <figcaption>
+                  <span class="text-small">{{ where }}</span>
+                  <span class="text-replique block">{{ mascot_line(state) }}</span>
+                </figcaption>
+              </figure>
+              {% endfor %}
+            </div>
           </div>
           <div>
             <p class="text-small mb-2">Motif de fond — Voronoï périodique, 307 plaques, tuile 2240px</p>
@@ -384,7 +444,7 @@
           </div>
           <div class="flex flex-col gap-1">
             <p class="text-small">Voix de l'app</p>
-            <p class="text-body"><img src="/static/icons/twiga-logo.svg" alt="" style="height:18px;width:auto;display:inline-block;vertical-align:-3px" /> Twiga a tout brouté ! — La savane est propre.</p>
+            <p class="text-body">{{ mascot(size=18) }} Twiga a tout brouté ! — La savane est propre.</p>
             <p class="text-body">Voir loin. Voir juste.</p>
           </div>
         </div>

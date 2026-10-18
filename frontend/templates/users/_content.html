@@ -27,7 +27,7 @@
         hx-target="#users-content"
         hx-swap="outerHTML"
         hx-trigger="change"
-        class="flex-1 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+        class="flex-1 min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
       >
         {% for role in ["admin", "editor", "viewer"] %}
         <option value="{{ role }}" {% if role == user.role %}selected{% endif %}>{{ role_labels[role] }}</option>

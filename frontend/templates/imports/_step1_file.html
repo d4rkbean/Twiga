@@ -1,3 +1,4 @@
+{% from "_macros/brand.html" import mascot %}
 <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4">
   <h2 class="text-xl font-bold text-primary">{{ _("Étape 1 — Choisir le fichier") }}</h2>
   <p class="text-sm text-secondary">
@@ -29,7 +30,7 @@
       <select
         name="account_id"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       >
         {% for account in accounts %}
         <option value="{{ account.id }}">{{ account.name }}</option>
@@ -45,7 +46,7 @@
     <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
       {{ _("Continuer") }}
     </button>
-    <p class="htmx-indicator text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga tend le cou...") }}</p>
+    <p class="htmx-indicator text-sm text-secondary text-center">{{ mascot(size=16) }} {{ _("Twiga tend le cou...") }}</p>
   </form>
 
   <script>

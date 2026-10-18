@@ -1,3 +1,4 @@
+{% from "_macros/brand.html" import mascot %}
 <div id="recurring-content" class="flex flex-col gap-3">
   {% if recurring_patterns %}
   <p class="text-sm text-secondary">
@@ -77,7 +78,7 @@
         <input type="hidden" name="category_id" value="{{ item.category.id if item.category else '' }}" />
         <button
           type="submit"
-          class="w-full min-h-[50px] rounded-xl font-medium {{ 'bg-success text-on-accent font-semibold' if item.status == 'confirmed' else 'bg-container border border-border text-success' }}"
+          class="w-full min-h-[50px] rounded-xl font-medium {{ 'bg-success-soft border border-success text-success font-semibold' if item.status == 'confirmed' else 'bg-container border border-border text-success' }}"
         >
           {{ icon('check', size=16) }} {{ _("Confirmer") }}
         </button>
@@ -103,7 +104,7 @@
   </div>
   {% else %}
   <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Aucun abonnement récurrent détecté pour l'instant.") }}</p>
+    <p class="text-sm text-secondary text-center">{{ mascot(size=16) }} {{ _("Aucun abonnement récurrent détecté pour l'instant.") }}</p>
   </div>
   {% endfor %}
 </div>

@@ -5,8 +5,8 @@
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ _("Chèques & paiements en attente") }}</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
+    <h1 class="text-page-title">{{ _("Chèques & paiements en attente") }}</h1>
+    <a href="/settings" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
@@ -24,11 +24,11 @@
         type="text"
         name="check_number"
         placeholder="{{ _("Numéro de chèque (si chèque)") }}"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
       <select
         name="payment_method"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       >
         <option value="" selected>{{ _("— Moyen de paiement (si pas de chèque) —") }}</option>
         {% for code, meta in payment_methods.items() %}
@@ -44,25 +44,25 @@
         name="amount"
         placeholder="{{ _("Montant") }}"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
       <input
         type="date"
         name="issued_date"
         aria-label="{{ _("Date d'émission") }}"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
       <input
         type="text"
         name="recipient"
         placeholder="{{ _("Destinataire / motif (optionnel)") }}"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
       <select
         name="account_id"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       >
         <option value="" disabled selected>{{ _("Compte débité...") }}</option>
         {% for account in accounts %}
@@ -76,7 +76,7 @@
         hx-target="#new-check-subcategory"
         hx-swap="outerHTML"
         hx-trigger="change"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       >
         <option value="" disabled selected>{{ _("Catégorie...") }}</option>
         {% for category in parent_categories %}

@@ -34,7 +34,7 @@
         <button
           type="button"
           @click="showAccounts = !showAccounts"
-          class="text-xs text-accent font-medium text-left mt-auto pt-1 relative"
+          class="text-xs text-primary font-medium text-left mt-auto pt-1 relative"
         >
           <span x-text="showAccounts ? '▲ masquer comptes' : '▼ voir comptes'">{{ _("▼ voir comptes") }}</span>
         </button>
@@ -74,7 +74,7 @@
           {% for pillar in cap_pillar_progress %}
           <div class="h-1.5 rounded-full bg-page overflow-hidden">
             <div
-              class="h-full rounded-full {{ 'bg-danger' if pillar.ratio >= 100 else 'bg-warning' if pillar.ratio > 80 else 'bg-success' }}"
+              class="h-full rounded-full {{ 'bg-danger' if pillar.ratio >= 100 else 'bg-warning-gauge' if pillar.ratio > 80 else 'bg-success' }}"
               style="width: {{ pillar.ratio }}%;"
             ></div>
           </div>
@@ -86,7 +86,7 @@
         </p>
         {% endif %}
 
-        <a href="/cap/mid" class="text-xs text-accent font-medium mt-auto pt-1 relative">
+        <a href="/cap/mid" class="text-xs text-primary font-medium mt-auto pt-1 relative">
           {% if cap_entry %}{{ _("Voir le détail →") }}{% else %}{{ _("Fixer le cap →") }}{% endif %}
         </a>
       </div>
@@ -102,7 +102,7 @@
         <p class="text-sm font-semibold text-primary lg:hidden">
           {% trans pending_count=pending_count, v="s" if pending_count > 1 else "" %}{{ pending_count }} transaction{{ v }}{% endtrans %}<br />{{ _("en attente") }}
         </p>
-        <a href="/transactions/inbox" class="text-xs text-accent font-medium mt-auto pt-1 relative">{{ _("Traiter →") }}</a>
+        <a href="/transactions/inbox" class="text-xs text-primary font-medium mt-auto pt-1 relative">{{ _("Traiter →") }}</a>
         {% else %}
         <p class="text-sm text-secondary">{{ _("Aucune alerte") }}</p>
         {% endif %}
@@ -177,7 +177,7 @@
     <select
       name="period"
       x-model="periode"
-      class="flex-1 min-w-[150px] lg:flex-none lg:w-auto lg:min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+      class="flex-1 min-w-[150px] lg:flex-none lg:w-auto lg:min-w-0 min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
     >
       {% for key, label in period_choices %}
       <option value="{{ key }}" {% if key == period_key %}selected{% endif %}>{{ label }}</option>
@@ -190,7 +190,7 @@
       x-show="periode === 'perso'"
       style="display: none;"
       aria-label="{{ _("Date de début") }}"
-      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+      class="min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
     />
     <input
       type="date"
@@ -199,11 +199,11 @@
       x-show="periode === 'perso'"
       style="display: none;"
       aria-label="{{ _("Date de fin") }}"
-      class="min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+      class="min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
     />
     <select
       name="account_id"
-      class="flex-1 min-w-[140px] lg:flex-none lg:w-auto lg:min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
+      class="flex-1 min-w-[140px] lg:flex-none lg:w-auto lg:min-w-0 min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
     >
       <option value="" {% if account_id is none %}selected{% endif %}>{{ _("Tous les comptes") }}</option>
       {% for account in accounts %}
@@ -255,7 +255,7 @@
 
   <a
     href="/reports"
-    class="min-h-[50px] rounded-xl border-2 border-accent text-accent font-semibold flex items-center justify-center gap-1"
+    class="min-h-[50px] rounded-xl border-2 border-accent-ink text-accent-ink font-semibold flex items-center justify-center gap-1"
   >
     {{ icon('chart-bar', size=18) }} {{ _("Voir le rapport complet") }} {{ icon('arrow-narrow-right') }}
   </a>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros/brand.html" import mascot %}
 
 {% block title %}{{ _("Connexion — Twiga 🦒") }}{% endblock %}
 
@@ -17,8 +18,11 @@
 
 {# Seul écran de l'application à porter le pelage en pleine page : aucune
    donnée à lire ici, donc rien avec quoi le motif puisse entrer en
-   concurrence. Voir design-system.css, `body.pelage`. #}
-{% block body_brand %}{{ _("pelage") }}{% endblock %}
+   concurrence. Voir design-system.css, `body.pelage`.
+   `pelage` est un nom de classe CSS : il ne passe JAMAIS par la traduction
+   (l'ancien `_("pelage")` le traduisait, et la page perdait son motif dès
+   que la langue n'était plus le français). #}
+{% block body_brand %}pelage{% endblock %}
 
 {% block content %}
 {# Pas de bg-page ici : <body> porte déjà ce fond, et un aplat opaque sur ce
@@ -31,12 +35,7 @@
      contenant. Bordure 1px en plus de l'ombre au repos — la carte se pose
      ici sur un fond texturé, pas sur l'aplat de page habituel. #}
   <div class="w-full max-w-sm bg-container border border-border rounded-xl shadow-sm p-6 flex flex-col items-center gap-2">
-    <img
-      src="/static/icons/twiga-logo.svg"
-      alt="{{ _("Twiga") }}"
-      class="w-32 h-32 mb-2"
-      style="width:128px; height:128px;"
-    />
+    {{ mascot(size=128, label=true, cls="mb-2") }}
     <h1 class="text-3xl font-extrabold tracking-tight text-primary">{{ _("TWIGA") }}</h1>
     <p class="text-sm text-secondary italic mb-4">{{ _("Voir loin. Voir juste.") }}</p>
     <form hx-post="/login" hx-target="#login-error" hx-swap="innerHTML" class="w-full flex flex-col gap-3">
@@ -49,7 +48,7 @@
         autocomplete="username"
         required
         autofocus
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 text-center"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3 text-center"
       />
       {% with field_name = "password", field_label = _("Mot de passe"), field_placeholder = _("Mot de passe"), field_autocomplete = "current-password", field_input_class = "text-center" %}
       {% include "_password_field.html" %}

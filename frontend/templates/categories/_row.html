@@ -7,7 +7,7 @@
       {{ icon('folder', size=16) if not is_child else '–' }} {{ category.icon or "" }} {{ category.name }}
     </span>
     {% if is_child and category.pillar and category.pillar != resolve_category_pillar(category.parent) %}
-    <span class="text-xs bg-accent/10 text-accent rounded px-1.5 py-0.5 flex-shrink-0" title="{{ _("Diffère du pilier hérité du parent") }}">
+    <span class="text-xs bg-sunken text-secondary rounded px-1.5 py-0.5 flex-shrink-0" title="{{ _("Diffère du pilier hérité du parent") }}">
       {{ _("override") }}
     </span>
     {% endif %}
@@ -20,7 +20,7 @@
       hx-target="#category-row-{{ category.id }}"
       hx-swap="outerHTML"
       aria-label="{{ _("Pilier Le Cap") }}"
-      class="flex-1 min-w-0 min-h-[46px] rounded-xl border border-border bg-container text-primary text-sm px-2"
+      class="flex-1 min-w-0 min-h-[46px] rounded-xl border border-field bg-container text-primary text-sm px-2"
     >
       {% if is_child %}
       <option value="" {{ 'selected' if not category.pillar else '' }}>{{ icon('corner-down-right', size=14) }} {% trans parent=get_pillar_icon(resolve_category_pillar(category.parent)) %}Hérite {{ parent }}{% endtrans %}</option>

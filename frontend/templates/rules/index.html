@@ -5,8 +5,8 @@
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ _("Règles de catégorisation") }}</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
+    <h1 class="text-page-title">{{ _("Règles de catégorisation") }}</h1>
+    <a href="/settings" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
   </div>
 
   <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
@@ -17,7 +17,7 @@
         name="label"
         placeholder="{{ _("Libellé à tester (ex : CARREFOUR MARKET PARIS)") }}"
         required
-        class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="flex-1 min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
       <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold px-4">
         {{ _("Tester") }}
@@ -41,7 +41,7 @@
         name="keyword"
         placeholder="{{ _("Mot-clé (ex : CARREFOUR)") }}"
         required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       />
       <select
         name="parent_category_id"
@@ -50,7 +50,7 @@
         hx-target="#new-rule-subcategory"
         hx-swap="outerHTML"
         hx-trigger="change"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       >
         <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
         {% for category in parent_categories %}
@@ -62,7 +62,7 @@
       {% endwith %}
       <select
         name="payment_method"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
       >
         <option value="">{{ _("Mode de paiement (optionnel)") }}</option>
         {% for code, meta in payment_methods.items() %}
@@ -72,7 +72,7 @@
       <div class="flex flex-col gap-1">
         <select
           name="receipt_family"
-          class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+          class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
         >
           <option value="">{{ _("Rayon de ticket auto (optionnel)") }}</option>
           {% for code, icon, label in receipt_families %}
