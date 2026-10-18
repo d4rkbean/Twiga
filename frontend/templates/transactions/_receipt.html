@@ -1,6 +1,6 @@
 {% from "_macros/brand.html" import mascot %}
-<div id="receipt-section-{{ transaction.id }}" class="flex flex-col gap-3 rounded-xl border border-border p-4">
-  <h3 class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('receipt') }}{{ _("Détail du ticket") }}</h3>
+<div id="receipt-section-{{ transaction.id }}" class="flex flex-col gap-3 border-t border-border pt-4">
+  <h3 class="text-section-title flex items-center gap-2" >{{ icon('receipt') }}{{ _("Détail du ticket") }}</h3>
 
   <form class="flex flex-col gap-2">
     <label class="text-xs text-secondary">
@@ -56,7 +56,7 @@
       </div>
 
       {% for item in group['items'] %}
-      <div class="receipt-item-row flex flex-col gap-1 rounded-lg border border-border p-2">
+      <div class="receipt-item-row flex flex-col gap-1.5 py-2 border-b border-border last:border-b-0">
         <input
           type="text"
           name="label"
@@ -67,7 +67,7 @@
           hx-include="closest .receipt-item-row"
           hx-target="#receipt-section-{{ transaction.id }}"
           hx-swap="outerHTML"
-          class="w-full min-h-[42px] rounded-lg border border-field bg-container text-primary text-sm px-2"
+          class="input-base min-h-[46px]"
         />
         <div class="flex items-center gap-1.5">
           <select
@@ -78,7 +78,7 @@
             hx-include="closest .receipt-item-row"
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
-            class="flex-1 min-w-0 min-h-[42px] rounded-lg border border-field bg-container text-primary text-xs px-1"
+            class="input-base min-h-[46px] flex-1 min-w-0 text-xs px-1"
           >
             <option value="">{{ _("— Rayon —") }}</option>
             {% for code, icon, label in receipt_families %}
@@ -96,7 +96,7 @@
             hx-include="closest .receipt-item-row"
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
-            class="w-20 flex-shrink-0 text-right min-h-[42px] rounded-lg border border-field bg-container text-primary text-sm px-2"
+            class="input-base min-h-[46px] w-24 flex-shrink-0 text-right tabular-nums"
           />
           <button
             type="button"
@@ -104,7 +104,7 @@
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
             aria-label="{{ _("Supprimer cette ligne") }}"
-            class="w-10 h-[42px] flex-shrink-0 text-danger text-sm"
+            class="btn btn-ghost w-[50px] px-0 flex-shrink-0 text-danger"
           >
             {{ icon('trash') }}
           </button>
@@ -123,7 +123,7 @@
     {% trans transaction_abs_amount=transaction_abs_amount | eur %}— Transaction : {{ transaction_abs_amount }}{% endtrans %}
     {% if ecart | abs > 0.01 %}
     <br />
-    <span class="text-warning">
+    <span class="text-warning font-medium">
       {{ icon('alert-triangle', size=16) }} {% trans ecart=ecart | abs | eur %}écart de {{ ecart }}{% endtrans %}
       {% if ecart > 0 %}{{ _("(remises, bons d'achat ou avoirs non comptés dans les lignes)") }}{% endif %}
     </span>
@@ -138,8 +138,8 @@
     hx-post="/transactions/receipts/{{ transaction.id }}/items/add"
     hx-target="#receipt-section-{{ transaction.id }}"
     hx-swap="outerHTML"
-    class="min-h-[42px] rounded-xl bg-container border border-border text-primary text-sm font-medium px-3 self-start"
+    class="btn btn-secondary self-start px-4"
   >
-    {{ _("+ Ajouter une ligne") }}
+    {{ icon('plus') }} {{ _("Ajouter une ligne") }}
   </button>
 </div>

@@ -97,6 +97,13 @@
    indicative (aria-hidden côté gabarit) ; les raccourcis eux-mêmes vivent
    dans inbox-shortcuts.js. Les jetons gardent le contraste dans les deux
    thèmes ; ce n'est jamais un contrôle. */
+/* Cases à cocher et boutons radio : l'ambre foncé de l'état actif plutôt que
+   le bleu natif du navigateur (listes d'opérations et de traitement en masse). */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-accent-ink);
+}
+
 @layer components {
   /* En @layer components, comme .btn : une feuille hors couche battrait les
      utilitaires (hidden, sm:inline-flex) qui règlent son affichage. */
