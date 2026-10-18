@@ -103,6 +103,7 @@ PAGES = [
     Page("/export/json"),
     Page("/export/transactions.csv"),
     Page("/export/restore/progress", htmx=True),
+    Page("/export/backup/status", htmx=True),
     Page("/imports/new"),
     Page("/users"),
     Page("/users/list", htmx=True),
