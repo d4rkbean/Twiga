@@ -367,15 +367,26 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
             worst_ratio = ratio
             worst_label = name
 
-    if worst_ratio > 80:
+    # Mêmes seuils que les jauges (≥ 75 % à surveiller, > 90 % presque
+    # atteint), pour que la phrase et les barres disent la même chose.
+    if worst_ratio > 100:
         status = "danger"
-        status_message = _t("🔴 %(label)s presque épuisé à mi-mois !") % {"label": worst_label}
-    elif worst_ratio > 60:
+        status_message = _t("%(label)s dépassé !") % {"label": worst_label}
+    elif worst_ratio > 90:
+        status = "danger"
+        status_message = _t("%(label)s presque épuisé !") % {"label": worst_label}
+    elif worst_ratio >= 75:
         status = "warning"
-        status_message = _t("🟠 Surveillez %(label)s dans les prochaines semaines.") % {"label": worst_label}
+        status_message = _t("Surveillez %(label)s dans les prochaines semaines.") % {"label": worst_label}
     else:
         status = "success"
-        status_message = _t("🟢 Le cap tient ! Continuez comme ça.")
+        status_message = _t("Le cap tient ! Continuez comme ça.")
+
+    # Le rythme du mois : la part du mois écoulée, repère des jauges.
+    days_in_month = end.day
+    rhythm = round(today.day / days_in_month * 100)
+    planned_total = sum((p["planned"] or Decimal("0.00") for p in pillars), Decimal("0.00"))
+    spent_total = sum((p["actual"] for p in pillars), Decimal("0.00"))
 
     context = {
         "request": request,
@@ -388,5 +399,11 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
         "income_is_planned": entry is not None,
         "status": status,
         "status_message": status_message,
+        "day_of_month": today.day,
+        "days_in_month": days_in_month,
+        "days_left": days_in_month - today.day,
+        "rhythm": rhythm,
+        "planned_total": planned_total,
+        "spent_total": spent_total,
     }
     return templates.TemplateResponse("cap/mid.html", context)

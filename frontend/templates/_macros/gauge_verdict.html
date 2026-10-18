@@ -1,0 +1,22 @@
+{#
+  Verdict d'une jauge de budget, toujours rendu en couleur ET en mot : le feu
+  tricolore ne désigne qu'un seuil franchi, et il se double d'un mot.
+
+    {% from "_macros/gauge_verdict.html" import gauge_fill, gauge_word, gauge_tone %}
+    <div class="progress-fill {{ gauge_fill(pct) }}" ...></div>
+    <span class="font-semibold {{ gauge_tone(pct) }}">{{ gauge_word(pct) }}</span>
+
+  Seuils (DESIGN.md) : ≥ 75 % à surveiller, > 90 % presque atteint, > 100 %
+  dépassé. En dessous de 75 %, « dans la cible ».
+#}
+{% macro gauge_fill(pct) -%}
+{{ "progress-red" if pct > 90 else ("progress-orange" if pct >= 75 else "progress-green") }}
+{%- endmacro %}
+
+{% macro gauge_tone(pct) -%}
+{{ "text-danger" if pct > 90 else ("text-warning" if pct >= 75 else "text-success") }}
+{%- endmacro %}
+
+{% macro gauge_word(pct) -%}
+{%- if pct > 100 %}{{ _("dépassé") }}{% elif pct > 90 %}{{ _("presque atteint") }}{% elif pct >= 75 %}{{ _("à surveiller") }}{% else %}{{ _("dans la cible") }}{% endif -%}
+{%- endmacro %}

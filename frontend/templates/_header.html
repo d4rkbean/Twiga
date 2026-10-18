@@ -97,14 +97,19 @@
        Présente sur mobile ET bureau : l'icône seule sur petit écran (cible
        de 50px, dont un carré ambre de 40px), le libellé à partir de lg. Fond
        ambre parce que c'est la seule action primaire de l'en-tête — les
-       autres boutons y sont des bascules. #}
+       autres boutons y sont des bascules.
+
+       Un écran qui a SA propre action principale (Budgets : « Enregistrer »,
+       Le Cap : les boutons du rituel) pose `{% set demote_import = true %}` en
+       tête de son gabarit : l'écran gagne, et Importer passe en secondaire —
+       un seul ambre plein par écran. #}
     <a
       id="tour-import"
       href="/imports/new"
       aria-label="{{ _("Importer des données") }}"
       class="inline-flex items-center justify-center w-[50px] h-[50px] lg:w-auto flex-shrink-0 text-sm font-semibold"
     >
-      <span class="inline-flex items-center justify-center gap-2 w-10 h-10 lg:w-auto lg:h-[50px] lg:px-4 rounded-xl bg-accent text-on-accent hover:bg-accent-hover">
+      <span class="inline-flex items-center justify-center gap-2 w-10 h-10 lg:w-auto lg:h-[50px] lg:px-4 rounded-xl {{ 'bg-container border border-border-strong text-primary hover:bg-sunken' if demote_import else 'bg-accent text-on-accent hover:bg-accent-hover' }}">
         {{ icon('file-import', size=18) }}<span class="hidden lg:inline">{{ _("Importer") }}</span>
       </span>
     </a>

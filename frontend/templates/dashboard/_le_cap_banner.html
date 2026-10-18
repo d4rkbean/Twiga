@@ -1,14 +1,14 @@
-{% from "_macros/brand.html" import mascot %}
 {% if show_le_cap_banner %}
-<div id="le-cap-banner" class="w-full flex items-center justify-between gap-3 bg-container rounded-xl shadow-sm p-4 border-2 border-accent">
-  <p class="text-sm text-primary flex-1">{{ mascot(size=16) }} {{ _("Un nouveau mois commence — Fixez le cap ensemble !") }}</p>
-  <a href="/cap" class="min-h-[44px] px-3 rounded-xl bg-accent text-on-accent text-sm font-semibold flex items-center flex-shrink-0">
-    {{ icon('arrow-narrow-right') }} {{ _("Le Cap") }}
+<section id="le-cap-banner" aria-label="{{ _("Le Cap") }}" class="flex flex-wrap items-center gap-x-4 gap-y-3 bg-container rounded-xl border border-border shadow-sm px-4 py-3 lg:px-5">
+  <span class="text-secondary flex-shrink-0">{{ icon('compass', size=22) }}</span>
+  <p class="flex-1 basis-[240px] text-sm text-primary">{{ _("Un nouveau mois commence — Fixez le cap ensemble !") }}</p>
+  <a href="/cap" class="btn btn-secondary flex-shrink-0">
+    {{ _("Le Cap") }} {{ icon('arrow-right', size=16) }}
   </a>
-  <button type="button" id="le-cap-banner-close" aria-label="{{ _("Fermer") }}" class="text-secondary text-lg leading-none flex-shrink-0 w-11 h-11 flex items-center justify-center">
+  <button type="button" id="le-cap-banner-close" aria-label="{{ _("Fermer") }}" class="text-secondary flex-shrink-0 w-[50px] h-[50px] flex items-center justify-center">
     {{ icon('x') }}
   </button>
-</div>
+</section>
 <script>
   (function () {
     var key = "dismissed_le_cap_banner_" + {{ current_month_key | tojson | safe }};

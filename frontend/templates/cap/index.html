@@ -2,14 +2,21 @@
 
 {% block title %}{{ _("Le Cap — Twiga 🦒") }}{% endblock %}
 
-{% block content %}
-<main class="flex flex-col gap-4 px-4 pt-2 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-page-title">{{ icon('compass', size=24) }} {{ _("Le Cap") }}</h1>
-    <a href="/dashboard" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Panorama") }}</a>
-  </div>
+{# Le rituel a ses propres boutons d'action (« Suivant », « Fixer le cap ») :
+   c'est lui qui porte l'ambre plein de l'écran, Importer passe en secondaire. #}
+{% set demote_import = true %}
 
-  <div id="cap-wizard" class="flex flex-col gap-4">
+{% block content %}
+<main class="flex flex-col gap-5 px-4 pt-2 pb-8 max-w-lg mx-auto lg:max-w-3xl lg:px-8 lg:py-6">
+  <header class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-page-title">{{ _("Le Cap") }}</h1>
+      <p class="text-sm text-secondary">{{ _("Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes.") }}</p>
+    </div>
+    <a href="/dashboard" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ icon('arrow-narrow-left') }} {{ _("Panorama") }}</a>
+  </header>
+
+  <div id="cap-wizard" class="flex flex-col gap-5">
     {% include step_template %}
   </div>
 </main>
