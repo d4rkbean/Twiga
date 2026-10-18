@@ -91,7 +91,7 @@
        confirmation qui ressemble à une vraie application. -->
   <dialog
     id="twiga-confirm-dialog"
-    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm"
   >
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center gap-2">
@@ -127,7 +127,7 @@
        <dialog>, sans JS supplémentaire). -->
   <dialog
     id="twiga-help-dialog"
-    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-md"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-md"
   >
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center justify-between">
@@ -189,7 +189,7 @@
 
   <dialog
     id="twiga-about-dialog"
-    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm"
   >
     <div class="flex flex-col gap-4 p-6">
       <div class="flex items-center justify-between">
@@ -223,7 +223,7 @@
     }
 
     (function () {
-      var THEME_COLORS = { light: "#faf8f5", dark: "#0f172a" };
+      var THEME_COLORS = { light: "#faf8f5", dark: "#17130f" };
 
       function applyThemeColorMeta(isDark) {
         var meta = document.querySelector('meta[name="theme-color"]');
@@ -244,6 +244,15 @@
         localStorage.setItem("theme", isDark ? "dark" : "light");
         applyThemeColorMeta(isDark);
         window.dispatchEvent(new CustomEvent("themechange", { detail: { dark: isDark } }));
+        // Les graphiques Chart.js lisent leurs couleurs au moment du rendu :
+        // on redemande donc le contenu des pages qui en portent, avec les
+        // filtres courants (même requête qu'un changement de période).
+        if (window.htmx) {
+          ["dashboard-filters", "reports-account-filter"].forEach(function (id) {
+            var form = document.getElementById(id);
+            if (form) window.htmx.trigger(form, "change");
+          });
+        }
       };
     })();
   </script>

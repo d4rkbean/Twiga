@@ -54,7 +54,7 @@
 {% endmacro %}
 
 {% macro movement_dialog(project, action, title, button_label) %}
-<dialog id="{{ action }}-funds-{{ project.id }}" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-sm">
+<dialog id="{{ action }}-funds-{{ project.id }}" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm">
   <form
     hx-post="/projects/{{ project.id }}/{{ action }}"
     hx-target="#projects-list"

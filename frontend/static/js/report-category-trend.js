@@ -87,5 +87,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", render);
+  // Couleurs relues au changement de thème.
+  window.addEventListener("themechange", render);
   document.body.addEventListener("htmx:afterSwap", render);
 })();
