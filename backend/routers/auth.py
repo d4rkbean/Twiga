@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from backend import auth, crud
 from backend.database import get_db
-from backend.templating import templates
+from backend.templating import flash_html, templates
 from backend.i18n import gettext as _t
 
 router = APIRouter(tags=["auth"])
@@ -65,7 +65,7 @@ def login_submit(
     key = (_client_ip(request), username.strip().lower())
     if _is_locked_out(key):
         return HTMLResponse(
-            _t('<p class="text-sm text-danger">Trop de tentatives. Réessaie dans quelques minutes.</p>'),
+            flash_html("error", _t("Trop de tentatives. Réessaie dans quelques minutes.")),
             status_code=429,
         )
 
@@ -73,7 +73,7 @@ def login_submit(
     if user is None:
         _record_failed_attempt(key)
         return HTMLResponse(
-            _t('<p class="text-sm text-danger">Nom d\'utilisateur ou mot de passe incorrect.</p>'),
+            flash_html("error", _t("Nom d'utilisateur ou mot de passe incorrect.")),
             status_code=401,
         )
     _clear_failed_attempts(key)

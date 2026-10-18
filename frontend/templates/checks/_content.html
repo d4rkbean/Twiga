@@ -1,68 +1,74 @@
-<div id="checks-content" class="flex flex-col gap-4">
-  <div class="flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">{{ _("En attente") }}</h2>
+{# Pastille d'un paiement : un chèque porte un stylo, les autres moyens leur icône. #}
+{% macro badge(pending_check) %}
+<span class="w-10 h-10 shrink-0 rounded-full bg-sunken text-secondary flex items-center justify-center">
+  {{ icon('writing' if pending_check.check_number else get_payment_method_icon_name(pending_check.payment_method), size=18) }}
+</span>
+{% endmacro %}
+
+<div id="checks-content" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
+  <section class="card p-0 overflow-hidden flex flex-col">
+    <div class="flex items-baseline justify-between gap-2 px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
+      <h2 class="text-section-title">{{ _("En attente") }}</h2>
+      {% if outstanding_checks %}
+      <p class="text-xs text-secondary">{% trans count=outstanding_checks | length %}{{ count }} paiements{% endtrans %}</p>
+      {% endif %}
+    </div>
     {% for pending_check in outstanding_checks %}
-    <div class="bg-container rounded-xl shadow-sm p-4 flex items-start justify-between gap-3">
-      <div class="flex flex-col min-w-0">
-        <span class="text-primary font-medium">
-          {% if pending_check.check_number %}
-          N° {{ pending_check.check_number }}
-          {% else %}
-          {{ payment_methods[pending_check.payment_method].icon if pending_check.payment_method in payment_methods else "" }}
-          {{ pending_check.payment_method | pm_label }}
-          {% endif %}
-          <span class="amount-blur text-danger font-semibold">{{ pending_check.amount | eur }}</span>
+    <div class="px-4 lg:px-6 py-3 border-t border-border flex items-start gap-3">
+      {{ badge(pending_check) }}
+      <div class="flex flex-col min-w-0 flex-1">
+        <span class="text-primary font-semibold">
+          {% if pending_check.check_number %}N° {{ pending_check.check_number }}{% else %}{{ pending_check.payment_method | pm_label }}{% endif %}
         </span>
-        <span class="text-xs text-secondary truncate">
+        <span class="text-xs text-secondary">
           {{ pending_check.issued_date | fr_date }} · {{ pending_check.account.name }} ·
-          {% if not pending_check.category.parent_id %}{{ get_category_icon(pending_check.category.name) }}{% endif %}
           {{ pending_check.category.name | category_display }}
         </span>
         {% if pending_check.recipient %}
-        <span class="text-xs text-secondary truncate">{{ pending_check.recipient }}</span>
+        <span class="text-xs text-secondary">{{ pending_check.recipient }}</span>
         {% endif %}
       </div>
-      <button
-        type="button"
-        hx-post="/checks/{{ pending_check.id }}/delete"
-        hx-target="#checks-content"
-        hx-swap="outerHTML"
-        hx-confirm="{{ _("Annuler ce paiement en attente ? Il ne sera plus rapproché automatiquement.") }}"
-        class="flex-shrink-0 min-h-[44px] px-3 rounded-xl text-sm text-danger font-medium"
-      >
-        {{ _("Annuler") }}
-      </button>
+      <div class="flex flex-col items-end gap-1 shrink-0">
+        <span class="amount-blur font-bold tabular-nums text-primary">{{ pending_check.amount | eur }}</span>
+        <button
+          type="button"
+          hx-post="/checks/{{ pending_check.id }}/delete"
+          hx-target="#checks-content"
+          hx-swap="outerHTML"
+          hx-confirm="{{ _("Annuler ce paiement en attente ? Il ne sera plus rapproché automatiquement.") }}"
+          class="-mr-3 min-h-[50px] px-3 rounded-xl text-sm text-danger font-medium"
+        >
+          {{ _("Annuler") }}
+        </button>
+      </div>
     </div>
     {% else %}
-    <div class="bg-container rounded-xl shadow-sm p-6">
-      <p class="text-sm text-secondary text-center">
-        {{ _("Aucun paiement en attente. Enregistres-en un ci-dessus dès que tu en émets un (chèque, Wero, PayPal...).") }}
-      </p>
-    </div>
+    <p class="text-sm text-secondary text-center px-4 pb-6">
+      {{ _("Aucun paiement en attente. Enregistres-en un ci-dessus dès que tu en émets un (chèque, Wero, PayPal...).") }}
+    </p>
     {% endfor %}
-  </div>
+  </section>
 
   {% if matched_checks %}
-  <div class="flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">{{ _("Récemment rapprochés") }}</h2>
+  <section class="card p-0 overflow-hidden flex flex-col">
+    <div class="px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
+      <h2 class="text-section-title">{{ _("Récemment rapprochés") }}</h2>
+    </div>
     {% for pending_check in matched_checks %}
-    <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col opacity-70">
-      <span class="text-primary font-medium">
-        {% if pending_check.check_number %}
-        N° {{ pending_check.check_number }}
-        {% else %}
-        {{ payment_methods[pending_check.payment_method].icon if pending_check.payment_method in payment_methods else "" }}
-        {{ pending_check.payment_method | pm_label }}
-        {% endif %}
-        <span class="amount-blur text-secondary font-semibold">{{ pending_check.amount | eur }}</span>
-      </span>
-      <span class="text-xs text-secondary truncate">
-        {{ _("Catégorisé en") }}
-        {% if not pending_check.category.parent_id %}{{ get_category_icon(pending_check.category.name) }}{% endif %}
-        {% trans name=pending_check.category.name | category_display, date=pending_check.matched_transaction.date | fr_date %}{{ name }} le {{ date }}{% endtrans %}
-      </span>
+    <div class="px-4 lg:px-6 py-3 border-t border-border flex items-start gap-3">
+      {{ badge(pending_check) }}
+      <div class="flex flex-col min-w-0 flex-1">
+        <span class="text-primary font-semibold">
+          {% if pending_check.check_number %}N° {{ pending_check.check_number }}{% else %}{{ pending_check.payment_method | pm_label }}{% endif %}
+        </span>
+        <span class="text-xs text-secondary">
+          {{ _("Catégorisé en") }}
+          {% trans name=pending_check.category.name | category_display, date=pending_check.matched_transaction.date | fr_date %}{{ name }} le {{ date }}{% endtrans %}
+        </span>
+      </div>
+      <span class="amount-blur font-bold tabular-nums text-secondary shrink-0">{{ pending_check.amount | eur }}</span>
     </div>
     {% endfor %}
-  </div>
+  </section>
   {% endif %}
 </div>

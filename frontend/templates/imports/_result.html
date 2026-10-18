@@ -1,21 +1,31 @@
 {% from "_macros/brand.html" import mascot %}
-<div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-3 text-center">
-  <h2 class="text-2xl font-bold text-primary">{{ mascot(size=28) }} {{ _("Twiga a tout avalé !") }}</h2>
-  <p class="text-secondary">{{ _("Import terminé.") }}</p>
-  <p class="text-secondary">{{ icon('circle-check', size=16) }} {% trans imported_count=imported_count %}{{ imported_count }} opération(s) importée(s).{% endtrans %}</p>
-  {% if duplicate_count %}
-  <p class="text-secondary">{% trans duplicate_count=duplicate_count %}{{ duplicate_count }} doublon(s) ignoré(s).{% endtrans %}</p>
-  {% endif %}
-  {% if excluded_count %}
-  <p class="text-secondary">{% trans excluded_count=excluded_count %}{{ excluded_count }} opération(s) exclue(s) volontairement.{% endtrans %}</p>
-  {% endif %}
-  {% if relinked_count %}
-  <p class="text-secondary">{% trans relinked_count=relinked_count %}{{ relinked_count }} opération(s) existante(s) recatégorisée(s).{% endtrans %}</p>
-  {% endif %}
+{% from "imports/_stepper.html" import stepper %}
+{{ stepper(4) }}
+<div class="card flex flex-col gap-4 lg:p-6">
+  <div class="flex items-center gap-4">
+    <div class="shrink-0">{{ mascot("swallowed", 88) }}</div>
+    <div class="flex flex-col gap-1 min-w-0">
+      <h2 class="text-replique">{{ _("Twiga a tout avalé !") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Import terminé.") }}</p>
+    </div>
+  </div>
+
+  <ul class="flex flex-col gap-1 text-sm text-secondary">
+    <li class="flex items-center gap-2 text-primary">{{ icon('circle-check', size=16) }} {% trans imported_count=imported_count %}{{ imported_count }} opération(s) importée(s).{% endtrans %}</li>
+    {% if duplicate_count %}
+    <li>{% trans duplicate_count=duplicate_count %}{{ duplicate_count }} doublon(s) ignoré(s).{% endtrans %}</li>
+    {% endif %}
+    {% if excluded_count %}
+    <li>{% trans excluded_count=excluded_count %}{{ excluded_count }} opération(s) exclue(s) volontairement.{% endtrans %}</li>
+    {% endif %}
+    {% if relinked_count %}
+    <li>{% trans relinked_count=relinked_count %}{{ relinked_count }} opération(s) existante(s) recatégorisée(s).{% endtrans %}</li>
+    {% endif %}
+  </ul>
 
   {% if transfer_summary %}
   {% set transfer_total = transfer_summary | sum(attribute="count") %}
-  <div class="text-left bg-page rounded-xl p-3 flex flex-col gap-1">
+  <div class="bg-sunken rounded-xl p-3 flex flex-col gap-1">
     <p class="text-sm font-semibold text-primary">
       {{ icon('repeat', size=16) }} {% trans transfer_total=transfer_total, v="s" if transfer_total != 1 else "" %}{{ transfer_total }} virement{{ v }} interne{{ v }} détecté{{ v }} et exclu{{ v }} automatiquement :{% endtrans %}
     </p>
@@ -30,7 +40,7 @@
   {% endif %}
 
   {% if check_match_summary %}
-  <div class="text-left bg-page rounded-xl p-3 flex flex-col gap-1">
+  <div class="bg-sunken rounded-xl p-3 flex flex-col gap-1">
     <p class="text-sm font-semibold text-primary">
       {{ icon('receipt', size=16) }} {% trans check_match_summary=check_match_summary | length, check_match_summary2="s" if check_match_summary | length != 1 else "" %}{{ check_match_summary }} paiement{{ check_match_summary2 }} en attente rapproché{{ check_match_summary2 }} automatiquement :{% endtrans %}
     </p>
@@ -38,7 +48,7 @@
       {% for c in check_match_summary %}
       <li>
         {% if c.check_number %}N° {{ c.check_number }}{% else %}{{ c.payment_method | pm_label }}{% endif %}
-        — <span class="amount-blur">{{ c.amount | eur }}</span> {{ icon('arrow-narrow-right', size=14) }} {{ c.category_name }}
+        — <span class="amount-blur tabular-nums">{{ c.amount | eur }}</span> {{ icon('arrow-narrow-right', size=14) }} {{ c.category_name }}
         {% if c.recipient %} ({{ c.recipient }}){% endif %}
       </li>
       {% endfor %}
@@ -46,22 +56,17 @@
   </div>
   {% endif %}
 
-  <p class="text-secondary">{{ icon('inbox', size=16) }} {% trans to_categorize_count=to_categorize_count %}{{ to_categorize_count }} opération(s) dans La Savane à catégoriser.{% endtrans %}</p>
+  <p class="text-sm text-secondary flex items-center gap-2">{{ icon('inbox', size=16) }} {% trans to_categorize_count=to_categorize_count %}{{ to_categorize_count }} opération(s) dans La Savane à catégoriser.{% endtrans %}</p>
 
-  <!-- Plusieurs comptes = souvent plusieurs fichiers à importer à la suite
-       (un par banque/compte) : proposer d'enchaîner tout de suite, plutôt
-       que de forcer un détour par La Savane entre chaque import. -->
-  <a
-    href="/imports/new"
-    class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
-  >
-    {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
-  </a>
-
-  <a
-    href="/transactions/inbox"
-    class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center"
-  >
-    {{ _("Aller à La Savane") }}
-  </a>
+  <div class="flex flex-col gap-2 lg:flex-row-reverse lg:justify-start">
+    <a href="/transactions/inbox" class="btn btn-primary lg:px-8">
+      {{ _("Aller à La Savane") }}
+    </a>
+    <!-- Plusieurs comptes = souvent plusieurs fichiers à importer à la suite
+         (un par banque/compte) : proposer d'enchaîner tout de suite, plutôt
+         que de forcer un détour par La Savane entre chaque import. -->
+    <a href="/imports/new" class="btn btn-secondary border-border-strong">
+      {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
+    </a>
+  </div>
 </div>

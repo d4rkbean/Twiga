@@ -9,20 +9,24 @@
   class="flex flex-col gap-2"
 >
   {% if status == "running" %}
-  <p class="text-sm text-secondary">
+  <p class="text-sm text-secondary tabular-nums" role="status">
     {{ _("Import en cours") }}{% if total %} : {{ processed }} / {{ total }}{% else %}...{% endif %}
   </p>
-  <div class="w-full h-2 rounded-full bg-page overflow-hidden">
+  <div class="progress-base">
     <div
-      class="h-full bg-accent transition-all"
+      class="progress-fill progress-amber transition-all"
       style="width: {{ ((processed / total * 100) if total else 0) }}%"
     ></div>
   </div>
   {% elif status == "done" %}
-  <p class="text-sm text-success py-2">
-    {{ icon('check', size=16) }} {% trans accounts=summary.accounts, categories=summary.categories, transactions=summary.transactions, budgets=summary.budgets, projects=summary.projects %}Import terminé : {{ accounts }} compte(s), {{ categories }} catégorie(s), {{ transactions }} transaction(s), {{ budgets }} budget(s), {{ projects }} projet(s){% endtrans %}{% if summary.project_movements %} {% trans project_movements=summary.project_movements %}(+ {{ project_movements }} mouvement(s)){% endtrans %}{% endif %}{% trans rules=summary.rules %}, {{ rules }} règle(s).{% endtrans %}
+  <p class="text-sm text-success py-2 flex items-start gap-2" role="status">
+    <span class="mt-0.5">{{ icon('check', size=16) }}</span>
+    <span>{% trans accounts=summary.accounts, categories=summary.categories, transactions=summary.transactions, budgets=summary.budgets, projects=summary.projects %}Import terminé : {{ accounts }} compte(s), {{ categories }} catégorie(s), {{ transactions }} transaction(s), {{ budgets }} budget(s), {{ projects }} projet(s){% endtrans %}{% if summary.project_movements %} {% trans project_movements=summary.project_movements %}(+ {{ project_movements }} mouvement(s)){% endtrans %}{% endif %}{% trans rules=summary.rules %}, {{ rules }} règle(s).{% endtrans %}</span>
   </p>
   {% elif status == "error" %}
-  <p class="text-sm text-danger py-2">{{ icon('circle-x', size=16) }} {% trans error=error %}Erreur pendant l'import : {{ error }}{% endtrans %}</p>
+  <p class="text-sm text-danger py-2 flex items-start gap-2" role="alert">
+    <span class="mt-0.5">{{ icon('circle-x', size=16) }}</span>
+    <span>{% trans error=error %}Erreur pendant l'import : {{ error }}{% endtrans %}</span>
+  </p>
   {% endif %}
 </div>

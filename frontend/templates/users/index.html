@@ -1,53 +1,77 @@
 {% extends "base.html" %}
+{% from "_macros/page.html" import page_header %}
 
 {% block title %}{{ _("Utilisateurs — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-page-title">{{ icon('users', size=24) }} {{ _("Utilisateurs") }}</h1>
-    <a href="/settings" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
-  </div>
+{% set role_labels = {"admin": _("Administrateur"), "editor": _("Éditeur"), "viewer": _("Lecture seule")} %}
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+  {{ page_header(
+    _("Utilisateurs"),
+    subtitle=_("Les personnes du foyer qui se connectent à Twiga, et ce que chacune peut faire."),
+    back_href="/settings",
+    back_label=_("Paramètres"),
+  ) }}
 
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">{{ _("Ajouter un utilisateur") }}</h2>
-    <form
-      hx-post="/users/create"
-      hx-target="#users-content"
-      hx-swap="outerHTML"
-      class="flex flex-col gap-3"
-    >
-      <label for="new-user-username" class="sr-only">{{ _("Nom d'utilisateur") }}</label>
-      <input
-        id="new-user-username"
-        type="text"
-        name="username"
-        placeholder="{{ _("Nom d'utilisateur") }}"
-        autocomplete="off"
-        required
-        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-      />
-      {% with field_name = "password", field_label = _("Mot de passe"), field_placeholder = _("Mot de passe (8 caractères min.)"), field_autocomplete = "new-password", field_minlength = 8 %}
-      {% include "_password_field.html" %}
-      {% endwith %}
-      <select
-        name="role"
-        required
-        class="min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
-      >
-        {% for role in roles %}
-        <option value="{{ role }}" {% if role == "viewer" %}selected{% endif %}>
-          {{ {"admin": _("Administrateur"), "editor": _("Éditeur"), "viewer": _("Lecture seule")}[role] }}
-        </option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        {{ _("Ajouter l'utilisateur") }}
-      </button>
-    </form>
-  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4 lg:gap-6 items-start">
+    <div class="flex flex-col gap-3">
+      <h2 class="text-section-title">{{ _("Utilisateurs existants") }}</h2>
+      {% include "users/_content.html" %}
+    </div>
 
-  <h2 class="text-lg font-bold text-primary">{{ _("Utilisateurs existants") }}</h2>
-  {% include "users/_content.html" %}
+    <div class="flex flex-col gap-4 lg:order-last order-first">
+      <section class="card flex flex-col gap-4 lg:p-5">
+        <h2 class="text-section-title">{{ _("Ajouter un utilisateur") }}</h2>
+        <form
+          hx-post="/users/create"
+          hx-target="#users-content"
+          hx-swap="outerHTML"
+          class="flex flex-col gap-4"
+        >
+          <label class="form-group">
+            <span class="form-label">{{ _("Nom d'utilisateur") }}</span>
+            <input
+              id="new-user-username"
+              type="text"
+              name="username"
+              placeholder="{{ _("Nom d'utilisateur") }}"
+              autocomplete="off"
+              required
+              class="input-base"
+            />
+          </label>
+          <div class="form-group">
+            <span class="form-label">{{ _("Mot de passe (8 caractères min.)") }}</span>
+            {% with field_name = "password", field_label = _("Mot de passe"), field_placeholder = _("Mot de passe (8 caractères min.)"), field_autocomplete = "new-password", field_minlength = 8 %}
+            {% include "_password_field.html" %}
+            {% endwith %}
+          </div>
+          <fieldset class="form-group">
+            <legend class="form-label mb-1">{{ _("Rôle") }}</legend>
+            <div class="flex gap-1 rounded-xl bg-sunken p-1">
+              {% for role in roles %}
+              <label class="flex-1 min-w-0">
+                <input type="radio" name="role" value="{{ role }}" class="peer sr-only" {% if role == "viewer" %}checked{% endif %} />
+                <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center text-center text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-accent-soft peer-checked:text-accent-ink peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">{{ role_labels[role] }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <button type="submit" class="btn btn-primary">
+            {{ icon('plus', size=18) }} {{ _("Ajouter l'utilisateur") }}
+          </button>
+        </form>
+      </section>
+
+      <section class="card flex flex-col gap-3 lg:p-5">
+        <h2 class="text-section-title">{{ _("Ce que permet chaque rôle") }}</h2>
+        <dl class="flex flex-col gap-3 text-sm">
+          <div><dt class="font-semibold text-primary">{{ _("Administrateur") }}</dt><dd class="text-secondary">{{ _("Tout : import, suppression, utilisateurs, réglages.") }}</dd></div>
+          <div><dt class="font-semibold text-primary">{{ _("Éditeur") }}</dt><dd class="text-secondary">{{ _("Catégorisation, budgets et projets.") }}</dd></div>
+          <div><dt class="font-semibold text-primary">{{ _("Lecture seule") }}</dt><dd class="text-secondary">{{ _("Consultation uniquement.") }}</dd></div>
+        </dl>
+      </section>
+    </div>
+  </div>
 </main>
 {% endblock %}
