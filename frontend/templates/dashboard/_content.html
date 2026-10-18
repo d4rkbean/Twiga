@@ -40,6 +40,7 @@
 </script>
 
 {% from "_macros/signed_amount.html" import signed %}
+{% from "_macros/gauge_verdict.html" import gauge_fill, gauge_word, gauge_tone %}
 {# Le libellé de décalage est rendu dans le formulaire des filtres, hors de ce
    fragment : renvoyé ici en swap hors bande pour rester synchronisé. #}
 {% if row1_oob %}{% include "dashboard/_period_label.html" %}{% endif %}
@@ -143,13 +144,11 @@
           <span class="amount-blur text-sm tabular-nums flex-shrink-0 text-primary">{{ item.spent | eur }} <span class="text-secondary">/ {{ item.budget | eur }}</span></span>
         </div>
         <div class="progress-base" role="img" aria-label="{% trans percentage=item.percentage | round | int %}{{ percentage }} % consommé{% endtrans %}">
-          <div class="progress-fill {{ 'progress-red' if item.percentage > 90 else 'progress-orange' }}" style="width: {{ item.bar_width }}%;"></div>
+          <div class="progress-fill {{ gauge_fill(item.percentage) }}" style="width: {{ item.bar_width }}%;"></div>
         </div>
         <p class="flex flex-wrap gap-x-3 text-xs">
           <span class="text-secondary tabular-nums">{% trans percentage=item.percentage | round | int %}{{ percentage }} % consommé{% endtrans %}</span>
-          <span class="font-semibold {{ 'text-danger' if item.percentage > 90 else 'text-warning' }}">
-            {% if item.percentage > 100 %}{{ _("dépassé") }}{% elif item.percentage > 90 %}{{ _("presque atteint") }}{% else %}{{ _("à surveiller") }}{% endif %}
-          </span>
+          <span class="font-semibold {{ gauge_tone(item.percentage) }}">{{ gauge_word(item.percentage) }}</span>
         </p>
       </div>
       {% endfor %}
