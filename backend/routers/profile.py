@@ -45,7 +45,7 @@ def update_profile(
         # crud.update_user_profile): it goes through the _flash.html fragment,
         # whose Jinja autoescape keeps any HTML in it inert (no XSS).
         return HTMLResponse(flash_html("error", error), status_code=400)
-    return HTMLResponse(flash_html("success", _t("✓ Profil mis à jour.")))
+    return HTMLResponse(flash_html("success", _t("Profil mis à jour.")))
 
 
 @router.post("/tour-seen", status_code=204)

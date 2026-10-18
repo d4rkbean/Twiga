@@ -164,13 +164,13 @@ def save_cap_income_source(
     except (ArithmeticError, ValueError):
         settings_row.income_fixed_amount = None
     db.commit()
-    return HTMLResponse(content=flash_html("success", _t("✓ Réglage enregistré")))
+    return HTMLResponse(content=flash_html("success", _t("Réglage enregistré")))
 
 
 @app.post("/settings/detect-payment-methods", response_class=HTMLResponse)
 def detect_payment_methods(db: Session = Depends(get_db)):
     updated_count = crud.detect_missing_payment_methods(db)
-    message = ngettext("✓ %(n)s transaction mise à jour", "✓ %(n)s transactions mises à jour", updated_count) % {
+    message = ngettext("%(n)s transaction mise à jour", "%(n)s transactions mises à jour", updated_count) % {
         "n": updated_count
     }
     return HTMLResponse(content=flash_html("success", message))
@@ -208,7 +208,7 @@ def change_password(
     # backend/auth.py, authenticate_request) : changer le mot de passe
     # invalide donc le cookie actuel, on en réémet un nouveau tout de suite
     # pour ne pas déconnecter l'utilisateur qui vient de changer le sien.
-    response = HTMLResponse(flash_html("success", _t("✓ Mot de passe modifié.")))
+    response = HTMLResponse(flash_html("success", _t("Mot de passe modifié.")))
     response.set_cookie(
         auth.SESSION_COOKIE_NAME,
         auth.create_session_token(current_user),

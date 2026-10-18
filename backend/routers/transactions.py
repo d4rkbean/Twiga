@@ -646,7 +646,7 @@ def create_transaction(
     )
 
     context = {"request": request, **_build_list_context(db, filters)}
-    context["success_message"] = _t("✅ Opération ajoutée")
+    context["success_message"] = _t("Opération ajoutée")
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
@@ -814,10 +814,6 @@ def delete_transaction_detail(
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
-def _plural_feminine(count: int) -> str:
-    return "s" if count != 1 else ""
-
-
 @router.post("/bulk-apply", response_class=HTMLResponse)
 def bulk_apply(
     request: Request,
@@ -844,7 +840,7 @@ def bulk_apply(
 
     context = {"request": request, **_build_list_context(db, filters)}
     context["success_message"] = ngettext(
-        "✅ %(n)s opération mise à jour", "✅ %(n)s opérations mises à jour", len(transactions)
+        "%(n)s opération mise à jour", "%(n)s opérations mises à jour", len(transactions)
     ) % {"n": len(transactions)}
     return templates.TemplateResponse("transactions/_content.html", context)
 
@@ -863,7 +859,7 @@ def bulk_unvalidate(
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
         context["success_message"] = ngettext(
-            "📥 %(n)s opération remise dans La Savane", "📥 %(n)s opérations remises dans La Savane", count
+            "%(n)s opération remise dans La Savane", "%(n)s opérations remises dans La Savane", count
         ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)
 
@@ -881,8 +877,9 @@ def bulk_mark_transfer(
 
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
-        plural = _plural_feminine(count)
-        context["success_message"] = f"🔄 {count} opération{plural} marquée{plural} comme virement"
+        context["success_message"] = ngettext(
+            "%(n)s opération marquée comme virement", "%(n)s opérations marquées comme virement", count
+        ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
@@ -900,7 +897,7 @@ def bulk_mark_unexpected(
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
         context["success_message"] = ngettext(
-            "🆘 %(n)s opération marquée comme imprévu", "🆘 %(n)s opérations marquées comme imprévus", count
+            "%(n)s opération marquée comme imprévu", "%(n)s opérations marquées comme imprévus", count
         ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)
 
@@ -919,8 +916,8 @@ def bulk_unmark_transfer(
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
         context["success_message"] = ngettext(
-            "↩️ %(n)s opération renvoyée dans La Savane (virement annulé)",
-            "↩️ %(n)s opérations renvoyées dans La Savane (virement annulé)",
+            "%(n)s opération renvoyée dans La Savane (virement annulé)",
+            "%(n)s opérations renvoyées dans La Savane (virement annulé)",
             count,
         ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)
@@ -939,6 +936,7 @@ def bulk_delete(
 
     context = {"request": request, **_build_list_context(db, filters)}
     if count:
-        plural = _plural_feminine(count)
-        context["success_message"] = f"🗑️ {count} opération{plural} supprimée{plural}"
+        context["success_message"] = ngettext(
+            "%(n)s opération supprimée", "%(n)s opérations supprimées", count
+        ) % {"n": count}
     return templates.TemplateResponse("transactions/_content.html", context)

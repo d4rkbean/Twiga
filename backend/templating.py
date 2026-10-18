@@ -17,7 +17,7 @@ from backend.formatting import format_amount, format_amount_as, format_date, for
 from backend import i18n
 from backend.models import Account
 from backend.payment_methods import get_payment_method_icon_name, get_payment_method_label
-from backend.pillars import PILLAR_ORDER, PILLARS, get_pillar_icon, get_pillar_label
+from backend.pillars import PILLAR_ORDER, PILLARS, get_pillar_label
 from backend.receipt_families import receipt_family_display
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -281,7 +281,6 @@ templates.env.globals["icon"] = icon
 templates.env.globals["icon_names"] = icon_names
 templates.env.globals["PILLARS"] = PILLARS
 templates.env.globals["PILLAR_ORDER"] = PILLAR_ORDER
-templates.env.globals["get_pillar_icon"] = get_pillar_icon
 templates.env.globals["get_pillar_label"] = get_pillar_label
 templates.env.globals["resolve_category_pillar"] = resolve_category_pillar
 templates.env.globals["resolve_transaction_pillar"] = resolve_transaction_pillar

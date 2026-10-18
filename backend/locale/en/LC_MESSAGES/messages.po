@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 17:57+0000\n"
+"POT-Creation-Date: 2026-10-18 18:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -138,6 +138,48 @@ msgstr "%(monthly_effort)s / month"
 #, python-format
 msgid "%(monthly_evolution)s ce mois-ci"
 msgstr "%(monthly_evolution)s this month"
+
+#, python-format
+msgid "%(n)s opération marquée comme imprévu"
+msgid_plural "%(n)s opérations marquées comme imprévus"
+msgstr[0] "%(n)s transaction marked as unexpected"
+msgstr[1] "%(n)s transactions marked as unexpected"
+
+#, python-format
+msgid "%(n)s opération marquée comme virement"
+msgid_plural "%(n)s opérations marquées comme virement"
+msgstr[0] "%(n)s transaction marked as a transfer"
+msgstr[1] "%(n)s transactions marked as a transfer"
+
+#, python-format
+msgid "%(n)s opération mise à jour"
+msgid_plural "%(n)s opérations mises à jour"
+msgstr[0] "%(n)s transaction updated"
+msgstr[1] "%(n)s transactions updated"
+
+#, python-format
+msgid "%(n)s opération remise dans La Savane"
+msgid_plural "%(n)s opérations remises dans La Savane"
+msgstr[0] "%(n)s transaction put back in La Savane"
+msgstr[1] "%(n)s transactions put back in La Savane"
+
+#, python-format
+msgid "%(n)s opération renvoyée dans La Savane (virement annulé)"
+msgid_plural "%(n)s opérations renvoyées dans La Savane (virement annulé)"
+msgstr[0] "%(n)s transaction sent back to La Savane (transfer cancelled)"
+msgstr[1] "%(n)s transactions sent back to La Savane (transfer cancelled)"
+
+#, python-format
+msgid "%(n)s opération supprimée"
+msgid_plural "%(n)s opérations supprimées"
+msgstr[0] "%(n)s transaction deleted"
+msgstr[1] "%(n)s transactions deleted"
+
+#, python-format
+msgid "%(n)s transaction mise à jour"
+msgid_plural "%(n)s transactions mises à jour"
+msgstr[0] "%(n)s transaction updated"
+msgstr[1] "%(n)s transactions updated"
 
 #, python-format
 msgid "%(name)s (général)"
@@ -344,9 +386,6 @@ msgstr "90 d"
 msgid ": ce rapport mesure ce qui est acheté, pas ce qui est payé."
 msgstr ": this report measures what is bought, not what is paid."
 
-msgid "<p class=\"text-sm text-success py-2\">✓ Règle créée</p>"
-msgstr "<p class=\"text-sm text-success py-2\">✓ Rule created</p>"
-
 msgid "= Disponible à répartir :"
 msgstr "= Available to allocate:"
 
@@ -356,8 +395,8 @@ msgstr "Subscriptions and bills"
 msgid "Abonnements récurrents"
 msgstr "Recurring subscriptions"
 
-msgid "Abonnements récurrents — Twiga 🦒"
-msgstr "Recurring subscriptions — Twiga 🦒"
+msgid "Abonnements récurrents — Twiga"
+msgstr "Recurring subscriptions — Twiga"
 
 msgid "Accessoires et soins"
 msgstr "Accessories and care"
@@ -716,8 +755,8 @@ msgstr "Budgets %(budget_points)s/40 · Result %(result_points)s/30 · Categoriz
 msgid "Budgets à risque"
 msgstr "Budgets at risk"
 
-msgid "Budgets — Twiga 🦒"
-msgstr "Budgets — Twiga 🦒"
+msgid "Budgets — Twiga"
+msgstr "Budgets — Twiga"
 
 msgid "CB"
 msgstr "Card"
@@ -758,8 +797,8 @@ msgstr "Categories"
 msgid "Catégories existantes"
 msgstr "Existing categories"
 
-msgid "Catégories — Twiga 🦒"
-msgstr "Categories — Twiga 🦒"
+msgid "Catégories — Twiga"
+msgstr "Categories — Twiga"
 
 msgid "Catégories, sous-catégories et couleurs"
 msgstr "Categories, subcategories and colors"
@@ -849,8 +888,8 @@ msgstr "Check not found"
 msgid "Chèques & paiements en attente"
 msgstr "Checks & pending payments"
 
-msgid "Chèques & paiements en attente — Twiga 🦒"
-msgstr "Checks & pending payments — Twiga 🦒"
+msgid "Chèques & paiements en attente — Twiga"
+msgstr "Checks & pending payments — Twiga"
 
 msgid "Cinéma et spectacles"
 msgstr "Cinema and shows"
@@ -901,8 +940,8 @@ msgstr "Detected accounts"
 msgid "Comptes existants"
 msgstr "Existing accounts"
 
-msgid "Comptes — Twiga 🦒"
-msgstr "Accounts — Twiga 🦒"
+msgid "Comptes — Twiga"
+msgstr "Accounts — Twiga"
 
 msgid "Confiance de la suggestion"
 msgstr "Suggestion confidence"
@@ -934,8 +973,8 @@ msgstr "Signed in %(M)s"
 msgid "Connexion"
 msgstr "Sign in"
 
-msgid "Connexion — Twiga 🦒"
-msgstr "Sign in — Twiga 🦒"
+msgid "Connexion — Twiga"
+msgstr "Sign in — Twiga"
 
 msgid "Consultation uniquement."
 msgstr "View only."
@@ -1136,8 +1175,8 @@ msgstr "Detect transfers"
 msgid "Détecter les virements internes"
 msgstr "Detect internal transfers"
 
-msgid "Détecter les virements — Twiga 🦒"
-msgstr "Detect transfers — Twiga 🦒"
+msgid "Détecter les virements — Twiga"
+msgstr "Detect transfers — Twiga"
 
 msgid "Détecter virements"
 msgstr "Detect transfers"
@@ -1378,8 +1417,8 @@ msgstr "Import transactions"
 msgid "Importer un autre fichier"
 msgstr "Import another file"
 
-msgid "Importer un fichier — Twiga 🦒"
-msgstr "Import a file — Twiga 🦒"
+msgid "Importer un fichier — Twiga"
+msgstr "Import a file — Twiga"
 
 msgid "Importer un relevé"
 msgstr "Import a statement"
@@ -1482,8 +1521,8 @@ msgstr "Language"
 msgid "Le Cap"
 msgstr "Le Cap"
 
-msgid "Le Cap — Twiga 🦒"
-msgstr "Le Cap — Twiga 🦒"
+msgid "Le Cap — Twiga"
+msgstr "Le Cap — Twiga"
 
 msgid "Le Panorama montre où va l'argent. Mon mois fixe ce qu'on se donne le droit de dépenser."
 msgstr "Panorama shows where your money goes. My month is where you run Le Cap (“the heading” in French): the spending course you set for the month, inspired by the Japanese kakeibo method — Needs, Wants, Unexpected."
@@ -1682,8 +1721,8 @@ msgstr "Payment method (optional)"
 msgid "Modes de paiement"
 msgstr "Payment methods"
 
-msgid "Modes de paiement — Twiga 🦒"
-msgstr "Payment methods — Twiga 🦒"
+msgid "Modes de paiement — Twiga"
+msgstr "Payment methods — Twiga"
 
 msgid "Modifier"
 msgstr "Edit"
@@ -1712,14 +1751,14 @@ msgstr "Next month"
 msgid "Mon mois"
 msgstr "My month"
 
-msgid "Mon mois — Twiga 🦒"
-msgstr "My month — Twiga 🦒"
+msgid "Mon mois — Twiga"
+msgstr "My month — Twiga"
 
 msgid "Mon profil"
 msgstr "My profile"
 
-msgid "Mon profil — Twiga 🦒"
-msgstr "My profile — Twiga 🦒"
+msgid "Mon profil — Twiga"
+msgstr "My profile — Twiga"
 
 msgid "Montant"
 msgstr "Amount"
@@ -1771,6 +1810,9 @@ msgstr "Current password is incorrect."
 #, python-format
 msgid "Mot de passe de %(username)s réinitialisé."
 msgstr "Password for %(username)s has been reset."
+
+msgid "Mot de passe modifié."
+msgstr "Password changed."
 
 msgid "Mot-clé (ex : CARREFOUR)"
 msgstr "Keyword (e.g. CARREFOUR)"
@@ -1873,6 +1915,9 @@ msgstr "OFX"
 msgid "OK"
 msgstr "OK"
 
+msgid "Opération ajoutée"
+msgstr "Transaction added"
+
 msgid "Opérations"
 msgstr "Transactions"
 
@@ -1914,14 +1959,14 @@ msgstr "Panorama"
 msgid "Panorama et Mon mois"
 msgstr "Panorama and My month"
 
-msgid "Panorama — Twiga 🦒"
-msgstr "Panorama — Twiga 🦒"
+msgid "Panorama — Twiga"
+msgstr "Panorama — Twiga"
 
 msgid "Paramètres"
 msgstr "Settings"
 
-msgid "Paramètres — Twiga 🦒"
-msgstr "Settings — Twiga 🦒"
+msgid "Paramètres — Twiga"
+msgstr "Settings — Twiga"
 
 msgid "Parking et péages"
 msgstr "Parking and tolls"
@@ -2001,6 +2046,9 @@ msgstr "Bonuses"
 msgid "Prochaine attendue :"
 msgstr "Next expected:"
 
+msgid "Profil mis à jour."
+msgstr "Profile updated."
+
 msgid "Projet"
 msgstr "Project"
 
@@ -2014,8 +2062,8 @@ msgstr "Projects"
 msgid "Projets : %(v)s%(routine_project_savings)s ce mois"
 msgstr "Projects: %(v)s%(routine_project_savings)s this month"
 
-msgid "Projets — Twiga 🦒"
-msgstr "Projects — Twiga 🦒"
+msgid "Projets — Twiga"
+msgstr "Projects — Twiga"
 
 msgid "Précédent"
 msgstr "Previous"
@@ -2080,8 +2128,8 @@ msgstr "File under"
 msgid "Rapport Twiga"
 msgstr "Twiga report"
 
-msgid "Rapport complet — Twiga 🦒"
-msgstr "Full report — Twiga 🦒"
+msgid "Rapport complet — Twiga"
+msgstr "Full report — Twiga"
 
 msgid "Rapports"
 msgstr "Reports"
@@ -2229,6 +2277,9 @@ msgstr "Pace on day %(day)s (%(rhythm)s %%)"
 msgid "Règle correspondante : \"%(keyword)s\""
 msgstr "Matching rule: \"%(keyword)s\""
 
+msgid "Règle créée"
+msgstr "Rule created"
+
 msgid "Règle introuvable"
 msgstr "Rule not found"
 
@@ -2238,8 +2289,8 @@ msgstr "Categorization rules"
 msgid "Règles existantes"
 msgstr "Existing rules"
 
-msgid "Règles — Twiga 🦒"
-msgstr "Rules — Twiga 🦒"
+msgid "Règles — Twiga"
+msgstr "Rules — Twiga"
 
 msgid "Réaffecter et supprimer"
 msgstr "Reassign and delete"
@@ -2256,6 +2307,9 @@ msgstr "Actual"
 
 msgid "Réessayer"
 msgstr "Try again"
+
+msgid "Réglage enregistré"
+msgstr "Setting saved"
 
 msgid "Régler le pilier de chaque catégorie"
 msgstr "Set the pillar of each category"
@@ -2697,9 +2751,6 @@ msgstr "Twiga runs on your server, at your place. No third-party service, no tel
 msgid "Twiga — retour à l'accueil"
 msgstr "Twiga — back to home"
 
-msgid "Twiga 🦒"
-msgstr "Twiga 🦒"
-
 msgid "Twiga, la girafe de l'application"
 msgstr "Twiga, the app's giraffe"
 
@@ -2759,8 +2810,8 @@ msgstr "Users"
 msgid "Utilisateurs existants"
 msgstr "Existing users"
 
-msgid "Utilisateurs — Twiga 🦒"
-msgstr "Users — Twiga 🦒"
+msgid "Utilisateurs — Twiga"
+msgstr "Users — Twiga"
 
 msgid "Vacances et voyages"
 msgstr "Holidays and travel"
@@ -3119,48 +3170,6 @@ msgstr "— suggested %(occurrences)s times"
 msgid "→ / Espace"
 msgstr "→ / Space"
 
-#, fuzzy, python-format
-msgid "↩️ %(n)s opération renvoyée dans La Savane (virement annulé)"
-msgid_plural "↩️ %(n)s opérations renvoyées dans La Savane (virement annulé)"
-msgstr[0] "↩️ %(n)s transaction sent back to La Savane (transfer cancelled)"
-msgstr[1] "↩️ %(n)s transactions sent back to La Savane (transfer cancelled)"
-
 msgid "− de critères"
 msgstr "− fewer criteria"
-
-#, fuzzy, python-format
-msgid "✅ %(n)s opération mise à jour"
-msgid_plural "✅ %(n)s opérations mises à jour"
-msgstr[0] "✅ %(n)s transaction updated"
-msgstr[1] "✅ %(n)s transactions updated"
-
-msgid "✅ Opération ajoutée"
-msgstr "✅ Transaction added"
-
-#, python-format
-msgid "✓ %(n)s transaction mise à jour"
-msgid_plural "✓ %(n)s transactions mises à jour"
-msgstr[0] "✓ %(n)s transaction updated"
-msgstr[1] "✓ %(n)s transactions updated"
-
-msgid "✓ Mot de passe modifié."
-msgstr "✓ Password changed."
-
-msgid "✓ Profil mis à jour."
-msgstr "✓ Profile updated."
-
-msgid "✓ Réglage enregistré"
-msgstr "✓ Setting saved"
-
-#, fuzzy, python-format
-msgid "🆘 %(n)s opération marquée comme imprévu"
-msgid_plural "🆘 %(n)s opérations marquées comme imprévus"
-msgstr[0] "🆘 %(n)s transaction marked as unexpected"
-msgstr[1] "🆘 %(n)s transactions marked as unexpected"
-
-#, fuzzy, python-format
-msgid "📥 %(n)s opération remise dans La Savane"
-msgid_plural "📥 %(n)s opérations remises dans La Savane"
-msgstr[0] "📥 %(n)s transaction put back in La Savane"
-msgstr[1] "📥 %(n)s transactions put back in La Savane"
 
