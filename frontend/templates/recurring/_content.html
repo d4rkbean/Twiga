@@ -1,16 +1,17 @@
-{% from "_macros/brand.html" import mascot %}
-<div id="recurring-content" class="flex flex-col gap-3">
+{% from "_macros/brand.html" import mascot, mascot_line %}
+<div id="recurring-content" class="flex flex-col gap-4">
   {% if recurring_patterns %}
-  <p class="text-sm text-secondary">
-    {% trans recurring_active_count=recurring_active_count, v="s" if recurring_active_count != 1 else "" %}{{ recurring_active_count }} abonnement{{ v }} détecté{{ v }} · Total mensuel estimé :{% endtrans %} <span class="amount-blur">{{ recurring_monthly_total | eur }}</span>
+  <p class="text-sm text-secondary -mt-2">
+    {% trans recurring_active_count=recurring_active_count, v="s" if recurring_active_count != 1 else "" %}{{ recurring_active_count }} abonnement{{ v }} détecté{{ v }} · Total mensuel estimé :{% endtrans %} <span class="amount-blur tabular-nums">{{ recurring_monthly_total | eur }}</span>
   </p>
   {% endif %}
 
   {% for group in recurring_duplicate_groups %}
-  <div class="bg-container rounded-xl shadow-sm p-3 flex flex-col gap-2 border border-accent">
-    <p class="text-sm text-primary">
+  <div class="card flex flex-col gap-3 sm:flex-row sm:items-center lg:p-5">
+    <span class="hidden sm:flex w-10 h-10 shrink-0 rounded-full bg-sunken items-center justify-center text-secondary">{{ icon('repeat', size=18) }}</span>
+    <p class="text-sm text-primary flex-1 min-w-0">
       {% trans group=group | length %}Ces {{ group }} entrées semblent être le même abonnement :{% endtrans %}
-      {% for item in group %}{{ item.label_pattern | replace("|", " / ") }}{% if not loop.last %}, {% endif %}{% endfor %}
+      <strong class="font-semibold">{% for item in group %}{{ item.label_pattern | replace("|", " / ") }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>
     </p>
     <form hx-post="/recurring/merge" hx-target="#recurring-content" hx-swap="outerHTML">
       {% for item in group %}
@@ -19,92 +20,91 @@
       <input type="hidden" name="amount" value="{{ group[0].amount }}" />
       <input type="hidden" name="frequency_days" value="{{ group[0].frequency_days }}" />
       <input type="hidden" name="category_id" value="{{ group[0].category.id if group[0].category else '' }}" />
-      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold px-4">
+      <button type="submit" class="btn {{ 'btn-primary' if loop.first else 'btn-secondary border-border-strong' }} w-full sm:w-auto sm:px-6">
         {{ _("Fusionner") }}
       </button>
     </form>
   </div>
   {% endfor %}
 
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
   {% for item in recurring_patterns %}
   {% set effective_state = "ignored" if item.status == "ignored" else ("inactive" if item.activity_status == "inactive" else ("seen" if item.seen_this_month else "pending")) %}
-  <div
-    class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2 border-l-4 {{ 'border-success' if effective_state == 'seen' else ('border-warning' if effective_state == 'pending' else 'border-border') }}"
-  >
-    <span class="text-primary font-bold truncate">
-      {{ icon('repeat', size=16) }} {{ item.label_pattern | replace("|", " / ") }}{% if item.payment_method and item.payment_method in payment_methods %} · {{ payment_methods[item.payment_method].label }}{% endif %}
-    </span>
+  <div class="card flex flex-col gap-3 lg:p-5">
+    <div class="flex items-start gap-3">
+      <span class="w-10 h-10 shrink-0 rounded-full bg-sunken flex items-center justify-center text-secondary">{{ icon('repeat', size=18) }}</span>
+      <div class="flex-1 min-w-0 flex flex-col">
+        <span class="text-primary font-semibold break-words">{{ item.label_pattern | replace("|", " / ") }}</span>
+        {% if item.payment_method and item.payment_method in payment_methods %}
+        <span class="text-xs text-secondary">{{ payment_methods[item.payment_method].label }}</span>
+        {% endif %}
+      </div>
+      <div class="flex flex-col items-end shrink-0">
+        <span class="amount-blur font-bold tabular-nums text-primary">−{{ item.amount | eur }}</span>
+        <span class="text-xs text-secondary">{{ item.frequency_label }}</span>
+      </div>
+    </div>
 
-    <p class="amount-blur text-lg font-bold text-danger">
-      -{{ item.amount | eur }} · {{ item.frequency_label }}
-    </p>
-
-    <p class="text-sm text-secondary">{% trans last_date=item.last_date | fr_date %}Dernière fois : {{ last_date }}{% endtrans %}</p>
-    {% if effective_state != "inactive" %}
-    <p class="text-sm text-secondary">
-      {% trans next_expected=item.next_expected | fr_date %}Prochaine attendue : {{ next_expected }}{% endtrans %}
-      {{ icon('bell-off', size=14) if effective_state == 'ignored' else (icon('circle-check', size=14) if effective_state == 'seen' else icon('alert-triangle', size=14)) }}
-    </p>
-    {% endif %}
-
-    {% if item.category %}
-    <p class="text-sm text-secondary">{% trans v=item.category.icon or "", name=item.category.name | category_display %}Catégorie : {{ v }} {{ name }}{% endtrans %}</p>
-    {% endif %}
-
-    <p
-      class="text-sm font-medium {{ 'text-success' if effective_state == 'seen' else ('text-warning' if effective_state == 'pending' else 'text-secondary') }}"
-    >
+    <p>
       {% if effective_state == "ignored" %}
-      {{ icon('bell-off', size=14) }} {{ _("Ignoré") }}
+      <span class="badge badge-neutral">{{ icon('bell-off', size=14) }} {{ _("Ignoré") }}</span>
       {% elif effective_state == "inactive" %}
-      {{ icon('clock', size=14) }} {% trans days_since_last=item.days_since_last %}Inactif/annulé ? (dernier vu il y a {{ days_since_last }} jours){% endtrans %}
+      <span class="badge badge-neutral">{{ icon('clock', size=14) }} {% trans days_since_last=item.days_since_last %}Inactif/annulé ? (dernier vu il y a {{ days_since_last }} jours){% endtrans %}</span>
       {% elif effective_state == "seen" %}
-      {{ icon('circle-check', size=14) }} {{ _("Déjà prélevé ce mois") }}
+      <span class="badge badge-positive">{{ icon('circle-check', size=14) }} {{ _("Déjà prélevé ce mois") }}</span>
       {% else %}
-      {{ icon('alert-triangle', size=14) }} {{ _("Attendu ce mois, pas encore vu") }}
+      <span class="badge badge-warning">{{ icon('alert-triangle', size=14) }} {{ _("Attendu ce mois, pas encore vu") }}</span>
       {% endif %}
     </p>
 
-    <div class="flex gap-2 pt-1">
-      <form
-        hx-post="/recurring/confirm"
-        hx-target="#recurring-content"
-        hx-swap="outerHTML"
-        class="flex-1"
-      >
+    <dl class="flex flex-col gap-1 text-sm">
+      <div class="flex gap-1"><dt class="text-secondary">{{ _("Dernière fois :") }}</dt><dd class="tabular-nums text-primary">{{ item.last_date | fr_date }}</dd></div>
+      {% if effective_state != "inactive" %}
+      <div class="flex gap-1"><dt class="text-secondary">{{ _("Prochaine attendue :") }}</dt><dd class="tabular-nums text-primary">{{ item.next_expected | fr_date }}</dd></div>
+      {% endif %}
+      {% if item.category %}
+      <div class="flex gap-1"><dt class="text-secondary">{{ _("Catégorie :") }}</dt><dd class="text-primary">{{ item.category.icon or "" }} {{ item.category.name | category_display }}</dd></div>
+      {% endif %}
+    </dl>
+
+    <div class="grid grid-cols-2 gap-2 mt-auto pt-1">
+      <form hx-post="/recurring/confirm" hx-target="#recurring-content" hx-swap="outerHTML">
         <input type="hidden" name="label_pattern" value="{{ item.label_pattern }}" />
         <input type="hidden" name="amount" value="{{ item.amount }}" />
         <input type="hidden" name="frequency_days" value="{{ item.frequency_days }}" />
         <input type="hidden" name="category_id" value="{{ item.category.id if item.category else '' }}" />
-        <button
-          type="submit"
-          class="w-full min-h-[50px] rounded-xl font-medium {{ 'bg-success-soft border border-success text-success font-semibold' if item.status == 'confirmed' else 'bg-container border border-border text-success' }}"
-        >
+        {% if item.status == 'confirmed' %}
+        <button type="submit" class="btn w-full bg-success-soft border-success text-success font-semibold">
+          {{ icon('check', size=16) }} {{ _("Confirmé") }}
+        </button>
+        {% else %}
+        <button type="submit" class="btn btn-secondary border-border-strong w-full">
           {{ icon('check', size=16) }} {{ _("Confirmer") }}
         </button>
+        {% endif %}
       </form>
-      <form
-        hx-post="/recurring/ignore"
-        hx-target="#recurring-content"
-        hx-swap="outerHTML"
-        class="flex-1"
-      >
+      <form hx-post="/recurring/ignore" hx-target="#recurring-content" hx-swap="outerHTML">
         <input type="hidden" name="label_pattern" value="{{ item.label_pattern }}" />
         <input type="hidden" name="amount" value="{{ item.amount }}" />
         <input type="hidden" name="frequency_days" value="{{ item.frequency_days }}" />
         <input type="hidden" name="category_id" value="{{ item.category.id if item.category else '' }}" />
-        <button
-          type="submit"
-          class="w-full min-h-[50px] rounded-xl font-medium {{ 'border-2 border-danger text-danger font-semibold' if item.status == 'ignored' else 'bg-container border border-border text-danger' }}"
-        >
+        {% if item.status == 'ignored' %}
+        <button type="submit" class="btn btn-danger w-full font-semibold">
+          {{ icon('x', size=16) }} {{ _("Ignoré") }}
+        </button>
+        {% else %}
+        <button type="submit" class="btn btn-secondary border-border-strong w-full">
           {{ icon('x', size=16) }} {{ _("Ignorer") }}
         </button>
+        {% endif %}
       </form>
     </div>
   </div>
   {% else %}
-  <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center">{{ mascot(size=16) }} {{ _("Aucun abonnement récurrent détecté pour l'instant.") }}</p>
+  <div class="card sm:col-span-2 xl:col-span-3 flex flex-col items-center gap-2 py-8 text-center">
+    {{ mascot("default", 56) }}
+    <p class="text-sm text-secondary">{{ _("Aucun abonnement récurrent détecté pour l'instant.") }}</p>
   </div>
   {% endfor %}
+  </div>
 </div>

@@ -1,16 +1,12 @@
 {% extends "base.html" %}
+{% from "_macros/page.html" import page_header %}
 
 {% block title %}{{ _("Abonnements récurrents — Twiga 🦒") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-page-title">{{ icon('repeat', size=24) }} {{ _("Abonnements récurrents") }}</h1>
-    <a href="/settings" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
-  </div>
+<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+  {{ page_header(_("Abonnements récurrents"), back_href="/settings", back_label=_("Paramètres")) }}
 
-  <div id="recurring-content">
-    {% include "recurring/_content.html" %}
-  </div>
+  {% include "recurring/_content.html" %}
 </main>
 {% endblock %}
