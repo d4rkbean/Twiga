@@ -47,7 +47,7 @@
           {% if resources_from_cap %}
           {{ _("— le montant fixé dans Le Cap.") }}
           {% else %}
-          {{ _("— proposé d'après votre réglage, tant que le cap du mois n'est pas fixé.") }}
+          {{ _("— proposé d'après ton réglage, tant que le cap du mois n'est pas fixé.") }}
           {% endif %}
           · <a href="/settings" class="font-medium text-primary underline">{{ _("Changer la source des ressources") }}</a>
         </p>
@@ -55,7 +55,7 @@
         <p class="text-sm text-secondary">
           {% trans period_label=period_label %}Ressources de {{ period_label }} non définies.{% endtrans %}
           <a href="/cap" class="font-medium text-primary underline">{{ _("Fixer le cap du mois →") }}</a>
-          {{ _("pour les poser, ou répartissez librement ci-dessous.") }}
+          {{ _("pour les poser, ou répartis librement ci-dessous.") }}
         </p>
         {% endif %}
 

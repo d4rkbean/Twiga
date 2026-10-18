@@ -8,7 +8,7 @@
   <div class="flex flex-col gap-1">
     <p class="text-section-title">{{ _("Bienvenue dans Le Cap !") }}</p>
     <p class="text-sm text-primary">
-      {{ _("Chaque mois, prenez 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
+      {{ _("Chaque mois, prends 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
     </p>
   </div>
 </div>
@@ -118,7 +118,7 @@
     {% if virements %}
     <div class="flex flex-col">
       <p class="text-xs text-secondary pb-2">
-        {% trans current_month_label=current_month_label %}Cochez les virements qui financent {{ current_month_label }}{% endtrans %}
+        {% trans current_month_label=current_month_label %}Coche les virements qui financent {{ current_month_label }}{% endtrans %}
       </p>
       <div class="flex flex-col max-h-64 overflow-y-auto border-t border-border">
         {% for v in virements %}
@@ -234,7 +234,7 @@
         {{ icon('pig-money', size=16) }}
         <span>
           {{ _("Prélèvement sur épargne") }}
-          <span class="block text-xs text-secondary">{{ _("Ce que vous sortez de l'épargne pour financer ce mois") }}</span>
+          <span class="block text-xs text-secondary">{{ _("Ce que tu sors de l'épargne pour financer ce mois") }}</span>
         </span>
       </span>
       <input

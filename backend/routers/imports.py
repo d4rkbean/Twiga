@@ -139,7 +139,7 @@ async def preview(
             import_storage.delete_upload(import_id, f".{fmt}")
             return _error(
                 request,
-                _t("Choisissez un compte existant, ou importez d'abord un fichier QIF pour en créer un."),
+                _t("Choisis un compte existant, ou importe d'abord un fichier QIF pour en créer un."),
             )
 
         account = _get_account(db, account_id)
