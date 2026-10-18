@@ -1,62 +1,63 @@
 {% from "_macros/brand.html" import mascot %}
-<div id="receipt-section-{{ transaction.id }}" class="flex flex-col gap-3 border-t border-border pt-4">
-  <h3 class="text-section-title flex items-center gap-2" >{{ icon('receipt') }}{{ _("Détail du ticket") }}</h3>
+{% from "_macros/menu.html" import dropdown %}
+{% set family_options = [("", _("— Rayon —"))] %}
+{% for code, family_icon, family_label in receipt_families %}{% if family_options.append((code, family_label)) %}{% endif %}{% endfor %}
+<section id="receipt-section-{{ transaction.id }}" aria-label="{{ _("Détail du ticket") }}" class="flex flex-col gap-3 border-t border-border pt-3.5">
+  <h3 class="flex items-center gap-2 text-base font-semibold text-primary">{{ icon('receipt') }}{{ _("Détail du ticket") }}</h3>
 
-  <form class="flex flex-col gap-2">
-    <label class="text-xs text-secondary">
-      {{ _("Facture PDF de l'appli du magasin (Leclerc, Intermarché...) : les lignes en sont proposées automatiquement dès le fichier choisi ci-dessous, rayon compris quand il est reconnaissable — à vérifier avant d'enregistrer, l'extraction n'est jamais garantie exacte. Le fichier n'est pas conservé, seules les lignes le sont — et un nouvel import") }} <strong>{{ _("remplace") }}</strong> {{ _("le détail existant. Pour un ticket papier (photo), pas d'extraction automatique possible : ajoute les lignes à la main ci-dessous.") }}
+  <div class="flex flex-col gap-2">
+    <p class="text-sm text-secondary">{{ _("Facture PDF de l'appli du magasin : les lignes sont proposées seules, rayon compris, à vérifier. Ticket papier : ajoute les lignes à la main.") }}</p>
+    {# The file is sent as soon as it is chosen (hx-trigger on the field itself:
+       on the <form> it did not catch the "change" of the nested field). The
+       field is the invisible half of a 50 px button. #}
+    <label class="btn btn-secondary w-full cursor-pointer border-border-strong">
+      {{ icon('file-text') }} {{ _("Choisir la facture PDF") }}
+      <input
+        type="file"
+        name="file"
+        accept=".pdf"
+        required
+        hx-post="/transactions/receipts/{{ transaction.id }}/upload"
+        hx-target="#receipt-section-{{ transaction.id }}"
+        hx-swap="outerHTML"
+        hx-encoding="multipart/form-data"
+        hx-trigger="change"
+        hx-indicator="#receipt-reading-{{ transaction.id }}"
+        class="sr-only"
+      />
     </label>
-    <!-- hx-post/hx-trigger directement sur le champ fichier, pas sur le
-         <form> : hx-trigger ne déclenche que la requête portée par le MÊME
-         élément — le mettre sur le <form> pendant que hx-post y était aussi
-         ne suffisait pas à capter fiablement le "change" du champ imbriqué
-         (constaté : aucune requête envoyée). Choisir un fichier envoie donc
-         directement la facture, sans bouton "Extraire" intermédiaire — un
-         clic de moins, il n'y a de toute façon rien d'autre à renseigner
-         ici avant d'envoyer. -->
-    <input
-      type="file"
-      name="file"
-      accept=".pdf"
-      required
-      hx-post="/transactions/receipts/{{ transaction.id }}/upload"
-      hx-target="#receipt-section-{{ transaction.id }}"
-      hx-swap="outerHTML"
-      hx-encoding="multipart/form-data"
-      hx-trigger="change"
-      class="text-sm text-primary"
-    />
-    <p class="htmx-indicator text-sm text-secondary text-center">{{ mascot(size=16) }} {{ _("Twiga tend le cou...") }}</p>
-  </form>
+    <p class="text-xs text-secondary">{{ _("Le fichier n'est pas gardé, seules les lignes le sont — un nouvel import remplace le détail existant.") }}</p>
+    <p id="receipt-reading-{{ transaction.id }}" class="htmx-indicator flex items-center gap-2 text-sm text-secondary" aria-live="polite">{{ mascot(size=20) }} {{ _("Twiga tend le cou… Lecture de la facture") }}</p>
+  </div>
 
   {% if raw_extracted_text is not none %}
   <details class="rounded-lg border border-border">
-    <summary class="text-xs text-secondary px-2 py-1.5 cursor-pointer select-none">
+    <summary class="cursor-pointer select-none px-2 py-1.5 text-xs text-secondary">
       {{ icon('zoom-in', size=16) }} {{ _("Texte brut extrait de la facture (ne réapparaîtra plus après — le fichier n'est pas gardé)") }}
     </summary>
-    <pre class="text-xs text-secondary whitespace-pre-wrap break-words px-2 pb-2 max-h-64 overflow-y-auto">{{ raw_extracted_text or _("(aucun texte extrait — ce PDF n'a peut-être pas de calque de texte, par ex. une image scannée)") }}</pre>
+    <pre class="max-h-64 overflow-y-auto whitespace-pre-wrap break-words px-2 pb-2 text-xs text-secondary">{{ raw_extracted_text or _("(aucun texte extrait — ce PDF n'a peut-être pas de calque de texte, par ex. une image scannée)") }}</pre>
   </details>
   {% endif %}
 
   {% if receipt_items %}
-  <!-- Groupé par rayon (voir receipt_families.group_items_by_family) plutôt
-       qu'en liste plate : sur un ticket de 25 articles, la liste plate ne
-       laissait voir que des sélecteurs de rayon empilés, le nom du produit
-       passait à la trappe. Chaque article : libellé sur sa propre ligne (en
-       entier, lisible sur mobile), puis rayon + montant + suppression en
-       dessous. -->
+  {# Grouped by aisle (see receipt_families.group_items_by_family): on a
+     25-article ticket a flat list hid the product names behind stacked
+     aisle selectors. #}
   <div class="flex flex-col gap-3">
     {% for group in receipt_groups %}
     <div class="flex flex-col gap-1.5">
       <div class="flex items-baseline justify-between gap-2 border-b border-border pb-1">
-        <span class="text-sm font-semibold text-primary">{{ group.icon }} {{ group.label }}</span>
-        <span class="amount-blur text-xs text-secondary whitespace-nowrap">
+        <span class="flex items-center gap-2 text-sm font-semibold text-primary">
+          <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ ('var(--color-chart-' ~ ((loop.index0 % 8) + 1) ~ ')') }}" aria-hidden="true"></span>
+          {{ group.label }}
+        </span>
+        <span class="amount-blur whitespace-nowrap text-xs text-secondary">
           {% trans items=group['items'] | length, subtotal=group.subtotal | eur %}{{ items }} art. · {{ subtotal }}{% endtrans %}
         </span>
       </div>
 
       {% for item in group['items'] %}
-      <div class="receipt-item-row flex flex-col gap-1.5 py-2 border-b border-border last:border-b-0">
+      <div class="receipt-item-row flex flex-col gap-1.5 border-b border-border py-2 last:border-b-0">
         <input
           type="text"
           name="label"
@@ -67,24 +68,19 @@
           hx-include="closest .receipt-item-row"
           hx-target="#receipt-section-{{ transaction.id }}"
           hx-swap="outerHTML"
-          class="input-base min-h-[46px]"
+          class="input-base"
         />
-        <div class="flex items-center gap-1.5">
-          <select
-            name="family"
-            aria-label="{{ _("Rayon") }}"
+        <div class="flex items-start gap-1.5">
+          <div
+            class="min-w-0 flex-1"
             hx-post="/transactions/receipts/items/{{ item.id }}/update"
-            hx-trigger="change"
+            hx-trigger="menu-change"
             hx-include="closest .receipt-item-row"
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
-            class="input-base min-h-[46px] flex-1 min-w-0 text-xs px-1"
           >
-            <option value="">{{ _("— Rayon —") }}</option>
-            {% for code, icon, label in receipt_families %}
-            <option value="{{ code }}" {{ 'selected' if item.family == code else '' }}>{{ icon }} {{ label }}</option>
-            {% endfor %}
-          </select>
+            {{ dropdown("family", family_options, selected=item.family or "", aria=_("Rayon")) }}
+          </div>
           <input
             type="text"
             inputmode="decimal"
@@ -96,7 +92,7 @@
             hx-include="closest .receipt-item-row"
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
-            class="input-base min-h-[46px] w-24 flex-shrink-0 text-right tabular-nums"
+            class="input-base w-24 flex-shrink-0 text-right tabular-nums"
           />
           <button
             type="button"
@@ -104,7 +100,7 @@
             hx-target="#receipt-section-{{ transaction.id }}"
             hx-swap="outerHTML"
             aria-label="{{ _("Supprimer cette ligne") }}"
-            class="btn btn-ghost w-[50px] px-0 flex-shrink-0 text-danger"
+            class="btn btn-ghost w-[50px] flex-shrink-0 px-0 text-danger"
           >
             {{ icon('trash') }}
           </button>
@@ -118,12 +114,15 @@
   {% set items_total = receipt_items | sum(attribute='amount') %}
   {% set transaction_abs_amount = transaction.amount | abs %}
   {% set ecart = items_total - transaction_abs_amount %}
-  <p class="amount-blur text-xs text-secondary border-t border-border pt-2">
-    {{ _("Total des lignes :") }} <span class="text-primary font-medium">{{ items_total | eur }}</span>
-    {% trans transaction_abs_amount=transaction_abs_amount | eur %}— Transaction : {{ transaction_abs_amount }}{% endtrans %}
+  <div class="amount-blur flex items-center justify-between border-t border-border pt-2 text-sm font-semibold text-primary">
+    <span>{{ _("Total des lignes") }}</span>
+    <span class="tabular-nums">{{ items_total | eur }}</span>
+  </div>
+  <p class="amount-blur text-xs text-secondary">
+    {% trans transaction_abs_amount=transaction_abs_amount | eur %}Transaction : {{ transaction_abs_amount }}{% endtrans %}
     {% if ecart | abs > 0.01 %}
     <br />
-    <span class="text-warning font-medium">
+    <span class="font-medium text-warning">
       {{ icon('alert-triangle', size=16) }} {% trans ecart=ecart | abs | eur %}écart de {{ ecart }}{% endtrans %}
       {% if ecart > 0 %}{{ _("(remises, bons d'achat ou avoirs non comptés dans les lignes)") }}{% endif %}
     </span>
@@ -133,13 +132,27 @@
   </p>
   {% endif %}
 
-  <button
-    type="button"
-    hx-post="/transactions/receipts/{{ transaction.id }}/items/add"
-    hx-target="#receipt-section-{{ transaction.id }}"
-    hx-swap="outerHTML"
-    class="btn btn-secondary self-start px-4"
-  >
-    {{ icon('plus') }} {{ _("Ajouter une ligne") }}
-  </button>
-</div>
+  <div class="flex flex-wrap items-center gap-x-4">
+    <button
+      type="button"
+      hx-post="/transactions/receipts/{{ transaction.id }}/items/add"
+      hx-target="#receipt-section-{{ transaction.id }}"
+      hx-swap="outerHTML"
+      class="min-h-[50px] px-1 text-sm font-medium text-accent-ink"
+    >
+      {{ _("Ajouter une ligne") }}
+    </button>
+    {% if receipt_items %}
+    <button
+      type="button"
+      hx-post="/transactions/receipts/{{ transaction.id }}/clear"
+      hx-target="#receipt-section-{{ transaction.id }}"
+      hx-swap="outerHTML"
+      hx-confirm="{{ _("Retirer le détail du ticket ? Les lignes seront supprimées.") }}"
+      class="min-h-[50px] px-1 text-sm text-secondary"
+    >
+      {{ _("Retirer le détail") }}
+    </button>
+    {% endif %}
+  </div>
+</section>

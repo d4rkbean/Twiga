@@ -51,7 +51,10 @@ def test_operations_amounts_are_ink_with_a_minus_sign(clients):
 
 def test_operations_type_filter_is_a_segmented_control_that_filters(clients):
     page = clients["admin"].get("/transactions/list").text
-    assert page.count('name="f_type"') == 4
+    # The four tabs of the mock-up; "Virements" moved to the "Tous types" menu.
+    for tab in ("Toutes", "Dépenses", "Recettes", "À trier"):
+        assert f">{tab}</button>" in page
+    assert page.count('name="f_type"') == 1
     income = clients["admin"].get(
         "/transactions/list/content?f_type=income", headers={"HX-Request": "true"}
     ).text

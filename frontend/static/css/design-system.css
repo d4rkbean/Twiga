@@ -295,9 +295,12 @@
        une transformation sur <main> ferait de lui le repère de ses
        descendants en position:fixed pendant l'animation (barre d'actions de
        la catégorisation en masse). Les éléments fixes eux-mêmes en sont
-       exclus. */
+       exclus. `backwards` et non `both` : avec `both` l'animation terminée
+       garde une transformation (matrice identité) qui fait de l'enfant le
+       repère des éléments fixes qu'il contient (barre et feuilles de
+       l'écran Opérations, dans le fragment de liste). */
     main > :not(.fixed):not(dialog) {
-      animation: twiga-rise var(--duration-slow) var(--ease-out) both;
+      animation: twiga-rise var(--duration-slow) var(--ease-out) backwards;
     }
 
     /* Contenu inséré par htmx (swap) : même glissé que l'entrée de page. */
