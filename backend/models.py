@@ -358,6 +358,10 @@ class AppState(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     last_routine_month: Mapped[date | None] = mapped_column(Date, nullable=True)
     session_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Date de la dernière sauvegarde complète faite depuis Paramètres >
+    # Données > « Sauvegarder maintenant » (jamais le fichier lui-même : il est
+    # téléchargé, pas conservé sur le serveur). NULL = aucune pour l'instant.
+    last_backup_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class User(Base):

@@ -137,6 +137,7 @@ def settings(request: Request, db: Session = Depends(get_db)):
             "cap_settings": cap_settings,
             "income_sources": crud.INCOME_SOURCES,
             "accounts": crud.list_accounts(db),
+            "last_backup_at": crud.get_or_create_app_state(db).last_backup_at,
         },
     )
 

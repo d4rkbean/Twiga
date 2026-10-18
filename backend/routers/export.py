@@ -6,7 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Request, UploadFi
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
-from backend import export, restore
+from backend import crud, export, restore
 from backend.database import SessionLocal, get_db
 from backend.routers.transactions import ListFilters, _get_list_filters, list_filter_kwargs
 from backend.templating import templates
@@ -29,8 +29,7 @@ def _json_default(value):
     raise TypeError(f"Objet non sérialisable en JSON : {value!r}")
 
 
-@router.get("/json")
-def export_json(db: Session = Depends(get_db)):
+def _json_backup_response(db: Session) -> Response:
     data = export.build_full_export(db)
     content = json.dumps(data, ensure_ascii=False, indent=2, default=_json_default)
     filename = f"twiga-export-{date.today().isoformat()}.json"
@@ -38,6 +37,31 @@ def export_json(db: Session = Depends(get_db)):
         content=content,
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/json")
+def export_json(db: Session = Depends(get_db)):
+    return _json_backup_response(db)
+
+
+@router.post("/backup")
+def backup_now(db: Session = Depends(get_db)):
+    # « Sauvegarder maintenant » (Paramètres > Données) : la même sauvegarde
+    # complète que l'export JSON, qui sert à la restauration. Le fichier est
+    # téléchargé, jamais conservé sur le serveur ; seule la date est retenue.
+    # POST : la politique de rôles ne laisse écrire qu'à l'admin ici, alors
+    # que l'export JSON en GET reste lisible par tous les rôles.
+    response = _json_backup_response(db)
+    crud.mark_backup_done(db)
+    return response
+
+
+@router.get("/backup/status", response_class=HTMLResponse)
+def backup_status(request: Request, db: Session = Depends(get_db)):
+    state = crud.get_or_create_app_state(db)
+    return templates.TemplateResponse(
+        "export/_backup_status.html", {"request": request, "last_backup_at": state.last_backup_at}
     )
 
 

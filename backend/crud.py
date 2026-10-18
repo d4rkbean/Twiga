@@ -2731,6 +2731,15 @@ def get_or_create_app_state(db: Session) -> AppState:
     return state
 
 
+def mark_backup_done(db: Session, when: datetime | None = None) -> datetime:
+    # Retient la date de la dernière sauvegarde complète (heure locale du
+    # serveur, comme le reste des dates de l'application).
+    state = get_or_create_app_state(db)
+    state.last_backup_at = when or datetime.now()
+    db.commit()
+    return state.last_backup_at
+
+
 def mark_routine_seen(db: Session, month_start: date) -> None:
     state = get_or_create_app_state(db)
     state.last_routine_month = month_start
