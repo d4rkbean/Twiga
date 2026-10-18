@@ -613,6 +613,9 @@
     Chart.defaults.borderColor = colorBorder;
     Chart.defaults.scale.grid.color = colorBorder;
     Chart.defaults.scale.ticks.color = colorSecondary;
+    // Liseré entre les parts d'un anneau : la couleur de la surface (blanc par
+    // défaut dans Chart.js, qui dessinerait un contour clair en sombre).
+    Chart.defaults.elements.arc.borderColor = cssColor("--color-container", "#ffffff");
 
     var numberLocale = document.documentElement.dataset.numberLocale || "fr-FR";
     var currencyFormatter = new Intl.NumberFormat(numberLocale, { style: "currency", currency: "EUR" });
