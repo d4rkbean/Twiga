@@ -256,3 +256,44 @@ def test_panorama_envelopes_follow_the_account_filter(clients):
     section = html.split('id="tour-budget-section"')[1].split("</section>")[0]
     assert "Test groceries" in section
     assert "Avec le tri" not in section  # nothing of this account waits in La Savane
+
+
+# --- 4. Le Cap: the live panel -------------------------------------------------
+
+
+def _fixer_html(clients) -> str:
+    response = clients["admin"].post("/cap/step2", data={})
+    assert response.status_code == 200
+    return response.text
+
+
+def test_cap_fixer_step_has_a_live_panel_computed_in_the_browser(clients):
+    html = _fixer_html(clients)
+    assert "en direct" in html
+    assert 'aria-label="Le plan en direct"' in html
+    for text in ("Ressources du mois", "Total réparti", "Épargne qui reste", "Tu répartis plus que tes ressources."):
+        assert text in html
+    # The panel reads the form's own Alpine state: no new request behind it.
+    panel = html.split('aria-label="Le plan en direct"')[1]
+    assert "hx-get" not in panel and "hx-post" not in panel
+    assert "x-text=\"fmt(totalDepenses)\"" in panel
+    assert "x-text=\"fmt(savings)\"" in panel
+    assert 'x-show="couvert < 0"' in panel
+
+
+def test_cap_fixer_panel_compares_with_the_month_before_per_pillar(clients):
+    html = _fixer_html(clients)
+    assert "pilier par pilier" in html
+    # The three pillars, and last month's real figures embedded for the page script.
+    for code in ("essentiel", "choix", "imprevu"):
+        assert f"code: '{code}'" in html
+    assert "precedent:" in html
+    assert "du plan" in html and "dans la cible" in html
+
+
+def test_cap_fixer_form_fields_are_unchanged(clients):
+    html = _fixer_html(clients)
+    form = html.split('hx-post="/cap/save"')[1].split("</form>")[0]
+    for name in ("planned_income", "planned_imprevu", "savings_withdrawal", "intention", "amount_"):
+        assert f'name="{name}' in form
+    assert html.count("btn-primary") <= 1

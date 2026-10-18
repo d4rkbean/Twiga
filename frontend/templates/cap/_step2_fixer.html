@@ -1,18 +1,6 @@
 {% from "_macros/brand.html" import mascot %}
 {% from "_macros/pillar_icon.html" import pillar_icon %}
-{% include "cap/_progress_dots.html" %}
 
-{% if first_use %}
-<div class="card card-amber flex items-start gap-3 p-4 lg:p-5">
-  {{ mascot(size=36) }}
-  <div class="flex flex-col gap-1">
-    <p class="text-section-title">{{ _("Bienvenue dans Le Cap !") }}</p>
-    <p class="text-sm text-primary">
-      {{ _("Chaque mois, prends 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
-    </p>
-  </div>
-</div>
-{% endif %}
 
 {#
   Le plan du mois se décide à DEUX niveaux sur un seul écran : l'enveloppe du
@@ -30,11 +18,7 @@
   imprévue y bascule quelle que soit sa catégorie). On ne prévoit pas DANS
   QUOI tombera un imprévu, seulement combien on lui réserve.
 #}
-<form
-  hx-post="/cap/save"
-  hx-target="#cap-wizard"
-  hx-swap="innerHTML"
-  class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-5"
+<div
   x-data="{
     income: {{ prefill_income }},
     imprevu: {{ '%.2f' % prefill_imprevu }},
@@ -93,7 +77,52 @@
     get couvert() { return this.income + (Number(this.prelevement) || 0) - this.totalDepenses },
     fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('-', '−') + ' €' },
     intentionLength: 0,
+    /* Panneau « en direct » : tout est recalculé ici, dans le navigateur, à
+       partir des mêmes champs que le formulaire — aucune requête. `precedent`
+       est le réel du mois écoulé par pilier (rien ne bouge pendant la saisie). */
+    precedent: {{ previous_actuals | tojson | forceescape }},
+    piliers: [
+      { code: 'essentiel', label: '{{ groupes[0].label | jsq }}' },
+      { code: 'choix', label: '{{ groupes[1].label | jsq }}' },
+      { code: 'imprevu', label: '{{ _("Imprévus") | jsq }}' },
+    ],
+    prevu(code) {
+      return code === 'imprevu' ? (Number(this.imprevu) || 0) : this.totalGroupe(code)
+    },
+    /* Part du plan que le mois écoulé aurait consommée ; null si le pilier
+       n'a rien de prévu (pas de division par zéro). */
+    part(code) {
+      const prevu = this.prevu(code)
+      return prevu > 0 ? Math.round((Number(this.precedent[code]) || 0) / prevu * 100) : null
+    },
+    /* Mêmes seuils que la macro gauge_verdict : ≥ 75 % à surveiller, > 90 %
+       presque atteint, > 100 % dépassé. */
+    mot(pct) {
+      return pct > 100 ? '{{ _("dépassé") | jsq }}' : pct > 90 ? '{{ _("presque atteint") | jsq }}' : pct >= 75 ? '{{ _("à surveiller") | jsq }}' : '{{ _("dans la cible") | jsq }}'
+    },
+    ton(pct) { return pct > 90 ? 'text-danger' : pct >= 75 ? 'text-warning' : 'text-success' },
+    remplissage(pct) { return pct > 90 ? 'progress-red' : pct >= 75 ? 'progress-orange' : 'progress-green' },
   }"
+  class="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start"
+>
+<div class="flex flex-col gap-5 min-w-0">
+{% include "cap/_progress_dots.html" %}
+{% if first_use %}
+<div class="card card-amber flex items-start gap-3 p-4 lg:p-5">
+  {{ mascot(size=36) }}
+  <div class="flex flex-col gap-1">
+    <p class="text-section-title">{{ _("Bienvenue dans Le Cap !") }}</p>
+    <p class="text-sm text-primary">
+      {{ _("Chaque mois, prends 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
+    </p>
+  </div>
+</div>
+{% endif %}
+<form
+  hx-post="/cap/save"
+  hx-target="#cap-wizard"
+  hx-swap="innerHTML"
+  class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-5"
 >
   <h2 class="text-section-title">{% trans current_month_label=current_month_label %}Fixer le cap de {{ current_month_label }}{% endtrans %}</h2>
 
@@ -244,7 +273,7 @@
     </label>
   </div>
 
-  <div class="border-t border-border pt-4 flex flex-col gap-2">
+  <div class="border-t border-border pt-4 lg:hidden flex flex-col gap-2">
     <div class="flex items-baseline justify-between gap-3">
       <span class="text-sm font-semibold text-primary">{{ _("Épargne prévue") }}</span>
       <span
@@ -301,3 +330,77 @@
     </button>
   </div>
 </form>
+</div>
+{# Panneau « en direct » : à droite du formulaire dès lg, sous lui en
+   mobile. Il se recalcule pendant la saisie, côté navigateur (même état Alpine
+   que le formulaire, aucune requête) : ressources, total réparti par pilier,
+   épargne qui reste et alerte si on répartit plus que les ressources ; puis la
+   comparaison avec le mois écoulé, pilier par pilier. #}
+<aside class="flex flex-col gap-5 lg:sticky lg:top-20" aria-label="{{ _("Le plan en direct") }}">
+  <section class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-3" aria-labelledby="cap-live-title">
+    <h2 id="cap-live-title" class="text-section-title">{% trans current_month_label=current_month_label %}{{ current_month_label }}, en direct{% endtrans %}</h2>
+    <dl class="flex flex-col text-sm">
+      <div class="flex items-baseline justify-between gap-3 min-h-[34px]">
+        <dt class="text-secondary">{{ _("Ressources du mois") }}</dt>
+        <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="fmt(Number(income) || 0)"></dd>
+      </div>
+      <template x-for="pilier in piliers" :key="pilier.code">
+        <div class="flex items-baseline justify-between gap-3 min-h-[34px]">
+          <dt class="text-secondary" x-text="pilier.label"></dt>
+          <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="fmt(prevu(pilier.code))"></dd>
+        </div>
+      </template>
+      <div class="flex items-baseline justify-between gap-3 min-h-[34px] border-t border-border">
+        <dt class="text-secondary">{{ _("Total réparti") }}</dt>
+        <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="fmt(totalDepenses)"></dd>
+      </div>
+      <div x-show="prelevement > 0" style="display: none;" class="flex items-baseline justify-between gap-3 min-h-[34px]">
+        <dt class="text-secondary">{{ _("Prélèvement sur épargne") }}</dt>
+        <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="fmt(Number(prelevement) || 0)"></dd>
+      </div>
+    </dl>
+    <div class="border-t border-border pt-3 flex flex-col gap-2">
+      <div class="flex items-baseline justify-between gap-3">
+        <span class="text-sm font-semibold text-primary">{{ _("Épargne qui reste") }}</span>
+        <span
+          class="amount-blur text-amount-large tabular-nums"
+          :class="savings >= 0 ? 'text-success' : 'text-danger'"
+          x-text="fmt(savings)"
+        ></span>
+      </div>
+      <p x-show="savings < 0 && couvert >= 0" style="display: none;" class="alert alert-neutral">
+        {{ icon('info-circle', size=18) }} <span>{{ _("Déficit couvert par le prélèvement sur épargne.") }}</span>
+      </p>
+      <p x-show="couvert < 0" style="display: none;" class="alert alert-danger font-medium" role="alert">
+        {{ icon('alert-triangle', size=18) }} <span>{{ _("Tu répartis plus que tes ressources.") }}</span>
+      </p>
+    </div>
+  </section>
+
+  <section class="bg-container rounded-xl border border-border shadow-sm p-4 lg:p-5 flex flex-col gap-4" aria-labelledby="cap-previous-title">
+    <div class="flex flex-col gap-1">
+      <h2 id="cap-previous-title" class="text-section-title">{% trans previous_month_label=previous_month_label %}{{ previous_month_label }}, pilier par pilier{% endtrans %}</h2>
+      <p class="text-xs text-secondary">{{ _("Ce que le mois écoulé a vraiment coûté, rapporté au plan que tu fixes.") }}</p>
+    </div>
+    <template x-for="pilier in piliers" :key="pilier.code">
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-baseline justify-between gap-3 text-sm">
+          <span class="font-semibold text-primary" x-text="pilier.label"></span>
+          <span class="amount-blur tabular-nums text-primary"><span x-text="fmt(Number(precedent[pilier.code]) || 0)"></span> <span class="text-secondary" x-text="'/ ' + fmt(prevu(pilier.code))"></span></span>
+        </div>
+        <div class="progress-base" role="presentation">
+          <div class="progress-fill" :class="remplissage(part(pilier.code) || 0)" :style="'width: ' + Math.min(part(pilier.code) || 0, 100) + '%'"></div>
+        </div>
+        <p class="text-xs">
+          <template x-if="part(pilier.code) !== null">
+            <span class="font-semibold tabular-nums" :class="ton(part(pilier.code))" x-text="part(pilier.code) + ' % {{ _("du plan") | jsq }} · ' + mot(part(pilier.code))"></span>
+          </template>
+          <template x-if="part(pilier.code) === null">
+            <span class="text-secondary">{{ _("Rien de prévu pour l'instant.") }}</span>
+          </template>
+        </p>
+      </div>
+    </template>
+  </section>
+</aside>
+</div>
