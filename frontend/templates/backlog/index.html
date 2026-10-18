@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _("Catégorisation en masse — Twiga 🦒") }}{% endblock %}
+{% block title %}{{ _("Traitement en masse — Twiga") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-page-title">{{ _("Catégorisation en masse") }}</h1>
-    <a href="/transactions/inbox" class="text-sm text-primary font-medium">{{ icon('arrow-narrow-left') }} {{ _("La Savane") }}</a>
+{# Mobile : une colonne. Dès lg, la liste à gauche et la colonne des filtres
+   à droite (voir _content.html) : la page s'élargit, comme Opérations. #}
+<main class="flex flex-col gap-3 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8">
+  <div class="flex flex-col gap-1">
+    <a href="/transactions/inbox" class="btn btn-ghost self-start px-3 -ml-3 text-primary">
+      {{ icon('arrow-narrow-left') }} {{ _("La Savane") }}
+    </a>
+    <h1 class="text-page-title">{{ _("Traitement en masse") }}</h1>
   </div>
-  <p class="text-sm text-secondary">
+  <p class="text-sm text-secondary max-w-2xl">
     {{ _("Suggestions basées sur la similarité avec vos transactions déjà catégorisées, triées par confiance décroissante.") }}
   </p>
 

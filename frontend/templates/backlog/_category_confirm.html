@@ -6,10 +6,10 @@
 >
   <input type="hidden" name="category_id" value="{{ category.id }}" />
   <input type="hidden" name="page" value="{{ page }}" />
-  <button
-    type="submit"
-    class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
-  >
+  {# Secondaire : l'action principale de l'écran est « Appliquer » (panneau
+     de sélection). Le nom de la catégorie choisie suffit à dire ce qu'on
+     confirme. #}
+  <button type="submit" class="btn btn-secondary w-full font-semibold">
     {{ icon('check') }} {% trans v=category.icon or "", name=category.name %}Confirmer {{ v }} {{ name }}{% endtrans %}
   </button>
 </form>
