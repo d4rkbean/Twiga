@@ -1,0 +1,27 @@
+{# « À suivre » : les prochaines opérations de la file, à côté de la carte (en
+   colonne dès lg, repliées sous la carte en mobile). Le conteneur garde son
+   état déplié/replié ; seuls le compteur et la liste sont remplacés (OOB) à
+   chaque validation ou passage. #}
+<aside
+  id="inbox-upcoming"
+  x-data="{ open: false }"
+  aria-labelledby="inbox-upcoming-title"
+  class="lg:order-first bg-container rounded-xl border border-border shadow-sm overflow-hidden"
+>
+  <button
+    type="button"
+    @click="open = !open"
+    :aria-expanded="open"
+    aria-controls="inbox-upcoming-body"
+    class="w-full min-h-[50px] px-4 flex items-center justify-between gap-3 text-left lg:pointer-events-none lg:cursor-default"
+  >
+    <h2 id="inbox-upcoming-title" class="text-section-title">{{ _("À suivre") }}</h2>
+    <span class="flex items-center gap-2 text-xs text-secondary">
+      {% include "inbox/_upcoming_count.html" %}
+      <span class="lg:hidden transition-transform" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span>
+    </span>
+  </button>
+  <div id="inbox-upcoming-body" :class="open ? '' : 'hidden lg:block'">
+    {% include "inbox/_upcoming_list.html" %}
+  </div>
+</aside>

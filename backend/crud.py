@@ -41,7 +41,7 @@ from backend.i18n import gettext as _t, lazy_gettext
 from backend.payment_methods import get_payment_method_label
 
 
-def get_next_pending_transaction(db: Session) -> Transaction | None:
+def _pending_queue_stmt():
     # Les transactions passées ("Passer") repassent après toutes celles
     # jamais encore vues, triées par date de skip (la plus ancienne d'abord)
     # pour ne pas bloquer indéfiniment sur la même transaction.
@@ -53,7 +53,7 @@ def get_next_pending_transaction(db: Session) -> Transaction | None:
     # validated=True, ce qui pouvait laisser un virement (re)marqué comme tel
     # traîner ici tant qu'il n'était pas validé par ailleurs. Ce filtre est
     # le filet de sécurité côté lecture, en plus du correctif à la source.
-    stmt = (
+    return (
         select(Transaction)
         .options(selectinload(Transaction.account))
         .where(Transaction.validated.is_(False), Transaction.is_transfer.is_(False))
@@ -63,9 +63,18 @@ def get_next_pending_transaction(db: Session) -> Transaction | None:
             Transaction.date,
             Transaction.id,
         )
-        .limit(1)
     )
-    return db.execute(stmt).scalar_one_or_none()
+
+
+def get_next_pending_transaction(db: Session) -> Transaction | None:
+    return db.execute(_pending_queue_stmt().limit(1)).scalar_one_or_none()
+
+
+def get_upcoming_pending_transactions(db: Session, limit: int = 8) -> list[Transaction]:
+    # Le début de la file de La Savane, dans l'ordre exact où les cartes sont
+    # présentées (même requête que get_next_pending_transaction) : sert la
+    # liste « À suivre » à côté de la carte.
+    return list(db.execute(_pending_queue_stmt().limit(limit)).scalars().all())
 
 
 def get_top_level_categories(db: Session) -> list[Category]:
@@ -142,6 +151,7 @@ def categorize_transaction(
     category: Category,
     label: str | None = None,
     payment_method: str | None = None,
+    is_unexpected: bool | None = None,
 ) -> Transaction:
     if label and label.strip():
         transaction.label = label.strip()
@@ -149,6 +159,11 @@ def categorize_transaction(
     transaction.validated = True
     if payment_method:
         transaction.payment_method = payment_method
+    # Bascule « Imprévu » de la carte (La Savane) : s'ajoute à la décision,
+    # sans remplacer la catégorie. None = la carte ne disait rien, on ne
+    # touche pas au drapeau.
+    if is_unexpected is not None:
+        transaction.is_unexpected = is_unexpected
     db.commit()
     db.refresh(transaction)
     _maybe_add_receipt_family_line(db, transaction, category)
@@ -1303,6 +1318,68 @@ def get_budget_progress(
     return results
 
 
+def get_budget_envelopes(
+    db: Session, start: date, end: date, account_id: int | None = None
+) -> list[dict]:
+    """Chaque budget du mois avec ce qu'il deviendrait « avec le tri ».
+
+    Les lignes de get_budget_progress, enrichies de `pending` (somme des
+    dépenses encore dans La Savane que celle-ci proposerait dans cette
+    catégorie) et du pourcentage atteint si on les comptait aussi
+    (`projected_percentage`). Mêmes règles que la consommation réelle : la
+    période et le compte demandés, les virements et les opérations déjà
+    marquées imprévues exclus, et une dépense proposée dans une sous-catégorie
+    compte pour le budget de sa catégorie parente, à condition d'être du même pilier.
+    """
+    envelopes = get_budget_progress(db, start, end, account_id)
+    if not envelopes:
+        return []
+
+    conditions = [
+        Transaction.validated.is_(False),
+        Transaction.is_transfer.is_(False),
+        Transaction.is_unexpected.is_(False),
+        Transaction.amount < 0,
+        Transaction.date >= start,
+        Transaction.date <= end,
+    ]
+    if account_id is not None:
+        conditions.append(Transaction.account_id == account_id)
+    pending = list(db.execute(select(Transaction).where(*conditions)).scalars().all())
+    suggestions = suggest_categories_for_transactions(db, pending)
+
+    # Même rattachement que get_budget_progress : la catégorie qui porte le
+    # budget et ses enfants directs.
+    budget_categories = {item["category"].id: item["category"] for item in envelopes}
+    pending_by_budget: dict[int, Decimal] = {}
+    for transaction in pending:
+        suggestion = suggestions.get(transaction.id)
+        if suggestion is None:
+            continue
+        category = suggestion["category"]
+        if category.id in budget_categories:
+            owner = category
+        elif category.parent_id in budget_categories:
+            owner = budget_categories[category.parent_id]
+        else:
+            continue
+        if resolve_category_pillar(category) != resolve_budget_pillar(owner, list(owner.children)):
+            continue
+        pending_by_budget[owner.id] = pending_by_budget.get(owner.id, Decimal("0.00")) - transaction.amount
+
+    for item in envelopes:
+        pending_amount = pending_by_budget.get(item["category"].id, Decimal("0.00"))
+        projected = (
+            (item["spent"] + pending_amount) / item["budget"] * 100 if item["budget"] else Decimal("0.00")
+        )
+        item["pending"] = pending_amount
+        item["projected_percentage"] = projected
+        item["pending_width"] = max(
+            0, min(round(projected), 100) - item["bar_width"]
+        ) if pending_amount else 0
+    return envelopes
+
+
 def get_budgets_for_month(db: Session, month_start: date) -> dict[int, Decimal]:
     stmt = select(Budget.category_id, Budget.amount).where(Budget.month == month_start)
     return {category_id: amount for category_id, amount in db.execute(stmt).all()}
@@ -2435,6 +2512,24 @@ def list_transactions(
     return transactions, total
 
 
+def list_all_transactions(db: Session, **filters) -> list[Transaction]:
+    # Toutes les opérations qui correspondent aux filtres de la liste (mêmes
+    # paramètres que list_transactions, sans pagination ni tri choisi) : sert
+    # l'export CSV du bouton « Exporter » d'Opérations, qui doit contenir
+    # exactement ce que les filtres en cours désignent, pas seulement la page.
+    conditions = _build_transaction_filter_conditions(db, **filters)
+    stmt = (
+        select(Transaction)
+        .options(
+            selectinload(Transaction.account),
+            selectinload(Transaction.category).selectinload(Category.parent),
+        )
+        .where(*conditions)
+        .order_by(Transaction.date, Transaction.id)
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
 def get_transactions_total_amount(
     db: Session,
     *,
@@ -2634,6 +2729,15 @@ def get_or_create_app_state(db: Session) -> AppState:
         db.commit()
         db.refresh(state)
     return state
+
+
+def mark_backup_done(db: Session, when: datetime | None = None) -> datetime:
+    # Retient la date de la dernière sauvegarde complète (heure locale du
+    # serveur, comme le reste des dates de l'application).
+    state = get_or_create_app_state(db)
+    state.last_backup_at = when or datetime.now()
+    db.commit()
+    return state.last_backup_at
 
 
 def mark_routine_seen(db: Session, month_start: date) -> None:
@@ -2991,6 +3095,35 @@ def suggest_backlog_category(
         "based_on_label": based_on_label,
         "confidence": round(best_ratio * 100),
     }
+
+
+def suggest_categories_for_transactions(
+    db: Session, transactions: list[Transaction]
+) -> dict[int, dict]:
+    # Même moteur que suggest_category_with_confidence (règle explicite
+    # d'abord, sinon similarité floue), mais l'échantillon d'historique et
+    # les catégories ne sont chargés qu'une fois pour tout le lot : la liste
+    # « À suivre » et la carte Enveloppes du Panorama proposent une catégorie
+    # pour plusieurs opérations à la fois. Seules les opérations qui ont une
+    # proposition figurent dans le résultat (clé : id de l'opération).
+    if not transactions:
+        return {}
+    samples = get_categorized_label_samples(db)
+    categories_by_id = {c.id: c for c in db.execute(select(Category)).scalars().all()}
+    suggestions: dict[int, dict] = {}
+    for transaction in transactions:
+        matched_rule = find_matching_rule(db, transaction.raw_label)
+        if matched_rule is not None:
+            suggestions[transaction.id] = {
+                "category": matched_rule.category,
+                "based_on_label": None,
+                "confidence": 100,
+            }
+            continue
+        suggestion = suggest_backlog_category(transaction, samples, categories_by_id)
+        if suggestion is not None:
+            suggestions[transaction.id] = suggestion
+    return suggestions
 
 
 def suggest_category_with_confidence(db: Session, transaction: Transaction) -> dict | None:

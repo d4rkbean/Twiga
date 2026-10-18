@@ -175,26 +175,18 @@ def _build_period_context(
     ]
     trend_income_label = "Recettes (M-1)" if shift_income else _t("Recettes")
 
-    # Budgets déjà triés par % consommé décroissant (get_budget_progress) :
-    # les 6 premiers (grille compacte 3 colonnes x 2 rangées en desktop) sont
-    # donc naturellement les plus urgents à surveiller, cohérent avec un
-    # aperçu Panorama plutôt qu'une liste exhaustive (toujours disponible via
-    # "Voir tous →" -> /budgets).
-    #
     # Les budgets sont définis PAR MOIS : les confronter à « 90 derniers
     # jours » comparerait une enveloppe mensuelle à trois mois de dépenses.
     # Ils restent donc calés sur le mois civil en cours quelle que soit la
     # période choisie, et le gabarit affiche ce mois dans le titre pour que
     # l'écart avec le reste de la page soit explicite. Même règle que les
-    # objectifs du Cap (voir _build_cap_progress).
+    # objectifs du Cap (voir _build_cap_progress). La carte « Enveloppes »
+    # suit en revanche le compte choisi, comme le reste du Panorama, et
+    # montre pour chaque budget ce qu'il deviendrait avec les opérations
+    # encore dans La Savane (get_budget_envelopes). Triées par pourcentage
+    # consommé décroissant : les plus tendues d'abord.
     budget_month_start, budget_month_end = month_range(today.year, today.month)
-    budget_progress = crud.get_budget_progress(db, budget_month_start, budget_month_end, account_id)
-    budget_progress_total = len(budget_progress)
-    # Les budgets les plus consommés d'abord (get_budget_progress trie déjà
-    # par pourcentage décroissant) : la colonne du Récapitulatif ne montre
-    # que ceux qui appellent une décision, pas la liste complète — celle-ci
-    # vit sur « Mon mois », qui est faite pour ça.
-    budgets_at_risk = [b for b in budget_progress if b["percentage"] >= 75][:5]
+    envelopes = crud.get_budget_envelopes(db, budget_month_start, budget_month_end, account_id)
 
     return {
         "period_key": period_key,
@@ -224,9 +216,7 @@ def _build_period_context(
         "trend_expense_values": trend_expense_values,
         "trend_income_values": trend_income_values,
         "trend_income_label": trend_income_label,
-        "budget_progress": budget_progress[:6],
-        "budget_progress_total": budget_progress_total,
-        "budgets_at_risk": budgets_at_risk,
+        "envelopes": envelopes,
         # Chiffres de la bande du haut qui ne dépendent pas de la période mais
         # vivent dans le même fragment : le solde, le nombre de comptes et ce
         # qui attend dans La Savane.

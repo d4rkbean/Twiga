@@ -75,6 +75,9 @@ Two complementary options:
   downloads a `twiga-export-YYYY-MM-DD.json` file with all your data
   (accounts, categories, transactions, budgets, projects, rules, pending
   checks, etc. — user accounts excluded).
+  *Settings → Data → Back up now* (admin only) produces the same file, downloads
+  it right away and remembers the date of the last backup (the file itself is
+  never kept on the server).
 - **PostgreSQL dump** (recommended for automated backups, restores the exact
   state of the database):
   ```bash
