@@ -112,7 +112,9 @@ def update_preferences(
                 setattr(user, name, value)
             db.commit()
 
-    if "language" in sent or "number_format" in sent:
+    # The interface variant changes the whole shell (navigation, menus, tour),
+    # so the page is rendered again, like for the language.
+    if "language" in sent or "number_format" in sent or "ui_variant" in sent:
         response = Response(status_code=200, headers={"HX-Refresh": "true"})
     else:
         response = HTMLResponse(flash_html("success", _t("Réglage enregistré")))

@@ -1,0 +1,105 @@
+{% from "other_way/_icons.html" import shell_icon %}
+{% import "other_way/_shell_data.html" as shell with context %}
+{#- Le menu Plus : tout ce qui n'est pas l'une des trois destinations, rangé par
+    intention. Un panneau sous la barre sur ordinateur, une feuille du bas sur
+    mobile (la même balise, deux mises en page).
+
+    En tête : le solde total, flouté par l'œil. Il se charge à la première
+    ouverture (hx-trigger="intersect once" : un élément caché n'intersecte
+    pas), pour ne pas coûter une requête à chaque page.
+
+    Les entrées réservées à l'administrateur (Utilisateurs, et le groupe
+    Alimenter) disparaissent pour les autres rôles : voir _shell_data.html.
+
+    La date du dernier relevé importé n'est pas affichée : l'application ne la
+    garde nulle part (ni table d'imports, ni colonne), et la date de la
+    dernière opération ne dit pas la même chose. -#}
+{% macro row(item, accent=false) %}
+{% set active = shell.shell_active == "more" and shell.shell_title == item.label %}
+<a
+  href="{{ item.href }}"
+  {% if active %}aria-current="page"{% endif %}
+  class="min-h-[50px] flex items-center gap-3 px-3 rounded-xl text-sm leading-tight {{ 'bg-accent-soft text-accent-ink font-semibold' if active else ('bg-sunken border border-border-strong text-primary font-medium' if accent else 'text-primary font-medium hover:bg-sunken') }}"
+>
+  <span class="{{ '' if active else 'text-secondary' }}">{{ shell_icon(item.icon) }}</span>
+  <span class="min-w-0">{{ item.label }}</span>
+</a>
+{% endmacro %}
+<div
+  x-show="shell === 'more'"
+  style="display: none;"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0 translate-y-2"
+  x-transition:enter-end="opacity-100 translate-y-0"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100 translate-y-0"
+  x-transition:leave-end="opacity-0 translate-y-2"
+  role="dialog"
+  aria-modal="true"
+  aria-label="{{ _("Plus") }}"
+  class="print:hidden fixed z-[9000] inset-x-0 bottom-0 max-h-[88vh] flex flex-col overflow-hidden bg-container text-primary shadow-lg rounded-t-2xl border-t border-border lg:inset-x-auto lg:bottom-auto lg:top-[60px] lg:left-1/2 lg:-translate-x-1/2 lg:w-[940px] lg:max-w-[calc(100%-5rem)] lg:max-h-[calc(100vh-5rem)] lg:rounded-xl lg:border"
+>
+  {# Mobile : la poignée, le titre, et le bouton Fermer (voile et Échap
+     ferment aussi). #}
+  <div class="lg:hidden flex-shrink-0 px-4 pt-2 pb-1">
+    <span class="mx-auto block w-10 h-1.5 rounded-full bg-border"></span>
+    <div class="flex items-center justify-between pt-2">
+      <h2 class="font-display text-xl font-extrabold tracking-tight">{{ _("Plus") }}</h2>
+      <button type="button" @click="closeShell()" class="min-h-[50px] px-4 rounded-xl border border-border-strong bg-container text-sm font-medium text-primary hover:bg-sunken">{{ _("Fermer") }}</button>
+    </div>
+  </div>
+
+  <div class="overflow-y-auto p-4 flex flex-col gap-4" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+    <a href="/accounts" class="min-h-[56px] flex items-center gap-3 px-4 rounded-xl bg-page border border-border text-primary">
+      <span class="text-secondary">{{ shell_icon("balance") }}</span>
+      <span
+        id="shell-balance"
+        class="flex flex-1 items-center justify-between gap-3 min-w-0"
+        hx-get="/dashboard/shell-balance"
+        hx-trigger="intersect once"
+        hx-swap="innerHTML"
+      >
+        <span class="flex flex-col min-w-0">
+          <span class="text-sm font-medium">{{ _("Solde total") }}</span>
+          <span class="text-xs text-secondary">…</span>
+        </span>
+        <span class="amount-blur text-lg font-semibold tabular-nums whitespace-nowrap">…</span>
+      </span>
+    </a>
+
+    {# Ordinateur : deux colonnes (le quotidien à gauche, les réglages à
+       droite). Mobile : tout sur une colonne, deux entrées par ligne. #}
+    <div class="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-x-8">
+      <div class="flex flex-col gap-4">
+        {% for group in shell.more_groups %}{% if group.key == "daily" %}
+        <section aria-label="{{ group.title }}">
+          <p class="px-3 pb-1 text-xs font-medium text-secondary">{{ group.title }}</p>
+          <div class="grid grid-cols-2 gap-x-2 lg:grid-cols-1">
+            {% for item in group["items"] %}{{ row(item) }}{% endfor %}
+          </div>
+        </section>
+        {% endif %}{% endfor %}
+
+        <div class="grid grid-cols-2 gap-x-2 gap-y-4 lg:grid-cols-1">
+          {% for group in shell.more_groups %}{% if group.key in ("review", "feed") and (shell.is_admin or not group.admin) %}
+          <section aria-label="{{ group.title }}">
+            <p class="px-3 pb-1 text-xs font-medium text-secondary">{{ group.title }}</p>
+            <div class="grid">
+              {% for item in group["items"] %}{{ row(item, accent=(group.key == "feed")) }}{% endfor %}
+            </div>
+          </section>
+          {% endif %}{% endfor %}
+        </div>
+      </div>
+
+      {% for group in shell.more_groups %}{% if group.key == "settings" %}
+      <section aria-label="{{ group.title }}">
+        <p class="px-3 pb-1 text-xs font-medium text-secondary">{{ group.title }}</p>
+        <div class="grid grid-cols-2 gap-x-2">
+          {% for item in group["items"] %}{% if shell.is_admin or not item.admin %}{{ row(item) }}{% endif %}{% endfor %}
+        </div>
+      </section>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+</div>

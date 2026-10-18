@@ -1,0 +1,53 @@
+{#- Résultats de la recherche globale, version « L'autre voie » : à plat, sans
+    carte ni ombre — la feuille de recherche (other_way/_search_sheet.html) est
+    déjà la carte. Mêmes données et mêmes liens que search/_results.html. -#}
+<div class="flex flex-col divide-y divide-border">
+  {% if transactions %}
+  <div class="py-2">
+    <p class="text-xs font-medium text-secondary px-2 pb-1 flex items-center gap-1.5">{{ icon('list-details', size=14) }} {{ _("Opérations") }}</p>
+    {% for tx in transactions %}
+    <a
+      href="/transactions/list?f_search={{ tx.label | urlencode }}"
+      class="flex items-center justify-between gap-3 px-2 py-2 rounded-xl hover:bg-sunken min-h-[50px]"
+    >
+      <span class="text-sm text-primary truncate">{{ tx.label }}</span>
+      <span class="amount-blur text-xs text-secondary tabular-nums whitespace-nowrap flex-shrink-0">
+        {{ tx.amount | eur }} · {{ tx.date | fr_date }}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if categories %}
+  <div class="py-2">
+    <p class="text-xs font-medium text-secondary px-2 pb-1 flex items-center gap-1.5">{{ icon('folder', size=14) }} {{ _("Catégories") }}</p>
+    {% for category in categories %}
+    <a
+      href="/transactions/list?f_category={{ category.id }}"
+      class="px-2 py-2 rounded-xl hover:bg-sunken min-h-[50px] flex items-center text-sm text-primary truncate"
+    >
+      {{ category.icon or "" }} {{ category.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if projects %}
+  <div class="py-2">
+    <p class="text-xs font-medium text-secondary px-2 pb-1 flex items-center gap-1.5">{{ icon('target', size=14) }} {{ _("Projets") }}</p>
+    {% for project in projects %}
+    <a
+      href="/projects#project-card-{{ project.id }}"
+      class="px-2 py-2 rounded-xl hover:bg-sunken min-h-[50px] flex items-center text-sm text-primary truncate"
+    >
+      {{ project.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not transactions and not categories and not projects %}
+  <p class="text-sm text-secondary text-center p-4">{% trans query=query %}Aucun résultat pour « {{ query }} ».{% endtrans %}</p>
+  {% endif %}
+</div>

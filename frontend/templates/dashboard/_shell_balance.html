@@ -1,0 +1,8 @@
+{#- Solde total et nombre de comptes, en tête du menu Plus de « L'autre voie »
+    (other_way/_more_menu.html, #shell-balance). Rendu dans les deux interfaces :
+    c'est un fragment, il n'a pas de variante. -#}
+<span class="flex flex-col min-w-0">
+  <span class="text-sm font-medium">{{ _("Solde total") }}</span>
+  <span class="text-xs text-secondary">{% trans count=account_count %}sur {{ count }} compte{% pluralize %}sur {{ count }} comptes{% endtrans %}</span>
+</span>
+<span class="amount-blur text-lg font-semibold tabular-nums whitespace-nowrap">{{ total_balance | eur }}</span>

@@ -58,6 +58,7 @@ PAGES = [
         htmx=True,
     ),
     Page("/dashboard/sidebar-balance", htmx=True),
+    Page("/dashboard/shell-balance", htmx=True),
     # Accounts
     Page("/accounts"),
     Page("/accounts/content", htmx=True),

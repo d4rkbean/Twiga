@@ -1,0 +1,60 @@
+{% set tour = tour_context(request) %}
+{#- La visite guidée de « L'autre voie » : cinq étapes, sans changement de page,
+    avec les mêmes mécanismes que la Classique (Suivant, Précédent, Passer,
+    mémorisation sur le compte). Le balisage est celui de _tour_ui.html ; seules
+    les étapes changent.
+
+    La cible est l'élément du mobile, altTarget celui de l'ordinateur (une cible
+    cachée par le point de rupture est écartée par tour.js). L'aide n'a pas de
+    bouton sur mobile : elle est dans le menu de l'avatar, c'est donc lui qu'on
+    entoure. Il n'y a pas d'étape « Importer » : l'import vit sous
+    Plus > Alimenter, il n'a plus de bouton dans la coque. -#}
+{% set tour_steps = [
+  {
+    "id": "welcome",
+    "icon": "compass",
+    "target": none,
+    "position": "center",
+    "title": _("Bienvenue chez Twiga"),
+    "text": "<p>"|safe ~ _("Trois temps : importer tes opérations, les ranger, puis suivre tes comptes.") ~ "</p><p>"|safe ~ _("Tes données restent sur ce serveur. Rien ne part sur Internet.") ~ "</p>"|safe,
+  },
+  {
+    "id": "destinations",
+    "icon": "inbox",
+    "target": "#tour-b-bottom-nav",
+    "altTarget": "#tour-b-nav",
+    "position": "top",
+    "altPosition": "bottom",
+    "title": _("Quatre destinations"),
+    "text": "<p>"|safe ~ _("La Savane pour ranger, Panorama pour comprendre, Le Cap pour viser.") ~ "</p>"|safe,
+  },
+  {
+    "id": "more",
+    "icon": "dots",
+    "target": "#tour-b-bottom-plus",
+    "altTarget": "#tour-b-plus",
+    "position": "top",
+    "altPosition": "bottom",
+    "title": _("Le reste se cache sous Plus"),
+    "text": "<p>"|safe ~ _("Opérations, budgets, rapports, import et réglages : tout est rangé par intention.") ~ "</p>"|safe,
+  },
+  {
+    "id": "search",
+    "icon": "search",
+    "target": "#tour-b-search-icon",
+    "altTarget": "#tour-b-search",
+    "position": "bottom",
+    "title": _("Chercher"),
+    "text": "<p>"|safe ~ _("Ctrl+K cherche une opération, une catégorie ou un projet.") ~ "</p><p>"|safe ~ _("L'icône en forme d'œil masque les montants.") ~ "</p>"|safe,
+  },
+  {
+    "id": "help",
+    "icon": "help-circle",
+    "target": "#tour-b-avatar",
+    "altTarget": "#tour-b-help",
+    "position": "bottom",
+    "title": _("Besoin d'aide ?"),
+    "text": "<p>"|safe ~ _("Le bouton Aide relance cette visite à tout moment.") ~ "</p>"|safe,
+  },
+] %}
+{% include "_tour_ui.html" %}
