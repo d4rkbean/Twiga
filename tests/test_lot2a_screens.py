@@ -68,5 +68,5 @@ def test_operations_keeps_the_ids_read_by_the_scripts(clients):
 def test_bulk_processing_page_renders_filters_and_rows(clients):
     html = clients["admin"].get("/backlog").text
     assert 'id="backlog-search-input"' in html
-    assert 'id="backlog-suggestion-filter"' in html
-    assert 'name="selected_ids"' in html
+    assert 'id="backlog-chips"' in html
+    assert 'data-row-ids=' in html

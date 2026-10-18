@@ -46,8 +46,6 @@ PAGES = [
     # Backlog
     Page("/backlog"),
     Page("/backlog/content", htmx=True),
-    Page("/backlog/{transaction_id}/category-select", htmx=True),
-    Page("/backlog/{transaction_id}/category-confirm", {"category_id": "{category_id}"}, htmx=True),
     # Dashboard
     Page("/dashboard"),
     Page("/dashboard/content", htmx=True),

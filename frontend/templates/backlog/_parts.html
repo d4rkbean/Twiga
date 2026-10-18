@@ -1,0 +1,105 @@
+{#
+  Fragments of the bulk processing screen that live OUTSIDE the swapped list
+  but depend on the filtered data: the confidence chips and their counters,
+  the "displayed" counter, the two bulk buttons, the last-action message.
+
+  Each macro takes `oob`: on the first page load it is false (the fragment sits
+  in its place in index.html); in an htmx response it is true, and htmx swaps
+  the element with the same id wherever it stands on the page.
+#}
+
+{% macro chips(counts, oob=false) -%}
+<div id="backlog-chips" class="flex flex-wrap gap-2" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% for key, label in [("all", _("Toutes")), ("high", _("≥ 90 %%")), ("mid", _("70–90 %%")), ("low", _("< 70 %%")), ("none", _("Sans suggestion"))] %}
+  <button
+    type="button"
+    @click="setConf('{{ key }}')"
+    :aria-pressed="conf === '{{ key }}'"
+    :class="conf === '{{ key }}' ? 'bg-accent-soft border-accent text-accent-ink font-semibold' : 'bg-container border-border-strong text-primary'"
+    class="min-h-[50px] px-3.5 rounded-xl border flex items-center gap-2 text-sm"
+  >
+    <span>{{ label }}</span>
+    <span class="tabular-nums font-normal text-secondary">{{ counts[key] }}</span>
+  </button>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro visible_count(total, oob=false) -%}
+<span id="backlog-visible" {% if oob %}hx-swap-oob="true"{% endif %}>{{ total }}</span>
+{%- endmacro %}
+
+{# "Validate everything sure" and "Send back everything unsure": desktop copy, in the side panel. #}
+{% macro bulk_buttons(counts, oob=false) -%}
+<div id="backlog-bulk-d" class="flex flex-col gap-2.5" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {{ bulk_pair(counts, "") }}
+</div>
+{%- endmacro %}
+
+{% macro bulk_pair(counts, cls) -%}
+<button
+  type="button"
+  hx-post="/backlog/bulk-validate"
+  hx-include="#backlog-form"
+  hx-vals='{"min_confidence": 90}'
+  hx-target="#backlog-list"
+  hx-swap="innerHTML"
+  hx-confirm="{{ _("Ranger toutes les suggestions à 90 %% de confiance ou plus ?") }}"
+  {% if not counts["high"] %}disabled{% endif %}
+  class="btn btn-secondary border-border-strong px-2 {{ cls }}"
+>{% trans n=counts["high"] %}Tout valider ≥ 90 % ({{ n }}){% endtrans %}</button>
+<button
+  type="button"
+  hx-post="/backlog/bulk-reject"
+  hx-include="#backlog-form"
+  hx-vals='{"max_confidence": 70}'
+  hx-target="#backlog-list"
+  hx-swap="innerHTML"
+  hx-confirm="{{ _("Renvoyer dans La Savane toutes les suggestions à moins de 70 %% de confiance ?") }}"
+  {% if not counts["low"] %}disabled{% endif %}
+  class="btn btn-secondary border-border-strong px-2 {{ cls }}"
+>{% trans n=counts["low"] %}Rejeter < 70 % ({{ n }}){% endtrans %}</button>
+{%- endmacro %}
+
+{# What the last action did, in a sentence. #}
+{% macro last_text(last) -%}
+{%- if last -%}
+  {%- set done -%}
+    {%- if last.kind == "rejected" -%}
+      {%- trans n=last.count -%}{{ n }} opération renvoyée dans La Savane{%- pluralize -%}{{ n }} opérations renvoyées dans La Savane{%- endtrans -%}
+    {%- elif last.kind == "filed_sure" -%}
+      {%- trans n=last.count, threshold=last.threshold -%}{{ n }} opération rangée (confiance ≥ {{ threshold }} %){%- pluralize -%}{{ n }} opérations rangées (confiance ≥ {{ threshold }} %){%- endtrans -%}
+    {%- elif last.count == 1 and last.path -%}
+      {%- trans label=last.label, path=last.path -%}Opération « {{ label }} » rangée dans {{ path }}{%- endtrans -%}
+    {%- elif last.count and last.path -%}
+      {%- trans n=last.count, path=last.path -%}{{ n }} opération rangée dans {{ path }}{%- pluralize -%}{{ n }} opérations rangées dans {{ path }}{%- endtrans -%}
+    {%- elif last.count -%}
+      {%- trans n=last.count -%}{{ n }} opération rangée{%- pluralize -%}{{ n }} opérations rangées{%- endtrans -%}
+    {%- endif -%}
+  {%- endset -%}
+  {{- done -}}
+  {%- if last.kept %} · {% trans n=last.kept %}{{ n }} sans suggestion gardée{% pluralize %}{{ n }} sans suggestion gardées{% endtrans %}{% endif -%}
+  {%- if last.payment %} · {% trans payment=last.payment %}paiement {{ payment }}{% endtrans %}{% endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro last_message(last, suffix, classes, oob=false) -%}
+<p
+  id="backlog-last-{{ suffix }}"
+  aria-live="polite"
+  class="{{ classes }} text-xs text-secondary"
+  {% if not last %}style="display: none;"{% endif %}
+  {% if oob %}hx-swap-oob="true"{% endif %}
+>{{ last_text(last) }}</p>
+{%- endmacro %}
+
+{# Told to the Alpine component after each swap (see backlog.js, sync). #}
+{% macro sync(rows, visible_ids, oob=false) -%}
+{%- set shown_ids = rows | map(attribute="ids") | sum(start=[]) -%}
+<span
+  id="backlog-sync"
+  hidden
+  x-init="sync({{ shown_ids | tojson }}, {{ visible_ids | tojson }})"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+></span>
+{%- endmacro %}

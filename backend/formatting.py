@@ -48,3 +48,14 @@ def format_date_as(value: date, number_format: str) -> str:
     if number_format == "en-US":
         return value.strftime("%m/%d/%Y")
     return value.strftime("%d/%m/%Y")
+
+
+def format_short_date(value: date) -> str:
+    """Day and month only (02/09), for lists where the year is obvious."""
+    return format_short_date_as(value, current_format())
+
+
+def format_short_date_as(value: date, number_format: str) -> str:
+    if number_format == "en-US":
+        return value.strftime("%m/%d")
+    return value.strftime("%d/%m")
