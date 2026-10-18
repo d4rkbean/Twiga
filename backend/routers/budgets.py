@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from backend import crud
 from backend.database import get_db
 from backend.dates import month_label, month_names, month_range
+from backend.pillars import PILLAR_ORDER, get_pillar_label
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
 
@@ -57,11 +58,24 @@ def _build_context(db: Session, month: int, year: int) -> dict:
     current_month_start, current_month_end = month_range(today.year, today.month)
     current_month_status = crud.get_budget_progress(db, current_month_start, current_month_end)
 
+    # Les catégories rangées par pilier (même résolution que « Mon mois » et
+    # le rituel : voir crud.resolve_budget_pillar), pour que l'écran où l'on
+    # règle le plan raconte le même découpage que celui où on le suit.
+    groups = [
+        {
+            "code": code,
+            "label": get_pillar_label(code),
+            "categories": [c for c in categories if crud.resolve_budget_pillar(c, c.children) == code],
+        }
+        for code in PILLAR_ORDER
+    ]
+
     return {
         "month": month,
         "year": year,
         "period_label": month_label(year, month),
         "categories": categories,
+        "groups": [group for group in groups if group["categories"]],
         "budgets": budgets,
         "current_month_status": current_month_status,
         "current_month_label": month_label(today.year, today.month),
