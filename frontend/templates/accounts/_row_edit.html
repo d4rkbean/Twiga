@@ -27,7 +27,7 @@
       <input
         type="color"
         name="color"
-        value="{{ account.color or '#d4a96a' }}"
+        value="{{ account | account_color }}"
         class="h-[50px] w-16 rounded-xl border border-field bg-container"
       />
     </label>

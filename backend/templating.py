@@ -76,20 +76,10 @@ def category_color_filter(category_id: int | None) -> str:
     return _CATEGORY_PALETTE[category_id % len(_CATEGORY_PALETTE)]
 
 
-# Palette dédiée aux comptes (distincte de celle des catégories), 10
-# couleurs pour couvrir un usage personnel large sans répétition.
-_ACCOUNT_COLOR_PALETTE = [
-    "#3B82F6",
-    "#10B981",
-    "#F59E0B",
-    "#EF4444",
-    "#8B5CF6",
-    "#06B6D4",
-    "#F97316",
-    "#84CC16",
-    "#EC4899",
-    "#6366F1",
-]
+# Pastilles de compte : la palette de données du design system (la même que
+# les catégories, jamais d'ambre, réservé à l'action principale). Une couleur
+# choisie par l'utilisateur dans le formulaire d'édition prime toujours.
+_ACCOUNT_COLOR_PALETTE = _CATEGORY_PALETTE
 
 
 def account_color_filter(account) -> str:
