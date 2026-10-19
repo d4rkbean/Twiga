@@ -308,6 +308,14 @@ The choice is a per-account preference (Mon profil > Affichage, `User.ui_variant
 
 `static/js/tour.js` has no step of its own. Each interface's `_tour.html` provides the steps (target, fallback target for the other breakpoint, icon, title, text) as JSON in `data-steps` on the root of `_tour_ui.html`. Classic keeps its five steps; the other way tells five too: welcome, the four destinations, "Le reste se cache sous Plus", search, help. Same mechanics in both (Suivant, Précédent, Passer, remembered on the account).
 
+### Twiga's sentence and the plan screens
+
+Every screen of the other way opens with a sentence in the voice of the app ("Il reste 518 € à dépenser d'ici le 30.") that answers before any figure does and changes when the reader acts. The sentences are pure functions in `backend/answers.py` (figures in, translated text out; `tests/test_answers.py`): the routes compute the figures with `crud` and hand them over, the other way's templates print the result, the Classic ones ignore it. A sentence the reader changes by typing (Budgets, Le Cap) is written by the server for the first paint and recomposed in the browser with the same words (`static/js/budgets-plan.js`, `cap-flow.js`).
+
+The plan screens (Panorama, Mon mois, Budgets, Le Cap, Rapports) share `other_way/_plan_kit.html`: `voice` (mascot, sentence, the line that says why), `neighbours` (the strip of neighbouring screens under the top bar, from `lg`) and `gauge` (spent, still to sort, pace of the month). Verdicts come from `answers.verdict` and keep the thresholds of the Traffic Light Rule (past 75 % watch, past 90 % almost used up, past 100 % exceeded), each with its word. A screen whose primary action is amber has exactly one amber fill: "Ranger maintenant" (Panorama), "Préparer Le Cap" (Mon mois), "Enregistrer" (Budgets), "Continuer" / "Fixer le cap" (Le Cap).
+
+Two patterns recur. **The sheet**: a choice that opens (period and account on the Panorama, the period of Rapports, the steps of Le Cap) is a block of the page from `lg` and a bottom sheet with its scrim below it, one element for both. **The focus mode**: Le Cap on mobile replaces the top bar and the bottom bar with its own (`shell_focus`), because a ritual takes the whole screen.
+
 ## Elevation & Depth
 
 The system is **almost flat**. Depth comes first from the contrast between the page background and the container surface, reinforced by a 1px border; the shadow is only a whisper on top. There are only two levels, and nothing in between.
