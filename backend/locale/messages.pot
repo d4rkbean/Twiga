@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 05:20+0000\n"
+"POT-Creation-Date: 2026-10-19 05:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -170,6 +170,10 @@ msgstr ""
 
 #, python-format
 msgid "%(date)s · %(count)s occurrences"
+msgstr ""
+
+#, python-format
+msgid "%(days)s jours"
 msgstr ""
 
 #, python-format
@@ -1966,7 +1970,7 @@ msgstr ""
 msgid "Indique un montant supérieur à 0."
 msgstr ""
 
-msgid "Instance privée, hébergée chez toi."
+msgid "Instance privée, hébergée chez toi. Aucune donnée ne quitte ton réseau."
 msgstr ""
 
 msgid "Intention"
@@ -3409,6 +3413,9 @@ msgstr ""
 msgid "Total budgété"
 msgstr ""
 
+msgid "Total des comptes"
+msgstr ""
+
 msgid "Total des lignes"
 msgstr ""
 
@@ -3768,6 +3775,13 @@ msgid "Vérifier"
 msgstr ""
 
 msgid "Vérifier ligne par ligne"
+msgstr ""
+
+#, python-format
+msgid "Vérifié il y a %(minutes)s min"
+msgstr ""
+
+msgid "Vérifié à l'instant"
 msgstr ""
 
 msgid "Vétérinaire"
@@ -4171,9 +4185,6 @@ msgid "— %(name)s (sans sous-catégorie)"
 msgstr ""
 
 msgid "— (non défini)"
-msgstr ""
-
-msgid "— Moyen de paiement (si pas de chèque) —"
 msgstr ""
 
 msgid "— Rayon —"
