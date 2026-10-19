@@ -17,7 +17,7 @@
       <form hx-post="/profile/sessions/close" hx-target="#profile-sessions" hx-swap="outerHTML"
             hx-confirm="{{ _("Fermer cette session ? L'appareil sera déconnecté.") }}">
         <input type="hidden" name="session_id" value="{{ item.id }}" />
-        <button type="submit" class="btn btn-secondary border-border-strong px-4" aria-label="{{ _("Fermer la session de %(device)s", device=item.device ~ ' · ' ~ item.browser) }}">{{ _("Fermer") }}</button>
+        <button type="submit" class="btn btn-secondary border-border-strong px-4" aria-label="{{ _("Fermer la session de %(device)s", device=item.device ~ ' · ' ~ item.browser) }}">{{ icon('logout', size=18) }} {{ _("Fermer") }}</button>
       </form>
       {% endif %}
     </li>
