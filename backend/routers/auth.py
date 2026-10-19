@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from backend import answers, auth, crud
+from backend import answers, auth, crud, sessions
 from backend.templating import user_display_name, user_initials, user_role_label
 from backend.database import get_db
 from backend.templating import flash_html, templates
@@ -105,7 +105,7 @@ def login_submit(
     response.headers["HX-Redirect"] = "/dashboard"
     response.set_cookie(
         auth.SESSION_COOKIE_NAME,
-        auth.create_session_token(user),
+        auth.open_session(db, user, request.headers.get("user-agent")),
         max_age=auth.SESSION_MAX_AGE,
         httponly=True,
         samesite="lax",
@@ -114,9 +114,14 @@ def login_submit(
 
 
 @router.post("/logout")
-def logout():
+def logout(request: Request, db: Session = Depends(get_db)):
     if not auth.AUTH_ENABLED:
         return RedirectResponse(url="/")
+    # Only this device's session is closed; the others stay open.
+    current_user = auth.get_current_user(request)
+    session_id = getattr(request.state, "session_id", None)
+    if current_user is not None and session_id is not None:
+        sessions.close_session(db, current_user.id, session_id)
     response = HTMLResponse(status_code=200)
     response.headers["HX-Redirect"] = "/login"
     response.delete_cookie(auth.SESSION_COOKIE_NAME)

@@ -193,7 +193,7 @@ def clients(app, demo):
         built = {"anonymous": anonymous}
         for role in ROLES:
             with SessionLocal() as db:
-                token = auth.create_session_token(crud.get_user(db, demo[f"user_{role}"]))
+                token = auth.open_session(db, crud.get_user(db, demo[f"user_{role}"]), "pytest")
             client = TestClient(app, follow_redirects=False)
             client.cookies.set(auth.SESSION_COOKIE_NAME, token)
             built[role] = client
