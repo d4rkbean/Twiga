@@ -1158,6 +1158,9 @@ msgstr ""
 msgid "Fichier QIF, CSV ou OFX"
 msgstr ""
 
+msgid "Fichier trop volumineux (5 Mo maximum)."
+msgstr ""
+
 msgid "Fixer le cap"
 msgstr ""
 
