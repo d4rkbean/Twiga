@@ -1,0 +1,181 @@
+{% from "_macros/brand.html" import mascot %}
+{% from "_macros/signed_amount.html" import signed %}
+{% set month_current = current_month_name %}
+{% set month_current_lower = current_month_name | lower if current_language() != "en" else current_month_name %}
+{% set month_previous_lower = previous_month_name_lower %}
+{% from "other_way/cap/_flow_kit.html" import flow_texts, frise, mobile_bar, flow_footer with context %}
+{#- Première moitié du rituel : le bilan du mois écoulé, puis « Un mot » (quatre
+    questions facultatives). Les deux étapes (cinq gestes sur mobile) vivent dans le
+    navigateur ; « Continuer » à la fin envoie les réponses à /cap/step2, qui renvoie
+    la seconde moitié. -#}
+{% set frise_labels = [_("Bilan"), _("Un mot"), _("Ressources"), _("Les piliers"), _("Épargne"), _("Intention")] %}
+{% set step_labels = [
+  (0, _("Le bilan de %(month)s", month=previous_month_name_lower)),
+  (1, _("Un mot, question 1")), (2, _("Un mot, question 2")), (3, _("Un mot, question 3")), (4, _("Un mot, question 4")),
+] %}
+{% set questions = [
+  ("reflection_unexpected", reflection_unexpected | default(""), _("Quels ont été nos imprévus ? Étaient-ils évitables ?")),
+  ("reflection_regret", reflection_regret | default(""), _("Y a-t-il une dépense dont tu n'es pas fier(e) ?")),
+  ("reflection_proud", reflection_proud | default(""), _("Y a-t-il une dépense dont tu es particulièrement content(e) ?")),
+  ("reflection_worked_well", reflection_worked_well | default(""), _("Qu'est-ce qui a bien fonctionné ce mois ?")),
+] %}
+{% set config = {"mode": "review", "answers": review_answers, "locale": number_locale()} %}
+{% set held = bilan_lines | selectattr("code", "in", ["essentiel", "choix", "imprevu"]) | selectattr("écart_color", "equalto", "success") | list | length %}
+
+<div
+  id="cap-flow-root"
+  x-data="twigaCapFlow()"
+  data-config="{{ config | tojson | forceescape }}"
+  data-texts="{{ flow_texts() | forceescape }}"
+  class="flex flex-col gap-5 lg:gap-8"
+>
+  {{ mobile_bar(step_labels) }}
+  {{ frise(frise_labels) }}
+  <p class="hidden text-xs text-secondary lg:block -mt-3" x-show="max > 0" style="display: none;">{{ _("Touche une étape déjà vue pour y revenir.") }}</p>
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+    <form id="cap-flow" x-ref="flow" hx-post="/cap/step2" hx-target="#cap-wizard" hx-swap="innerHTML" class="flex min-w-0 flex-col gap-5">
+
+      <section aria-label="{{ _("La réponse de Twiga") }}" aria-live="polite" class="flex items-start gap-3 lg:gap-5">
+        <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
+        <div class="flex min-w-0 flex-col gap-2">
+          <h1 id="answer" x-text="answer" class="amount-blur font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ review_answers.group[0] }}</h1>
+          <p id="answer-sub" x-text="detail" class="amount-blur max-w-[70ch] text-sm text-secondary lg:text-base">{{ review_answers.groupDetail[0] }}</p>
+        </div>
+      </section>
+
+      {# --- Le bilan --- #}
+      <div x-show="visible(0)" class="flex flex-col gap-4" aria-label="{{ _("Bilan de %(month)s", month=previous_month_name_lower) }}">
+        <dl data-tour="cap-bilan" class="grid grid-cols-1 overflow-hidden rounded-xl border border-border bg-container shadow-sm max-sm:divide-y sm:grid-cols-3 sm:divide-x divide-border">
+          <div class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-0.5 p-4 sm:grid-cols-1 lg:p-5">
+            <dt class="text-xs text-secondary">{{ _("Recettes") }}</dt>
+            <dd class="amount-blur text-xl font-bold tabular-nums text-primary max-sm:col-start-2 max-sm:row-span-2 max-sm:row-start-1">{{ signed(bilan_income, plus=true) }}</dd>
+            {% if bilan_income_planned is not none %}<dd class="amount-blur text-xs text-secondary">{{ _("prévu %(amount)s", amount=bilan_income_planned | eur) }}</dd>{% endif %}
+          </div>
+          <div class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-0.5 p-4 sm:grid-cols-1 lg:p-5">
+            <dt class="text-xs text-secondary">{{ _("Dépenses") }}</dt>
+            <dd class="amount-blur text-xl font-bold tabular-nums text-primary max-sm:col-start-2 max-sm:row-span-2 max-sm:row-start-1">{{ signed(-bilan_expense) }}</dd>
+            {% if bilan_pending %}<dd class="text-xs text-secondary">{{ _("dont %(amount)s encore à ranger", amount=bilan_pending | eur) }}</dd>{% endif %}
+          </div>
+          <div class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-0.5 p-4 sm:grid-cols-1 lg:p-5">
+            <dt class="text-xs text-secondary">{{ _("Reste du mois") }}</dt>
+            <dd class="amount-blur font-display text-[1.75rem] font-extrabold leading-tight tabular-nums max-sm:col-start-2 max-sm:row-span-2 max-sm:row-start-1 {{ 'text-success' if bilan_result >= 0 else 'text-danger' }}">{{ signed(bilan_result, plus=true) }}</dd>
+            {% if has_previous_cap %}<dd class="text-xs font-semibold {{ 'text-success' if held == 3 else 'text-warning' }}">{{ _("%(held)s piliers tenus sur 3", held=held) }}</dd>{% endif %}
+          </div>
+        </dl>
+
+        {# L'enveloppe que le tri de La Savane pousserait le plus près de sa limite. #}
+        {% if envelope_alert %}
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-container p-4 shadow-sm" role="status">
+          <span class="flex-none {{ 'text-danger' if envelope_alert.over else 'text-warning' }}">{{ icon('alert-triangle', size=20) }}</span>
+          <p class="min-w-0 flex-1 basis-60 text-sm text-primary"><strong class="font-semibold {{ 'text-danger' if envelope_alert.over else 'text-warning' }}">{{ _("Dépassé.") if envelope_alert.over else _("À surveiller.") }}</strong> {{ _("%(name)s est à %(percentage)s %% avec le tri : des opérations encore dans La Savane rapprochent l'enveloppe de sa limite.", name=envelope_alert.name | category_display, percentage=envelope_alert.percentage) }}</p>
+          <a href="/transactions/inbox" class="min-h-[50px] inline-flex items-center text-sm font-medium text-accent-ink underline">{{ _("Les ranger") }}</a>
+        </div>
+        {% endif %}
+
+        <section class="rounded-xl border border-border bg-container shadow-sm" x-data="{ open: false, ouverts: {} }">
+          <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" class="flex min-h-[62px] w-full items-center justify-between gap-3 px-[var(--space-card)] py-3 text-left">
+            <span class="flex flex-col lg:flex-row lg:items-baseline lg:gap-4"><span class="font-display text-lg font-extrabold tracking-tight text-primary">{{ _("Voir le détail") }}</span><span class="text-xs text-secondary lg:text-sm">{{ _("Prévu, réel et écart, par pilier et par catégorie") }}</span></span>
+            <span class="text-secondary transition-transform" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+          </button>
+          <div x-show="open" style="display: none;" class="overflow-x-auto px-[var(--space-card)] pb-[var(--space-card)]">
+            <table class="w-full min-w-[420px] text-sm" aria-label="{{ _("Bilan de %(month)s : prévu, réel, écart", month=previous_month_name_lower) }}">
+              <thead><tr class="text-xs text-secondary"><th class="pb-2 text-left font-medium"></th><th class="pb-2 text-right font-medium">{{ _("Prévu") }}</th><th class="pb-2 text-right font-medium">{{ _("Réel") }}</th><th class="pb-2 text-right font-medium">{{ _("Écart") }}</th></tr></thead>
+              <tbody>
+                {% for line in bilan_lines %}
+                {% set has_detail = line.detail and line.detail.categories %}
+                {% set tone = {"success": "text-success", "warning": "text-warning", "danger": "text-danger"}[line.écart_color] if line.écart_color else "text-secondary" %}
+                <tr class="border-t border-border">
+                  <th scope="row" class="py-1 text-left font-semibold text-primary">
+                    {% if has_detail %}
+                    <button type="button" @click="ouverts['{{ line.code }}'] = !ouverts['{{ line.code }}']" :aria-expanded="ouverts['{{ line.code }}'] ? 'true' : 'false'" class="flex min-h-[50px] items-center gap-2"><span class="text-secondary transition-transform" :class="ouverts['{{ line.code }}'] ? 'rotate-90' : ''">{{ icon('chevron-right', size=16) }}</span>{{ line.name }}</button>
+                    {% else %}<span class="flex min-h-[50px] items-center">{{ line.name }}</span>{% endif %}
+                  </th>
+                  <td class="amount-blur py-1 text-right tabular-nums text-secondary">{% if line.planned is not none %}{{ line.planned | eur }}{% else %}—{% endif %}</td>
+                  <td class="amount-blur py-1 text-right tabular-nums text-primary">{{ line.real | eur }}</td>
+                  <td class="amount-blur py-1 text-right tabular-nums {{ tone }}">
+                    {% if line.écart is not none %}{{ signed(line.écart, plus=true) }}<span class="block text-xs">{% if line.écart_color == "success" %}{{ _("Atteint") if line.code in ("income", "savings") else _("Tenu") }}{% elif line.écart_color == "warning" %}{{ _("Juste en dessous") if line.code in ("income", "savings") else _("Juste dépassé") }}{% else %}{{ _("En dessous") if line.code in ("income", "savings") else _("Dépassé") }}{% endif %}</span>{% else %}—{% endif %}
+                  </td>
+                </tr>
+                {% if has_detail %}
+                {% for ligne in line.detail.categories %}
+                {% set gap = ligne.budget - ligne.spent %}
+                <tr x-show="ouverts['{{ line.code }}']" style="display: none;" class="border-t border-border">
+                  <td class="truncate py-2 pl-8 text-secondary">{{ ligne.category.name | category_display }}</td>
+                  <td class="amount-blur py-2 text-right tabular-nums text-secondary">{{ ligne.budget | eur }}</td>
+                  <td class="amount-blur py-2 text-right tabular-nums text-primary">{{ ligne.spent | eur }}</td>
+                  <td class="amount-blur py-2 text-right tabular-nums {{ 'text-success' if gap >= 0 else 'text-danger' }}">{{ signed(gap, plus=true) }}</td>
+                </tr>
+                {% endfor %}
+                {% if line.detail.unbudgeted %}
+                <tr x-show="ouverts['{{ line.code }}']" style="display: none;" class="border-t border-border">
+                  <td class="py-2 pl-8 italic text-secondary">{{ _("Hors budget") }}</td>
+                  <td class="py-2 text-right text-secondary">—</td>
+                  <td class="amount-blur py-2 text-right tabular-nums italic text-primary">{{ line.detail.unbudgeted | eur }}</td>
+                  <td class="py-2 text-right text-secondary">—</td>
+                </tr>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {% if unexpected_transactions %}
+        <section class="rounded-xl border border-border bg-container shadow-sm" x-data="{ open: false }">
+          <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" class="flex min-h-[62px] w-full items-center justify-between gap-3 px-[var(--space-card)] py-3 text-left">
+            <span class="flex flex-col"><span class="text-sm font-semibold text-primary">{{ _("Imprévus du mois :") }}</span><span class="amount-blur text-xs text-secondary">{{ ngettext("%(n)s imprévu : %(total)s", "%(n)s imprévus : %(total)s", unexpected_transactions | length, n=unexpected_transactions | length, total=(unexpected_transactions | sum(attribute="amount") | abs) | eur) }}</span></span>
+            <span class="text-secondary transition-transform" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+          </button>
+          <div x-show="open" style="display: none;" class="flex flex-col px-[var(--space-card)] pb-3 text-sm">
+            {% for tx in unexpected_transactions %}
+            <p class="flex min-h-[44px] items-center justify-between gap-3 border-t border-border"><span class="min-w-0 truncate text-primary">{{ tx.date | short_date }} · {{ tx.label or _("(sans libellé)") }}</span><span class="amount-blur flex-none font-semibold tabular-nums">{{ signed(tx.amount) }}</span></p>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+      </div>
+
+      {# --- Un mot : une question par geste sur mobile, les quatre ensemble sur ordinateur --- #}
+      <div x-show="desktop ? group === 1 : (step >= 1 && step <= 4)" data-tour="cap-word" style="display: none;" class="flex flex-col gap-4" aria-label="{{ _("Un mot sur %(month)s", month=previous_month_name_lower) }}">
+        {% for name, value, question in questions %}
+        <label x-show="desktop || step === {{ loop.index }}" {% if not loop.first %}style="display: none;"{% endif %} class="flex flex-col gap-2 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+          <span class="text-sm font-semibold text-primary lg:text-base">{{ question }}</span>
+          <textarea name="{{ name }}" rows="4" class="rounded-xl border border-field bg-container px-3 py-2 text-base text-primary focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink">{{ value }}</textarea>
+        </label>
+        {% endfor %}
+      </div>
+
+      {% if not has_previous_cap %}
+      <button type="button" x-show="visible(0)" hx-post="/cap/step2" hx-include="#cap-flow" hx-vals='{"first": "1"}' hx-target="#cap-wizard" hx-swap="innerHTML" class="min-h-[50px] self-start text-sm font-medium text-accent-ink underline">{{ _("C'est notre premier Cap : pas de bilan à faire") }}</button>
+      {% endif %}
+
+      {{ flow_footer() }}
+    </form>
+
+    {# Le plan en direct (ordinateur) : ce que deviennent les ressources prévues. #}
+    <aside class="hidden lg:flex lg:sticky lg:top-20 flex-col gap-4" aria-label="{{ _("Le plan en direct") }}">
+      <section class="flex flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" aria-labelledby="live-title">
+        <div class="flex flex-col gap-1">
+          <h2 id="live-title" class="text-section-title">{{ _("%(month)s, en direct", month=current_month_name) }}</h2>
+          <p class="amount-blur text-sm text-secondary">{{ _("Ce que deviennent les %(amount)s de ressources prévues.", amount=plan.income | eur) }}</p>
+        </div>
+        {% set scale = [plan.income, plan.categories + plan.imprevu] | max or 1 %}
+        <div class="flex h-3 overflow-hidden rounded-full bg-sunken" role="img" aria-label="{{ _("Répartition des ressources prévues") }}">
+          <span style="width: {{ (plan.categories / scale * 100) | round(1) }}%; background: var(--color-chart-1)"></span>
+          <span style="width: {{ (plan.imprevu / scale * 100) | round(1) }}%; background: var(--color-chart-6)"></span>
+          <span style="width: {{ ([plan.savings, 0] | max / scale * 100) | round(1) }}%; background: var(--color-chart-2)"></span>
+        </div>
+        <dl class="flex flex-col text-sm">
+          <div class="flex min-h-[34px] items-baseline justify-between gap-3"><dt class="text-secondary">{{ _("Catégories") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ signed(-plan.categories) }}</dd></div>
+          <div class="flex min-h-[34px] items-baseline justify-between gap-3"><dt class="text-secondary">{{ _("Imprévus") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ signed(-plan.imprevu) }}</dd></div>
+        </dl>
+        <div class="flex flex-col gap-1 border-t border-border pt-3">
+          <p class="text-sm font-semibold text-primary">{{ _("Épargne prévue") }}</p>
+          <p class="amount-blur font-display text-[2rem] font-extrabold leading-tight tabular-nums {{ 'text-success' if plan.savings >= 0 else 'text-danger' }}">{{ signed(plan.savings, plus=true) }}</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>

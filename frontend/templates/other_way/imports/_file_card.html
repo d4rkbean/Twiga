@@ -1,0 +1,29 @@
+{#- The file that was read (name, size, dates, account) and what Twiga checks
+    each time. Shared by the recap of a statement and by the one of a HomeBank
+    history. Expects: file_name, file_size, span, account_label, balance_after. -#}
+<div class="flex flex-col gap-5 min-w-0">
+  <section data-tour="import-file" class="card flex flex-wrap items-center gap-3">
+    <span class="shrink-0 text-secondary">{{ icon('file-text', size=28) }}</span>
+    <div class="min-w-[12rem] flex-1">
+      <p class="font-semibold [overflow-wrap:anywhere]">{{ file_name }}</p>
+      <p class="text-sm text-secondary">
+        {{ file_size | kilobytes }} {{ _("Ko") }}
+        {%- if span %} · {% trans first=span[0] | short_date, last=span[1] | fr_date %}du {{ first }} au {{ last }}{% endtrans %}{% endif %}
+        {%- if account_label %} · {{ account_label }}{% endif %}
+      </p>
+    </div>
+    <button type="button" hx-get="/imports/step1" hx-target="#import-wizard" hx-swap="innerHTML" class="btn btn-secondary border-border-strong shrink-0">{{ _("Changer de fichier") }}</button>
+  </section>
+
+  <section data-tour="import-checks" class="card flex flex-col gap-3">
+    <h2 class="text-section-title">{{ _("Ce que Twiga vérifie à chaque import") }}</h2>
+    <ul class="flex flex-col gap-2 text-sm">
+      <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{{ _("Doublons repérés : même date, même montant, même libellé") }}</span></li>
+      <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{% if rules_count %}{% trans n=rules_count %}{{ n }} règle de rangement appliquée d'office{% pluralize %}Tes {{ n }} règles de rangement appliquées d'office{% endtrans %}{% else %}{{ _("Tes règles de rangement, appliquées d'office") }}{% endif %}</span></li>
+      {% if balance_after is defined and balance_after is not none %}
+      <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{% trans amount=balance_after | eur %}Solde du compte après import : <span class="amount-blur font-semibold tabular-nums">{{ amount }}</span>, à comparer au relevé{% endtrans %}</span></li>
+      {% endif %}
+    </ul>
+  </section>
+  <p class="text-sm text-secondary">{{ _("Rien n'est enregistré avant ta confirmation.") }}</p>
+</div>

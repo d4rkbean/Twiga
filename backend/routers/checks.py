@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from decimal import Decimal
+
+from backend import answers, crud, settings_hub
+from backend.formatting import format_amount
 from backend.database import get_db
 from backend.models import Account, Category, PendingCheck
 from backend.templating import templates
@@ -15,9 +18,17 @@ router = APIRouter(prefix="/checks", tags=["checks"])
 
 
 def _list_context(db: Session) -> dict:
+    outstanding = crud.get_outstanding_pending_checks(db)
+    today = date.today()
+    total = sum((abs(check.amount) for check in outstanding), Decimal("0"))
     return {
-        "outstanding_checks": crud.get_outstanding_pending_checks(db),
+        "outstanding_checks": outstanding,
         "matched_checks": crud.get_matched_pending_checks(db),
+        # The other way's sentence and the age of each payment; Classic ignores them.
+        "answer": answers.checks_answer(
+            len(outstanding), format_amount(total), settings_hub.oldest_outstanding_check(outstanding, today)
+        ),
+        "ages": {check.id: max((today - check.issued_date).days, 0) for check in outstanding},
     }
 
 
@@ -26,6 +37,7 @@ def _form_context(db: Session) -> dict:
         "parent_categories": crud.get_top_level_categories(db),
         "accounts": crud.list_accounts(db),
         "payment_methods": crud.get_payment_methods_dict(db),
+        "today": date.today().isoformat(),
     }
 
 

@@ -1,0 +1,44 @@
+{% from "other_way/_icons.html" import shell_icon %}
+{#- La recherche : la recherche globale de la Classique (/search/quick, les
+    mêmes résultats, Ctrl/Cmd+K), présentée en feuille plein écran sur mobile et
+    en fenêtre sous la barre sur ordinateur.
+
+    Les résultats arrivent dans #shell-search-results ; other_way/search/
+    _results.html les rend à plat (la feuille est déjà la carte). -#}
+<div
+  x-show="shell === 'search'"
+  style="display: none;"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0 translate-y-2"
+  x-transition:enter-end="opacity-100 translate-y-0"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100 translate-y-0"
+  x-transition:leave-end="opacity-0 translate-y-2"
+  role="dialog"
+  aria-modal="true"
+  aria-label="{{ _("Recherche") }}"
+  class="print:hidden fixed z-[9000] inset-0 flex flex-col overflow-hidden bg-container text-primary lg:inset-auto lg:top-24 lg:left-1/2 lg:-translate-x-1/2 lg:w-[640px] lg:max-w-[calc(100%-2rem)] lg:max-h-[calc(100vh-8rem)] lg:rounded-xl lg:border lg:border-border lg:shadow-lg"
+>
+  <div class="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2">
+    <h2 class="font-display text-xl font-extrabold tracking-tight">{{ _("Rechercher") }}</h2>
+    <button type="button" @click="closeShell()" class="min-h-[50px] px-4 rounded-xl border border-border-strong bg-container text-sm font-medium text-primary hover:bg-sunken">{{ _("Fermer") }}</button>
+  </div>
+  <div class="overflow-y-auto flex flex-col gap-3 px-4 pb-4" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+    <p class="flex items-center gap-2 text-sm text-secondary">{{ shell_icon("search", size=18) }}{{ _("Que cherches-tu ?") }}</p>
+    <input
+      id="shell-search-input"
+      type="search"
+      name="q"
+      placeholder="{{ _("Une opération, une catégorie, un projet") }}"
+      aria-label="{{ _("Rechercher") }}"
+      autocomplete="off"
+      hx-get="/search/quick"
+      hx-trigger="keyup[target.value.length >= 2] changed delay:300ms, search"
+      hx-target="#shell-search-results"
+      hx-swap="innerHTML"
+      @input="clearShortSearch($event)"
+      class="w-full min-h-[50px] rounded-xl border border-field bg-container text-primary px-3"
+    />
+    <div id="shell-search-results" aria-live="polite"></div>
+  </div>
+</div>

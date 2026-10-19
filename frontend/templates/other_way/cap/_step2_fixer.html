@@ -1,0 +1,282 @@
+{% from "_macros/brand.html" import mascot %}
+{% from "_macros/signed_amount.html" import signed %}
+{% set month_current = current_month_name %}
+{% set month_current_lower = current_month_name | lower if current_language() != "en" else current_month_name %}
+{% set month_previous_lower = previous_month_name_lower %}
+{% from "other_way/cap/_flow_kit.html" import flow_texts, frise, mobile_bar, flow_footer, stepper with context %}
+{#- Seconde moitié du rituel : les ressources, les piliers, l'épargne, l'intention.
+    Six gestes (Ressources, Essentiel, Choix, Imprévus, Épargne, Intention) sur mobile,
+    quatre étapes sur ordinateur. Tout se recalcule dans le navigateur
+    (static/js/cap-flow.js) ; « Fixer le cap » envoie les mêmes champs que la
+    Classique à /cap/save : planned_income, planned_imprevu, savings_withdrawal,
+    savings_goal, intention, amount_<id> par catégorie, et les quatre réponses. -#}
+{% set first = first_use | default(false) %}
+{% set frise_labels = [_("Bilan"), _("Un mot"), _("Ressources"), _("Les piliers"), _("Épargne"), _("Intention")] %}
+{% set step_labels = [
+  (5, _("Les ressources")), (6, _("Le pilier Essentiel")), (7, _("Le pilier Choix")),
+  (8, _("La réserve d'imprévus")), (9, _("L'épargne")), (10, _("L'intention")),
+] %}
+{% set pillar_dot = {"essentiel": "var(--color-chart-1)", "choix": "var(--color-chart-3)", "imprevu": "var(--color-chart-6)"} %}
+{% set steps_of = {"essentiel": 6, "choix": 7} %}
+{% set pillar_names_view = {"essentiel": _("Essentiel"), "choix": _("Choix"), "imprevu": _("Imprévus")} %}
+{% set config = {
+  "mode": "plan",
+  "first": first,
+  "income": prefill_income | float,
+  "withdrawal": savings_withdrawal | float,
+  "goal": (prefill_savings_goal or 0) | float,
+  "imprevu": prefill_imprevu | float,
+  "intent": intention_value | default(""),
+  "groups": {},
+  "previous": {},
+  "planned": {},
+  "thresholds": {"watch": 75, "almost": 90, "exceeded": 100},
+  "locale": number_locale(),
+} %}
+{% for g in groupes %}
+  {% set _a = config["groups"].update({g.code: []}) %}
+  {% for l in g.categories %}
+    {% set _b = config["groups"][g.code].append({"id": l.category.id, "amount": l.prefill | float, "plan": l.prefill | float, "spent": (previous_spent.get(l.category.id, 0)) | float}) %}
+  {% endfor %}
+  {% set _c = config["planned"].update({g.code: (g.categories | sum(attribute="prefill")) | float}) %}
+{% endfor %}
+{% set _d = config["planned"].update({"imprevu": prefill_imprevu | float}) %}
+{% for code in ("essentiel", "choix", "imprevu") %}
+  {% set _e = config["previous"].update({code: {"spent": previous_actuals.get(code, 0), "pending": previous_pending.get(code, 0)}}) %}
+{% endfor %}
+{% set source_notes = {
+  "recettes_precedent": _("D'après les recettes de %(month)s.", month=previous_month_label),
+  "recettes_courant": _("D'après les recettes de %(month)s à ce jour.", month=current_month_label),
+  "virements": _("Coche les virements qui financent %(month)s.", month=current_month_label),
+  "fixe": _("Montant fixe défini dans Paramètres."),
+} %}
+{% set source_label = (income_sources_view | selectattr("code", "equalto", income_source) | list | first).label %}
+
+<div
+  id="cap-flow-root"
+  x-data="twigaCapFlow()"
+  data-config="{{ config | tojson | forceescape }}"
+  data-texts="{{ flow_texts() | forceescape }}"
+  class="flex flex-col gap-5 lg:gap-8"
+>
+  {{ mobile_bar(step_labels) }}
+  {{ frise(frise_labels, review_link=not first) }}
+  <p class="hidden text-xs text-secondary lg:block -mt-3" x-show="max > 5 || !first" style="display: none;">{{ _("Touche une étape déjà vue pour y revenir.") }}</p>
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+    <form id="cap-flow" x-ref="flow" hx-post="/cap/save" hx-target="#cap-wizard" hx-swap="innerHTML" class="flex min-w-0 flex-col gap-5">
+
+      {# Ce qui part au serveur : les mêmes champs que la Classique. #}
+      <input type="hidden" name="planned_income" :value="Number(income) || 0" />
+      <input type="hidden" name="planned_imprevu" :value="Number(imprevu) || 0" />
+      <input type="hidden" name="savings_withdrawal" :value="Number(withdrawal) || 0" />
+      <input type="hidden" name="savings_goal" :value="Number(goal) || 0" />
+      {% for g in groupes %}{% for l in g.categories %}
+      <input type="hidden" name="amount_{{ l.category.id }}" :value="Number(groups.{{ g.code }}[{{ loop.index0 }}].amount) || 0" />
+      {% endfor %}{% endfor %}
+      <input type="hidden" name="reflection_unexpected" value="{{ reflection_unexpected | default('') }}" />
+      <input type="hidden" name="reflection_regret" value="{{ reflection_regret | default('') }}" />
+      <input type="hidden" name="reflection_proud" value="{{ reflection_proud | default('') }}" />
+      <input type="hidden" name="reflection_worked_well" value="{{ reflection_worked_well | default('') }}" />
+
+      <section aria-label="{{ _("La réponse de Twiga") }}" aria-live="polite" class="flex items-start gap-3 lg:gap-5">
+        <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
+        <div class="flex min-w-0 flex-col gap-2">
+          <h1 id="answer" x-text="answer" class="amount-blur font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ fix_title }}</h1>
+          <p id="answer-sub" x-text="detail" class="amount-blur max-w-[70ch] text-sm text-secondary lg:text-base">{{ _("L'épargne prévue se recalcule pendant que tu ajustes.") }}</p>
+        </div>
+      </section>
+
+      {# --- Ressources --- #}
+      <section x-show="visible(5)" data-tour="cap-income" aria-label="{{ _("Ressources de %(month)s", month=current_month_label) }}" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+          <p class="text-sm font-semibold text-primary">{{ _("Ressources du mois") }}</p>
+          {{ stepper("income", "income = __v__", "income = Math.max(0, round(income - 50))", "income = round(income + 50)", _("Moins 50 euros de ressources"), _("Plus 50 euros de ressources"), _("Ressources du mois")) }}
+          <p class="text-sm text-secondary">
+            {% if income_source == "fixe" %}{% trans %}Montant fixe défini dans <a href="/settings" class="font-medium text-accent-ink underline">Paramètres</a>.{% endtrans %}
+            {% else %}{{ source_notes[income_source] }}{% endif %}
+          </p>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <button type="button" @click="sourcesOpen = !sourcesOpen" :aria-expanded="sourcesOpen ? 'true' : 'false'" class="inline-flex min-h-[50px] items-center gap-2 rounded-xl border border-border-strong bg-container px-3.5 text-sm font-semibold text-accent-ink" :class="sourcesOpen ? 'bg-accent-soft border-accent-ink' : ''">
+              <span x-text="sourcesOpen ? '{{ _("Replier les sources") | jsq }}' : '{{ _("Modifier la source") | jsq }}'">{{ _("Modifier la source") }}</span>
+              <span class="transition-transform" :class="sourcesOpen ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span>
+            </button>
+            <span class="text-xs text-secondary">{{ _("Source actuelle : %(source)s", source=source_label) }}</span>
+          </div>
+          <div x-show="sourcesOpen" style="display: none;" role="group" aria-label="{{ _("D'où viennent les ressources du mois") }}" class="flex flex-col gap-2">
+            <p class="text-xs text-secondary">{{ _("Les 4 sources de Twiga : touches-en une.") }}</p>
+            {% for source in income_sources_view %}
+            <button
+              type="button"
+              aria-pressed="{{ 'true' if source.code == income_source else 'false' }}"
+              hx-post="/cap/step2"
+              hx-include="#cap-flow"
+              hx-vals='{"income_source": "{{ source.code }}"}'
+              hx-target="#cap-wizard"
+              hx-swap="innerHTML"
+              class="flex min-h-[62px] w-full items-center gap-3 rounded-xl border px-4 py-2 text-left aria-pressed:border-accent-ink aria-pressed:bg-accent-soft border-border-strong bg-container text-primary"
+            >
+              <span aria-hidden="true" class="h-4 w-4 flex-none rounded-full border-2 {{ 'border-accent-ink bg-accent' if source.code == income_source else 'border-field bg-container' }}"></span>
+              <span class="flex flex-col"><span class="text-sm font-semibold">{{ source.label }}</span><span class="text-xs text-secondary">{{ source.help }}</span></span>
+            </button>
+            {% endfor %}
+            <a href="/settings" class="min-h-[50px] inline-flex items-center text-sm font-medium text-accent-ink underline">{{ _("Le réglage par défaut se change dans les paramètres") }}</a>
+          </div>
+        </div>
+
+        {% if income_source == "virements" %}
+        <div class="flex flex-col gap-2 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+          <p class="text-sm font-semibold text-primary">{{ _("Coche les virements qui financent %(month)s", month=current_month_label) }}</p>
+          {% if virements %}
+          <div role="group" class="flex max-h-72 flex-col overflow-y-auto border-t border-border">
+            {% for v in virements %}
+            <label class="flex min-h-[54px] cursor-pointer items-center gap-3 border-b border-border">
+              <input type="checkbox" value="{{ '%.2f' % v.amount }}" @change="toggleTransfer($event.target.checked, Number($event.target.value))" class="check-box" />
+              <span class="flex min-w-0 flex-1 flex-col"><span class="truncate text-sm text-primary">{{ v.label }}</span><span class="text-xs text-secondary">{{ v.date | fr_date }}</span></span>
+              <span class="amount-blur flex-none text-sm font-semibold tabular-nums text-primary">{{ v.amount | eur }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-sm text-secondary">{{ icon('info-circle', size=14) }} {{ _("Aucun virement reçu sur le compte choisi depuis %(month)s.", month=previous_month_label) }}{% if not income_account_set %} <a href="/settings" class="font-medium text-accent-ink underline">{{ _("Choisir le compte dans les paramètres") }}</a>{% endif %}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </section>
+
+      {# --- Les piliers --- #}
+      <div x-show="visible(6) || visible(7)" style="display: none;" role="group" aria-label="{{ _("Point de départ des montants") }}" class="flex flex-wrap gap-2">
+        <button type="button" @click="startFrom('plan')" :aria-pressed="base === 'plan' ? 'true' : 'false'" class="min-h-[50px] flex-1 rounded-xl border border-border-strong bg-container px-4 text-sm font-medium text-primary aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink lg:flex-none">{{ _("Partir du plan de %(month)s", month=month_previous_lower) }}</button>
+        <button type="button" @click="startFrom('cost')" :aria-pressed="base === 'cost' ? 'true' : 'false'" class="min-h-[50px] flex-1 rounded-xl border border-border-strong bg-container px-4 text-sm font-medium text-primary aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink lg:flex-none">{{ _("Partir de ce que %(month)s a coûté", month=month_previous_lower) }}</button>
+      </div>
+
+      {% for g in groupes %}
+      {% set code = g.code %}
+      <section x-show="visible({{ steps_of[code] }})" data-tour="cap-pillar-{{ code }}" style="display: none;" aria-label="{{ _("Le pilier %(name)s", name=g.label) }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" x-data="{ detail: false }">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+          <div class="flex min-w-0 flex-col gap-1">
+            <h2 class="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight text-primary"><span aria-hidden="true" class="h-3 w-3 rounded-full" style="background: {{ pillar_dot[code] }}"></span>{{ g.label }}</h2>
+            <p class="amount-blur text-sm text-secondary">
+              {{ _("En %(month)s :", month=month_previous_lower) }} <span class="tabular-nums" x-text="fmt(previous.{{ code }}.spent + previous.{{ code }}.pending)"></span>.
+              <span class="font-medium text-primary" x-text="pillarAmount('{{ code }}') === planned.{{ code }} ? '{{ _("On garde %(amount)s ?", amount="__") | jsq }}'.replace('__', m(planned.{{ code }})) : '{{ _("Tu passes de %(old)s à %(new)s ?", old="__f", new="__t") | jsq }}'.replace('__f', m(planned.{{ code }})).replace('__t', m(pillarAmount('{{ code }}')))"></span>
+            </p>
+            <p class="text-xs"><span class="font-semibold" :class="pillarVerdict('{{ code }}').text" x-text="pillarVerdict('{{ code }}').word"></span> <span class="text-secondary" x-text="'{{ _("%(percent)s de ce montant au rythme de %(month)s", percent="__", month=month_previous_lower) | jsq }}'.replace('__', pc(pillarPct('{{ code }}')))"></span></p>
+          </div>
+          {{ stepper("pillarAmount('" ~ code ~ "')", "setPillar('" ~ code ~ "', __v__)", "bumpPillar('" ~ code ~ "', -50)", "bumpPillar('" ~ code ~ "', 50)", _("Moins 50 euros pour %(name)s", name=g.label), _("Plus 50 euros pour %(name)s", name=g.label), _("Enveloppe %(name)s", name=g.label)) }}
+        </div>
+        <button type="button" @click="detail = !detail" :aria-expanded="detail ? 'true' : 'false'" class="flex min-h-[50px] items-center gap-2 self-start text-sm font-semibold text-accent-ink">{{ _("Détail par catégorie (%(n)s)", n=g.categories | length) }}<span class="transition-transform" :class="detail ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span></button>
+        <div x-show="detail" style="display: none;" class="flex flex-col">
+          {% for l in g.categories %}
+          {% set row = "groups." ~ code ~ "[" ~ loop.index0 ~ "]" %}
+          <div class="flex flex-col gap-2 border-t border-border py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+            <div class="flex min-w-0 flex-col gap-0.5">
+              <p class="flex flex-wrap items-baseline gap-x-3 text-sm"><span class="font-semibold text-primary">{{ l.category.icon or "" }} {{ l.category.name | category_display }}</span><span class="text-xs font-semibold" :class="categoryVerdict({{ row }}).text" x-text="categoryVerdict({{ row }}).word"></span></p>
+              <p class="amount-blur text-xs text-secondary">{{ _("En %(month)s :", month=month_previous_lower) }} <span x-text="fmt({{ row }}.spent)"></span></p>
+              <p class="amount-blur text-xs text-secondary">{% if l.typical %}{{ _("~ %(amount)s · dépense habituelle, médiane des 3 derniers mois", amount=l.typical | eur) }}{% else %}{{ _("Pas de dépense habituelle sur les 3 derniers mois") }}{% endif %}</p>
+            </div>
+            {{ stepper(row ~ ".amount", row ~ ".amount = __v__", "bumpCategory(" ~ row ~ ", -10)", "bumpCategory(" ~ row ~ ", 10)", _("Moins 10 euros pour %(name)s", name=l.category.name | category_display), _("Plus 10 euros pour %(name)s", name=l.category.name | category_display), _("Budget %(name)s", name=l.category.name | category_display)) }}
+          </div>
+          {% endfor %}
+          <div class="flex items-center justify-between gap-3 border-t border-border pt-1">
+            <button type="button" @click="resetPillar('{{ code }}')" class="inline-flex min-h-[50px] items-center gap-1.5 text-sm font-medium text-accent-ink underline">{{ icon('clipboard-copy', size=16) }} {{ _("Reprendre %(month)s", month=month_previous_lower) }}</button>
+            <span class="amount-blur text-sm font-semibold tabular-nums text-primary" x-text="'{{ _("Total : %(amount)s", amount="__") | jsq }}'.replace('__', fmt(pillarAmount('{{ code }}')))"></span>
+          </div>
+        </div>
+      </section>
+      {% endfor %}
+
+      <section x-show="visible(8)" style="display: none;" aria-label="{{ _("La réserve d'imprévus") }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" x-data="{ events: false }">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+          <div class="flex min-w-0 flex-col gap-1">
+            <h2 class="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight text-primary"><span aria-hidden="true" class="h-3 w-3 rounded-full" style="background: var(--color-chart-6)"></span>{{ _("Imprévus") }}</h2>
+            <p class="amount-blur text-sm text-secondary">
+              {{ _("En %(month)s :", month=month_previous_lower) }} <span class="tabular-nums">{{ previous_actuals.get("imprevu", 0) | eur }}</span>{% if previous_events %} ({{ ngettext("%(n)s imprévu", "%(n)s imprévus", previous_events | length, n=previous_events | length) }}){% endif %}.
+              <span class="font-medium text-primary" x-text="Math.abs(imprevu - planned.imprevu) < 0.005 ? '{{ _("On garde %(amount)s de réserve ?", amount="__") | jsq }}'.replace('__', m(planned.imprevu)) : '{{ _("Tu passes de %(old)s à %(new)s de réserve ?", old="__f", new="__t") | jsq }}'.replace('__f', m(planned.imprevu)).replace('__t', m(imprevu))"></span>
+            </p>
+            <p class="text-xs"><span class="font-semibold" :class="pillarVerdict('imprevu').text" x-text="pillarVerdict('imprevu').word"></span> <span class="text-secondary" x-text="'{{ _("%(percent)s de cette réserve au rythme de %(month)s", percent="__", month=month_previous_lower) | jsq }}'.replace('__', pc(pillarPct('imprevu')))"></span></p>
+            <p class="text-xs text-secondary">{{ _("Une réserve, sans détail — un imprévu n'a pas de catégorie prévue") }}</p>
+          </div>
+          {{ stepper("imprevu", "imprevu = __v__", "imprevu = Math.max(0, round(imprevu - 10))", "imprevu = round(imprevu + 10)", _("Moins 10 euros de réserve Imprévus"), _("Plus 10 euros de réserve Imprévus"), _("Réserve Imprévus")) }}
+        </div>
+        {% if previous_events %}
+        <button type="button" @click="events = !events" :aria-expanded="events ? 'true' : 'false'" class="flex min-h-[50px] items-center gap-2 self-start text-sm font-semibold text-accent-ink">{{ _("Voir les imprévus de %(month)s", month=month_previous_lower) }}<span class="transition-transform" :class="events ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span></button>
+        <div x-show="events" style="display: none;" class="flex flex-col">
+          {% for tx in previous_events %}
+          <p class="flex min-h-[44px] items-center justify-between gap-3 border-t border-border text-sm"><span class="min-w-0 truncate text-primary">{{ tx.date | short_date }} {{ tx.label or _("(sans libellé)") }}</span><span class="amount-blur flex-none tabular-nums">{{ signed(tx.amount) }}</span></p>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+
+      {# --- Épargne --- #}
+      <section x-show="visible(9)" data-tour="cap-savings" style="display: none;" aria-label="{{ _("Épargne de %(month)s", month=current_month_label) }}" class="flex flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          <div class="flex flex-col gap-0.5">
+            <p class="text-sm font-semibold text-primary">{{ _("Et si je pioche dans l'épargne ?") }}</p>
+            <p class="text-xs text-secondary"><span class="font-medium text-primary">{{ _("Prélèvement sur épargne.") }}</span> {{ _("Ce que tu sors de l'épargne pour financer ce mois") }}</p>
+          </div>
+          {{ stepper("withdrawal", "withdrawal = __v__", "withdrawal = Math.max(0, round(withdrawal - 50))", "withdrawal = round(withdrawal + 50)", _("Moins 50 euros de prélèvement"), _("Plus 50 euros de prélèvement"), _("Prélèvement sur épargne")) }}
+        </div>
+        <div class="flex flex-col gap-3 border-t border-border pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          <div class="flex flex-col gap-0.5">
+            <p class="text-sm font-semibold text-primary">{{ _("Objectif d'épargne") }}</p>
+            <p class="text-xs text-secondary">{{ _("Par pas de 100 €") }}</p>
+          </div>
+          {{ stepper("goal", "goal = __v__", "goal = Math.max(0, round(goal - 100))", "goal = round(goal + 100)", _("Baisser l'objectif de 100 €"), _("Augmenter l'objectif de 100 €"), _("Objectif d'épargne")) }}
+        </div>
+        <div class="flex flex-col gap-2 border-t border-border pt-4">
+          <div class="flex items-baseline justify-between gap-3">
+            <span class="text-sm font-semibold text-primary">{{ _("Épargne prévue") }}</span>
+            <span class="amount-blur font-display text-[1.75rem] font-extrabold tabular-nums" :class="savings >= 0 ? 'text-success' : 'text-danger'" x-text="signed(savings)"></span>
+          </div>
+          <p x-show="alert" style="display: none;" role="status" class="alert" :class="alert && alert.kind === 'danger' ? 'alert-danger font-medium' : 'alert-neutral'"><span x-text="alert && alert.text"></span></p>
+        </div>
+      </section>
+
+      {# --- Intention --- #}
+      <section x-show="visible(10)" data-tour="cap-intent" style="display: none;" aria-label="{{ _("Intention de %(month)s", month=month_current_lower) }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+        <label for="cap-intent" class="text-section-title">{{ _("Notre intention pour %(month)s :", month=current_month_label_lower) }}</label>
+        <p class="text-sm text-secondary">{{ _("Une ou deux phrases, que tu retrouveras en ouvrant Mon mois.") }}</p>
+        <textarea id="cap-intent" name="intention" x-model="intent" rows="3" maxlength="500" placeholder="{{ _("Ce mois-ci, nous voulons...") }}" class="rounded-xl border border-field bg-container px-3 py-2 text-base text-primary focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"></textarea>
+        <span class="text-xs text-secondary">{{ _("500 caractères au maximum.") }}</span>
+        <div role="group" aria-label="{{ _("Idées d'intention, d'après %(month)s", month=month_previous_lower) }}" class="flex flex-col gap-2">
+          <p class="text-xs text-secondary">{% if intention_ideas.ratio >= 75 %}{{ _("%(pillar)s est monté à %(percent)s %% de son prévu en %(month)s : des idées pour le mois qui vient.", pillar=pillar_names_view[intention_ideas.pillar], percent=intention_ideas.ratio, month=month_previous_lower) }}{% else %}{{ _("Quelques idées pour le mois qui vient.") }}{% endif %}</p>
+          <div class="flex flex-wrap gap-2">
+            {% for idea in intention_ideas.ideas %}
+            <button type="button" @click="intent = intent === '{{ idea | jsq }}' ? '' : '{{ idea | jsq }}'" :aria-pressed="intent === '{{ idea | jsq }}' ? 'true' : 'false'" class="min-h-[50px] rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink">{{ idea }}</button>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      {{ flow_footer(review_back=not first) }}
+    </form>
+
+    {# --- Le plan en direct --- #}
+    <aside class="flex flex-col gap-4 lg:sticky lg:top-20" :class="desktop || step >= 9 ? '' : 'hidden'" aria-label="{{ _("Le plan en direct") }}">
+      <section class="flex flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" aria-labelledby="live-title">
+        <div class="flex flex-col gap-1">
+          <h2 id="live-title" class="text-section-title">{{ _("%(month)s, en direct", month=current_month_name) }}</h2>
+          <p class="amount-blur text-sm text-secondary" x-text="'{{ _("Ce que deviennent les %(amount)s de ressources prévues.", amount="__") | jsq }}'.replace('__', fmt(income))"></p>
+        </div>
+        <div class="flex h-3 overflow-hidden rounded-full bg-sunken" role="img" aria-label="{{ _("Répartition des ressources prévues") }}">
+          <span :style="'width: ' + share(pillarAmount('essentiel')) + '%; background: var(--color-chart-1)'"></span>
+          <span :style="'width: ' + share(pillarAmount('choix')) + '%; background: var(--color-chart-3)'"></span>
+          <span :style="'width: ' + share(imprevu) + '%; background: var(--color-chart-6)'"></span>
+          <span :style="'width: ' + share(savings) + '%; background: var(--color-chart-2)'"></span>
+        </div>
+        <dl class="flex flex-col text-sm">
+          {% for code, label, dot in (("essentiel", _("Essentiel"), "var(--color-chart-1)"), ("choix", _("Choix"), "var(--color-chart-3)"), ("imprevu", _("Imprévus"), "var(--color-chart-6)")) %}
+          <div class="flex min-h-[34px] items-baseline justify-between gap-3"><dt class="flex items-center gap-2 text-secondary"><span aria-hidden="true" class="h-2.5 w-2.5 rounded-full" style="background: {{ dot }}"></span>{{ label }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary" x-text="fmt(-pillarAmount('{{ code }}'))"></dd></div>
+          {% endfor %}
+          <div x-show="withdrawal > 0" style="display: none;" class="flex min-h-[34px] items-baseline justify-between gap-3"><dt class="text-secondary">{{ _("Prélèvement sur épargne") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary" x-text="signed(withdrawal)"></dd></div>
+        </dl>
+        <div class="flex flex-col gap-1 border-t border-border pt-3">
+          <p class="flex items-center gap-2 text-sm font-semibold text-primary"><span aria-hidden="true" class="h-2.5 w-2.5 rounded-full" style="background: var(--color-chart-2)"></span>{{ _("Épargne prévue") }}</p>
+          <p class="amount-blur font-display text-[2rem] font-extrabold leading-tight tabular-nums" :class="savings >= 0 ? 'text-success' : 'text-danger'" x-text="signed(savings)"></p>
+          <p class="text-xs font-semibold" :class="liveWord.text" x-text="liveWord.word"></p>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>

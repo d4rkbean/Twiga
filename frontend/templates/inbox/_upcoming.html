@@ -1,0 +1,27 @@
+{# « À suivre » : the next operations of the queue, next to the card (a column
+   from lg:, folded under the card on a phone). The container keeps its
+   open/closed state; only the counter and the list are replaced (out of band)
+   after each filing or skip. #}
+<aside
+  id="inbox-upcoming"
+  x-data="{ open: false }"
+  aria-labelledby="inbox-upcoming-title"
+  class="overflow-hidden rounded-xl border border-border bg-container shadow-sm"
+>
+  <button
+    type="button"
+    @click="open = !open"
+    :aria-expanded="open"
+    aria-controls="inbox-upcoming-body"
+    class="flex min-h-[54px] w-full items-center justify-between gap-3 px-4 text-left lg:pointer-events-none lg:cursor-default"
+  >
+    <h2 id="inbox-upcoming-title" class="text-base font-semibold text-primary">{{ _("À suivre") }}</h2>
+    <span class="flex items-center gap-2 text-xs font-medium text-secondary">
+      {% include "inbox/_upcoming_count.html" %}
+      <span class="transition-transform lg:hidden" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span>
+    </span>
+  </button>
+  <div id="inbox-upcoming-body" :class="open ? '' : 'hidden lg:block'">
+    {% include "inbox/_upcoming_list.html" %}
+  </div>
+</aside>

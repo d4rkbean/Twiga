@@ -1,0 +1,127 @@
+{% from "_macros/brand.html" import mascot %}
+{#
+  Fragments of the operations screen (the other way) that live OUTSIDE the swapped
+  list but depend on the filtered data: Twiga's sentence and its actions, the
+  pills with their counters, the side panel, and the note that tells the page
+  component what is drawn.
+
+  Each macro takes `oob`: on the first page load it is false (the fragment sits
+  in its place in index.html); in an htmx response it is true, and htmx swaps
+  the element with the same id wherever it stands on the page.
+#}
+
+{# The sentence, then the actions. With a selection the sentence changes (the page component says how). #}
+{% macro head(answer, todo, oob=false) -%}
+<header
+  id="ops-head"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+  aria-label="{{ _("Réponse de Twiga") }}"
+  class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8"
+>
+  <div class="flex min-w-0 items-start gap-4">
+    <span class="flex-none pt-1">{{ mascot(size=52) }}</span>
+    <div class="min-w-0">
+      <div x-show="count === 0">
+        <h1 class="font-display text-[28px] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[34px]">{{ answer.title }}</h1>
+        <p class="mt-1.5 text-secondary lg:max-w-[70ch]">{{ answer.detail }}</p>
+      </div>
+      <div x-show="count > 0" style="display: none;">
+        <h1 class="font-display text-[28px] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[34px]"><span x-text="phrase"></span> <span class="amount-blur" x-text="sumLabel"></span>.</h1>
+        <p class="mt-1.5 text-secondary lg:max-w-[70ch]">{{ _("Choisis une catégorie pour les ranger d'un coup, ou un autre geste.") }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="flex flex-wrap gap-2 lg:flex-none lg:flex-nowrap">
+    <button
+      type="button"
+      hx-get="/transactions/new"
+      data-tour="operations-new"
+      hx-include="#transactions-filters"
+      hx-target="#transaction-new-slot"
+      hx-swap="innerHTML"
+      class="btn btn-secondary border-border-strong px-5"
+    >{{ icon('plus', size=18) }} {{ _("Nouvelle opération") }}</button>
+    <a id="transactions-export" :href="exportHref()" download class="btn btn-secondary w-[50px] border-border-strong px-0 lg:w-auto lg:px-5">{{ icon('download', size=18) }}<span class="max-lg:sr-only">{{ _("Exporter") }}</span></a>
+    {% if todo %}
+    <a x-show="count === 0" href="/transactions/inbox" class="btn btn-primary w-full px-6 max-lg:order-first lg:w-auto">{% trans n=todo %}Ranger l'opération à trier{% pluralize %}Ranger les {{ n }} à trier{% endtrans %}</a>
+    {% endif %}
+    <button type="button" x-show="count > 0" style="display: none;" @click="menu = 'bcat'" class="btn btn-primary w-full px-6 max-lg:order-first lg:w-auto">{{ _("Ranger dans…") }}</button>
+  </div>
+</header>
+{%- endmacro %}
+
+{# The views over the operations: all, expenses, income, to sort, transfers. #}
+{% macro pills(counts, oob=false) -%}
+<div id="ops-pills" role="group" aria-label="{{ _("Type d'opération") }}" class="flex flex-wrap gap-2" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% for value, label, key in [("all", _("Toutes"), "all"), ("expense", _("Dépenses"), "expense"), ("income", _("Recettes"), "income"), ("todo", _("À trier"), "todo"), ("transfer", _("Virements"), "transfer")] %}
+  <button
+    type="button"
+    @click="setTab('{{ value }}')"
+    :aria-pressed="tab === '{{ value }}'"
+    :class="tab === '{{ value }}' ? 'border-accent bg-accent-soft text-accent-ink font-semibold' : 'border-border-strong bg-container text-primary font-medium'"
+    class="flex min-h-[50px] items-center gap-2 rounded-full border px-4 text-sm"
+  >
+    <span>{{ label }}</span>
+    <span class="font-normal tabular-nums text-secondary">{{ counts[key] }}</span>
+  </button>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# « Dans cette recherche »: the totals, the filters in force, where the expenses go. #}
+{% macro side(total, scope_total, total_amount, expense_total, income_total, period, breakdown, breakdown_max, oob=false) -%}
+<aside
+  id="ops-side"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+  aria-label="{{ _("Ce que montre la recherche") }}"
+  class="flex flex-col gap-5 rounded-xl border border-border bg-container p-5 shadow-sm"
+>
+  <div class="flex flex-col gap-1">
+    <h2 class="font-display text-lg font-extrabold tracking-tight text-primary">{{ _("Dans cette recherche") }}</h2>
+    <p class="text-xs text-secondary">{% trans n=total, all=scope_total, period=period.label %}{{ n }} opérations sur {{ all }} · {{ period }}{% endtrans %}</p>
+    <p class="amount-blur mt-2 font-display text-[34px] font-extrabold leading-none tabular-nums {{ 'text-success' if total_amount > 0 else ('text-danger' if total_amount < 0 else 'text-primary') }}">{{ "+" if total_amount > 0 else "" }}{{ total_amount | eur }}</p>
+    <dl class="mt-2 flex flex-col gap-1 text-sm">
+      <div class="flex justify-between gap-3"><dt class="text-secondary">{{ _("Dépenses") }}</dt><dd class="amount-blur tabular-nums text-primary">{{ (-expense_total) | eur }}</dd></div>
+      <div class="flex justify-between gap-3"><dt class="text-secondary">{{ _("Recettes") }}</dt><dd class="amount-blur tabular-nums text-primary">+{{ income_total | eur }}</dd></div>
+    </dl>
+  </div>
+  <div class="flex flex-col gap-2 border-t border-border pt-4">
+    <h3 class="text-base font-semibold text-primary">{{ _("Filtres actifs") }}</h3>
+    <p x-show="active.length === 0" class="text-sm text-secondary">{% trans period=period.label %}Aucun : toutes les opérations de {{ period }}.{% endtrans %}</p>
+    <ul x-show="active.length > 0" style="display: none;" class="flex flex-wrap gap-2">
+      <template x-for="filter in active" :key="filter.key">
+        <li>
+          <button type="button" @click="clear(filter.key)" class="flex min-h-[50px] items-center gap-2 rounded-full border border-border-strong bg-container px-4 text-sm text-primary" :aria-label="'{{ _("Retirer le filtre") | jsq }} ' + filter.label">
+            <span x-text="filter.label"></span>{{ icon('x', size=16) }}
+          </button>
+        </li>
+      </template>
+    </ul>
+  </div>
+  <div class="flex flex-col gap-2.5 border-t border-border pt-4">
+    <h3 class="text-base font-semibold text-primary">{{ _("Où partent les dépenses") }}</h3>
+    {% for entry in breakdown %}
+    {% set top = entry.category %}
+    <div class="flex flex-col gap-1">
+      <div class="flex items-center justify-between gap-3 text-sm">
+        <span class="flex min-w-0 items-center gap-2 text-primary"><span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ (top.id if top else none) | category_color }}" aria-hidden="true"></span><span class="truncate">{{ top.name if top else _("À trier") }}</span></span>
+        <span class="amount-blur flex-none tabular-nums text-primary">{{ (-entry.total) | eur }}</span>
+      </div>
+      <div class="progress-base"><div class="progress-fill" style="width: {{ (entry.total * 100 / breakdown_max) | round | int }}%; background-color: {{ (top.id if top else none) | category_color }};"></div></div>
+    </div>
+    {% else %}
+    <p class="text-sm text-secondary">{{ _("Aucune dépense dans cette recherche.") }}</p>
+    {% endfor %}
+  </div>
+</aside>
+{%- endmacro %}
+
+{# Told to the page component after each swap (see operations-b.js, sync). #}
+{% macro sync(transactions, oob=false) -%}
+<span
+  id="ops-sync"
+  hidden
+  x-init="sync([{{ transactions | map(attribute='id') | join(',') }}], { {% for tx in transactions %}{{ tx.id }}: {{ (tx.amount * 100) | int }}{% if not loop.last %}, {% endif %}{% endfor %} })"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+></span>
+{%- endmacro %}

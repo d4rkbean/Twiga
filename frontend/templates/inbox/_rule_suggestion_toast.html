@@ -31,10 +31,10 @@
         <input type="hidden" name="category_id" value="{{ rule_suggestion.category_id }}" />
         <input type="text" name="keyword" value="{{ rule_suggestion.keyword }}" />
         <div class="flex gap-2">
-          <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+          <button type="submit" class="rule-suggestion-btn-secondary">
             {{ icon('check') }} {{ _("Créer la règle") }}
           </button>
-          <button type="button" @click="visible = false" class="rule-suggestion-btn-secondary">
+          <button type="button" @click="visible = false" class="rule-suggestion-btn-ghost">
             {{ icon('x') }} {{ _("Non merci") }}
           </button>
         </div>

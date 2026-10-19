@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import auth, crud
+from backend import answers, auth, crud
 from backend.database import get_db
-from backend.templating import templates
+from backend.templating import templates, user_display_name
 from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -13,7 +13,18 @@ _ROLES = ("admin", "editor", "viewer")
 
 
 def _list_context(db: Session) -> dict:
-    return {"users": crud.list_users(db)}
+    users = crud.list_users(db)
+    active = [user for user in users if user.is_active]
+    roles = {role: sum(1 for user in active if user.role == role) for role in _ROLES}
+    return {
+        "users": users,
+        # The other way's sentence (who has access, who never opened the account); Classic ignores it.
+        "answer": answers.users_answer(
+            roles,
+            [user_display_name(user) for user in active if user.last_login is None],
+            [user_display_name(user) for user in active if user.role == "admin"],
+        ),
+    }
 
 
 def _active_admin_count(db: Session, exclude_id: int | None = None) -> int:
@@ -130,7 +141,7 @@ def remove_user(request: Request, user_id: int, db: Session = Depends(get_db)):
     current_user = auth.get_current_user(request)
     context = {"request": request, **_list_context(db)}
     if current_user is not None and current_user.id == user_id:
-        context["error"] = _t("Impossible de supprimer votre propre compte.")
+        context["error"] = _t("Impossible de supprimer ton propre compte.")
         return templates.TemplateResponse("users/_content.html", context, status_code=400)
     if target.role == "admin" and _active_admin_count(db, exclude_id=user_id) == 0:
         context["error"] = _t("Impossible : il doit rester au moins un administrateur actif.")

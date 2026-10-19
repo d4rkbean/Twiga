@@ -34,6 +34,48 @@ services:
       # Living style guide at /design-system. Off by default: the route
       # returns 404 unless this variable is true.
       SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}
+      # "The other way" interface variant (Mon profil > Affichage): offered
+      # disabled until this is true.
+      ENABLE_OTHER_WAY: ${ENABLE_OTHER_WAY:-false}
+
+  # --- Tests (profile "test", left out of the normal start) ---
+  # tools/test.sh: a throwaway PostgreSQL database (in memory, no volume) and
+  # a Python container that runs the pytest suite against it.
+  db-test:
+    profiles: ["test"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: finance_test
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: finance
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance -d finance_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  test:
+    profiles: ["test"]
+    image: python:3.12-slim
+    depends_on:
+      db-test:
+        condition: service_healthy
+    working_dir: /work
+    volumes:
+      - .:/work:ro
+    environment:
+      DATABASE_URL: postgresql://finance:finance@db-test:5432/finance_test
+      AUTH_ENABLED: "true"
+      AUTH_PASSWORD: changeme
+      SHOW_DESIGN_SYSTEM: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PIP_ROOT_USER_ACTION: ignore
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    command: >
+      sh -c "pip install -q -r requirements.txt -r requirements-dev.txt
+      && python -m pytest -p no:cacheprovider"
 
 volumes:
   pgdata:

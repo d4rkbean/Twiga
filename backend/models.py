@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
@@ -32,7 +32,7 @@ class PaymentMethod(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
-    icon: Mapped[str] = mapped_column(String(10))
+    icon: Mapped[str] = mapped_column(String(30))
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     display_order: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -212,8 +212,14 @@ class ProjectMovement(Base):
     # Signé, comme Transaction.amount : positif = ajout, négatif = dépense.
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Compte d'où vient l'argent ajouté (facultatif : une dépense, ou un
+    # mouvement ancien, n'en a pas).
+    account_id: Mapped[int | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )
 
     project: Mapped["Project"] = relationship(back_populates="movements")
+    account: Mapped["Account | None"] = relationship()
 
 
 class CapSettings(Base):
@@ -249,6 +255,9 @@ class CapSettings(Base):
     )
     # Enveloppe fixe, quand income_source vaut "fixe".
     income_fixed_amount: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    # Jour du mois où le mois budgétaire commence (1, 5, 10 ou 15 : "Début du
+    # mois budgétaire" dans Paramètres > Préférences). Réglage du foyer.
+    budget_start_day: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
     income_account: Mapped["Account | None"] = relationship()
 
@@ -270,6 +279,9 @@ class CapEntry(Base):
     planned_choix: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     planned_imprevu: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     intention: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Monthly savings goal set in the ritual (optional): the live panel says whether
+    # the planned savings reach it.
+    savings_goal: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     reflection_unexpected: Mapped[str | None] = mapped_column(Text, nullable=True)
     reflection_regret: Mapped[str | None] = mapped_column(Text, nullable=True)
     reflection_proud: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -358,6 +370,14 @@ class AppState(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     last_routine_month: Mapped[date | None] = mapped_column(Date, nullable=True)
     session_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Date de la dernière sauvegarde complète faite depuis Paramètres >
+    # Données > « Sauvegarder maintenant » (jamais le fichier lui-même : il est
+    # téléchargé, pas conservé sur le serveur). NULL = aucune pour l'instant.
+    last_backup_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Setting "Afficher les comptes sur la page de connexion" (Paramètres):
+    # the other way's login shows the household as tiles to pick from. Off by
+    # default, set by the administrator only.
+    show_login_accounts: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
 
 
 class User(Base):
@@ -389,12 +409,47 @@ class User(Base):
     # localStorage pour qu'un nouvel appareil ou un navigateur vidé ne la
     # rejoue pas. La migration marque les comptes existants comme l'ayant vue.
     tour_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Visite guidée de chaque écran : {identifiant d'écran: date de la
+    # proposition} (voir backend/tours.py). Une visite d'écran ne se propose
+    # qu'une fois par compte ; NULL = aucune proposée.
+    tours_seen: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # Langue de l'interface ("fr" / "en", voir backend/i18n.py) et format des
     # montants et dates ("fr" / "en-GB" / "en-US"). Deux réglages distincts.
     # number_format NULL = celui de la langue choisie.
     language: Mapped[str] = mapped_column(String(5), default="fr", server_default="fr")
     number_format: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # Display preferences (see backend/preferences.py): interface variant
+    # ("classic" / "other_way"), theme ("light" / "system" / "dark") and
+    # density ("compact" / "normal" / "comfortable"). The server defaults keep
+    # existing accounts on the current look.
+    ui_variant: Mapped[str] = mapped_column(String(20), default="classic", server_default="classic")
+    theme: Mapped[str] = mapped_column(String(10), default="system", server_default="system")
+    density: Mapped[str] = mapped_column(String(12), default="normal", server_default="normal")
 
+
+class UserSession(Base):
+    # One row per signed-in device (see backend/auth.py and backend/sessions.py).
+    # The session cookie carries a random session id; only its SHA-256 is kept
+    # here, so a copy of the table cannot be replayed as a cookie. A session
+    # closed from "Mon profil", by logging out or by a password change is
+    # deleted: the next request carrying its cookie is signed out.
+    #
+    # legacy_hash is set only on a session converted from a token issued before
+    # this table existed (no session id inside): it is the SHA-256 of that old
+    # token, so concurrent requests carrying it join the same row instead of
+    # creating one each. Closing such a session keeps the row as a tombstone
+    # (token_hash cleared, revoked_at set) so the old token cannot be converted
+    # again; purge_expired_sessions() removes it with the other expired ones.
+    __tablename__ = "user_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    legacy_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    user_agent: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 class RecurringPattern(Base):
     # Décision de l'utilisateur (confirmé/ignoré) sur un abonnement récurrent
@@ -445,3 +500,19 @@ class PendingCheck(Base):
     category: Mapped["Category"] = relationship()
     account: Mapped["Account"] = relationship()
     matched_transaction: Mapped["Transaction | None"] = relationship()
+
+
+class ImportLog(Base):
+    """One line of the "Derniers imports" table: what a finished import
+    brought in (file name, account, lines read, duplicates, rows imported)."""
+
+    __tablename__ = "import_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    imported_on: Mapped[date] = mapped_column(Date, default=date.today)
+    filename: Mapped[str] = mapped_column(String(255))
+    # "Tous les comptes" for a QIF file, which creates its own accounts.
+    account_name: Mapped[str] = mapped_column(String(255))
+    lines: Mapped[int] = mapped_column(Integer, default=0)
+    duplicates: Mapped[int] = mapped_column(Integer, default=0)
+    imported: Mapped[int] = mapped_column(Integer, default=0)

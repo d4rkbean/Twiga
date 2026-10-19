@@ -5,9 +5,12 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud
+from backend.budget_month import period_containing
 from backend.database import get_db
-from backend.dates import month_label, month_names, month_range
+from backend.dates import MONTH_ABBR_EN, MONTH_ABBR_FR, month_label, month_names, month_range
+from backend.i18n import current_language
+from backend.pillars import PILLAR_ORDER, get_pillar_label
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
 
@@ -49,25 +52,53 @@ def _build_context(db: Session, month: int, year: int) -> dict:
         month_resources = crud.get_income_prefill(db, month_start)
         resources_from_cap = False
 
-    # Toujours le mois CIVIL en cours, indépendamment du mois consulté/édité
+    # Toujours le mois budgétaire en cours, indépendamment du mois consulté/édité
     # ci-dessus dans le formulaire : ce statut doit rester visible quel que
     # soit le mois affiché, pour remplacer la bannière d'alertes de La
     # Savane une fois ses alertes masquées.
     today = date.today()
-    current_month_start, current_month_end = month_range(today.year, today.month)
-    current_month_status = crud.get_budget_progress(db, current_month_start, current_month_end)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
+    current_month_status = crud.get_budget_progress(db, current_period.start, current_period.last_day)
+
+    # Les catégories rangées par pilier (même résolution que « Mon mois » et
+    # le rituel : voir crud.resolve_budget_pillar), pour que l'écran où l'on
+    # règle le plan raconte le même découpage que celui où on le suit.
+    groups = [
+        {
+            "code": code,
+            "label": get_pillar_label(code),
+            "categories": [c for c in categories if crud.resolve_budget_pillar(c, c.children) == code],
+        }
+        for code in PILLAR_ORDER
+    ]
+
+    # The sentence of the other way's screen: what is left to spread, written
+    # from the same figures the form recomputes in the browser while you type.
+    savings_withdrawal = crud.get_savings_withdrawal(db, month_start)
+    total_budgeted = sum((amount or Decimal("0.00") for amount in budgets.values()), Decimal("0.00"))
+    headline, subline = answers.budgets_answer(
+        available=month_resources + savings_withdrawal,
+        total=total_budgeted,
+        month_label=month_label(year, month),
+    )
+    abbreviations = MONTH_ABBR_EN if current_language() == "en" else MONTH_ABBR_FR
 
     return {
+        "answer_headline": headline,
+        "answer_sub": subline,
+        "total_budgeted": total_budgeted,
+        "month_abbreviations": [name.capitalize() for name in abbreviations],
         "month": month,
         "year": year,
         "period_label": month_label(year, month),
         "categories": categories,
+        "groups": [group for group in groups if group["categories"]],
         "budgets": budgets,
         "current_month_status": current_month_status,
-        "current_month_label": month_label(today.year, today.month),
+        "current_month_label": current_period.label,
         "month_resources": month_resources,
         "resources_from_cap": resources_from_cap,
-        "savings_withdrawal": crud.get_savings_withdrawal(db, month_start),
+        "savings_withdrawal": savings_withdrawal,
     }
 
 
@@ -79,10 +110,11 @@ def budgets_page(
     db: Session = Depends(get_db),
 ):
     today = date.today()
-    month = month if month and 1 <= month <= 12 else today.month
-    year = year or today.year
+    current_month = period_containing(today, crud.get_budget_start_day(db)).month
+    month = month if month and 1 <= month <= 12 else current_month.month
+    year = year or current_month.year
 
-    years = sorted(set(range(today.year - 1, today.year + 2)) | set(crud.get_transaction_years(db)), reverse=True)
+    years = sorted(set(range(current_month.year - 1, current_month.year + 2)) | set(crud.get_transaction_years(db)), reverse=True)
     if year not in years:
         years = sorted(set(years) | {year}, reverse=True)
 

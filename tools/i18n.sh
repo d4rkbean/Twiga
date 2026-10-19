@@ -16,8 +16,8 @@ run() {
     python:3.12-slim sh -c "pip install -q --user babel jinja2 >/dev/null 2>&1 && PATH=/tmp/.local/bin:\$PATH $1"
 }
 case "${1:-all}" in
-  extract) run "pybabel extract -F babel.cfg -k lazy_gettext -k _t -k ngettext --no-location --sort-output -o backend/locale/messages.pot ." ;;
-  update)  run "pybabel update -i backend/locale/messages.pot -d backend/locale -l en --no-fuzzy-matching --no-location" ;;
+  extract) run "pybabel extract -F babel.cfg -k lazy_gettext -k _t -k ngettext:1,2 --no-location --sort-output -o backend/locale/messages.pot . frontend/templates/_macros" ;;
+  update)  run "pybabel update -i backend/locale/messages.pot -d backend/locale -l en --no-fuzzy-matching --no-wrap" ;;
   compile) run "pybabel compile -d backend/locale" ;;
   check)   run "python tools/i18n_check.py" ;;
   all)     "$0" extract && "$0" update && "$0" compile ;;

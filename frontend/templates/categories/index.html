@@ -1,54 +1,105 @@
 {% extends "base.html" %}
+{% from "_macros/page.html" import page_header %}
+{% from "_macros/dropdown_field.html" import dropdown_field %}
 
-{% block title %}{{ _("Catégories — Twiga 🦒") }}{% endblock %}
+{# Cet écran a sa propre action principale en ambre plein : « Importer », dans
+   l'en-tête de la coque, passe en secondaire (un seul ambre plein par écran). #}
+{% set demote_import = true %}
+
+{% block title %}{{ _("Catégories — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("categories", [
+  tour_step('[data-tour="categories-add"]', _("Ajouter une catégorie"), _("Donne un nom et choisis l'emplacement : au premier niveau, ou comme sous-catégorie d'une autre."), "plus", position="bottom", alt_target='[data-tour="categories-add-mobile"]', alt_position="bottom", write=True),
+  tour_step('[data-tour="categories-pillar"]', _("Le pilier du Cap"), _("Chaque catégorie compte dans un pilier du Cap : Essentiel, Choix ou Imprévus. Une sous-catégorie reprend celui de sa catégorie."), "compass", position="bottom"),
+  tour_step("#categories-content", _("Tes catégories"), _("Chaque ligne indique son pilier du Cap et ses budgets. Les sous-catégories sont rangées en dessous."), "tag", position="top"),
+  tour_step('[data-tour="categories-toggle"]', _("Déplier une catégorie"), _("La flèche à gauche ouvre les sous-catégories. C'est là que tu peux en ajouter une."), "chevron-right", position="bottom", optional=True),
+  tour_step('[data-tour="categories-reset"]', _("Réinitialiser les piliers"), _("Efface les piliers réglés à la main sur les sous-catégories : elles reprennent celui de leur catégorie."), "refresh", position="bottom", write=True),
+]) }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ _("Catégories") }}</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
+  {% set child_total = categories | map(attribute="children") | map("length") | sum %}
+  {% set categories_subtitle %}{% trans count=categories | length %}{{ count }} catégorie{% pluralize %}{{ count }} catégories{% endtrans %} · {% trans count=child_total %}{{ count }} sous-catégorie{% pluralize %}{{ count }} sous-catégories{% endtrans %}{% endset %}
+  {{ page_header(_("Catégories"), subtitle=categories_subtitle, back_href="/settings", back_label=_("Paramètres")) }}
+
+  {% set parent_options = namespace(items=[("", _("Catégorie de premier niveau"))]) %}
+  {% for parent in categories %}
+  {% set option_label %}{% trans v=parent.icon or "", name=parent.name %}Sous-catégorie de {{ v }} {{ name }}{% endtrans %}{% endset %}
+  {% set parent_options.items = parent_options.items + [(parent.id, option_label)] %}
+  {% endfor %}
+  {# Le même formulaire sert au bureau (carte) et au mobile (feuille) : il n'est écrit qu'une fois. #}
+  {% set add_form %}
+      <form
+        hx-post="/categories/create"
+        hx-target="#categories-content"
+        hx-swap="outerHTML"
+        hx-on::after-request="this.closest('dialog')?.close()"
+        class="flex flex-col gap-3 lg:flex-row lg:items-end"
+      >
+        <label class="form-group lg:flex-1">
+          <span class="form-label">{{ _("Nom de la catégorie") }}</span>
+          <input type="text" name="name" placeholder="{{ _("Nom de la catégorie") }}" required class="input-base" />
+        </label>
+        <div class="form-group lg:flex-1">
+          <span class="form-label">{{ _("Emplacement") }}</span>
+          {{ dropdown_field("parent_id", parent_options.items, "", aria_label=_("Emplacement")) }}
+        </div>
+        {# L'ambre va à l'action de départ quand il n'y a encore rien (le jeu de base). #}
+        <button type="submit" class="btn {{ 'btn-primary' if categories else 'btn-secondary border-border-strong' }} lg:px-8">
+          {{ _("Ajouter") }}
+        </button>
+      </form>
+  {% endset %}
+
+  <button
+    type="button"
+    onclick="document.getElementById('new-category-dialog').showModal()"
+    data-tour="categories-add-mobile"
+    class="btn {{ 'btn-primary' if categories else 'btn-secondary border-border-strong' }} lg:hidden"
+  >
+    {{ icon('plus', size=18) }} {{ _("Ajouter une catégorie") }}
+  </button>
+
+  <dialog id="new-category-dialog" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm">
+    <div class="p-4 flex flex-col gap-3">
+      <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
+      {{ add_form }}
+      <button type="button" onclick="this.closest('dialog').close()" class="btn btn-secondary border-border-strong">{{ _("Annuler") }}</button>
+    </div>
+  </dialog>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 lg:gap-6 items-start">
+    <section data-tour="categories-add" class="card hidden lg:flex flex-col gap-3">
+      <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
+      {{ add_form }}
+    </section>
+
+    <aside data-tour="categories-pillar" class="card flex flex-col gap-3">
+      <h2 class="text-section-title">{{ _("Pilier du Cap") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Chaque catégorie compte dans un pilier du Cap. Une sous-catégorie hérite de sa catégorie, sauf si tu lui en donnes un autre.") }}</p>
+      <ul class="hidden lg:flex flex-col gap-2 text-sm">
+        <li class="flex items-center gap-2"><span class="text-info">{{ icon('home', size=16) }}</span><span><strong class="font-semibold">{{ _("Essentiel") }}</strong> · {{ _("logement, courses, santé") }}</span></li>
+        <li class="flex items-center gap-2"><span class="text-chart-3">{{ icon('star', size=16) }}</span><span><strong class="font-semibold">{{ _("Choix") }}</strong> · {{ _("sorties, loisirs, plaisirs") }}</span></li>
+        <li class="flex items-center gap-2"><span class="text-warning">{{ icon('urgent', size=16) }}</span><span><strong class="font-semibold">{{ _("Imprévus") }}</strong> · {{ _("une réserve, sans détail") }}</span></li>
+      </ul>
+      <p class="text-sm text-secondary">{{ _("L'Épargne ne se choisit pas ici : elle se fixe dans Le Cap.") }}</p>
+      <div class="flex flex-col gap-1 items-start max-lg:items-stretch">
+        <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink whitespace-nowrap">{{ _("Ouvrir Le Cap") }} {{ icon('arrow-narrow-right', size=16) }}</a>
+        <button
+          type="button"
+          data-tour="categories-reset"
+          hx-post="/categories/reset-pillar-overrides"
+          hx-target="#categories-content"
+          hx-swap="outerHTML"
+          hx-confirm="{{ _("Réinitialiser tous les piliers des sous-catégories vers « hérite du parent » ?") }}"
+          class="btn btn-secondary border-border-strong w-full lg:w-auto"
+        >
+          {{ icon('refresh', size=18) }} {{ _("Réinitialiser les piliers") }}
+        </button>
+      </div>
+    </aside>
   </div>
 
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">{{ _("Ajouter une catégorie") }}</h2>
-    <form
-      hx-post="/categories/create"
-      hx-target="#categories-content"
-      hx-swap="outerHTML"
-      class="flex flex-col gap-3"
-    >
-      <input
-        type="text"
-        name="name"
-        placeholder="{{ _("Nom de la catégorie") }}"
-        required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      />
-      <select name="parent_id" class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3">
-        <option value="">{{ _("Catégorie de premier niveau") }}</option>
-        {% for parent in categories %}
-        <option value="{{ parent.id }}">{% trans v=parent.icon or "", name=parent.name %}Sous-catégorie de {{ v }} {{ name }}{% endtrans %}</option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        {{ _("Ajouter") }}
-      </button>
-    </form>
-  </div>
-
-  <div class="flex items-center justify-between">
-    <h2 class="text-lg font-bold text-primary">{{ _("Catégories existantes") }}</h2>
-    <button
-      type="button"
-      hx-post="/categories/reset-pillar-overrides"
-      hx-target="#categories-content"
-      hx-swap="outerHTML"
-      hx-confirm="{{ _("Réinitialiser tous les piliers des sous-catégories vers « hérite du parent » ?") }}"
-      class="text-xs text-secondary font-medium"
-    >
-      {{ _("Réinitialiser les piliers") }}
-    </button>
-  </div>
   {% include "categories/_content.html" %}
 </main>
 {% endblock %}

@@ -1,0 +1,30 @@
+{#- « Derniers imports »: what was imported, when, from which file. `oob` makes a
+    response replace the one already on the page. -#}
+<section id="import-history" class="card flex flex-col gap-3" {% if oob %}hx-swap-oob="true"{% endif %} aria-labelledby="import-history-title">
+  <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <h2 id="import-history-title" class="text-section-title">{{ _("Derniers imports") }}</h2>
+    {% if import_logs %}
+    <p class="text-sm text-secondary">{% trans files=import_logs | length, rows=import_logs_total | integer %}{{ files }} fichier · {{ rows }} opérations{% pluralize %}{{ files }} fichiers · {{ rows }} opérations{% endtrans %}</p>
+    {% endif %}
+  </div>
+  {% if import_logs %}
+  <ul class="-mx-[var(--space-card)] border-t border-border">
+    {% for log in import_logs %}
+    <li class="grid grid-cols-1 sm:grid-cols-[6.5rem_minmax(0,1.6fr)_minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-0.5 px-[var(--space-card)] py-[var(--row-pad)] min-h-[var(--row-static)] border-b border-border last:border-0 text-sm">
+      <span class="hidden sm:block tabular-nums text-secondary">{{ log.imported_on | fr_date }}</span>
+      <span class="min-w-0">
+        <span class="block font-mono text-xs break-all">{{ log.filename }}</span>
+        <span class="block sm:hidden text-xs text-secondary">{{ log.imported_on | fr_date }} · {{ log.account_name }}</span>
+      </span>
+      <span class="hidden sm:block text-secondary truncate">{{ log.account_name }}</span>
+      <span class="sm:text-right tabular-nums sm:whitespace-nowrap">
+        <strong>{% trans n=log.imported, shown=log.imported | integer %}{{ shown }} importée{% pluralize %}{{ shown }} importées{% endtrans %}</strong>
+        <span class="text-secondary">· {% trans n=log.duplicates %}{{ n }} doublon{% pluralize %}{{ n }} doublons{% endtrans %}</span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-sm text-secondary">{{ _("Aucun import pour l'instant.") }}</p>
+  {% endif %}
+</section>

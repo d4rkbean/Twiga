@@ -1,0 +1,35 @@
+{#- « Sessions ouvertes » (Mon profil, Classique, maquette A-D-profil) : les appareils connectés au
+    compte, l'appareil courant en premier. Fragment rendu par /profile/sessions/close et
+    /profile/sessions/close-others, qui remplacent #profile-sessions. Le numéro de ligne part dans
+    le corps d'un POST, jamais dans l'adresse. -#}
+<div id="profile-sessions" class="flex flex-col">
+  <h2 id="h-sess" class="text-section-title mb-4">{{ _("Sessions ouvertes") }}</h2>
+  <ul class="flex flex-col">
+    {% for item in sessions %}
+    <li class="flex items-center gap-3 min-h-[56px] py-2 {{ '' if loop.first else 'border-t border-border' }}">
+      <div class="flex-1 min-w-0">
+        <p class="font-medium truncate">{{ item.device }} · {{ item.browser }}</p>
+        <p class="text-xs text-secondary">{% if item.is_current %}{{ item.last_seen }}{% else %}{{ _("Dernière activité %(when)s", when=item.last_seen) }}{% endif %} · {{ _("ouverte le %(date)s", date=item.opened_on) }}</p>
+      </div>
+      {% if item.is_current %}
+      <span class="flex-none rounded-full bg-success-soft text-success text-xs font-semibold px-3 py-0.5">{{ _("Cet appareil") }}</span>
+      {% else %}
+      <form hx-post="/profile/sessions/close" hx-target="#profile-sessions" hx-swap="outerHTML"
+            hx-confirm="{{ _("Fermer cette session ? L'appareil sera déconnecté.") }}">
+        <input type="hidden" name="session_id" value="{{ item.id }}" />
+        <button type="submit" class="btn btn-secondary border-border-strong px-4" aria-label="{{ _("Fermer la session de %(device)s", device=item.device ~ ' · ' ~ item.browser) }}">{{ icon('logout', size=18) }} {{ _("Fermer") }}</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% if sessions | length > 1 %}
+  <form hx-post="/profile/sessions/close-others" hx-target="#profile-sessions" hx-swap="outerHTML"
+        hx-confirm="{{ _("Fermer toutes les autres sessions ? Ces appareils seront déconnectés.") }}" class="pt-3 border-t border-border">
+    <button type="submit" class="btn btn-secondary border-border-strong">{{ _("Fermer les autres sessions") }}</button>
+  </form>
+  {% else %}
+  <p class="text-xs text-secondary pt-3 border-t border-border">{{ _("Aucune autre session ouverte.") }}</p>
+  {% endif %}
+  <p class="text-xs font-medium text-success mt-2 empty:hidden" role="status" aria-live="polite">{{ sessions_notice }}</p>
+</div>

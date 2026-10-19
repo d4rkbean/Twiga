@@ -10,7 +10,8 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud, report_view
+from backend.budget_month import period_containing, period_of_month
 from backend.database import get_db
 from backend.dates import (
     month_label,
@@ -23,7 +24,7 @@ from backend.dates import (
     year_label,
     year_range,
 )
-from backend.formatting import format_amount, format_date
+from backend.formatting import format_amount_for_export, format_date
 from backend.templating import category_display_filter, templates
 from backend.i18n import gettext as _t
 
@@ -64,17 +65,25 @@ def _resolve_period(
     date_from: str | None,
     date_to: str | None,
     today: date,
+    start_day: int = 1,
 ) -> ResolvedPeriod:
     period_type = period_type if period_type in _PERIOD_TYPES else "mois"
+    # "Mois" is the budget month (see backend/budget_month.py): the one the
+    # selector names, which starts on the household's start day.
+    current_period = period_containing(today, start_day)
+    current_month = current_period.month.month
 
     if period_type == "mois":
-        m = month if month and 1 <= month <= 12 else today.month
-        y = year or today.year
-        start, end = month_range(y, m)
-        label = month_label(y, m)
-        prev_m, prev_y = (12, y - 1) if m == 1 else (m - 1, y)
-        next_m, next_y = (1, y + 1) if m == 12 else (m + 1, y)
-        prev_start, prev_end = month_range(prev_y, prev_m)
+        m = month if month and 1 <= month <= 12 else current_month
+        y = year or current_period.month.year
+        budget_period = period_of_month(y, m, start_day)
+        start, end = budget_period.start, budget_period.last_day
+        label = budget_period.label
+        prev_period = budget_period.shifted(-1)
+        prev_m, prev_y = prev_period.month.month, prev_period.month.year
+        next_period = budget_period.shifted(1)
+        next_m, next_y = next_period.month.month, next_period.month.year
+        prev_start, prev_end = prev_period.start, prev_period.last_day
         prev_params = {"period_type": "mois", "month": prev_m, "year": prev_y}
         next_params = {"period_type": "mois", "month": next_m, "year": next_y}
         quarter, semester = (m - 1) // 3 + 1, 1 if m <= 6 else 2
@@ -89,7 +98,7 @@ def _resolve_period(
         prev_start, prev_end = quarter_range(prev_y, prev_q)
         prev_params = {"period_type": "trimestre", "quarter": prev_q, "year": prev_y}
         next_params = {"period_type": "trimestre", "quarter": next_q, "year": next_y}
-        month, quarter, semester = today.month, q, 1 if q <= 2 else 2
+        month, quarter, semester = current_month, q, 1 if q <= 2 else 2
 
     elif period_type == "semestre":
         s = semester if semester in (1, 2) else (1 if today.month <= 6 else 2)
@@ -101,7 +110,7 @@ def _resolve_period(
         prev_start, prev_end = semester_range(prev_y, prev_s)
         prev_params = {"period_type": "semestre", "semester": prev_s, "year": prev_y}
         next_params = {"period_type": "semestre", "semester": next_s, "year": next_y}
-        month, quarter, semester = today.month, (today.month - 1) // 3 + 1, s
+        month, quarter, semester = current_month, (today.month - 1) // 3 + 1, s
 
     elif period_type == "annee":
         y = year or today.year
@@ -110,13 +119,13 @@ def _resolve_period(
         prev_start, prev_end = year_range(y - 1)
         prev_params = {"period_type": "annee", "year": y - 1}
         next_params = {"period_type": "annee", "year": y + 1}
-        month, quarter, semester = today.month, (today.month - 1) // 3 + 1, 1 if today.month <= 6 else 2
+        month, quarter, semester = current_month, (today.month - 1) // 3 + 1, 1 if today.month <= 6 else 2
 
     else:  # personnalise
         try:
-            start = date.fromisoformat(date_from) if date_from else today.replace(day=1)
+            start = date.fromisoformat(date_from) if date_from else current_period.start
         except ValueError:
-            start = today.replace(day=1)
+            start = current_period.start
         try:
             end = date.fromisoformat(date_to) if date_to else today
         except ValueError:
@@ -140,7 +149,7 @@ def _resolve_period(
             "date_from": next_start.isoformat(),
             "date_to": next_end.isoformat(),
         }
-        month, quarter, semester = today.month, (today.month - 1) // 3 + 1, 1 if today.month <= 6 else 2
+        month, quarter, semester = current_month, (today.month - 1) // 3 + 1, 1 if today.month <= 6 else 2
 
     return ResolvedPeriod(
         period_type=period_type,
@@ -161,7 +170,7 @@ def _resolve_period(
         # que report_qs alimente un hx-get déclenché par hx-trigger="load"
         # (422 Unprocessable Entity, FastAPI ne parse pas la chaîne "None"
         # comme int).
-        month=m if period_type == "mois" else today.month,
+        month=m if period_type == "mois" else current_month,
         year=y,
         quarter=quarter,
         semester=semester,
@@ -170,7 +179,7 @@ def _resolve_period(
     )
 
 
-def _resolve_period_from_params(params: dict, today: date) -> ResolvedPeriod:
+def _resolve_period_from_params(params: dict, today: date, start_day: int = 1) -> ResolvedPeriod:
     # Reconstruit un ResolvedPeriod complet à partir d'un prev_params déjà
     # produit par _resolve_period (voir "Décalage période" plus bas, onglet
     # Mois) : réutilise la même résolution plutôt que de dupliquer la
@@ -186,6 +195,7 @@ def _resolve_period_from_params(params: dict, today: date) -> ResolvedPeriod:
         params.get("date_from"),
         params.get("date_to"),
         today,
+        start_day,
     )
 
 
@@ -275,7 +285,8 @@ def _build_report_context(
 ) -> dict:
     today = today or date.today()
     parsed_account_id = _parse_account_id(account_id)
-    period = _resolve_period(period_type, month, year, quarter, semester, date_from, date_to, today)
+    start_day = crud.get_budget_start_day(db)
+    period = _resolve_period(period_type, month, year, quarter, semester, date_from, date_to, today, start_day)
 
     # "Décalage période" : reflète la réalité d'un budget familial où le
     # salaire perçu fin du mois M-1 finance les dépenses du mois M — un
@@ -302,7 +313,7 @@ def _build_report_context(
     # période ("Dépenses : Juillet 2026 | Recettes : Juin 2026").
     mois_shift_active = shift_income and period.period_type == "mois"
     if mois_shift_active:
-        shifted_prev_period = _resolve_period_from_params(period.prev_params, today)
+        shifted_prev_period = _resolve_period_from_params(period.prev_params, today, crud.get_budget_start_day(db))
         income_period_start, income_period_end = period.prev_start, period.prev_end
         income_period_label = shifted_prev_period.label
         income_compare_start, income_compare_end = shifted_prev_period.prev_start, shifted_prev_period.prev_end
@@ -359,7 +370,8 @@ def _build_report_context(
             for i in range(len(months))
         ]
         receipt_chart_series.append({"label": _t("Autres"), "data": others})
-    current_month_start, _ = month_range(today.year, today.month)
+    # Marks the current month in the 12-month cashflow (calendar months).
+    current_month_start = today.replace(day=1)
 
     expense_rows = _build_category_rows(
         db, period.start, period.end, period.prev_start, period.prev_end, parsed_account_id, positive=False
@@ -457,26 +469,26 @@ def _build_report_context(
     # sens univoque. L'historique, lui, reste indépendant de toute période :
     # c'est un journal complet, pas une vue filtrée.
     cap_today = date.today()
-    cap_month_start = date(cap_today.year, cap_today.month, 1)
-    cap_entry = crud.get_cap_entry_for_month(db, cap_month_start)
+    cap_period = period_containing(cap_today, start_day)
+    cap_entry = crud.get_cap_entry_for_month(db, cap_period.month)
     cap_pillar_bars = None
     if cap_entry is not None:
-        cap_actuals = crud.get_pillar_actuals(db, cap_month_start, cap_today, parsed_account_id)
+        cap_actuals = crud.get_pillar_actuals(db, cap_period.start, cap_today, parsed_account_id)
         cap_pillar_bars = [
             {
-                "icon": icon,
+                "key": key,
                 "name": name,
                 "planned": planned,
                 "actual": cap_actuals[key],
                 "bar_width": min(round(cap_actuals[key] / planned * 100), 100) if planned else 0,
             }
-            for key, icon, name, planned in [
-                ("essentiel", "🏠", _t("Essentiel"), cap_entry.planned_essentiel),
-                ("choix", "🌟", _t("Choix"), cap_entry.planned_choix),
-                ("imprevu", "🆘", _t("Imprévus"), cap_entry.planned_imprevu),
+            for key, name, planned in [
+                ("essentiel", _t("Essentiel"), cap_entry.planned_essentiel),
+                ("choix", _t("Choix"), cap_entry.planned_choix),
+                ("imprevu", _t("Imprévus"), cap_entry.planned_imprevu),
             ]
         ]
-    cap_unexpected = crud.get_unexpected_transactions(db, cap_month_start, cap_today)
+    cap_unexpected = crud.get_unexpected_transactions(db, cap_period.start, cap_today)
     cap_unexpected_total = sum((-t.amount for t in cap_unexpected), Decimal("0.00"))
     cap_history = crud.get_cap_entry_history(db)
 
@@ -491,6 +503,8 @@ def _build_report_context(
         "expense_total": expense_total,
         "result_total": result_total,
         "savings_rate": savings_rate,
+        "prev_income": prev_income,
+        "prev_expense": prev_expense,
         "income_change": _percent_change(income_total, prev_income),
         "expense_change": _percent_change(expense_total, prev_expense),
         "result_change": result_change,
@@ -506,6 +520,7 @@ def _build_report_context(
         "income_bar_pct": income_bar_pct,
         "expense_bar_pct": expense_bar_pct,
         "expense_rows": expense_rows,
+        "pending_expense_total": crud.get_pending_expense_total(db, period.start, period.end, parsed_account_id),
         "income_rows": income_rows,
         "budget_progress": budget_progress,
         "period_months": period_months,
@@ -530,8 +545,17 @@ def _build_report_context(
         "cap_unexpected": cap_unexpected,
         "cap_unexpected_total": cap_unexpected_total,
         "cap_history": cap_history,
-        "cap_month_label": month_label(cap_today.year, cap_today.month),
+        "cap_month_label": cap_period.label,
     }
+
+
+def _add_other_way_context(request: Request, db: Session, context: dict, question: str | None) -> None:
+    """The nine questions of the other way's Rapports: only computed for it, so the
+    Classic page renders exactly what it always did."""
+    if getattr(request.state, "ui_variant", None) != "other_way":
+        return
+    context.update(report_view.build_other_way_context(db, context, date.today()))
+    context["question"] = question if question in answers.REPORT_QUESTION_IDS else "dep"
 
 
 @router.get("", response_class=HTMLResponse)
@@ -546,6 +570,7 @@ def reports_page(
     date_to: str | None = None,
     account_id: str | None = None,
     shift_income: str | None = None,
+    q: str | None = None,
     db: Session = Depends(get_db),
 ):
     context = _build_report_context(
@@ -553,6 +578,7 @@ def reports_page(
         shift_income=shift_income == "1",
     )
     context["request"] = request
+    _add_other_way_context(request, db, context, q)
     return templates.TemplateResponse("reports/index.html", context)
 
 
@@ -568,6 +594,7 @@ def reports_content(
     date_to: str | None = None,
     account_id: str | None = None,
     shift_income: str | None = None,
+    q: str | None = None,
     db: Session = Depends(get_db),
 ):
     context = _build_report_context(
@@ -575,6 +602,7 @@ def reports_content(
         shift_income=shift_income == "1",
     )
     context["request"] = request
+    _add_other_way_context(request, db, context, q)
     return templates.TemplateResponse("reports/_content.html", context)
 
 
@@ -604,7 +632,9 @@ def report_transactions(
     # donut affiché), ça évite une requête DB supplémentaire ici juste pour
     # le titre.
     today = date.today()
-    period = _resolve_period(period_type, month, year, quarter, semester, date_from, date_to, today)
+    period = _resolve_period(
+        period_type, month, year, quarter, semester, date_from, date_to, today, crud.get_budget_start_day(db)
+    )
     parsed_account_id = _parse_account_id(account_id)
     uncategorized = category_id == "none"
     parsed_category_id = int(category_id) if category_id and not uncategorized else None
@@ -620,7 +650,7 @@ def report_transactions(
     mois_shift_active = shift_income == "1" and period.period_type == "mois"
     if positive and mois_shift_active:
         query_start, query_end = period.prev_start, period.prev_end
-        query_label = _resolve_period_from_params(period.prev_params, today).label
+        query_label = _resolve_period_from_params(period.prev_params, today, crud.get_budget_start_day(db)).label
     else:
         query_start, query_end, query_label = period.start, period.end, period.label
 
@@ -654,6 +684,71 @@ def report_transactions(
     return templates.TemplateResponse("reports/_transactions_list.html", context)
 
 
+@router.get("/category-sheet", response_class=HTMLResponse)
+def category_sheet(
+    request: Request,
+    period_type: str | None = None,
+    month: int | None = None,
+    year: int | None = None,
+    quarter: int | None = None,
+    semester: int | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    account_id: str | None = None,
+    type: str = "expense",
+    category_id: str | None = None,
+    exact_category_id: str | None = None,
+    category_name: str = "",
+    shift_income: str | None = None,
+    db: Session = Depends(get_db),
+):
+    # The side sheet of a category (the other way): what it weighs, its
+    # subcategories, then its twelve months and its operations. The trend and the
+    # operations are the existing fragments, which the sheet loads by itself; this
+    # route only draws the head: the sentence, the total and the subcategories.
+    today = date.today()
+    period = _resolve_period(
+        period_type, month, year, quarter, semester, date_from, date_to, today, crud.get_budget_start_day(db)
+    )
+    parsed_account_id = _parse_account_id(account_id)
+    uncategorized = category_id == "none"
+    parsed_category_id = int(category_id) if category_id and not uncategorized else None
+    parsed_exact_id = int(exact_category_id) if exact_category_id else None
+    positive = type == "income"
+    shifted = shift_income == "1" and period.period_type == "mois"
+    if positive and shifted:
+        query_start, query_end = period.prev_start, period.prev_end
+    else:
+        query_start, query_end = period.start, period.end
+
+    rows = _build_category_rows(
+        db, query_start, query_end, period.prev_start, period.prev_end, parsed_account_id, positive=positive
+    )
+    row = next((r for r in rows if r["category_id"] == parsed_category_id), None)
+    _, count = crud.get_report_transactions_page(
+        db, query_start, query_end, parsed_account_id,
+        positive=positive, category_id=parsed_category_id, exact_category_id=parsed_exact_id,
+        uncategorized=uncategorized, page=1, page_size=1,
+    )
+    context = {
+        "request": request,
+        "report_qs": _build_report_qs(period, parsed_account_id, shift_income == "1"),
+        "type": type,
+        "category_id": category_id or "",
+        "exact_category_id": exact_category_id or "",
+        "category_name": category_name,
+        "uncategorized": uncategorized,
+        "parent_name": row["name"] if row else category_name,
+        "total": row["amount"] if row else Decimal("0.00"),
+        "percent": row["percent_of_total"] if row else 0,
+        "count": count,
+        "subcategories": row["subcategories"] if row and not exact_category_id else [],
+        "period_label": period.label,
+        "positive": positive,
+    }
+    return templates.TemplateResponse("other_way/reports/_category_sheet.html", context)
+
+
 @router.get("/category-trend", response_class=HTMLResponse)
 def category_trend(
     request: Request,
@@ -676,13 +771,17 @@ def category_trend(
     # naviguer sur un mois passé avant d'ouvrir "l'évolution" d'une
     # catégorie doit ancrer la fenêtre sur CE mois-là, pas sur aujourd'hui.
     today = date.today()
-    period = _resolve_period(period_type, month, year, quarter, semester, date_from, date_to, today)
+    period = _resolve_period(
+        period_type, month, year, quarter, semester, date_from, date_to, today, crud.get_budget_start_day(db)
+    )
     parsed_account_id = _parse_account_id(account_id)
     uncategorized = category_id == "none"
     parsed_category_id = int(category_id) if category_id and not uncategorized else None
     positive = type == "income"
 
-    anchor_year, anchor_month = period.end.year, period.end.month
+    anchor_year, anchor_month = (
+        (period.year, period.month) if period.period_type == "mois" else (period.end.year, period.end.month)
+    )
     months = trailing_months_ending(anchor_year, anchor_month, count=12)
     trend = crud.get_category_trend(
         db, parsed_category_id, months, positive=positive, account_id=parsed_account_id, exact=exact
@@ -733,7 +832,9 @@ def export_report_transactions_csv(
     # /reports/transactions, pour exporter exactement ce que l'utilisateur
     # voit dans ce tableau, sans la pagination de l'affichage à l'écran.
     today = date.today()
-    period = _resolve_period(period_type, month, year, quarter, semester, date_from, date_to, today)
+    period = _resolve_period(
+        period_type, month, year, quarter, semester, date_from, date_to, today, crud.get_budget_start_day(db)
+    )
     parsed_account_id = _parse_account_id(account_id)
     uncategorized = category_id == "none"
     parsed_category_id = int(category_id) if category_id and not uncategorized else None
@@ -799,21 +900,21 @@ def export_report_csv(
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow([_t("Rapport Twiga"), context["period_bar_label"]])
     writer.writerow([])
-    writer.writerow([_t("Recettes"), format_amount(context["income_total"])])
-    writer.writerow([_t("Dépenses"), format_amount(context["expense_total"])])
-    writer.writerow([_t("Résultat"), format_amount(context["result_total"])])
+    writer.writerow([_t("Recettes"), format_amount_for_export(context["income_total"])])
+    writer.writerow([_t("Dépenses"), format_amount_for_export(context["expense_total"])])
+    writer.writerow([_t("Résultat"), format_amount_for_export(context["result_total"])])
     writer.writerow([_t("Taux d'épargne"), f"{context['savings_rate']} %"])
     writer.writerow([_t("Score Twiga"), f"{context['twiga_score']['score']} / 100"])
     writer.writerow([])
     writer.writerow([_t("Dépenses par catégorie"), _t("Montant"), "%" + _t(" du total"), _t("Évolution vs période précédente")])
     for row in context["expense_rows"]:
         change = f"{row['change']} %" if row["change"] is not None else ""
-        writer.writerow([row["name"], format_amount(row["amount"]), f"{row['percent_of_total']} %", change])
+        writer.writerow([row["name"], format_amount_for_export(row["amount"]), f"{row['percent_of_total']} %", change])
     writer.writerow([])
     writer.writerow([_t("Recettes par catégorie"), _t("Montant"), "%" + _t(" du total"), _t("Évolution vs période précédente")])
     for row in context["income_rows"]:
         change = f"{row['change']} %" if row["change"] is not None else ""
-        writer.writerow([row["name"], format_amount(row["amount"]), f"{row['percent_of_total']} %", change])
+        writer.writerow([row["name"], format_amount_for_export(row["amount"]), f"{row['percent_of_total']} %", change])
 
     filename = f"twiga-rapport-{period.start.isoformat()}-{period.end.isoformat()}.csv"
     return Response(

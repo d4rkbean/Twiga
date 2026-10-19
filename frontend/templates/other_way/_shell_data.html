@@ -1,0 +1,92 @@
+{#-
+  Ce que la coque de « L'autre voie » sait afficher : ses destinations, le
+  contenu du menu Plus, et où l'on se trouve. Un seul endroit, lu par la barre
+  du haut, la barre du bas et le menu Plus :
+
+    {% import "other_way/_shell_data.html" as shell with context %}
+
+  Exporte : destinations, more_groups, is_admin, shell_active, shell_title.
+
+  Rôles : les mêmes conditions que la coque Classique, lues dans
+  backend/auth.py (_ADMIN_ONLY_PREFIXES : /imports et /users). Ces deux entrées
+  portent "admin": true et disparaissent pour l'éditeur et la lecture seule ;
+  le groupe « Alimenter » (l'import) avec elles. Sans authentification, tout
+  est permis, donc tout s'affiche.
+
+  Destination active : La Savane sur /transactions/inbox, Panorama sur
+  /dashboard, Le Cap sur /cap et /budgets (donc aussi Mon mois, qui est sous
+  /cap), Plus sur tout le reste. shell_title (en-tête mobile) est le libellé de
+  l'entrée dont le préfixe est le plus long.
+-#}
+{% set path = request.url.path %}
+{% set current_user = get_current_user(request) %}
+{% set is_admin = current_user is none or current_user.role == "admin" %}
+
+{% set destinations = [
+  {"key": "savane", "href": "/transactions/inbox", "icon": "savane", "label": _("La Savane"), "prefixes": ["/transactions/inbox"]},
+  {"key": "panorama", "href": "/dashboard", "icon": "panorama", "label": _("Panorama"), "prefixes": ["/dashboard"], "also": ["/cap/mid", "/budgets"]},
+  {"key": "cap", "href": "/cap", "icon": "cap", "label": _("Le Cap"), "prefixes": ["/cap"]},
+] %}
+
+{% set more_groups = [
+  {"key": "daily", "title": _("Au quotidien"), "items": [
+    {"href": "/transactions/list", "icon": "operations", "label": _("Opérations"), "prefixes": ["/transactions"]},
+    {"href": "/cap/mid", "icon": "month", "label": _("Mon mois"), "prefixes": ["/cap/mid"]},
+    {"href": "/budgets", "icon": "budgets", "label": _("Budgets"), "prefixes": ["/budgets"]},
+    {"href": "/projects", "icon": "projects", "label": _("Projets"), "prefixes": ["/projects"]},
+    {"href": "/backlog", "icon": "mass", "label": _("Traitement en masse"), "prefixes": ["/backlog"]},
+  ]},
+  {"key": "review", "title": _("Faire le point"), "items": [
+    {"href": "/reports", "icon": "reports", "label": _("Rapports"), "prefixes": ["/reports"]},
+  ]},
+  {"key": "feed", "title": _("Alimenter"), "admin": true, "items": [
+    {"href": "/imports/new", "icon": "import", "label": _("Importer un relevé"), "prefixes": ["/imports"], "admin": true},
+  ]},
+  {"key": "settings", "title": _("Régler Twiga"), "items": [
+    {"href": "/settings", "icon": "settings", "label": _("Paramètres"), "prefixes": ["/settings"]},
+    {"href": "/accounts", "icon": "accounts", "label": _("Comptes"), "prefixes": ["/accounts"]},
+    {"href": "/categories", "icon": "categories", "label": _("Catégories"), "prefixes": ["/categories"]},
+    {"href": "/rules", "icon": "rules", "label": _("Règles"), "prefixes": ["/rules"]},
+    {"href": "/payment-methods", "icon": "payments", "label": _("Modes de paiement"), "prefixes": ["/payment-methods"]},
+    {"href": "/recurring", "icon": "recurring", "label": _("Abonnements"), "prefixes": ["/recurring"]},
+    {"href": "/checks", "icon": "checks", "label": _("Chèques"), "prefixes": ["/checks"]},
+    {"href": "/users", "icon": "users", "label": _("Utilisateurs"), "prefixes": ["/users"], "admin": true},
+    {"href": "/profile", "icon": "profile", "label": _("Mon profil"), "prefixes": ["/profile"]},
+  ]},
+] %}
+
+{#- Où l'on se trouve. -#}
+{% set where = namespace(active="more", title="", longest=0, longest_active=0) %}
+{% for destination in destinations %}
+  {% for prefix in destination.prefixes + destination.get("also", []) %}
+    {# The destination that owns the longest matching path is the active one:
+       Mon mois (/cap/mid) and Budgets belong to Panorama although /cap/mid
+       also starts with /cap. #}
+    {% if path.startswith(prefix) and prefix | length > where.longest_active %}
+      {% set where.active = destination.key %}
+      {% set where.longest_active = prefix | length %}
+    {% endif %}
+  {% endfor %}
+  {% for prefix in destination.prefixes %}
+    {% if path.startswith(prefix) and prefix | length > where.longest %}
+      {% set where.title = destination.label %}
+      {% set where.longest = prefix | length %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+{% for group in more_groups %}
+  {% for item in group["items"] %}
+    {% for prefix in item.prefixes %}
+      {% if path.startswith(prefix) and prefix | length > where.longest %}
+        {% set where.title = item.label %}
+        {% set where.longest = prefix | length %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+{% endfor %}
+{% set shell_active = where.active %}
+{#- A screen may name itself on mobile (`shell_page_title`, "Ajuster le plan"),
+    add a line under the title (`shell_subtitle`, "Septembre 2026") and offer a
+    way back (`shell_back`, the href of the parent screen): set at the top of
+    the page template, read here and by the top bar. -#}
+{% set shell_title = shell_page_title if shell_page_title is defined else (where.title or _("Twiga")) %}

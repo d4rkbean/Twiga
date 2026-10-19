@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs %}
+
+{% block title %}{{ _("Importer un fichier — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("import", [
+  tour_step("#import-drop-form", _("Dépose ton relevé"), _("Glisse un fichier QIF, CSV ou OFX dans la zone, ou clique pour le choisir. Il est lu tout de suite, rien n'est enregistré encore."), "upload", position="bottom", write=True),
+  tour_step('[data-tour="import-checks"]', _("Ce que Twiga vérifie"), _("À chaque import, Twiga écarte les doublons, applique tes règles de rangement et rapproche les virements et les chèques."), "shield", position="top"),
+  tour_step('[data-tour="import-read"]', _("Ce que Twiga a lu"), _("Les lignes lues, les doublons écartés, celles rangées par une règle et celles à trier ensuite. Vérifie les chiffres avant de confirmer."), "file-text", position="top", optional=True),
+  tour_step('[data-tour="import-adjust"]', _("Ajuster si besoin"), _("Change le compte concerné, les colonnes ou le format de date : le récapitulatif se recalcule aussitôt."), "adjustments", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="import-confirm"]', _("Confirmer l'import"), _("Un seul bouton enregistre les opérations. Tant que tu ne l'as pas cliqué, rien n'est ajouté à tes comptes."), "circle-check", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="import-result"]', _("Et ensuite"), _("Le bilan de l'import, puis le chemin vers La Savane pour ranger ce qui reste à catégoriser."), "inbox", position="bottom", optional=True),
+]) }}{% endblock %}
+
+{% block content %}
+{#- One file, one confirmation. Everything below the tabs is #import-wizard:
+    the drop screen, then the recap of the file, then the result, or the
+    error, each a fragment that replaces the previous one. -#}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": true},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": false},
+  ]) }}
+  <div id="import-wizard" class="flex flex-col gap-5 min-w-0">
+    {% include "imports/_step1_file.html" %}
+  </div>
+</main>
+{% endblock %}

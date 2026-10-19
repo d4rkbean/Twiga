@@ -1,0 +1,9 @@
+{#- The inline form that adds a sub-category under a root. -#}
+<form id="add-subcategory-{{ parent.id }}" hx-post="/categories/create" hx-target="#categories-content" hx-swap="outerHTML" class="py-2 flex flex-col gap-2 sm:flex-row">
+  <input type="hidden" name="parent_id" value="{{ parent.id }}" />
+  <input type="text" name="name" placeholder="{{ _("Nom de la sous-catégorie") }}" aria-label="{{ _("Nom de la sous-catégorie") }}" required autofocus autocomplete="off" class="input-base sm:flex-1" />
+  <div class="flex gap-2">
+    <button type="button" hx-get="/categories/{{ parent.id }}/add-subcategory-button" hx-target="#add-subcategory-{{ parent.id }}" hx-swap="outerHTML" class="btn btn-secondary border-border-strong flex-1 sm:flex-none sm:px-6">{{ _("Annuler") }}</button>
+    <button type="submit" class="btn btn-secondary border-accent-ink text-accent-ink font-semibold flex-1 sm:flex-none sm:px-8">{{ _("Ajouter") }}</button>
+  </div>
+</form>

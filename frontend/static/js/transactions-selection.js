@@ -45,6 +45,9 @@
     var stored = localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
     if (stored && stored !== select.value) {
       select.value = stored;
+      // The drawn dropdown reads the same value from the Alpine component.
+      var board = document.querySelector("main[x-data]");
+      if (board && window.Alpine) Alpine.$data(board).size = stored;
       form.requestSubmit();
     }
   };

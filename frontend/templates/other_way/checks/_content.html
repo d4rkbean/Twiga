@@ -1,0 +1,76 @@
+{#- Chèques, the other way: the sentence (how many wait, for how much, since when), the
+    payments sorted by age (the oldest first), what was matched recently and how the
+    matching works. The whole block is replaced by every action (#checks-content),
+    so the sentence follows. The action that opens the form lives in the sentence. -#}
+{% from "other_way/_ui.html" import answer_head %}
+{% set write = can_edit("/checks/create") %}
+{% macro badge(pending_check) %}
+<span class="w-10 h-10 shrink-0 rounded-full bg-sunken text-secondary flex items-center justify-center">
+  {{ icon('writing' if pending_check.check_number else get_payment_method_icon_name(pending_check.payment_method), size=18) }}
+</span>
+{% endmacro %}
+<div id="checks-content" class="flex flex-col gap-5">
+  {% call answer_head(answer.title, answer.detail, blur_phrase=true) %}
+    {% if write %}
+    <button type="button" x-show="!adding" data-tour="checks-add" @click="adding = true; $nextTick(() => document.getElementById('check-number').focus())" class="btn btn-primary">
+      {{ icon('plus', size=18) }} {{ _("Enregistrer un paiement émis") }}
+    </button>
+    {% endif %}
+  {% endcall %}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+    <div class="flex flex-col gap-5 min-w-0">
+      <section data-tour="checks-waiting" class="flex flex-col gap-3" aria-labelledby="waiting-title">
+        <h2 id="waiting-title" class="text-section-title">{{ _("En attente") }} <span class="font-normal text-secondary">· {{ outstanding_checks | length }}</span></h2>
+        {% for pending_check in outstanding_checks | sort(attribute="issued_date") %}
+        {% set age = ages[pending_check.id] %}
+        <div class="card !p-4 flex items-start gap-3">
+          {{ badge(pending_check) }}
+          <div class="flex flex-col min-w-0 flex-1 gap-0.5">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="font-semibold">{% if pending_check.check_number %}N° {{ pending_check.check_number }}{% else %}{{ pending_check.payment_method | pm_label }}{% endif %}</span>
+              <span class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ pending_check.amount | eur }}</span>
+            </div>
+            <span class="text-xs text-secondary">{% trans date=pending_check.issued_date | fr_date, account=pending_check.account.name, category=pending_check.category.name | category_display %}Émis le {{ date }} · {{ account }} · {{ category }}{% endtrans %}</span>
+            {% if pending_check.recipient %}<span class="text-xs text-secondary">{{ pending_check.recipient }}</span>{% endif %}
+            <span class="badge {{ 'badge-warning' if age >= 7 else 'badge-neutral' }} self-start mt-1">{% trans n=age %}Depuis {{ n }} jour{% pluralize %}Depuis {{ n }} jours{% endtrans %}</span>
+          </div>
+          {% if write %}
+          <button type="button" hx-post="/checks/{{ pending_check.id }}/delete" hx-target="#checks-content" hx-swap="outerHTML"
+                  hx-confirm="{{ _("Annuler ce paiement en attente ? Il ne sera plus rapproché automatiquement.") }}"
+                  class="-mr-2 shrink-0 min-h-[50px] px-3 rounded-xl text-sm text-danger font-medium">{{ _("Annuler") }}</button>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="card text-sm text-secondary">{{ _("Aucun paiement en attente. Enregistres-en un ci-dessus dès que tu en émets un (chèque, Wero, PayPal...).") }}</p>
+        {% endfor %}
+      </section>
+
+      {% if matched_checks %}
+      <section data-tour="checks-matched" class="flex flex-col gap-3" aria-labelledby="matched-title">
+        <h2 id="matched-title" class="text-section-title">{{ _("Récemment rapprochés") }}</h2>
+        {% for pending_check in matched_checks %}
+        <div class="card !p-4 flex items-start gap-3 bg-page border border-border">
+          <span class="w-10 h-10 shrink-0 rounded-full bg-success-soft text-success flex items-center justify-center">{{ icon('writing' if pending_check.check_number else get_payment_method_icon_name(pending_check.payment_method), size=18) }}</span>
+          <div class="flex flex-col min-w-0 flex-1 gap-0.5">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="font-semibold">{% if pending_check.check_number %}N° {{ pending_check.check_number }}{% else %}{{ pending_check.payment_method | pm_label }}{% endif %}</span>
+              <span class="amount-blur font-bold tabular-nums text-secondary whitespace-nowrap">{{ pending_check.amount | eur }}</span>
+            </div>
+            <span class="text-xs text-secondary">{% trans name=pending_check.category.name | category_display, date=pending_check.matched_transaction.date | fr_date %}Catégorisé en {{ name }} le {{ date }}{% endtrans %}</span>
+            <span class="badge badge-positive self-start mt-1">{{ _("Rapproché") }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+    </div>
+
+    <aside data-tour="checks-how" class="card flex flex-col gap-3 min-w-0" aria-labelledby="how-title">
+      <h2 id="how-title" class="text-section-title">{{ _("Comment il se rapproche tout seul") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Dès que ce paiement sera débité (montant retrouvé, ET numéro de chèque ou moyen de paiement identifié dans le libellé d'une opération importée), il sera automatiquement catégorisé — sans passer par La Savane.") }}</p>
+      <p class="text-sm text-secondary">{{ _("Utile aussi pour les paiements via un intermédiaire (Wero, PayPal...) dont le libellé bancaire ne dit jamais à qui/pourquoi.") }}</p>
+      {% if can_edit("/imports/new") %}<a href="/imports/new" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink underline">{{ _("Importer un relevé") }} {{ icon('arrow-narrow-right', size=16) }}</a>{% endif %}
+    </aside>
+  </div>
+</div>

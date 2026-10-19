@@ -1,0 +1,38 @@
+{% from "other_way/_icons.html" import shell_icon %}
+{% import "other_way/_shell_data.html" as shell with context %}
+{#- La barre du bas de « L'autre voie » (mobile) : les trois destinations et
+    Plus, qui ouvre la feuille du même nom (_more_menu.html). État actif : ambre
+    doux derrière l'icône et texte accent-ink, comme la Classique ; jamais
+    l'aplat ambre, réservé à l'action principale de l'écran. -#}
+{% macro tab(active, label, icon_name) %}
+<span class="rounded-full w-11 h-[26px] flex items-center justify-center {{ 'bg-accent-soft' if active else '' }}">{{ shell_icon(icon_name) }}</span>
+<span>{{ label }}</span>
+{% endmacro %}
+<nav id="tour-b-bottom-nav" aria-label="{{ _("Navigation principale") }}" class="print:hidden lg:hidden {{ "max-lg:hidden" if shell_focus is defined and shell_focus else "" }} fixed bottom-0 inset-x-0 z-10 bg-container border-t border-border flex items-center">
+  {% for destination in shell.destinations %}
+  {% set active = shell.shell_active == destination.key %}
+  <a
+    href="{{ destination.href }}"
+    {% if active %}aria-current="page"{% endif %}
+    class="relative flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs {{ 'text-accent-ink font-semibold' if active else 'text-secondary font-medium' }}"
+  >{{ tab(active, destination.label, destination.icon) }}{% if destination.key == "savane" %}
+    {#- Badge on the icon: the number of operations to sort, hidden while empty (see _topbar.html). -#}
+    <span
+      id="savane-count-bottom"
+      class="absolute top-1 left-1/2 ml-2 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-ink text-container text-[11px] font-semibold leading-[18px] text-center tabular-nums empty:hidden"
+      data-noblur="1"
+      hx-get="/dashboard/sidebar-pending"
+      hx-trigger="load, htmx:afterRequest[detail.successful && detail.requestConfig.verb == 'post'] from:body delay:400ms"
+      hx-swap="innerHTML"
+    ></span>{% endif %}</a>
+  {% endfor %}
+  <button
+    id="tour-b-bottom-plus"
+    type="button"
+    aria-haspopup="dialog"
+    :aria-expanded="shell === 'more'"
+    {% if shell.shell_active == "more" %}aria-current="page"{% endif %}
+    @click="toggleShell('more')"
+    class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs {{ 'text-accent-ink font-semibold' if shell.shell_active == 'more' else 'text-secondary font-medium' }}"
+  >{{ tab(shell.shell_active == "more", _("Plus"), "more") }}</button>
+</nav>

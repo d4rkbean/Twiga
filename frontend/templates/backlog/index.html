@@ -1,17 +1,282 @@
 {% extends "base.html" %}
+{% from "backlog/_parts.html" import chips, visible_count, bulk_buttons, last_message, sync %}
+{% from "backlog/_picker.html" import picker_list %}
 
-{% block title %}{{ _("Catégorisation en masse — Twiga 🦒") }}{% endblock %}
+{# Cet écran a sa propre action principale en ambre plein : « Appliquer à la
+   sélection », dans le panneau de droite ; « Importer », dans l'en-tête de la
+   coque, passe en secondaire (un seul ambre plein par écran). #}
+{% set demote_import = true %}
+
+{% block title %}{{ _("Traitement en masse — Twiga") }}{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_url('/static/js/backlog.js') }}"></script>
+{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("backlog", [
+  tour_step('[data-tour="backlog-list"]', _("Les opérations à traiter"), _("Chaque ligne montre la catégorie proposée et son degré de confiance. Coche celles que tu veux traiter ensemble."), "list-details", position="top"),
+  tour_step('[data-tour="backlog-filters"]', _("Filtrer la liste"), _("Cherche un libellé, ou garde un compte ou une catégorie pour ne traiter qu'un paquet à la fois."), "filter", position="left", alt_target='[data-tour="backlog-filters-toggle"]', alt_position="bottom"),
+  tour_step("#backlog-chips", _("Le degré de confiance"), _("Les pastilles trient les suggestions de la plus sûre à la moins sûre, avec leur nombre."), "scale", position="left"),
+  tour_step('[data-tour="backlog-row"]', _("Ranger une ligne"), _("La coche range l'opération dans la catégorie proposée, la croix écarte la suggestion, l'étiquette te laisse choisir."), "check", position="top", optional=True, write=True),
+  tour_step('[data-tour="backlog-bulk"]', _("Traiter en masse"), _("Applique une catégorie aux lignes cochées, ou valide d'un coup toutes les suggestions sûres."), "folders", position="left", alt_target='[data-tour="backlog-bulk-pair"]', alt_position="bottom", write=True),
+]) }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ _("Catégorisation en masse") }}</h1>
-    <a href="/transactions/inbox" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("La Savane") }}</a>
-  </div>
-  <p class="text-sm text-secondary">
-    {{ _("Suggestions basées sur la similarité avec vos transactions déjà catégorisées, triées par confiance décroissante.") }}
-  </p>
+{% set board = {
+  "q": state.search,
+  "conf": state.suggestion_filter,
+  "acc": state.account_id | string if state.account_id else "",
+  "cat": state.category_id | string if state.category_id else "",
+  "group": state.group,
+  "limit": state.limit,
+  "step": step,
+  "shownIds": rows | map(attribute="ids") | sum(start=[]),
+  "labels": {
+    "allAccounts": _("Tous les comptes"),
+    "allCategories": _("Toutes les catégories"),
+    "acc": account_labels,
+    "cat": category_labels,
+    "categoryWord": _("Catégorie :"),
+    "paymentWord": _("Paiement :"),
+    "proposed": _("celle proposée"),
+    "none": _("aucun"),
+  },
+} %}
+{% set select_title = _("Ranger la sélection dans…") %}
+<main
+  class="flex flex-col gap-4 px-4 pb-8 lg:px-8"
+  x-data="backlogBoard({{ board | tojson | forceescape }})"
+  @keydown.escape.window="pick = null; payOpen = false; menu = ''"
+>
+  <header class="flex flex-col gap-1.5">
+    <a href="/transactions/inbox" class="hidden min-h-[32px] items-center gap-1.5 self-start text-sm font-medium text-accent-ink lg:inline-flex">
+      {{ icon('chevron-left', size=18) }} {{ _("La Savane") }}
+    </a>
+    <div class="-mx-2 flex items-center gap-2.5 lg:mx-0">
+      <a href="/transactions/inbox" aria-label="{{ _("Retour") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary lg:hidden">
+        {{ icon('chevron-left', size=22) }}
+      </a>
+      <h1 class="text-page-title flex-1 max-lg:!text-xl max-lg:!font-bold">{{ _("Traitement en masse") }}</h1>
+      <button
+        type="button"
+        data-tour="backlog-filters-toggle"
+        @click="filtersOpen = !filtersOpen"
+        :aria-expanded="filtersOpen"
+        aria-label="{{ _("Filtres") }}"
+        class="relative flex h-[50px] w-[50px] flex-none items-center justify-center text-primary lg:hidden"
+      >
+        {{ icon('filter', size=22) }}
+        <span
+          x-show="nFilters > 0"
+          x-text="nFilters"
+          style="display: none;"
+          class="absolute right-1 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1.5 text-xs font-semibold text-on-accent"
+        ></span>
+      </button>
+    </div>
+    <p class="text-secondary">{{ _("Suggestions tirées de tes opérations déjà rangées, de la plus sûre à la moins sûre.") }}</p>
+  </header>
 
-  {% include "backlog/_content.html" %}
+  {# State carried by every request: the filters, bound to the component. #}
+  <form id="backlog-form" x-ref="form" hx-get="/backlog/content" hx-trigger="refresh" hx-target="#backlog-list" hx-swap="innerHTML" hidden>
+    <input type="hidden" name="search" :value="q" />
+    <input type="hidden" name="suggestion_filter" :value="conf" />
+    <input type="hidden" name="account" :value="acc" />
+    <input type="hidden" name="category" :value="cat" />
+    <input type="hidden" name="group" :value="group ? '1' : ''" />
+    <input type="hidden" name="limit" :value="limit" />
+    <input type="hidden" name="apply_category_id" :value="bcat ? bcat.id : ''" />
+    <input type="hidden" name="apply_payment_method" :value="pay" />
+  </form>
+  <div id="backlog-selection" hidden>
+    <template x-for="id in selected" :key="id"><input type="hidden" name="selected_ids" :value="id" /></template>
+  </div>
+
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+    <div class="flex min-w-0 flex-col gap-3 lg:flex-[3_1_520px]">
+      <section data-tour="backlog-list" class="overflow-hidden rounded-xl border border-border bg-container shadow-sm" aria-label="{{ _("Opérations à traiter") }}">
+        <div id="backlog-list">
+          {% include "backlog/_content.html" %}
+        </div>
+      </section>
+      {{ last_message(last, "m", "lg:hidden") }}
+    </div>
+
+    <aside
+      data-tour="backlog-filters"
+      class="overflow-hidden rounded-xl border border-border bg-container shadow-sm lg:sticky lg:top-[72px] lg:w-[340px] lg:flex-none"
+      :class="filtersOpen ? '' : 'max-lg:hidden'"
+      aria-label="{{ _("Filtres et actions") }}"
+    >
+      <div class="flex flex-col gap-3.5 p-4 lg:px-5 lg:pb-5 lg:pt-2">
+        <div class="flex min-h-[50px] items-center justify-between">
+          <h2 class="text-base font-semibold text-primary">{{ _("Filtres") }}</h2>
+          <button type="button" @click="reset()" class="min-h-[50px] px-1 text-sm font-medium text-accent-ink">{{ _("Réinitialiser") }}</button>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label for="backlog-search-input" class="text-xs font-medium text-primary">{{ _("Rechercher un libellé") }}</label>
+          <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-secondary">{{ icon('search', size=18) }}</span>
+            <input
+              type="text"
+              id="backlog-search-input"
+              x-model="q"
+              @input.debounce.400ms="filterChanged()"
+              value="{{ state.search }}"
+              placeholder="{{ _("Ex. boulangerie") }}"
+              autocomplete="off"
+              class="input-base pl-[42px]"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <div class="text-xs font-medium text-primary">{{ _("Confiance de la suggestion") }}</div>
+          {{ chips(counts) }}
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <div class="text-xs font-medium text-primary">{{ _("Compte") }}</div>
+          <div>
+            <button type="button" @click="toggleMenu('acc')" :aria-expanded="menu === 'acc'" class="input-base flex items-center justify-between gap-2 text-left">
+              <span class="truncate" x-text="accLabel">{{ account_labels[state.account_id | string] if state.account_id else _("Tous les comptes") }}</span>
+              {{ icon('chevron-down', size=18) }}
+            </button>
+            <div x-show="menu === 'acc'" style="display: none;" class="mt-1 overflow-hidden rounded-xl border border-border bg-container">
+              <button type="button" @click="setAcc('')" :class="acc === '' ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm">{{ _("Tous les comptes") }}</button>
+              {% for account in accounts %}
+              <button type="button" @click="setAcc('{{ account.id }}')" :class="acc === '{{ account.id }}' ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0">{{ account.name }}</button>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <div class="text-xs font-medium text-primary">{{ _("Catégorie suggérée") }}</div>
+          <div>
+            <button type="button" @click="toggleMenu('cat')" :aria-expanded="menu === 'cat'" class="input-base flex items-center justify-between gap-2 text-left">
+              <span class="truncate" x-text="catLabel">{{ category_labels[state.category_id | string] if state.category_id else _("Toutes les catégories") }}</span>
+              {{ icon('chevron-down', size=18) }}
+            </button>
+            <div x-show="menu === 'cat'" style="display: none;" class="mt-1 overflow-hidden rounded-xl border border-border bg-container">
+              <button type="button" @click="setCat('')" :class="cat === '' ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm">{{ _("Toutes les catégories") }}</button>
+              {% for parent in parent_categories %}
+              <button type="button" @click="setCat('{{ parent.id }}')" :class="cat === '{{ parent.id }}' ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0">{{ parent.name }}</button>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Bulk categorization: computer only (on a phone: the bar and sheets below). #}
+      <div data-tour="backlog-bulk" class="hidden border-t border-border px-5 pb-5 pt-4 lg:block">
+        <div x-show="!pick" class="flex flex-col gap-2.5">
+          <h2 class="text-base font-semibold text-primary">{{ _("Catégorisation en masse") }}</h2>
+          <p class="mb-1 text-xs tabular-nums text-secondary">
+            <span x-text="selected.length">0</span>
+            <span x-show="selected.length <= 1">{{ _("sélectionnée") }}</span><span x-show="selected.length > 1" style="display: none;">{{ _("sélectionnées") }}</span>
+            · {{ visible_count(visible_total) }} {{ _("affichées") }}
+          </p>
+          <button
+            type="button"
+            hx-post="/backlog/bulk-apply"
+            hx-include="#backlog-form, #backlog-selection"
+            hx-target="#backlog-list"
+            hx-swap="innerHTML"
+            hx-confirm="{{ _("Appliquer ces modifications aux opérations sélectionnées ?") }}"
+            @htmx:after-request="if ($event.detail.successful) applied()"
+            :disabled="selected.length === 0"
+            :class="selected.length === 0 ? '!bg-sunken !text-secondary !opacity-100' : ''"
+            class="btn btn-primary min-h-[54px]"
+          >
+            {{ icon('check') }} {{ _("Appliquer à la sélection") }}
+          </button>
+          <button
+            type="button"
+            data-pick-title="{{ select_title }}"
+            @click="openPickSelection($el.dataset.pickTitle)"
+            :disabled="selected.length === 0"
+            :class="selected.length === 0 ? 'text-secondary !opacity-100' : ''"
+            class="btn btn-secondary border-border-strong"
+          >
+            {{ icon('tag') }} {{ _("Choisir une catégorie…") }}
+          </button>
+          <div class="flex flex-col gap-1.5">
+            <div class="text-xs font-medium text-primary">{{ _("Mode de paiement (optionnel)") }}</div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" @click="setPay('')" :aria-pressed="pay === ''" :class="pay === '' ? 'bg-accent-soft border-accent text-accent-ink font-semibold' : 'bg-container border-border-strong text-primary'" class="min-h-[50px] rounded-xl border px-3.5 text-sm">{{ _("Aucun") }}</button>
+              {% for code, meta in payment_methods.items() %}
+              <button type="button" data-code="{{ code }}" @click="setPay($el.dataset.code)" :aria-pressed="pay === $el.dataset.code" :class="pay === $el.dataset.code ? 'bg-accent-soft border-accent text-accent-ink font-semibold' : 'bg-container border-border-strong text-primary'" class="min-h-[50px] rounded-xl border px-3.5 text-sm">{{ meta.label }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          <p class="text-xs text-secondary" x-text="summary">{{ _("Catégorie :") }} {{ _("celle proposée") }} · {{ _("Paiement :") }} {{ _("aucun") }}</p>
+          {{ bulk_buttons(counts) }}
+        </div>
+
+        <div x-show="pick" style="display: none;" class="flex flex-col gap-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="min-w-0 text-base font-semibold text-primary" x-text="pick && pick.title"></h2>
+            <button type="button" @click="closePick()" aria-label="{{ _("Fermer la liste des catégories") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</button>
+          </div>
+          {{ picker_list(parent_categories) }}
+        </div>
+        {{ last_message(last, "d", "mt-3.5 border-t border-border pt-3.5") }}
+      </div>
+    </aside>
+  </div>
+
+  {# Phones: the selection bar above the navigation, and the two sheets it opens. #}
+  <div
+    x-show="selected.length > 0"
+    style="display: none;"
+    class="fixed inset-x-0 bottom-[59px] z-20 flex items-center gap-2 border-t border-border bg-container px-4 py-2 lg:hidden"
+  >
+    <span class="min-w-0 flex-1 font-semibold tabular-nums">
+      <span x-text="selected.length"></span>
+      <span x-show="selected.length <= 1">{{ _("sélectionnée") }}</span><span x-show="selected.length > 1" style="display: none;">{{ _("sélectionnées") }}</span>
+    </span>
+    <button type="button" @click="payOpen = true" aria-label="{{ _("Mode de paiement") }}" class="btn btn-secondary w-[50px] flex-none border-border-strong px-0">{{ icon('credit-card') }}</button>
+    <button type="button" data-pick-title="{{ select_title }}" @click="openPickSelection($el.dataset.pickTitle)" aria-label="{{ _("Choisir une catégorie") }}" class="btn btn-secondary w-[50px] flex-none border-border-strong px-0">{{ icon('tag') }}</button>
+    <button
+      type="button"
+      hx-post="/backlog/bulk-apply"
+      hx-include="#backlog-form, #backlog-selection"
+      hx-target="#backlog-list"
+      hx-swap="innerHTML"
+      hx-confirm="{{ _("Appliquer ces modifications aux opérations sélectionnées ?") }}"
+      @htmx:after-request="if ($event.detail.successful) applied()"
+      class="btn btn-primary flex-none px-5"
+    >{{ _("Appliquer") }}</button>
+  </div>
+
+  <div x-show="pick" style="display: none;" class="fixed inset-0 z-50 flex flex-col justify-end bg-scrim lg:hidden" @click.self="closePick()">
+    <div role="dialog" aria-label="{{ _("Choisir une catégorie") }}" class="flex flex-col gap-2 rounded-t-xl bg-container px-4 pb-4 pt-2 shadow-lg">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="min-w-0 text-base font-semibold text-primary" x-text="pick && pick.title"></h2>
+        <button type="button" @click="closePick()" aria-label="{{ _("Fermer") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</button>
+      </div>
+      {{ picker_list(parent_categories) }}
+    </div>
+  </div>
+
+  <div x-show="payOpen" style="display: none;" class="fixed inset-0 z-50 flex flex-col justify-end bg-scrim lg:hidden" @click.self="payOpen = false">
+    <div role="dialog" aria-label="{{ _("Mode de paiement") }}" class="flex flex-col gap-2.5 rounded-t-xl bg-container px-4 pb-5 pt-2 shadow-lg">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-semibold text-primary">{{ _("Mode de paiement (optionnel)") }}</h2>
+        <button type="button" @click="payOpen = false" aria-label="{{ _("Fermer") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" @click="setPay('')" :aria-pressed="pay === ''" :class="pay === '' ? 'bg-accent-soft border-accent text-accent-ink font-semibold' : 'bg-container border-border-strong text-primary'" class="min-h-[50px] rounded-xl border px-3.5 text-sm">{{ _("Aucun") }}</button>
+        {% for code, meta in payment_methods.items() %}
+        <button type="button" data-code="{{ code }}" @click="setPay($el.dataset.code)" :aria-pressed="pay === $el.dataset.code" :class="pay === $el.dataset.code ? 'bg-accent-soft border-accent text-accent-ink font-semibold' : 'bg-container border-border-strong text-primary'" class="min-h-[50px] rounded-xl border px-3.5 text-sm">{{ meta.label }}</button>
+        {% endfor %}
+      </div>
+      <p class="text-xs text-secondary" x-text="summary"></p>
+    </div>
+  </div>
+
+  {{ sync(rows, visible_ids) }}
 </main>
 {% endblock %}

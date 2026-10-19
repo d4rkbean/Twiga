@@ -12,6 +12,8 @@ moyen de paiement non renseigné (champ facultatif, jamais de contrainte de
 clé étrangère dessus).
 """
 
+import time
+
 # Ordre volontairement identique à la spec : une règle plus haut dans la
 # liste gagne en cas d'ambiguïté (ex : "VIREMENT SEPA" contient à la fois
 # "VIREMENT" et "SEPA" — la règle Virement, listée avant Prélèvement,
@@ -24,6 +26,15 @@ _DETECTION_RULES: list[tuple[list[str], str]] = [
     (["RETRAIT", "DAB", "GAB"], "Espèces"),
     (["AVOIR", "REMBOURSEMENT"], "Virement"),
 ]
+
+
+def detection_examples() -> list[tuple[str, str]]:
+    """The words Twiga reads in a label and the mode each one gives, in priority order:
+    [("CARTE, CB, TPE", "CB"), ...]. Shown by the Modes de paiement screen of the other way."""
+    seen: dict[str, list[str]] = {}
+    for keywords, name in _DETECTION_RULES:
+        seen.setdefault(name, []).extend(keywords)
+    return [(", ".join(words), name) for name, words in seen.items()]
 
 
 def detect_payment_from_label(label: str | None) -> str | None:
@@ -51,8 +62,57 @@ _ICON_NAMES = {
 _DEFAULT_ICON_NAME = "wallet"
 
 
+# Icons offered by the picker of Paramètres > Modes de paiement (Tabler names,
+# stored in PaymentMethod.icon). Rows created before the picker hold an emoji
+# there: they keep the icon of the name mapping above.
+PICKER_ICONS = [
+    "credit-card",
+    "cash",
+    "writing",
+    "refresh",
+    "arrows-left-right",
+    "clock",
+    "wallet",
+    "building-bank",
+    "receipt",
+    "gift",
+    "coins",
+    "pig-money",
+]
+
+# name (lowercase) -> chosen icon, read once from the table and dropped
+# whenever a mode is created, renamed or deleted (see refresh_chosen_icons).
+_chosen_icons: dict[str, str] | None = None
+_chosen_icons_at = 0.0
+_CHOSEN_ICONS_TTL = 30.0  # seconds: also covers a restore or a change made elsewhere
+
+
+def refresh_chosen_icons() -> None:
+    global _chosen_icons
+    _chosen_icons = None
+
+
+def _load_chosen_icons() -> dict[str, str]:
+    global _chosen_icons, _chosen_icons_at
+    if _chosen_icons is None or time.monotonic() - _chosen_icons_at > _CHOSEN_ICONS_TTL:
+        from sqlalchemy import select
+
+        from backend.database import SessionLocal
+        from backend.models import PaymentMethod
+
+        with SessionLocal() as db:
+            rows = db.execute(select(PaymentMethod.name, PaymentMethod.icon)).all()
+        _chosen_icons = {name.strip().lower(): icon for name, icon in rows if icon in PICKER_ICONS}
+        _chosen_icons_at = time.monotonic()
+    return _chosen_icons
+
+
 def get_payment_method_icon_name(name: str | None) -> str:
-    return _ICON_NAMES.get((name or "").strip().lower(), _DEFAULT_ICON_NAME)
+    key = (name or "").strip().lower()
+    chosen = _load_chosen_icons().get(key)
+    if chosen:
+        return chosen
+    return _ICON_NAMES.get(key, _DEFAULT_ICON_NAME)
 
 
 # Affichage des moyens de paiement par défaut dans la langue de l'utilisateur.

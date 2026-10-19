@@ -39,298 +39,309 @@
   })();
 </script>
 
-{# Mobile : colonne unique, ordre du DOM (libellé, chiffres de période,
-   camemberts, évolution, budgets, projets, flux) — inchangé.
-
-   Bureau : grille de 12 colonnes. L'ordre du DOM n'y est plus l'ordre visuel,
-   il est repris par `lg:order-*` pour hiérarchiser la lecture sans dupliquer
-   le balisage ni pénaliser le mobile :
-     1. libellé de période (12)
-     2. Évolution 12 mois (8)  ┐ même rangée : le graphique porteur occupe
-     3. chiffres de période (4)┘ les deux tiers, les chiffres s'alignent à côté
-     4. les deux camemberts (6 + 6)
-     5. budgets (6) et projets (6), côte à côte
-   Le chiffre qu'on vient chercher en premier — où on en est ce mois — est
-   ainsi en haut à gauche, pas enterré sous deux camemberts. #}
-{# Le libellé de période est rendu sur la ligne des filtres, hors de ce
+{% from "_macros/signed_amount.html" import signed %}
+{% from "_macros/gauge_verdict.html" import gauge_fill, gauge_word, gauge_tone %}
+{# Le libellé de décalage est rendu dans le formulaire des filtres, hors de ce
    fragment : renvoyé ici en swap hors bande pour rester synchronisé. #}
 {% if row1_oob %}{% include "dashboard/_period_label.html" %}{% endif %}
 
-<div class="flex flex-col gap-4 lg:grid lg:grid-cols-12 lg:gap-5 lg:items-start">
+<div class="flex flex-col gap-[var(--space-block)]">
 
+  {% set income_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(income_total, plus=true) }}</strong>{% endset %}
+  {% set expense_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(-expense_total) }}</strong>{% endset %}
+  {% set result_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(result_total, plus=true) }}</strong>{% endset %}
+  <p class="text-lg leading-snug text-primary lg:text-[22px] lg:max-w-[70ch]">
+    {% trans lead=period_lead, income=income_html, expense=expense_html, result=result_html %}{{ lead }} le foyer a reçu {{ income }} et dépensé {{ expense }}&nbsp;: il reste {{ result }}.{% endtrans %}
+    {% if pending_count %}
+    {% set pending_html %}<span class="amount-blur tabular-nums whitespace-nowrap">{{ pending_total | eur }}</span>{% endset %}
+    {% trans count=pending_count, amount=pending_html, v="s" if pending_count > 1 else "", v2="ent" if pending_count > 1 else "" %}À ce jour, <strong class="font-bold">{{ count }}&nbsp;opération{{ v }}</strong> ({{ amount }}) attend{{ v2 }} encore dans La Savane.{% endtrans %}
+    {% endif %}
+  </p>
 
-  <!-- RANGÉE "charts" (desktop) : Recettes par catégorie 50% | Dépenses par
-       catégorie 50%, côte à côte et même hauteur (lg:items-stretch + flex-1
-       sur chaque carte). Empilées en une seule colonne sur mobile.
-       Recettes à gauche : on lit ce qui est entré avant ce qui est sorti. -->
-  <div class="lg:grid lg:grid-cols-2 lg:gap-5 lg:items-stretch flex flex-col gap-4 lg:col-span-12 lg:order-4">
-  <div class="flex flex-col gap-2">
-  <h2 class="text-lg font-bold text-primary">{% trans period_label=period_label %}Recettes par catégorie — {{ period_label }}{% endtrans %}</h2>
-
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex-1">
-    {% if income_spending %}
-    {# Camembert agrandi, et liste des catégories placée À DROITE dès que
-       la carte est assez large (2xl). En dessous, la liste reste sous le
-       camembert : ces deux cartes occupent chacune une demi-largeur, et
-       les mettre côte à côte plus tôt écraserait les noms de catégorie. #}
-    <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:gap-6">
-      <div class="relative w-full max-w-64 lg:max-w-[300px] lg:w-[300px] 2xl:max-w-[320px] 2xl:w-[320px] mx-auto 2xl:mx-0 h-64 lg:h-[300px] 2xl:h-[320px] flex-shrink-0">
-        <canvas id="income-donut-chart"></canvas>
-        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-4">
-          <span id="income-donut-label" class="text-xs text-secondary truncate max-w-full">{{ _("Total recettes") }}</span>
-          <span id="income-donut-total" class="amount-blur text-lg font-bold text-primary"></span>
-          <span id="income-donut-percent" class="text-xs text-secondary"></span>
-        </div>
-      </div>
-      <div id="income-list" class="flex flex-col rounded-xl overflow-hidden lg:max-h-[200px] lg:overflow-y-auto 2xl:flex-1 2xl:min-w-0 2xl:max-h-[320px]"></div>
+  {# Les six chiffres de la période, d'un seul tenant : cellules séparées par
+     un filet de 1 px (le fond de la grille montre à travers l'écart). Les
+     montants restent à l'encre : un montant négatif n'est pas un verdict ;
+     seul le résultat porte une couleur, doublée d'un mot. #}
+  <div data-tour="dashboard-figures" class="grid grid-cols-2 lg:grid-cols-6 gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm">
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('wallet', size=14) }} {{ _("Solde total") }}</p>
+      <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(total_balance) }}</p>
+      <p class="text-xs text-secondary">{% trans count=accounts_count, v="s" if accounts_count > 1 else "" %}{{ count }} compte{{ v }}{% endtrans %}</p>
+      {# Déplie le détail par compte (la carte « Comptes » plus bas, repliée par
+         défaut : la liste complète prenait trop de place en permanence).
+         `showAccounts` vit sur <main> (index.html). #}
+      <button type="button" data-tour="dashboard-accounts-toggle" @click="showAccounts = !showAccounts" :aria-expanded="showAccounts ? 'true' : 'false'" aria-controls="dashboard-accounts" class="min-h-[50px] -mb-3 inline-flex items-center gap-1 text-xs font-semibold text-primary text-left">
+        <span x-show="!showAccounts">{{ _("Voir les comptes") }}</span>
+        <span x-show="showAccounts" style="display: none;">{{ _("Masquer les comptes") }}</span>
+        <span class="transition-transform" :class="showAccounts ? 'rotate-180' : ''">{{ icon('chevron-down', size=14) }}</span>
+      </button>
     </div>
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('arrow-narrow-left', size=14) }} {{ _("Recettes") }}</p>
+      <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(income_total, plus=true) }}</p>
+      <p class="text-xs text-secondary">{{ _("recettes décalées") if shift_income else _("sur la période") }}</p>
+    </div>
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('trending-down', size=14) }} {{ _("Dépenses") }}</p>
+      <p class="amount-blur text-xl font-bold tabular-nums {{ 'text-danger' if expense_total else 'text-primary' }}">{{ signed(-expense_total) }}</p>
+      <p class="text-xs text-secondary">{% if pending_period_total %}{% trans amount=pending_period_total | eur %}dont <span class="amount-blur">{{ amount }}</span> à trier{% endtrans %}{% else %}{{ _("sur la période") }}{% endif %}</p>
+    </div>
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('currency-euro', size=14) }} {{ _("Résultat") }}</p>
+      <p class="amount-blur text-xl font-bold tabular-nums {{ 'text-success' if result_total > 0 else ('text-danger' if result_total < 0 else 'text-primary') }}">{{ signed(result_total, plus=true) }}</p>
+      {% if result_total != 0 %}
+      <p class="text-xs font-medium {{ 'text-success' if result_total > 0 else 'text-danger' }}">{{ _("excédent") if result_total > 0 else _("déficit") }}</p>
+      {% endif %}
+      <p class="text-xs text-secondary">{{ _("recettes − dépenses") }}</p>
+    </div>
+    {# Taux d'épargne dérivé de income_total/result_total déjà en contexte :
+       aucune requête supplémentaire. #}
+    {% set savings_rate = (result_total / income_total * 100) | round | int if income_total else 0 %}
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('pig-money', size=14) }} {{ _("Taux d'épargne") }}</p>
+      <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ savings_rate | string | replace("-", "−") }} %</p>
+      <p class="text-xs text-secondary">{{ _("du revenu") }}</p>
+    </div>
+    {# Alertes : les opérations qui attendent encore dans La Savane. #}
+    {% if pending_count %}
+    <a href="/transactions/inbox" class="bg-container p-[var(--space-card)] flex flex-col gap-0.5 min-h-[50px] hover:bg-sunken">
+      <span class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('inbox', size=14) }} {{ _("À trier") }}</span>
+      <span class="text-xl font-bold tabular-nums text-primary">{{ pending_count }}</span>
+      <span class="text-xs text-secondary">{% trans v="s" if pending_count > 1 else "" %}opération{{ v }} en attente{% endtrans %}</span>
+      <span class="flex items-center gap-1 text-xs font-semibold text-primary">{{ _("Ranger maintenant →") }}</span>
+    </a>
     {% else %}
-    <p class="text-sm text-secondary text-center py-8">{{ _("Aucune recette sur cette période.") }}</p>
+    <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('inbox', size=14) }} {{ _("À trier") }}</p>
+      <p class="text-xl font-bold tabular-nums text-primary">0</p>
+      <p class="text-xs text-secondary">{{ _("Aucune alerte") }}</p>
+    </div>
     {% endif %}
   </div>
-  </div>
 
-  <div class="flex flex-col gap-2">
-  <h2 class="text-lg font-bold text-primary">{% trans period_label=period_label %}Dépenses par catégorie — {{ period_label }}{% endtrans %}</h2>
-
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex-1">
-    {% if category_spending %}
-    {# Camembert agrandi, et liste des catégories placée À DROITE dès que
-       la carte est assez large (2xl). En dessous, la liste reste sous le
-       camembert : ces deux cartes occupent chacune une demi-largeur, et
-       les mettre côte à côte plus tôt écraserait les noms de catégorie. #}
-    <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:gap-6">
-      <div class="relative w-full max-w-64 lg:max-w-[300px] lg:w-[300px] 2xl:max-w-[320px] 2xl:w-[320px] mx-auto 2xl:mx-0 h-64 lg:h-[300px] 2xl:h-[320px] flex-shrink-0">
-        <canvas id="category-donut-chart"></canvas>
-        <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-4">
-          <span id="category-donut-label" class="text-xs text-secondary truncate max-w-full">{{ _("Total dépenses") }}</span>
-          <span id="category-donut-total" class="amount-blur text-lg font-bold text-primary"></span>
-          <span id="category-donut-percent" class="text-xs text-secondary"></span>
+  {# Le mois civil en cours et l'état du plan : toujours le mois d'AUJOURD'HUI,
+     quelle que soit la période choisie (« Mois dernier », « 90 J »…), et
+     indépendants du compte. Deux cartes discrètes, rafraîchies avec le
+     fragment (la case « Décaler recettes » s'applique aux recettes du mois). #}
+  <div class="grid gap-[var(--space-block)] lg:grid-cols-2">
+    <section id="panorama-ce-mois" aria-labelledby="this-month-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+      <h2 id="this-month-title" class="text-section-title">{{ _("Ce mois") }}</h2>
+      <dl class="grid grid-cols-3 gap-3">
+        <div class="flex flex-col gap-0.5">
+          <dt class="text-xs font-medium text-secondary">{{ _("Recettes") }}</dt>
+          <dd class="amount-blur font-bold tabular-nums text-primary">{{ signed(row1_income, plus=true) }}</dd>
         </div>
-      </div>
-      <!-- Défilement interne au-delà de 200px (desktop) plutôt que de
-           pousser le reste de la page : une liste de catégories longue ne
-           doit jamais casser l'équilibre de hauteur entre les deux
-           colonnes de cette rangée. -->
-      <div id="category-list" class="flex flex-col rounded-xl overflow-hidden lg:max-h-[200px] lg:overflow-y-auto 2xl:flex-1 2xl:min-w-0 2xl:max-h-[320px]"></div>
-    </div>
-    {% else %}
-    <p class="text-sm text-secondary text-center py-8">{{ _("Aucune dépense sur cette période.") }}</p>
-    {% endif %}
-  </div>
-  </div>
-  </div>
-
-  {# CARTE « Récapitulatif », bâtie sur le modèle du « Monthly Recap Report »
-     d'AdminLTE : un seul cadre qui réunit en-tête + graphique + objectifs +
-     totaux, au lieu de quatre blocs séparés qu'il fallait relier de l'œil.
-
-       en-tête : titre et sélecteur de série
-       corps   : courbe 12 mois (8/12) | objectifs du Cap (4/12)
-       pied    : recettes, dépenses, résultat, taux d'épargne, séparés
-
-     ATTENTION à une asymétrie assumée : la courbe et le pied suivent la
-     PÉRIODE filtrée, les objectifs du Cap suivent le MOIS CIVIL en cours (un
-     cap est un engagement mensuel). D'où le mois rappelé explicitement dans
-     le sous-titre de la colonne de droite — sans ça, juxtaposer les deux
-     dans un même cadre induirait en erreur. #}
-  <div class="bg-container rounded-xl shadow-sm overflow-hidden flex flex-col lg:col-span-12 lg:order-2">
-
-    <div class="flex flex-col gap-2 p-4 md:p-6 border-b border-border lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-      <h2 class="text-lg font-bold text-primary">{% trans period_label=period_label %}Évolution — 12 mois jusqu'à {{ period_label }}{% endtrans %}</h2>
-      <!-- Sur mobile ces trois boutons sont des cibles tactiles (50 px
-           pleine largeur) ; sur bureau c'est un simple choix de série, et
-           trois barres de 50 px repoussaient le graphique sous la ligne de
-           flottaison. -->
-      <div class="flex gap-2 lg:flex-shrink-0">
-        <button
-          type="button"
-          id="trend-mode-expense"
-          class="flex-1 min-h-[50px] rounded-xl text-sm font-medium bg-accent text-on-accent lg:flex-none lg:min-h-0 lg:py-2 lg:px-4"
-        >
-          {{ _("Dépenses") }}
-        </button>
-        <button
-          type="button"
-          id="trend-mode-income"
-          class="flex-1 min-h-[50px] rounded-xl text-sm font-medium bg-page border border-border text-primary lg:flex-none lg:min-h-0 lg:py-2 lg:px-4"
-        >
-          {{ _("Recettes") }}
-        </button>
-        <button
-          type="button"
-          id="trend-mode-both"
-          class="flex-1 min-h-[50px] rounded-xl text-sm font-medium bg-page border border-border text-primary lg:flex-none lg:min-h-0 lg:py-2 lg:px-4"
-        >
-          {{ _("Les deux") }}
-        </button>
-      </div>
-    </div>
-
-    <div class="flex flex-col gap-6 p-4 md:p-6 lg:grid lg:grid-cols-12 lg:gap-8">
-      <div class="lg:col-span-8">
-        <div class="h-64 lg:h-[320px]">
-          <canvas id="trend-line-chart"></canvas>
+        <div class="flex flex-col gap-0.5">
+          <dt class="text-xs font-medium text-secondary">{{ _("Dépenses") }}</dt>
+          <dd class="amount-blur font-bold tabular-nums text-primary">{{ signed(-row1_expense) }}</dd>
         </div>
-      </div>
-
-      {# Budgets à risque — l'équivalent du bloc « Goal Completion »
-           d'AdminLTE, mais sur la PÉRIODE sélectionnée comme le reste de
-           cette carte. Cette colonne montrait auparavant les objectifs du
-           Cap, qui portaient eux sur le mois civil en cours : il avait fallu
-           l'écrire en sous-titre pour que ce ne soit pas trompeur. Et c'était
-           la troisième fois que le même mois s'affichait sur cette page —
-           tuile Budgets, tuile Le Cap, et ici.
-           Le suivi complet du mois vit désormais sur « Mon mois » ; le
-           Panorama n'en garde que ce qui appelle une décision. #}
-      <div id="tour-budget-section" class="lg:col-span-4 flex flex-col gap-4 lg:border-l lg:border-border lg:pl-8">
-        <div class="flex flex-col">
-          <h3 class="text-base font-bold text-primary">{{ icon('target', size=16) }} {{ _("Budgets à risque") }}</h3>
-          <p class="text-xs text-secondary">{{ period_label }}</p>
+        <div class="flex flex-col gap-0.5">
+          <dt class="text-xs font-medium text-secondary">{{ _("Résultat") }}</dt>
+          <dd class="amount-blur font-bold tabular-nums {{ 'text-success' if row1_result > 0 else ('text-danger' if row1_result < 0 else 'text-primary') }}">{{ signed(row1_result, plus=true) }}</dd>
+          {% if row1_result != 0 %}
+          <dd class="text-xs font-medium {{ 'text-success' if row1_result > 0 else 'text-danger' }}">{{ _("excédent") if row1_result > 0 else _("déficit") }}</dd>
+          {% endif %}
         </div>
+      </dl>
+    </section>
 
-        {% if budgets_at_risk %}
-        {% for item in budgets_at_risk %}
-        <div class="flex flex-col gap-1.5">
-          <div class="flex items-baseline justify-between gap-2">
-            <span class="text-sm font-medium text-primary min-w-0 truncate">
-              {{ item.category.icon or icon('tag', size=14) }} {{ item.category.name | category_display }}
-            </span>
-            <span class="amount-blur text-sm tabular-nums flex-shrink-0">
-              <span class="font-bold {{ 'text-danger' if item.percentage > 100 else 'text-warning' }}">{{ item.spent | eur }}</span><span class="text-secondary"> / {{ item.budget | eur }}</span>
-            </span>
-          </div>
-          <div class="h-2 rounded-full bg-page overflow-hidden">
-            <div
-              class="h-full rounded-full {{ 'bg-danger' if item.percentage > 90 else 'bg-warning' }}"
-              style="width: {{ item.bar_width }}%;"
-            ></div>
-          </div>
+    <section id="panorama-plan" aria-labelledby="plan-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="plan-title" class="text-section-title">{{ _("Mon mois") }}</h2>
+        <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">
+          {% if cap_entry %}{{ _("Voir le détail →") }}{% else %}{{ _("Fixer le cap →") }}{% endif %}
+        </a>
+      </div>
+      {% if budget_danger_count %}
+      <p class="text-sm font-semibold text-danger">{% trans v="s" if budget_danger_count > 1 else "" %}{{ budget_danger_count }} budget{{ v }} dépassé{{ v }}{% endtrans %}</p>
+      {% elif cap_savings_so_far is not none %}
+      <p class="amount-blur text-sm text-primary"><span class="font-bold tabular-nums">{{ signed(cap_savings_so_far, plus=true) }}</span> <span class="text-secondary">{{ _("épargnés à date") }}</span></p>
+      {% elif budget_defined_count %}
+      <p class="text-sm font-semibold text-success">{% trans v="s" if budget_ok_count > 1 else "" %}{{ budget_ok_count }} budget{{ v }} sous contrôle{% endtrans %}</p>
+      {% else %}
+      <p class="text-sm text-secondary">{{ _("Plan non fixé") }}</p>
+      {% endif %}
+
+      {% if cap_pillar_progress %}
+      <div class="flex flex-col gap-2">
+        {% for pillar in cap_pillar_progress %}
+        <div class="flex items-center gap-3">
+          <span class="w-20 flex-shrink-0 text-xs text-secondary truncate">{{ pillar.label }}</span>
+          <div class="progress-base"><div class="progress-fill {{ gauge_fill(pillar.ratio) }}" style="width: {{ pillar.ratio }}%;"></div></div>
+          <span class="w-24 flex-shrink-0 text-xs font-semibold text-right {{ gauge_tone(pillar.ratio) }}">{{ gauge_word(pillar.ratio) }}</span>
         </div>
         {% endfor %}
-        <a
-          href="/cap/mid"
-          class="mt-auto pt-2 text-sm font-medium border-t border-border flex items-baseline justify-between gap-2"
-        >
-          <span class="text-secondary">{{ _("Voir tout le mois") }}</span>
-          <span class="text-accent">{{ icon('arrow-narrow-right', size=16) }}</span>
-        </a>
-        {% else %}
-        <p class="text-sm text-secondary">{{ _("Aucun budget au-delà de 75 %% sur cette période.") }}</p>
-        <a href="/cap/mid" class="text-sm text-accent font-medium">{{ _("Voir tout le mois →") }}</a>
-        {% endif %}
       </div>
-    </div>
-
-    <!-- Pied de carte : les quatre totaux de la période, séparés comme dans
-         le modèle. 2×2 sur mobile, 4 colonnes sur bureau. Le taux d'épargne,
-         jusqu'ici réservé au bureau, est désormais visible partout : il tient
-         sans peine dans une grille 2×2. -->
-    <div class="mt-auto grid grid-cols-2 lg:grid-cols-4 bg-page border-t border-border">
-      <div class="flex flex-col items-center gap-0.5 p-4 border-border lg:border-l lg:first:border-l-0">
-        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums text-success">+{{ income_total | eur }}</span>
-        <span class="text-xs text-secondary uppercase tracking-wide text-center">{{ _("Recettes période") }}</span>
-      </div>
-      <div class="flex flex-col items-center gap-0.5 p-4 border-border lg:border-l">
-        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums text-danger">-{{ expense_total | eur }}</span>
-        <span class="text-xs text-secondary uppercase tracking-wide text-center">{{ _("Dépenses période") }}</span>
-      </div>
-      <div class="flex flex-col items-center gap-0.5 p-4 border-t border-border lg:border-t-0 lg:border-l">
-        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums {{ 'text-success' if result_total >= 0 else 'text-danger' }}">
-          {{ "+" if result_total > 0 else "" }}{{ result_total | eur }}
-        </span>
-        <span class="text-xs text-secondary uppercase tracking-wide text-center">{{ _("Résultat période") }}</span>
-      </div>
-      {# Taux d'épargne dérivé de income_total/result_total déjà en contexte :
-         aucune requête supplémentaire. #}
-      {% set savings_rate = (result_total / income_total * 100) | round | int if income_total else 0 %}
-      <div class="flex flex-col items-center gap-0.5 p-4 border-t border-border lg:border-t-0 lg:border-l">
-        <span class="amount-blur text-lg lg:text-xl font-extrabold tabular-nums {{ 'text-success' if savings_rate >= 0 else 'text-danger' }}">
-          {{ savings_rate }} %
-        </span>
-        <span class="text-xs text-secondary uppercase tracking-wide text-center">{{ _("Taux d'épargne") }}</span>
-      </div>
-    </div>
+      {% elif budget_defined_count %}
+      <p class="text-xs text-secondary tabular-nums">
+        {% trans ok=budget_ok_count, warning=budget_warning_count, danger=budget_danger_count %}{{ ok }} dans la cible · {{ warning }} à surveiller · {{ danger }} dépassés{% endtrans %}
+      </p>
+      {% endif %}
+    </section>
   </div>
 
-  <!-- RANGÉE "budgets + projets" (desktop) : deux grilles compactes de
-       mini-cartes (3 colonnes desktop / 2 mobile) plutôt que des listes
-       empilées qui poussaient la page en hauteur dès quelques budgets ou
-       projets. budget_progress et project_summaries déjà tronqués à 6 côté
-       serveur (triés respectivement par % consommé décroissant et par
-       list_projects), lien "Voir tous" affiché seulement si le total
-       dépasse ce qui est montré ici. -->
-  {# La grille Budgets vivait ici, en doublon de la colonne « Budgets à
-     risque » de la carte Récapitulatif et de la tuile d'en-tête. Le détail
-     complet par catégorie est sur « Mon mois ». #}
-  <div class="flex flex-col gap-4 lg:col-span-12 lg:order-5">
-  <div class="flex flex-col gap-2">
-  <div class="flex items-center justify-between">
-    <h2 class="text-lg font-bold text-primary">{{ _("Projets") }}</h2>
-    {% if project_summaries_total > 6 %}
-    <a href="/projects" class="text-sm text-accent font-medium">{{ _("Voir tous les projets →") }}</a>
-    {% endif %}
-  </div>
+  <div class="flex flex-col gap-[var(--space-block)] lg:grid lg:grid-cols-12 lg:items-stretch">
 
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-    {% for item in project_summaries %}
-    <div class="bg-container rounded-xl shadow-sm p-3 flex flex-col gap-1.5">
-      <span class="text-sm text-primary font-medium truncate">{{ icon('target', size=14) }} {{ item.project.name }}</span>
-      <span class="amount-blur text-xs text-secondary">
-        {{ item.project.current_amount | eur }} / {{ item.project.target_amount | eur }}
-      </span>
-      <div class="w-full h-1.5 rounded-full bg-page overflow-hidden">
-        <div class="h-full bg-accent" style="width: {{ item.bar_width }}%"></div>
+    {# Flux sur 12 mois : la courbe suit la PÉRIODE filtrée, les enveloppes
+       à droite suivent le MOIS CIVIL en cours (un budget est un
+       engagement mensuel) ; le mois est rappelé dans leur titre pour que
+       l'écart avec le reste de la page soit explicite. #}
+    <section data-tour="dashboard-trend" aria-labelledby="trend-title" class="lg:col-span-8 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="trend-title" class="text-section-title">{{ _("Flux sur 12 mois") }}</h2>
+        <a href="/reports" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Rapports") }} {{ icon('arrow-right', size=16) }}</a>
       </div>
-      <span class="amount-blur text-xs text-secondary">{% trans monthly_effort=item.monthly_effort | eur %}{{ monthly_effort }} / mois{% endtrans %}</span>
-    </div>
-    {% else %}
-    <div class="col-span-2 lg:col-span-4 bg-container rounded-xl shadow-sm p-4 md:p-6">
-      <p class="text-sm text-secondary text-center">{{ _("Aucun projet pour l'instant.") }}</p>
-    </div>
-    {% endfor %}
-  </div>
-  </div>
-  </div>
+      <div role="group" aria-label="{{ _("Mode d'affichage du graphique") }}" class="flex gap-2">
+        {% for mode, label in (("expense", _("Dépenses")), ("income", _("Recettes")), ("both", _("Les deux"))) %}
+        <button
+          type="button"
+          id="trend-mode-{{ mode }}"
+          aria-pressed="false"
+          class="flex-1 min-h-[50px] px-2 rounded-xl border border-border-strong bg-container text-primary text-sm font-medium aria-pressed:bg-accent-soft aria-pressed:border-accent-ink aria-pressed:text-accent-ink aria-pressed:font-semibold"
+        >{{ label }}</button>
+        {% endfor %}
+      </div>
+      {# Le mois lu sur la courbe : les puces sous le graphique le choisissent,
+         la phrase dit ses recettes et ses dépenses. #}
+      <p id="trend-readout" aria-live="polite" class="text-sm text-secondary"></p>
+      <div class="h-56 lg:h-[260px]">
+        <canvas id="trend-line-chart" role="img" aria-label="{{ _("Recettes et dépenses sur les douze derniers mois") }}"></canvas>
+      </div>
+      <div id="trend-months" role="group" aria-label="{{ _("Choisir un mois") }}" class="grid grid-cols-12 -mt-1"></div>
+      <p class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-secondary">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-chart-2"></span>{{ trend_income_label }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-chart-1"></span>{{ _("Dépenses") }}</span>
+      </p>
+    </section>
 
-  <!-- Flux financier (Sankey) : masqué en desktop (lg:hidden), inchangé sur
-       mobile. -->
-  <div class="lg:hidden flex flex-col gap-2 lg:col-span-12 lg:order-6">
-  <h2 class="text-lg font-bold text-primary">{% trans period_label=period_label %}Flux financier — {{ period_label }}{% endtrans %}</h2>
+    {# Enveloppes : chaque budget du mois civil en cours (suit le compte choisi),
+       avec ce qu'il deviendrait « avec le tri » — les opérations encore dans
+       La Savane que celle-ci proposerait dans cette catégorie. Remplace
+       l'ancienne carte « Budgets à risque » : une seule carte pour les
+       budgets. La barre porte le dépensé (couleur du verdict), puis en gris
+       ce qui attend d'être trié ; le verdict est toujours doublé d'un mot. #}
+    <section id="tour-budget-section" aria-labelledby="envelopes-title" class="lg:col-span-4 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-block)]">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="envelopes-title" class="text-section-title">{{ _("Enveloppes") }} <span class="text-xs font-normal text-secondary">· {{ budget_month_label }}</span></h2>
+        <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Mon mois") }} {{ icon('arrow-right', size=16) }}</a>
+      </div>
+      {% if envelopes %}
+      {% for item in envelopes[:4] %}
+      {% set spent_pct = item.percentage | round | int %}
+      {% set projected_pct = item.projected_percentage | round | int %}
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-3">
+          <span class="flex-shrink-0 w-9 h-9 rounded-full bg-sunken flex items-center justify-center text-secondary">{{ item.category.icon or icon('tag', size=18) }}</span>
+          <span class="flex-1 min-w-0 font-semibold text-primary truncate">{{ item.category.name | category_display }}</span>
+          <span class="amount-blur text-sm tabular-nums flex-shrink-0 text-primary">{{ signed(-item.spent) }} <span class="text-secondary">/ {{ item.budget | eur }}</span></span>
+        </div>
+        <div class="progress-base flex relative overflow-visible" role="img" aria-label="{% trans percentage=spent_pct %}{{ percentage }} % consommé{% endtrans %}">
+          <div class="progress-fill {{ gauge_fill(item.percentage) }}" style="width: {{ item.bar_width }}%;"></div>
+          {% if item.pending_width %}
+          <div class="h-full bg-border-strong" style="width: {{ item.pending_width }}%;"></div>
+          {% endif %}
+          <span aria-hidden="true" class="absolute -top-0.5 -bottom-0.5 w-0.5 rounded-full bg-primary" style="left: {{ month_pace }}%;"></span>
+        </div>
+        <p class="flex flex-wrap justify-between gap-x-3 text-xs">
+          <span class="text-secondary tabular-nums">
+            {% trans percentage=spent_pct %}{{ percentage }} % consommé{% endtrans %}
+            {% if item.pending %}· <span class="amount-blur">{% trans amount=item.pending | eur %}{{ amount }} à trier{% endtrans %}</span>{% endif %}
+          </span>
+          {% if item.pending %}
+          <span class="ml-auto text-right font-semibold tabular-nums {{ gauge_tone(item.projected_percentage) }}">{% trans percentage=projected_pct %}Avec le tri : {{ percentage }} %{% endtrans %} · {{ gauge_word(item.projected_percentage) }}</span>
+          {% else %}
+          <span class="ml-auto text-right font-semibold {{ gauge_tone(item.percentage) }}">{{ gauge_word(item.percentage) }}</span>
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
+      {% if envelopes | length > 4 %}
+      <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{% trans count=envelopes | length - 4, v="s" if envelopes | length - 4 > 1 else "" %}Voir les {{ count }} autre{{ v }} enveloppe{{ v }}{% endtrans %} {{ icon('arrow-right', size=16) }}</a>
+      {% endif %}
+      <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-success"></span>{{ _("Dépensé") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-border-strong"></span>{{ _("Encore dans La Savane") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-0.5 h-3 rounded-full bg-primary"></span>{% trans date=pace_date, percentage=month_pace %}Rythme au {{ date }} ({{ percentage }} %){% endtrans %}</span>
+      </p>
+      {% else %}
+      <p class="text-sm text-secondary">{{ _("Aucun budget n'est fixé pour ce mois.") }}</p>
+      <a href="/budgets" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Fixer les budgets") }} {{ icon('arrow-right', size=16) }}</a>
+      {% endif %}
+    </section>
 
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
-    {% if category_spending and income_spending %}
-    <div class="h-80">
-      <canvas id="cashflow-sankey-chart"></canvas>
-    </div>
-    {% else %}
-    <p class="text-sm text-secondary text-center py-8">
-      {{ _("Pas assez de données pour afficher le flux financier sur cette période.") }}
-    </p>
-    {% endif %}
-  </div>
-  </div>
+    {# Les deux répartitions côte à côte : on lit ce qui est entré avant ce
+       qui est sorti. Une rangée de 50 px par catégorie, cliquable pour ouvrir
+       le détail des opérations. #}
+    <section data-tour="dashboard-expenses" aria-labelledby="expense-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+      <h2 id="expense-title" class="text-section-title">{% trans period_label=period_label %}Dépenses par catégorie — {{ period_label }}{% endtrans %}</h2>
+      {% if category_spending %}
+      <div class="flex flex-col gap-3">
+        <div class="relative w-[180px] h-[180px] mx-auto flex-shrink-0">
+          <canvas id="category-donut-chart" role="img" aria-label="{{ _("Répartition des dépenses par catégorie") }}"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
+            <span id="category-donut-label" class="text-xs text-secondary truncate max-w-full">{{ _("Total dépenses") }}</span>
+            <span id="category-donut-total" class="amount-blur text-base font-bold tabular-nums text-primary"></span>
+            <span id="category-donut-percent" class="text-xs text-secondary"></span>
+          </div>
+        </div>
+        <div id="category-list" class="flex flex-col lg:max-h-[300px] lg:overflow-y-auto"></div>
+      </div>
+      {% else %}
+      <p class="text-sm text-secondary text-center py-8">{{ _("Aucune dépense sur cette période.") }}</p>
+      {% endif %}
+    </section>
 
+    <section aria-labelledby="income-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+      <h2 id="income-title" class="text-section-title">{% trans period_label=period_label %}Recettes par catégorie — {{ period_label }}{% endtrans %}</h2>
+      {% if income_spending %}
+      <div class="flex flex-col gap-3">
+        <div class="relative w-[180px] h-[180px] mx-auto flex-shrink-0">
+          <canvas id="income-donut-chart" role="img" aria-label="{{ _("Répartition des recettes par catégorie") }}"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
+            <span id="income-donut-label" class="text-xs text-secondary truncate max-w-full">{{ _("Total recettes") }}</span>
+            <span id="income-donut-total" class="amount-blur text-base font-bold tabular-nums text-primary"></span>
+            <span id="income-donut-percent" class="text-xs text-secondary"></span>
+          </div>
+        </div>
+        <div id="income-list" class="flex flex-col lg:max-h-[300px] lg:overflow-y-auto"></div>
+      </div>
+      {% else %}
+      <p class="text-sm text-secondary text-center py-8">{{ _("Aucune recette sur cette période.") }}</p>
+      {% endif %}
+    </section>
+
+    {# Flux financier (Sankey) : masqué sur bureau, où les deux répartitions
+       ci-dessus disent déjà la même chose. #}
+    <section aria-labelledby="flow-title" class="lg:hidden bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+      <h2 id="flow-title" class="text-section-title">{% trans period_label=period_label %}Flux financier — {{ period_label }}{% endtrans %}</h2>
+      {% if category_spending and income_spending %}
+      <div style="height: {{ [320, (category_spending | length) * 36 + 40] | max }}px;">
+        <canvas id="cashflow-sankey-chart"></canvas>
+      </div>
+      {% else %}
+      <p class="text-sm text-secondary text-center py-8">
+        {{ _("Pas assez de données pour afficher le flux financier sur cette période.") }}
+      </p>
+      {% endif %}
+    </section>
+
+  </div>
 </div>
-
-{% if row1_oob %}
-{% include "dashboard/_ce_mois_card.html" %}
-{% endif %}
 
 <dialog
   id="category-transactions-dialog"
-  class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-black/50 w-[calc(100%-2rem)] max-w-lg"
+  class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-lg"
 >
   <div class="p-4 flex flex-col gap-3">
     <div class="flex items-center justify-between gap-2">
-      <p id="category-transactions-title" class="text-lg font-bold text-primary truncate"></p>
+      <p id="category-transactions-title" class="text-section-title truncate"></p>
       <button
         type="button"
         onclick="document.getElementById('category-transactions-dialog').close()"
         aria-label="{{ _("Fermer") }}"
-        class="text-secondary text-xl leading-none flex-shrink-0"
+        class="text-secondary flex-shrink-0 w-[50px] h-[50px] flex items-center justify-center"
       >
-        {{ icon('x', size=16) }}
+        {{ icon('x') }}
       </button>
     </div>
     <div id="category-transactions-content"></div>
@@ -368,6 +379,10 @@
     var incomeValues = {{ income_values | tojson | safe }};
     var incomeCategoryIds = {{ income_category_ids | tojson | safe }};
     var trendLabels = {{ trend_labels | tojson | safe }};
+    var trendShortLabels = {{ trend_short_labels | tojson | safe }};
+    var periodIncome = {{ income_total | float | tojson | safe }};
+    var periodExpense = {{ expense_total | float | tojson | safe }};
+    var periodIsMonth = {{ is_calendar_month | tojson | safe }};
     var trendExpenseValues = {{ trend_expense_values | tojson | safe }};
     var trendIncomeValues = {{ trend_income_values | tojson | safe }};
     var trendIncomeLabel = {{ trend_income_label | tojson | safe }};
@@ -468,7 +483,7 @@
       // (épinglée / réduite / masquée), qui modifie le padding gauche du
       // <body>. Mesuré : conteneur revenu à 1005 px alors que le canvas
       // restait à 1164 — soit 160 px de graphique débordant sous la colonne
-      // colonne « Budgets à risque », courbe et libellés d'axe par-dessus.
+      // colonne « Enveloppes », courbe et libellés d'axe par-dessus.
       //
       // On surveille donc nous-mêmes le conteneur. Le test d'identité évite
       // qu'un observateur survivant ne redimensionne un graphique déjà
@@ -491,12 +506,11 @@
       var value = rootStyles.getPropertyValue(name).trim();
       return value || fallback;
     };
-    var colorSuccess = cssColor("--color-success", "#16a34a");
-    var colorDanger = cssColor("--color-danger", "#dc2626");
+    var colorSuccess = cssColor("--color-success", "#13703a");
+    var colorDanger = cssColor("--color-danger", "#c81e1e");
     var colorSecondary = cssColor("--color-secondary", "#6b7280");
-    var colorBorder = cssColor("--color-border", "#e5e7eb");
+    var colorBorder = cssColor("--color-border", "#e7e2da");
     var colorPrimary = cssColor("--color-primary", "#111827");
-    var colorAccent = cssColor("--color-accent", "#1e40af");
 
     // Texte et grille des graphiques Chart.js harmonisés avec le thème
     // actif : sans ça, le texte par défaut de Chart.js (gris foncé) devient
@@ -506,8 +520,16 @@
     Chart.defaults.borderColor = colorBorder;
     Chart.defaults.scale.grid.color = colorBorder;
     Chart.defaults.scale.ticks.color = colorSecondary;
+    // Liseré entre les parts d'un anneau : la couleur de la surface (blanc par
+    // défaut dans Chart.js, qui dessinerait un contour clair en sombre).
+    Chart.defaults.elements.arc.borderColor = cssColor("--color-container", "#ffffff");
 
-    var palette = ["#1e40af", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
+    // Palette de données : huit teintes lues dans design-system.css
+    // (--color-chart-1 à 8), sans ambre ni vert/rouge de verdict. Les replis
+    // sont les mêmes valeurs, au cas où la feuille de style manquerait.
+    var palette = ["#2563eb", "#0d9488", "#9333ea", "#db2777", "#65a30d", "#ea580c", "#0891b2", "#64748b"].map(function (fallback, index) {
+      return cssColor("--color-chart-" + (index + 1), fallback);
+    });
     var greyedOutColor = colorBorder;
     var colorsFor = function (labels) {
       return labels.map(function (_, index) {
@@ -610,7 +632,7 @@
           var selected = highlightedIndex === index;
           var dimmed = highlightedIndex !== null && !selected;
           row.classList.toggle("opacity-40", dimmed);
-          row.style.borderLeftColor = selected ? colors[index] : "transparent";
+          row.classList.toggle("bg-sunken", selected);
         });
       };
 
@@ -629,10 +651,13 @@
           var value = values[index];
           var percentage = total > 0 ? Math.round((value / total) * 100) : 0;
 
-          var row = document.createElement("div");
-          row.className =
-            "flex items-center gap-3 px-3 py-2.5 cursor-pointer border-l-4 border-transparent transition " +
-            (index % 2 === 0 ? "bg-container" : "bg-page");
+          // Un <button> et non un <div> : la ligne se prend au clavier et au
+          // doigt (50 px), et son état sélectionné se lit au fond, pas à une
+          // bordure colorée.
+          var row = document.createElement("button");
+          row.type = "button";
+          row.className = "flex items-center gap-3 w-full min-h-[var(--row-list)] px-2 text-left border-b border-border";
+          row.setAttribute("aria-label", {{ _("Voir les opérations : ") | tojson | safe }} + label);
 
           var dot = document.createElement("span");
           dot.className = "w-2.5 h-2.5 rounded-full flex-shrink-0";
@@ -642,22 +667,15 @@
           name.className = "flex-1 min-w-0 text-sm text-primary truncate";
           name.textContent = label;
 
-          // Montant et pourcentage empilés dans une colonne étroite plutôt
-          // que côte à côte : ça libère beaucoup plus de largeur pour le nom
-          // de catégorie (avant, les deux se disputaient l'espace restant
-          // sur la même ligne et coupaient le nom à 3-4 caractères dès que
-          // le montant était un peu long).
           var figures = document.createElement("div");
-          figures.className =
-            "flex flex-col items-end flex-shrink-0 leading-tight " +
-            "2xl:flex-row 2xl:items-baseline 2xl:gap-2";
+          figures.className = "flex items-baseline gap-3 flex-shrink-0";
 
           var amount = document.createElement("span");
-          amount.className = "amount-blur text-sm font-bold text-primary whitespace-nowrap";
+          amount.className = "amount-blur text-sm font-semibold tabular-nums text-primary whitespace-nowrap";
           amount.textContent = currencyFormatter.format(value);
 
           var percent = document.createElement("span");
-          percent.className = "text-xs text-secondary whitespace-nowrap";
+          percent.className = "w-10 text-right text-xs tabular-nums text-secondary whitespace-nowrap";
           percent.textContent = percentage + " %";
 
           figures.appendChild(amount);
@@ -710,7 +728,7 @@
     if (sankeyCanvas && categoryLabels.length && incomeLabels.length) {
       var incomeColorsForSankey = colorsFor(incomeLabels);
       var expenseColorsForSankey = colorsFor(categoryLabels);
-      var sankeyColorByKey = { total: colorAccent };
+      var sankeyColorByKey = { total: colorPrimary };
       var sankeyLabelByKey = { total: "Total" };
       var sankeyData = [];
 
@@ -772,7 +790,7 @@
                     (versTotal ? {{ _("Recette · ") | tojson }} : {{ _("Dépense · ") | tojson }}) +
                     nom +
                     " : " +
-                    currencyFormatter.format(raw.flow)
+                    currencyFormatter.format(raw.flow).replace("-", "−")
                   );
                 },
               },
@@ -784,55 +802,170 @@
 
     var trendCanvas = document.getElementById("trend-line-chart");
     if (trendCanvas) {
-      var expenseDataset = {
+      var colorExpenseSeries = palette[0];
+      var colorIncomeSeries = palette[1];
+      var seriesStyle = { fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 0, pointHitRadius: 14 };
+      var expenseDataset = Object.assign({
         label: {{ _("Dépenses") | tojson }},
         data: trendExpenseValues,
-        borderColor: colorDanger,
-        backgroundColor: colorDanger + "1a",
-        fill: true,
-        tension: 0.3,
-      };
-      var incomeDataset = {
+        borderColor: colorExpenseSeries,
+        backgroundColor: colorExpenseSeries + "1f",
+      }, seriesStyle);
+      var incomeDataset = Object.assign({
         label: trendIncomeLabel,
         data: trendIncomeValues,
-        borderColor: colorSuccess,
-        backgroundColor: colorSuccess + "1a",
-        fill: true,
-        tension: 0.3,
+        borderColor: colorIncomeSeries,
+        backgroundColor: colorIncomeSeries + "1f",
+      }, seriesStyle);
+
+      var numberLocale = document.documentElement.dataset.numberLocale || "fr-FR";
+      var lastMonth = trendLabels.length - 1;
+      // Le mois lu : le dernier quand la période est un mois civil, aucun sinon
+      // (la phrase donne alors les totaux de la période).
+      var selectedMonth = periodIsMonth ? lastMonth : null;
+      var readout = document.getElementById("trend-readout");
+      var monthChips = [];
+
+      var signedAmount = function (value, plus) {
+        var text = currencyFormatter.format(Math.abs(value));
+        if (value < 0 || (value === 0 && !plus)) return "−" + text;
+        return (plus ? "+" : "") + text;
+      };
+
+      var renderReadout = function () {
+        if (!readout) return;
+        var label = selectedMonth === null ? periodLabel : trendLabels[selectedMonth];
+        var income = selectedMonth === null ? periodIncome : Number(trendIncomeValues[selectedMonth]);
+        var expense = selectedMonth === null ? periodExpense : Number(trendExpenseValues[selectedMonth]);
+        readout.textContent = "";
+        var make = function (text, blur) {
+          var span = document.createElement("span");
+          span.textContent = text;
+          if (blur) span.className = "amount-blur tabular-nums";
+          return span;
+        };
+        readout.appendChild(make(label + " : " + {{ _("recettes") | tojson }} + " "));
+        readout.appendChild(make(signedAmount(income, true), true));
+        readout.appendChild(make(", " + {{ _("dépenses") | tojson }} + " "));
+        readout.appendChild(make(signedAmount(-expense, false), true));
+      };
+
+      // Trait vertical et pastilles sur le mois lu.
+      var selectedMonthPlugin = {
+        id: "selectedMonth",
+        afterDatasetsDraw: function (chart) {
+          if (selectedMonth === null) return;
+          var ctx = chart.ctx;
+          var meta0 = chart.getDatasetMeta(0);
+          if (!meta0 || !meta0.data[selectedMonth]) return;
+          var x = meta0.data[selectedMonth].x;
+          ctx.save();
+          ctx.strokeStyle = colorBorder;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, chart.chartArea.top);
+          ctx.lineTo(x, chart.chartArea.bottom);
+          ctx.stroke();
+          chart.data.datasets.forEach(function (dataset, index) {
+            var point = chart.getDatasetMeta(index).data[selectedMonth];
+            if (!point) return;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = cssColor("--color-container", "#ffffff");
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = dataset.borderColor;
+            ctx.stroke();
+          });
+          ctx.restore();
+        },
+      };
+
+      // Les puces de mois occupent la largeur du tracé : on les cale sur la
+      // zone du graphique à chaque mise en page.
+      var chipsBar = document.getElementById("trend-months");
+      var alignChips = function (chart) {
+        if (!chipsBar || !chart.chartArea) return;
+        chipsBar.style.marginLeft = chart.chartArea.left + "px";
+        chipsBar.style.width = chart.chartArea.right - chart.chartArea.left + "px";
       };
 
       var trendChart = createChart(trendCanvas, {
         type: "line",
-        data: { labels: trendLabels, datasets: [expenseDataset] },
+        data: { labels: trendLabels, datasets: [expenseDataset, incomeDataset] },
+        plugins: [
+          selectedMonthPlugin,
+          { id: "alignChips", afterLayout: alignChips },
+        ],
         options: {
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } },
+          animation: { duration: 400 },
+          interaction: { mode: "index", intersect: false },
+          onClick: function (event, elements) {
+            if (elements.length) selectMonth(elements[0].index);
+          },
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { grid: { display: false }, offset: true, ticks: { display: false } },
+            y: {
+              beginAtZero: true,
+              border: { display: false },
+              ticks: {
+                callback: function (value) {
+                  return value >= 1000 ? (value / 1000).toLocaleString(numberLocale) + " k" : value;
+                },
+              },
+            },
+          },
         },
       });
+
+      var selectMonth = function (index) {
+        selectedMonth = selectedMonth === index ? null : index;
+        monthChips.forEach(function (chip, i) {
+          chip.setAttribute("aria-pressed", i === selectedMonth ? "true" : "false");
+        });
+        renderReadout();
+        trendChart.update("none");
+      };
+
+      if (chipsBar) {
+        chipsBar.innerHTML = "";
+        trendShortLabels.forEach(function (short, index) {
+          var chip = document.createElement("button");
+          chip.type = "button";
+          var letter = document.createElement("span");
+          letter.className = "sm:hidden";
+          letter.textContent = short.charAt(0);
+          var full = document.createElement("span");
+          full.className = "hidden sm:inline";
+          full.textContent = short;
+          chip.appendChild(letter);
+          chip.appendChild(full);
+          chip.setAttribute("aria-label", trendLabels[index]);
+          chip.setAttribute("aria-pressed", index === selectedMonth ? "true" : "false");
+          chip.className = "min-h-[50px] px-0.5 rounded-lg text-xs text-secondary truncate aria-pressed:bg-accent-soft aria-pressed:text-accent-ink aria-pressed:font-semibold";
+          chip.addEventListener("click", function () {
+            selectMonth(index);
+          });
+          chipsBar.appendChild(chip);
+          monthChips.push(chip);
+        });
+        alignChips(trendChart);
+      }
+      renderReadout();
 
       var trendModes = { expense: [expenseDataset], income: [incomeDataset], both: [expenseDataset, incomeDataset] };
 
       var setTrendMode = function (mode) {
         trendChart.data.datasets = trendModes[mode];
-        trendChart.options.plugins.legend.display = mode === "both";
         trendChart.update();
 
         Object.keys(trendModes).forEach(function (candidate) {
           var button = document.getElementById("trend-mode-" + candidate);
-          if (!button) {
-            return;
+          if (button) {
+            button.setAttribute("aria-pressed", candidate === mode ? "true" : "false");
           }
-          var active = candidate === mode;
-          button.classList.toggle("bg-accent", active);
-          button.classList.toggle("text-on-accent", active);
-          // bg-page et non bg-container : ces boutons sont désormais DANS la
-          // carte Récapitulatif, donc sur un fond bg-container — un bouton
-          // inactif en bg-container y serait invisible.
-          button.classList.toggle("bg-page", !active);
-          button.classList.toggle("border", !active);
-          button.classList.toggle("border-border", !active);
-          button.classList.toggle("text-primary", !active);
         });
       };
 
@@ -845,7 +978,7 @@
         }
       });
 
-      setTrendMode("expense");
+      setTrendMode("both");
     }
     };
 

@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% from "transactions/_parts.html" import head, pills, side, sync %}
+
+{#- Opérations de « L'autre voie » : chercher d'abord, ranger sur place. La phrase de
+    Twiga, un grand champ de recherche, des pastilles pour les vues (type, compte)
+    et les filtres (catégorie, paiement, période, critères, tri), puis la liste
+    groupée par jour : une ligne s'ouvre sur place avec tous ses champs et le
+    détail du ticket. Cocher des lignes change la phrase et ouvre la barre de
+    sélection. Les routes et les ids sont ceux de la Classique
+    (#transactions-filters, #transactions-content). -#}
+{% block title %}{{ _("Opérations — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("operations", [
+  tour_step("#transactions-filters", _("Chercher d'abord"), _("Tape un commerce ou un libellé bancaire : la liste se met à jour pendant que tu écris. Les menus affinent ensuite."), "search", position="bottom"),
+  tour_step("#ops-pills", _("Les vues"), _("Toutes, Dépenses, Recettes, À trier ou Virements : un geste pour changer de vue. Les chiffres comptent les lignes de chacune."), "filter", position="bottom"),
+  tour_step('[data-tour="operations-new"]', _("Ajouter une opération"), _("Pour une dépense en espèces ou un oubli : saisis-la à la main, elle rejoint la liste."), "plus", position="bottom", write=True),
+  tour_step("#transactions-content", _("La liste, jour par jour"), _("Touche une ligne pour l'ouvrir sur place et la corriger. Coche-en plusieurs pour les ranger ensemble."), "list-details", position="top"),
+  tour_step("#ops-side", _("Ce que montre la recherche"), _("Le total, les dépenses et les recettes de ce que tu as filtré, avec la répartition par catégorie."), "chart-bar", position="left", optional=True),
+  tour_step("#transactions-export", _("Exporter"), _("Télécharge dans un fichier les opérations affichées, avec tes filtres actuels."), "download", position="bottom"),
+]) }}{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_url('/static/js/operations-b.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+{% set tree = {} %}
+{% for parent in categories %}
+  {% set kids = [] %}
+  {% for child in parent.children %}{% if kids.append({"id": child.id | string, "name": child.name}) %}{% endif %}{% endfor %}
+  {% if tree.update({parent.id | string: {"name": parent.name, "children": kids}}) %}{% endif %}
+{% endfor %}
+{% set pay_labels = {} %}
+{% for code, meta in payment_methods.items() %}{% if pay_labels.update({code: meta.label}) %}{% endif %}{% endfor %}
+{% set account_labels = {} %}
+{% for account in accounts %}{% if account_labels.update({account.id | string: account.name}) %}{% endif %}{% endfor %}
+{% set sort_labels = {"date_desc": _("Date (récent d'abord)"), "date_asc": _("Date (ancien d'abord)"), "amount_desc": _("Montant décroissant"), "amount_asc": _("Montant croissant")} %}
+{% set board = {
+  "q": search,
+  "type": type_filter,
+  "category": category_filter,
+  "subcategory": subcategory_filter,
+  "account": account_filter,
+  "pay": payment_method_filter,
+  "sort": sort_filter,
+  "size": page_size | string,
+  "amin": amount_min,
+  "amax": amount_max,
+  "dfrom": date_from,
+  "dto": date_to,
+  "openId": open_id,
+  "tree": tree,
+  "period": period,
+  "labels": {
+    "category": _("Catégorie"),
+    "todo": _("À trier"),
+    "payment": _("Paiement"),
+    "min": _("Montant min"),
+    "max": _("Montant max"),
+    "pay": pay_labels,
+    "account": account_labels,
+    "sort": sort_labels,
+    "type": {"expense": _("Dépenses"), "income": _("Recettes"), "transfer": _("Virements")},
+    "selOne": _("{n} opération choisie,"),
+    "selMany": _("{n} opérations choisies,"),
+  },
+} %}
+{% set current_user = get_current_user(request) %}
+<div class="border-b border-border bg-page">
+  <nav aria-label="{{ _("Plus, écrans voisins") }}" class="flex gap-1 overflow-x-auto px-4 lg:px-8">
+    {% for href, label, active in [("/transactions/list", _("Opérations"), true), ("/imports/new", _("Import"), false), ("/reports", _("Rapports"), false), ("/settings", _("Paramètres"), false)] %}
+    {% if href != "/imports/new" or current_user is none or current_user.role == "admin" %}
+    <a href="{{ href }}" {% if active %}aria-current="page"{% endif %} class="inline-flex min-h-[50px] flex-none items-center border-b-2 px-3 text-sm {{ 'border-accent-ink font-semibold text-primary' if active else 'border-transparent font-medium text-secondary' }}">{{ label }}</a>
+    {% endif %}
+    {% endfor %}
+  </nav>
+</div>
+<main
+  class="flex flex-col gap-[var(--space-block)] px-4 pb-8 pt-4 lg:px-8 lg:pt-6"
+  x-data="opsBoardB({{ board | tojson | forceescape }})"
+  @keydown.escape.window="menu = ''; bulkMenu = false"
+>
+  {{ head(answer, scope_counts.todo) }}
+
+  <form
+    id="transactions-filters"
+    x-ref="form"
+    hx-get="/transactions/list/content"
+    hx-trigger="submit"
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    @input.debounce.400ms="if ($event.target.hasAttribute('data-live')) submit()"
+    class="flex flex-col gap-3"
+  >
+    <input type="hidden" name="f_type" :value="type" />
+    <input type="hidden" name="f_category" :value="category" />
+    <input type="hidden" name="f_subcategory" :value="subcategory" />
+    <input type="hidden" name="f_account" :value="account" />
+    <input type="hidden" name="f_payment_method" :value="pay" />
+    <input type="hidden" name="f_sort" :value="sort" />
+    <input type="hidden" name="f_page_size" id="f_page_size" :value="size" />
+    <input type="hidden" name="f_amount_min" :value="amin" />
+    <input type="hidden" name="f_amount_max" :value="amax" />
+    <input type="hidden" name="f_date_from" :value="dfrom" />
+    <input type="hidden" name="f_date_to" :value="dto" />
+    <input type="hidden" name="f_open" :value="openId || ''" />
+
+    <div class="relative">
+      <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-secondary">{{ icon('search', size=20) }}</span>
+      <input
+        type="text"
+        name="f_search"
+        x-model="q"
+        data-live
+        value="{{ search }}"
+        placeholder="{{ _("Rechercher un commerce, un libellé bancaire…") }}"
+        aria-label="{{ _("Rechercher une opération") }}"
+        autocomplete="off"
+        class="input-base min-h-[56px] pl-12 pr-[50px] text-base"
+      />
+      <button type="button" x-show="q" style="display: none;" @click="q = ''; submit()" aria-label="{{ _("Effacer la recherche") }}" class="absolute inset-y-0 right-0 flex w-[50px] items-center justify-center text-secondary">{{ icon('x', size=18) }}</button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      {{ pills(scope_counts) }}
+      <span class="mx-1 h-8 w-px bg-border max-lg:hidden" aria-hidden="true"></span>
+      <div role="group" aria-label="{{ _("Compte") }}" class="flex flex-wrap gap-2">
+        {% for account in all_accounts %}
+        <button
+          type="button"
+          @click="setAccount('{{ account.id }}')"
+          :aria-pressed="account === '{{ account.id }}'"
+          :class="account === '{{ account.id }}' ? 'border-accent bg-accent-soft text-accent-ink font-semibold' : 'border-border-strong bg-container text-primary font-medium'"
+          class="flex min-h-[50px] items-center gap-2 rounded-full border px-4 text-sm"
+        ><span class="h-2 w-2 flex-none rounded-full" style="background-color: {{ account | account_color }}" aria-hidden="true"></span>{{ account.name }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-start gap-2" @click.outside="menu = ''">
+      {# Category #}
+      <div class="relative">
+        <button type="button" @click="menu = menu === 'cat' ? '' : 'cat'" :aria-expanded="menu === 'cat'" :class="category ? 'border-accent bg-accent-soft text-accent-ink font-semibold' : 'border-border-strong bg-container text-primary font-medium'" class="flex min-h-[50px] items-center gap-2 rounded-full border px-4 text-sm"><span x-text="categoryLabel">{{ _("Catégorie") }}</span>{{ icon('chevron-down', size=16) }}</button>
+        <div x-show="menu === 'cat'" style="display: none;" class="absolute left-0 top-full z-30 mt-1 max-h-[360px] w-[280px] overflow-y-auto rounded-xl border border-border bg-container shadow-lg">
+          <button type="button" @click="setCategory('')" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm">{{ _("Toutes les catégories") }}</button>
+          <button type="button" @click="setCategory('uncategorized')" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm">{{ _("Non catégorisé") }}</button>
+          {% for parent in categories %}
+          <button type="button" @click="setCategory('{{ parent.id }}')" :class="category === '{{ parent.id }}' && !subcategory ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center gap-2.5 border-b border-border px-3.5 text-left text-sm"><span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ parent.id | category_color }}" aria-hidden="true"></span>{{ parent.name }}</button>
+          {% for child in parent.children %}
+          <button type="button" @click="setSub('{{ parent.id }}', '{{ child.id }}')" :class="subcategory === '{{ child.id }}' ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border py-0 pl-9 pr-3.5 text-left text-sm">{{ child.name }}</button>
+          {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+      {# Payment #}
+      <div class="relative">
+        <button type="button" @click="menu = menu === 'pay' ? '' : 'pay'" :aria-expanded="menu === 'pay'" :class="pay ? 'border-accent bg-accent-soft text-accent-ink font-semibold' : 'border-border-strong bg-container text-primary font-medium'" class="flex min-h-[50px] items-center gap-2 rounded-full border px-4 text-sm"><span x-text="payLabel">{{ _("Paiement") }}</span>{{ icon('chevron-down', size=16) }}</button>
+        <div x-show="menu === 'pay'" style="display: none;" class="absolute left-0 top-full z-30 mt-1 w-[240px] overflow-hidden rounded-xl border border-border bg-container shadow-lg">
+          <button type="button" @click="setPay('')" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm">{{ _("Tout mode de paiement") }}</button>
+          {% for code, meta in payment_methods.items() %}
+          <button type="button" data-code="{{ code }}" @click="setPay($el.dataset.code)" :class="pay === $el.dataset.code ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0">{{ meta.label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      {# Period #}
+      <div class="relative">
+        <button type="button" @click="menu = menu === 'per' ? '' : 'per'" :aria-expanded="menu === 'per'" class="flex min-h-[50px] items-center gap-2 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary"><span>{{ period.label }}</span>{{ icon('chevron-down', size=16) }}</button>
+        <div x-show="menu === 'per'" style="display: none;" class="absolute left-0 top-full z-30 mt-1 flex w-[300px] flex-col gap-3 rounded-xl border border-border bg-container p-3 shadow-lg">
+          <div class="flex items-center justify-between gap-2">
+            <button type="button" @click="step('prev')" :disabled="!period.prev" aria-label="{{ _("Mois précédent") }}" class="btn btn-secondary w-[50px] px-0">{{ icon('chevron-left', size=18) }}</button>
+            <span class="text-sm font-semibold text-primary">{{ period.label }}</span>
+            <button type="button" @click="step('next')" :disabled="!period.next" aria-label="{{ _("Mois suivant") }}" class="btn btn-secondary w-[50px] px-0">{{ icon('chevron-right', size=18) }}</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="form-group"><label for="ops-from" class="form-label">{{ _("Du") }}</label><input id="ops-from" type="date" x-model="dfrom" class="input-base" /></div>
+            <div class="form-group"><label for="ops-to" class="form-label">{{ _("Au") }}</label><input id="ops-to" type="date" x-model="dto" class="input-base" /></div>
+          </div>
+          <button type="button" @click="setPeriod(dfrom, dto)" class="btn btn-secondary border-border-strong font-semibold">{{ _("Appliquer les dates") }}</button>
+          <button type="button" @click="setPeriod('', '')" class="min-h-[50px] text-sm font-medium text-accent-ink">{{ _("Toutes les dates") }}</button>
+        </div>
+      </div>
+      {# More criteria #}
+      <div class="relative">
+        <button type="button" @click="menu = menu === 'crit' ? '' : 'crit'" :aria-expanded="menu === 'crit'" :class="critCount ? 'border-accent bg-accent-soft text-accent-ink font-semibold' : 'border-border-strong bg-container text-primary font-medium'" class="flex min-h-[50px] items-center gap-2 rounded-full border px-4 text-sm">{{ _("+ de critères") }}{{ icon('chevron-down', size=16) }}</button>
+        <div x-show="menu === 'crit'" style="display: none;" class="absolute left-0 top-full z-30 mt-1 flex w-[300px] flex-col gap-3 rounded-xl border border-border bg-container p-3 shadow-lg">
+          <div class="form-group"><label for="ops-amin" class="form-label">{{ _("Montant min") }}</label><input id="ops-amin" type="text" inputmode="decimal" x-model="amin" placeholder="€" class="input-base" /></div>
+          <div class="form-group"><label for="ops-amax" class="form-label">{{ _("Montant max") }}</label><input id="ops-amax" type="text" inputmode="decimal" x-model="amax" placeholder="€" class="input-base" /></div>
+          <button type="button" @click="submit()" class="btn btn-secondary border-border-strong font-semibold">{{ _("Appliquer") }}</button>
+          <a href="/transactions/list" class="flex min-h-[50px] items-center justify-center text-sm font-medium text-accent-ink">{{ _("Réinitialiser") }}</a>
+        </div>
+      </div>
+      {# Sort #}
+      <div class="relative">
+        <button type="button" @click="menu = menu === 'sort' ? '' : 'sort'" :aria-expanded="menu === 'sort'" class="flex min-h-[50px] items-center gap-2 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary">{{ _("Trier") }}{{ icon('chevron-down', size=16) }}</button>
+        <div x-show="menu === 'sort'" style="display: none;" class="absolute left-0 top-full z-30 mt-1 w-[260px] overflow-hidden rounded-xl border border-border bg-container shadow-lg">
+          {% for code, label in sort_labels.items() %}
+          <button type="button" data-code="{{ code }}" @click="setSort($el.dataset.code)" :class="sort === $el.dataset.code ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <div id="transaction-new-slot"></div>
+  {# The detail and edit fragments of the Classic panel (still served by their routes)
+     swap into this id; the other way opens a row in place and never fills it. #}
+  <div id="transaction-detail-content" hidden></div>
+
+  <div class="flex flex-col gap-[var(--space-block)] lg:flex-row lg:items-start">
+    <div id="transactions-content" class="min-w-0 lg:flex-1">
+      {% include "transactions/_content.html" %}
+    </div>
+    <div class="lg:sticky lg:top-[72px] lg:w-[340px] lg:flex-none">
+      {{ side(total, scope_counts.all, total_amount, expense_total, income_total, period, expense_breakdown, expense_breakdown_max) }}
+    </div>
+  </div>
+  {{ sync(transactions) }}
+</main>
+{% endblock %}

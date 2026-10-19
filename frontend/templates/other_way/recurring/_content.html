@@ -1,0 +1,122 @@
+{#- Abonnements, the other way: the sentence (how many are still expected this month),
+    the duplicates to merge, then the subscriptions by state, each opening on its
+    detail and on Confirmer / Ignorer. The whole block is replaced by every action
+    (#recurring-content), so the sentence always follows. -#}
+{% from "_macros/brand.html" import mascot %}
+{% from "other_way/_ui.html" import answer_head %}
+{% set write = can_edit("/recurring/confirm") %}
+{% set section_meta = {
+  "pending": (_("Attendus ce mois, pas encore vus"), _("Ils n'ont pas encore été prélevés ce mois-ci.")),
+  "inactive": (_("Inactifs ou annulés ?"), _("Pas vus depuis plus de 90 jours.")),
+  "seen": (_("Déjà prélevés ce mois"), _("Rien à faire, ils sont passés.")),
+  "ignored": (_("Ignorés"), _("Ils ne comptent plus dans le total.")),
+} %}
+<div id="recurring-content" class="flex flex-col gap-5" x-data="{ filter: 'all', open: null }">
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    {{ answer_head(answer.title, answer.detail, blur_phrase=false, blur_detail=true) }}
+
+    {% for group in recurring_duplicate_groups %}
+    <section {% if loop.first %}data-tour="recurring-duplicates" {% endif %}class="card flex flex-col gap-3 min-w-0">
+      <p class="font-semibold">{% trans n=group | length, names=group | map(attribute="label_pattern") | map("replace", "|", " / ") | join(", ") %}Ces {{ n }} entrées semblent être le même abonnement : {{ names }}{% endtrans %}</p>
+      <p class="text-sm text-secondary amount-blur">
+        {% if group | map(attribute="amount") | unique | list | length == 1 %}{% trans amount=group[0].amount | eur %}Même montant ({{ amount }}) et même rythme chaque mois.{% endtrans %}{% else %}{{ _("Montants et rythmes proches.") }}{% endif %}
+      </p>
+      {% if write %}
+      <form hx-post="/recurring/merge" hx-target="#recurring-content" hx-swap="outerHTML">
+        {% for item in group %}<input type="hidden" name="label_pattern" value="{{ item.label_pattern }}" />{% endfor %}
+        <input type="hidden" name="amount" value="{{ group[0].amount }}" />
+        <input type="hidden" name="frequency_days" value="{{ group[0].frequency_days }}" />
+        <input type="hidden" name="category_id" value="{{ group[0].category.id if group[0].category else '' }}" />
+        <button type="submit" class="btn {{ 'btn-primary' if loop.first else 'btn-secondary border-border-strong' }}">{{ icon('arrow-narrow-right', size=18) }} {{ _("Fusionner") }}</button>
+      </form>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  {% if recurring_patterns %}
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    <div class="flex flex-col gap-4 min-w-0">
+      <div data-tour="recurring-filters" class="flex flex-wrap gap-2" role="radiogroup" aria-label="{{ _("Filtrer les abonnements") }}">
+        <button type="button" role="radio" @click="filter = 'all'" :aria-checked="filter === 'all'" class="chip">{{ _("Tous") }} <span class="text-secondary tabular-nums">{{ recurring_patterns | length }}</span></button>
+        {% for key, label in [("pending", _("Attendus")), ("inactive", _("Inactifs")), ("ignored", _("Ignorés"))] %}
+        <button type="button" role="radio" @click="filter = '{{ key }}'" :aria-checked="filter === '{{ key }}'" class="chip">{{ label }} <span class="text-secondary tabular-nums">{{ sections[key] | length }}</span></button>
+        {% endfor %}
+      </div>
+
+      <div data-tour="recurring-list" class="card !p-0 overflow-hidden">
+        {% for key in ["pending", "inactive", "seen", "ignored"] if sections[key] %}
+        <section x-show="filter === 'all' || filter === '{{ key }}'" aria-label="{{ section_meta[key][0] }}">
+          <div class="flex flex-wrap items-baseline gap-x-3 bg-sunken px-[var(--space-card)] py-2 border-t border-border first:border-t-0">
+            <h2 class="font-semibold text-sm">{{ section_meta[key][0] }} <span class="font-normal text-secondary">· {{ sections[key] | length }}</span></h2>
+            <p class="text-xs text-secondary">{{ section_meta[key][1] }}</p>
+          </div>
+          <ul>
+            {% for item in sections[key] %}
+            {% set uid = key ~ "-" ~ loop.index %}
+            <li class="border-t border-border first:border-t-0">
+              <button type="button" @click="open = open === '{{ uid }}' ? null : '{{ uid }}'" :aria-expanded="open === '{{ uid }}'"
+                      class="w-full min-h-[50px] px-[var(--space-card)] py-[var(--row-pad)] flex items-center gap-3 text-left">
+                <span class="shrink-0 grid place-items-center w-10 h-10 rounded-full {{ {'pending': 'bg-warning-soft text-warning', 'inactive': 'bg-sunken text-secondary', 'seen': 'bg-success-soft text-success', 'ignored': 'bg-sunken text-secondary'}[key] }}">
+                  {{ icon({'pending': 'alert-triangle', 'inactive': 'clock', 'seen': 'circle-check', 'ignored': 'bell-off'}[key], size=18) }}
+                </span>
+                <span class="flex-1 min-w-0 flex flex-col">
+                  <span class="font-semibold break-words">{{ item.label_pattern | replace("|", " / ") }}</span>
+                  <span class="text-xs text-secondary">{{ item.frequency_label }}{% if item.payment_method and item.payment_method in payment_methods %} · {{ payment_methods[item.payment_method].label }}{% endif %}</span>
+                </span>
+                <span class="hidden sm:flex flex-wrap gap-1.5 justify-end">
+                  {% if key == "pending" %}<span class="badge badge-warning">{{ _("Attendu ce mois, pas encore vu") }}</span>
+                  {% elif key == "inactive" %}<span class="badge badge-neutral">{% trans n=item.days_since_last %}Inactif/annulé ? (dernier vu il y a {{ n }} jours){% endtrans %}</span>
+                  {% elif key == "seen" %}<span class="badge badge-positive">{{ _("Déjà prélevé ce mois") }}</span>
+                  {% else %}<span class="badge badge-neutral">{{ _("Ignoré") }}</span>{% endif %}
+                  {% if item.status == "confirmed" %}<span class="badge badge-neutral">{{ _("Confirmé") }}</span>{% endif %}
+                </span>
+                <span class="amount-blur font-bold tabular-nums whitespace-nowrap">−{{ item.amount | eur }}</span>
+                <span class="shrink-0 text-secondary transition-transform" :class="open === '{{ uid }}' ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+              </button>
+              <div x-show="open === '{{ uid }}'" style="display: none" class="px-[var(--space-card)] pb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <dl class="flex flex-col gap-1 text-sm">
+                  <div class="flex gap-1"><dt class="text-secondary">{{ _("Dernière fois :") }}</dt><dd class="tabular-nums">{{ item.last_date | fr_date }}</dd></div>
+                  {% if key != "inactive" %}<div class="flex gap-1"><dt class="text-secondary">{{ _("Prochaine attendue :") }}</dt><dd class="tabular-nums">{{ item.next_expected | fr_date }}</dd></div>{% endif %}
+                  {% if item.category %}<div class="flex gap-1"><dt class="text-secondary">{{ _("Catégorie :") }}</dt><dd>{{ item.category.name | category_display }}</dd></div>{% endif %}
+                </dl>
+                {% if write %}
+                <div class="grid grid-cols-2 gap-2 lg:w-[22rem]">
+                  {% for action, label, icon_name, done in [("confirm", _("Confirmer"), "check", item.status == "confirmed"), ("ignore", _("Ignorer"), "x", item.status == "ignored")] %}
+                  <form hx-post="/recurring/{{ action }}" hx-target="#recurring-content" hx-swap="outerHTML">
+                    <input type="hidden" name="label_pattern" value="{{ item.label_pattern }}" />
+                    <input type="hidden" name="amount" value="{{ item.amount }}" />
+                    <input type="hidden" name="frequency_days" value="{{ item.frequency_days }}" />
+                    <input type="hidden" name="category_id" value="{{ item.category.id if item.category else '' }}" />
+                    <button type="submit" class="btn btn-secondary border-border-strong w-full {{ 'font-semibold' if done else '' }}" {% if done %}aria-pressed="true"{% endif %}>
+                      {{ icon(icon_name, size=16) }} {{ (_("Confirmé") if action == "confirm" else _("Ignoré")) if done else label }}
+                    </button>
+                  </form>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endfor %}
+      </div>
+    </div>
+
+    <aside class="flex flex-col gap-3 min-w-0">
+      <section data-tour="recurring-total" class="card flex flex-col gap-1" aria-labelledby="total-title">
+        <h2 id="total-title" class="text-sm font-semibold">{{ _("Total mensuel estimé") }}</h2>
+        <p class="amount-blur font-display font-extrabold text-[32px] leading-tight tabular-nums">{{ recurring_monthly_total | eur }}</p>
+        <p class="text-sm text-secondary">{% trans n=recurring_active_count %}Sur {{ n }} abonnement non ignoré. Un abonnement hebdomadaire compte 30 / 7 fois, un trimestriel un tiers, un annuel un douzième.{% pluralize %}Sur {{ n }} abonnements non ignorés. Un abonnement hebdomadaire compte 30 / 7 fois, un trimestriel un tiers, un annuel un douzième.{% endtrans %}</p>
+      </section>
+      <p data-tour="recurring-help" class="text-sm text-secondary px-1">{{ _("Confirmer dit à Twiga que c'est bien un abonnement. Ignorer le sort du total, sans le supprimer.") }}</p>
+    </aside>
+  </div>
+  {% else %}
+  <div class="card flex flex-col items-center gap-2 py-8 text-center">
+    {{ mascot("default", 56) }}
+    <p class="text-sm text-secondary">{{ _("Aucun abonnement récurrent détecté pour l'instant.") }}</p>
+  </div>
+  {% endif %}
+</div>

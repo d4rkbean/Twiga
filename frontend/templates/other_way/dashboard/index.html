@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{#- Le Panorama de L'autre voie : la phrase de Twiga, puis le détail en chiffres.
+    Tout le corps de la page est le fragment #dashboard-content (dashboard/_content.html,
+    celui de L'autre voie) : changer de période ou de compte le remplace en entier.
+    L'état qui doit survivre à l'échange vit ici, sur <main> : la feuille ouverte
+    (`panel`), le mode des anneaux sur mobile (`kind`) et la série de la courbe (`trend`). -#}
+{% block title %}{{ _("Panorama — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("dashboard", [
+  tour_step("#answer", _("La phrase de Twiga"), _("Twiga résume la période en une phrase, avec les chiffres qui la justifient juste en dessous."), "bulb", position="bottom"),
+  tour_step("#dashboard-filters", _("Période et compte"), _("Les deux pastilles changent la période et le compte. Toute la page se recalcule."), "calendar", position="bottom"),
+  tour_step('[data-tour="dashboard-things"]', _("Trois choses à regarder"), _("Ce qui mérite ton attention maintenant, chacune avec le bouton qui t'y emmène."), "target", position="top"),
+  tour_step("#enveloppes", _("Où en sont tes budgets"), _("Chaque jauge montre ce qui est dépensé et ce qui reste à ranger. Le trait marque le rythme du mois."), "wallet", position="right", optional=True),
+  tour_step('[data-tour="dashboard-trend"]', _("Douze mois d'évolution"), _("Les recettes et les dépenses sur un an. Touche un mois pour lire ses montants."), "chart-line", position="top"),
+  tour_step('[data-tour="dashboard-share-out"]', _("Où part l'argent"), _("Les anneaux répartissent dépenses et recettes par catégorie. Touche une ligne pour voir ses opérations."), "chart-bar", position="top"),
+]) }}{% endblock %}
+
+{% block shell_head %}{{ super() }}
+  <script src="{{ static_url('/static/js/panorama.js') }}" defer></script>
+{% endblock %}
+{% block extra_head %}
+  <script src="{{ static_url('/static/vendor/chart.min.js') }}" defer></script>
+  <script src="{{ static_url('/static/vendor/chartjs-chart-sankey.min.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<main
+  x-data="{ panel: null, kind: 'out', trend: 'both' }"
+  @keydown.escape.window="panel = null"
+  class="flex flex-col px-4 pt-5 pb-8 lg:px-10 lg:pt-8 lg:pb-12"
+>
+  <div id="dashboard-content">
+    {% include "dashboard/_content.html" %}
+  </div>
+</main>
+{% endblock %}

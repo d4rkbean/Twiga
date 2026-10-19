@@ -33,11 +33,15 @@
     if (!labels.length || !amounts.length) return;
 
     // Dernier mois (celui affiché dans le rapport) mis en évidence dans la
-    // couleur d'accent de l'app, les précédents dans une teinte neutre —
-    // c'est celui qu'on compare, pas juste un mois parmi d'autres.
+    // première teinte de la palette de données, les précédents dans la
+    // dernière (ardoise) estompée — c'est celui qu'on compare, pas juste un
+    // mois parmi d'autres. L'ambre n'est jamais une couleur de série.
+    var styles = getComputedStyle(document.documentElement);
+    var highlight = styles.getPropertyValue("--color-chart-1").trim() || "#2563eb";
+    var muted = (styles.getPropertyValue("--color-chart-8").trim() || "#64748b") + "66";
     var lastIndex = amounts.length - 1;
     var barColors = amounts.map(function (_, index) {
-      return index === lastIndex ? "#d4a96a" : "#9ca3af";
+      return index === lastIndex ? highlight : muted;
     });
 
     chart = new Chart(canvas, {
@@ -83,5 +87,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", render);
+  // Couleurs relues au changement de thème.
+  window.addEventListener("themechange", render);
   document.body.addEventListener("htmx:afterSwap", render);
 })();

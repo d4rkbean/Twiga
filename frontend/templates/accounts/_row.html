@@ -1,36 +1,42 @@
+{% set type_icons = {"courant": "building-bank", "epargne": "pig-money", "livret": "note", "cash": "cash"} %}
 <div
   id="account-row-{{ item.account.id }}"
-  class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2"
+  class="border-t border-border px-4 lg:px-6 py-3 max-lg:border-t-0 max-lg:bg-container max-lg:rounded-xl max-lg:shadow-sm"
   x-data="{ expanded: false }"
 >
-  <div class="flex items-center justify-between gap-2">
-    <div class="flex items-center gap-2 min-w-0">
+  <div class="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,3fr)_minmax(0,1.5fr)_minmax(0,1.5fr)_170px] items-center gap-x-3 gap-y-2">
+    <div class="flex items-center gap-3 min-w-0">
       <span
         class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
         style="background-color: {{ item.account | account_color }}"
       ></span>
-      <span class="text-primary font-bold truncate">
-        {{ get_account_type_icon(item.account.type) }} {{ item.account.name }}
-      </span>
+      <div class="flex flex-col min-w-0">
+        <span class="text-primary font-semibold truncate">{{ item.account.name }}</span>
+        {% if item.account.notes %}<span class="hidden lg:block text-xs text-secondary truncate">{{ item.account.notes }}</span>{% endif %}
+      </div>
     </div>
-    <div class="flex gap-1.5 flex-shrink-0">
+
+    <div class="flex gap-2 justify-end lg:col-start-4 lg:row-start-1">
       <button
         type="button"
+        {% if first_row %}data-tour="accounts-diagnostic"{% endif %}
         @click="expanded = !expanded"
+        :aria-expanded="expanded"
         :aria-label="expanded ? '{{ _("Masquer le diagnostic") | jsq }}' : '{{ _("Voir le diagnostic de solde") | jsq }}'"
-        class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
+        class="btn btn-secondary border-border-strong w-[50px] px-0 max-lg:border-transparent max-lg:bg-transparent max-lg:shadow-none"
       >
-        {{ icon('zoom-in') }}
+        {{ icon('zoom-in', size=18) }}
       </button>
       <button
         type="button"
         hx-get="/accounts/{{ item.account.id }}/edit"
+        {% if first_row %}data-tour="accounts-edit"{% endif %}
         hx-target="#account-row-{{ item.account.id }}"
         hx-swap="outerHTML"
         aria-label="{{ _("Modifier") }}"
-        class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center flex-shrink-0"
+        class="btn btn-secondary border-border-strong w-[50px] px-0 max-lg:border-transparent max-lg:bg-transparent max-lg:shadow-none"
       >
-        {{ icon('edit') }}
+        {{ icon('pencil', size=18) }}
       </button>
       <button
         type="button"
@@ -38,47 +44,49 @@
         hx-target="#account-row-{{ item.account.id }}"
         hx-swap="outerHTML"
         aria-label="{{ _("Supprimer") }}"
-        class="h-[50px] w-[50px] rounded-xl bg-container border border-border text-danger font-medium flex items-center justify-center flex-shrink-0"
+        class="btn btn-secondary border-border-strong w-[50px] px-0 text-danger max-lg:border-transparent max-lg:bg-transparent max-lg:shadow-none"
       >
-        {{ icon('trash') }}
+        {{ icon('trash', size=18) }}
       </button>
     </div>
-  </div>
-  <div class="flex items-center justify-between gap-2">
-    <span class="text-sm text-secondary truncate">
-      {% trans type=get_account_type_label(item.account.type), transaction_count=item.transaction_count, v="s" if item.transaction_count != 1 else "" %}{{ type }} · {{ transaction_count }} opération{{ v }}{% endtrans %}
+
+    <span class="flex items-center gap-2 min-w-0 text-sm text-secondary lg:col-start-2 lg:row-start-1">
+      <span class="hidden lg:inline text-secondary shrink-0">{{ icon(type_icons.get(item.account.type, "wallet"), size=18) }}</span>
+      <span class="flex flex-wrap items-baseline gap-x-1 min-w-0 lg:flex-col lg:items-start lg:gap-x-0">
+        <span class="lg:text-primary truncate">{{ get_account_type_label(item.account.type) }}<span class="lg:hidden" aria-hidden="true"> ·</span></span>
+        <span class="text-xs max-lg:text-sm">{% trans transaction_count=item.transaction_count, v="s" if item.transaction_count != 1 else "" %}{{ transaction_count }} opération{{ v }}{% endtrans %}</span>
+      </span>
     </span>
-    <span class="amount-blur font-bold whitespace-nowrap {{ 'text-success' if item.balance >= 0 else 'text-danger' }}">
+    <span class="amount-blur font-bold tabular-nums whitespace-nowrap text-right text-primary lg:col-start-3 lg:row-start-1">
       {{ item.balance | eur }}
     </span>
+    {% if item.account.notes %}<span class="lg:hidden col-span-2 text-sm text-secondary">{{ item.account.notes }}</span>{% endif %}
   </div>
 
-  <div x-show="expanded" style="display: none;" class="flex flex-col gap-1.5 border-t border-border pt-2 mt-1 text-sm">
+  <div x-show="expanded" style="display: none;" class="flex flex-col gap-1.5 border-t border-border pt-3 mt-3 text-sm">
     <div class="flex items-center justify-between">
       <span class="text-secondary">{{ _("Solde initial (manuel)") }}</span>
-      <span class="amount-blur text-primary font-medium">{{ item.initial_balance | eur }}</span>
+      <span class="amount-blur tabular-nums text-primary font-medium">{{ item.initial_balance | eur }}</span>
     </div>
     <div class="flex items-center justify-between">
       <span class="text-secondary">{{ _("Somme des opérations importées") }}</span>
-      <span class="amount-blur text-primary font-medium">{{ item.transactions_sum | eur }}</span>
+      <span class="amount-blur tabular-nums text-primary font-medium">{{ item.transactions_sum | eur }}</span>
     </div>
     <div class="flex items-center justify-between">
       <span class="text-secondary">{{ _("Nombre d'opérations importées") }}</span>
-      <span class="text-primary font-medium">{{ item.transaction_count }}</span>
+      <span class="tabular-nums text-primary font-medium">{{ item.transaction_count }}</span>
     </div>
     <div class="flex items-center justify-between">
       <span class="text-secondary">{{ _("Dont virements (is_transfer = true)") }}</span>
-      <span class="text-primary font-medium">{{ item.transfer_count }}</span>
+      <span class="tabular-nums text-primary font-medium">{{ item.transfer_count }}</span>
     </div>
     <div class="flex items-center justify-between">
       <span class="text-secondary">{{ _("Somme des virements") }}</span>
-      <span class="amount-blur text-primary font-medium">{{ item.transfer_sum | eur }}</span>
+      <span class="amount-blur tabular-nums text-primary font-medium">{{ item.transfer_sum | eur }}</span>
     </div>
-    <div class="flex items-center justify-between pt-1 border-t border-border">
+    <div class="flex items-center justify-between pt-2 border-t border-border">
       <span class="text-primary font-semibold">{{ _("Solde calculé (initial + opérations)") }}</span>
-      <span class="amount-blur font-bold {{ 'text-success' if item.balance >= 0 else 'text-danger' }}">
-        {{ item.balance | eur }}
-      </span>
+      <span class="amount-blur tabular-nums font-bold text-primary">{{ item.balance | eur }}</span>
     </div>
   </div>
 </div>

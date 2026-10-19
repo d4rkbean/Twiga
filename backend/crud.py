@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import difflib
+import math
 import re
 from calendar import monthrange
 from collections.abc import Callable
@@ -12,7 +13,8 @@ import bcrypt
 from sqlalchemy import and_, case, delete, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
-from backend.dates import format_date_long, month_range, months_between, shift_month
+from backend.budget_month import budget_months_within, period_containing, period_of_month
+from backend.dates import format_date_long, months_between, shift_month
 from backend.models import (
     Account,
     AppState,
@@ -21,6 +23,7 @@ from backend.models import (
     CapEntry,
     CapSettings,
     Category,
+    ImportLog,
     PaymentMethod,
     PendingCheck,
     Project,
@@ -41,7 +44,7 @@ from backend.i18n import gettext as _t, lazy_gettext
 from backend.payment_methods import get_payment_method_label
 
 
-def get_next_pending_transaction(db: Session) -> Transaction | None:
+def _pending_queue_stmt():
     # Les transactions passées ("Passer") repassent après toutes celles
     # jamais encore vues, triées par date de skip (la plus ancienne d'abord)
     # pour ne pas bloquer indéfiniment sur la même transaction.
@@ -53,7 +56,7 @@ def get_next_pending_transaction(db: Session) -> Transaction | None:
     # validated=True, ce qui pouvait laisser un virement (re)marqué comme tel
     # traîner ici tant qu'il n'était pas validé par ailleurs. Ce filtre est
     # le filet de sécurité côté lecture, en plus du correctif à la source.
-    stmt = (
+    return (
         select(Transaction)
         .options(selectinload(Transaction.account))
         .where(Transaction.validated.is_(False), Transaction.is_transfer.is_(False))
@@ -63,9 +66,28 @@ def get_next_pending_transaction(db: Session) -> Transaction | None:
             Transaction.date,
             Transaction.id,
         )
-        .limit(1)
     )
-    return db.execute(stmt).scalar_one_or_none()
+
+
+def get_next_pending_transaction(db: Session) -> Transaction | None:
+    return db.execute(_pending_queue_stmt().limit(1)).scalar_one_or_none()
+
+
+def get_transactions_by_ids(db: Session, ids: list[int]) -> dict[int, Transaction]:
+    # The operations La Savane handled during this visit (the "history" the page
+    # carries for « Précédente »), by id: they feed the session counters and the
+    # journal of the side panel.
+    if not ids:
+        return {}
+    rows = db.execute(select(Transaction).where(Transaction.id.in_(ids))).scalars().all()
+    return {row.id: row for row in rows}
+
+
+def get_upcoming_pending_transactions(db: Session, limit: int = 8) -> list[Transaction]:
+    # Le début de la file de La Savane, dans l'ordre exact où les cartes sont
+    # présentées (même requête que get_next_pending_transaction) : sert la
+    # liste « À suivre » à côté de la carte.
+    return list(db.execute(_pending_queue_stmt().limit(limit)).scalars().all())
 
 
 def get_top_level_categories(db: Session) -> list[Category]:
@@ -142,6 +164,7 @@ def categorize_transaction(
     category: Category,
     label: str | None = None,
     payment_method: str | None = None,
+    is_unexpected: bool | None = None,
 ) -> Transaction:
     if label and label.strip():
         transaction.label = label.strip()
@@ -149,6 +172,11 @@ def categorize_transaction(
     transaction.validated = True
     if payment_method:
         transaction.payment_method = payment_method
+    # Bascule « Imprévu » de la carte (La Savane) : s'ajoute à la décision,
+    # sans remplacer la catégorie. None = la carte ne disait rien, on ne
+    # touche pas au drapeau.
+    if is_unexpected is not None:
+        transaction.is_unexpected = is_unexpected
     db.commit()
     db.refresh(transaction)
     _maybe_add_receipt_family_line(db, transaction, category)
@@ -178,6 +206,13 @@ def bulk_update_transactions(
         for transaction in transactions:
             _maybe_add_receipt_family_line(db, transaction, category)
     return categorized_ids
+
+
+def count_transactions_without_payment_method(db: Session) -> int:
+    """Operations that have no payment mode yet (what "Détecter" would try to fill)."""
+    return db.execute(
+        select(func.count()).select_from(Transaction).where(Transaction.payment_method.is_(None))
+    ).scalar_one()
 
 
 def detect_missing_payment_methods(db: Session) -> int:
@@ -227,7 +262,7 @@ def undo_transaction(db: Session, transaction: Transaction) -> Transaction:
     return transaction
 
 
-def count_pending_transactions(db: Session) -> int:
+def count_pending_transactions(db: Session, account_id: int | None = None) -> int:
     # is_transfer.is_(False) : doit rester cohérent avec
     # get_next_pending_transaction (même filtre) pour que ce compte reflète
     # exactement le nombre d'opérations réellement enterables dans La
@@ -237,6 +272,8 @@ def count_pending_transactions(db: Session) -> int:
         .select_from(Transaction)
         .where(Transaction.validated.is_(False), Transaction.is_transfer.is_(False))
     )
+    if account_id is not None:
+        stmt = stmt.where(Transaction.account_id == account_id)
     return db.execute(stmt).scalar_one()
 
 
@@ -258,6 +295,27 @@ def get_payment_methods_dict(db: Session) -> dict[str, dict[str, str]]:
     # colonne "code" séparée.
     methods = db.execute(select(PaymentMethod).order_by(PaymentMethod.display_order)).scalars().all()
     return {m.name: {"icon": m.icon, "label": get_payment_method_label(m.name)} for m in methods}
+
+
+def record_import_log(
+    db: Session, filename: str, account_name: str, lines: int, duplicates: int, imported: int
+) -> ImportLog:
+    log = ImportLog(
+        imported_on=date.today(),
+        filename=filename[:255],
+        account_name=account_name[:255],
+        lines=lines,
+        duplicates=duplicates,
+        imported=imported,
+    )
+    db.add(log)
+    db.commit()
+    return log
+
+
+def list_import_logs(db: Session, limit: int = 10) -> list[ImportLog]:
+    stmt = select(ImportLog).order_by(ImportLog.imported_on.desc(), ImportLog.id.desc()).limit(limit)
+    return list(db.execute(stmt).scalars().all())
 
 
 def get_existing_account_names(db: Session) -> set[str]:
@@ -354,6 +412,50 @@ def detect_transfer_matches(
             break
 
     return pairs
+
+
+def preview_transfer_matches(
+    db: Session, account_id: int, parsed: list[ParsedTransaction]
+) -> dict[int, str]:
+    """The lines of a statement that look like one leg of a transfer between two of
+    the user's own accounts, before anything is imported.
+
+    The same rule as `detect_transfer_matches` (opposite signs, amounts within a
+    euro, three days apart), read-only: it answers with the position of the line
+    in `parsed` and the name of the other account, so the recap can say "2
+    virements entre tes comptes" before the user confirms.
+    """
+    if not parsed:
+        return {}
+    first = min(tx.date for tx in parsed) - timedelta(days=_TRANSFER_DATE_TOLERANCE_DAYS)
+    last = max(tx.date for tx in parsed) + timedelta(days=_TRANSFER_DATE_TOLERANCE_DAYS)
+    pool = list(
+        db.execute(
+            select(Transaction)
+            .options(selectinload(Transaction.account))
+            .where(
+                Transaction.is_transfer.is_(False),
+                Transaction.account_id != account_id,
+                Transaction.date.between(first, last),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    used: set[int] = set()
+    matches: dict[int, str] = {}
+    for position, tx in enumerate(parsed):
+        for other in pool:
+            if other.id in used:
+                continue
+            if not _amounts_match_as_transfer(tx.amount, other.amount):
+                continue
+            if abs((other.date - tx.date).days) > _TRANSFER_DATE_TOLERANCE_DAYS:
+                continue
+            used.add(other.id)
+            matches[position] = other.account.name
+            break
+    return matches
 
 
 def _tag_as_transfer(transaction: Transaction) -> None:
@@ -947,6 +1049,28 @@ def get_expense_total(
     return -db.execute(stmt).scalar_one()
 
 
+def get_pending_expense_total(
+    db: Session,
+    start: date | None = None,
+    end: date | None = None,
+    account_id: int | None = None,
+) -> Decimal:
+    """Sum of the expenses still waiting in La Savane (not yet validated)."""
+    conditions = [
+        Transaction.validated.is_(False),
+        Transaction.is_transfer.is_(False),
+        Transaction.amount < 0,
+    ]
+    if start is not None:
+        conditions.append(Transaction.date >= start)
+    if end is not None:
+        conditions.append(Transaction.date <= end)
+    if account_id is not None:
+        conditions.append(Transaction.account_id == account_id)
+    stmt = select(func.coalesce(func.sum(Transaction.amount), 0)).where(*conditions)
+    return -db.execute(stmt).scalar_one()
+
+
 def _resolve_top_level_category(db: Session) -> Callable[[int | None], tuple[int | None, str]]:
     categories = {c.id: c for c in db.execute(select(Category)).scalars().all()}
 
@@ -1194,9 +1318,10 @@ def get_period_monthly_breakdown(
 def get_budget_progress(
     db: Session, start: date, end: date, account_id: int | None = None
 ) -> list[dict]:
+    first_budget_month, last_budget_month = budget_months_within(start, end, get_budget_start_day(db))
     budget_stmt = (
         select(Budget.category_id, func.sum(Budget.amount))
-        .where(Budget.month >= start, Budget.month <= end)
+        .where(Budget.month >= first_budget_month, Budget.month <= last_budget_month)
         .group_by(Budget.category_id)
     )
     budget_totals = {category_id: total for category_id, total in db.execute(budget_stmt).all()}
@@ -1301,6 +1426,68 @@ def get_budget_progress(
 
     results.sort(key=lambda r: r["percentage"], reverse=True)
     return results
+
+
+def get_budget_envelopes(
+    db: Session, start: date, end: date, account_id: int | None = None
+) -> list[dict]:
+    """Chaque budget du mois avec ce qu'il deviendrait « avec le tri ».
+
+    Les lignes de get_budget_progress, enrichies de `pending` (somme des
+    dépenses encore dans La Savane que celle-ci proposerait dans cette
+    catégorie) et du pourcentage atteint si on les comptait aussi
+    (`projected_percentage`). Mêmes règles que la consommation réelle : la
+    période et le compte demandés, les virements et les opérations déjà
+    marquées imprévues exclus, et une dépense proposée dans une sous-catégorie
+    compte pour le budget de sa catégorie parente, à condition d'être du même pilier.
+    """
+    envelopes = get_budget_progress(db, start, end, account_id)
+    if not envelopes:
+        return []
+
+    conditions = [
+        Transaction.validated.is_(False),
+        Transaction.is_transfer.is_(False),
+        Transaction.is_unexpected.is_(False),
+        Transaction.amount < 0,
+        Transaction.date >= start,
+        Transaction.date <= end,
+    ]
+    if account_id is not None:
+        conditions.append(Transaction.account_id == account_id)
+    pending = list(db.execute(select(Transaction).where(*conditions)).scalars().all())
+    suggestions = suggest_categories_for_transactions(db, pending)
+
+    # Même rattachement que get_budget_progress : la catégorie qui porte le
+    # budget et ses enfants directs.
+    budget_categories = {item["category"].id: item["category"] for item in envelopes}
+    pending_by_budget: dict[int, Decimal] = {}
+    for transaction in pending:
+        suggestion = suggestions.get(transaction.id)
+        if suggestion is None:
+            continue
+        category = suggestion["category"]
+        if category.id in budget_categories:
+            owner = category
+        elif category.parent_id in budget_categories:
+            owner = budget_categories[category.parent_id]
+        else:
+            continue
+        if resolve_category_pillar(category) != resolve_budget_pillar(owner, list(owner.children)):
+            continue
+        pending_by_budget[owner.id] = pending_by_budget.get(owner.id, Decimal("0.00")) - transaction.amount
+
+    for item in envelopes:
+        pending_amount = pending_by_budget.get(item["category"].id, Decimal("0.00"))
+        projected = (
+            (item["spent"] + pending_amount) / item["budget"] * 100 if item["budget"] else Decimal("0.00")
+        )
+        item["pending"] = pending_amount
+        item["projected_percentage"] = projected
+        item["pending_width"] = max(
+            0, min(round(projected), 100) - item["bar_width"]
+        ) if pending_amount else 0
+    return envelopes
 
 
 def get_budgets_for_month(db: Session, month_start: date) -> dict[int, Decimal]:
@@ -1417,9 +1604,10 @@ def get_category_monthly_typical(
     if not enfants:
         return {}
 
+    start_day = get_budget_start_day(db)
     mois = [shift_month(month_start, -(i + 1)) for i in range(lookback)]
-    debut = min(mois)
-    _, fin = month_range(max(mois).year, max(mois).month)
+    debut = period_of_month(min(mois).year, min(mois).month, start_day).start
+    fin = period_of_month(max(mois).year, max(mois).month, start_day).last_day
 
     stmt = (
         select(Transaction.category_id, Transaction.date, func.sum(Transaction.amount))
@@ -1433,7 +1621,7 @@ def get_category_monthly_typical(
         .group_by(Transaction.category_id, Transaction.date)
     )
 
-    # (racine, 1er du mois) -> total dépensé
+    # (racine, mois budgétaire nommé par son 1er) -> total dépensé
     par_mois: dict[tuple[int, date], Decimal] = {}
     racine_de: dict[int, int] = {}
     for racine_id, ids in enfants.items():
@@ -1443,7 +1631,7 @@ def get_category_monthly_typical(
         racine_id = racine_de.get(category_id)
         if racine_id is None:
             continue
-        cle = (racine_id, date(jour.year, jour.month, 1))
+        cle = (racine_id, period_containing(jour, start_day).month)
         par_mois[cle] = par_mois.get(cle, Decimal("0.00")) + (-total)
 
     resultat: dict[int, Decimal] = {}
@@ -1569,12 +1757,11 @@ INCOME_SOURCES: list[tuple[str, str, str]] = [
     (
         "virements",
         lazy_gettext("Les virements reçus sur un compte"),
-        lazy_gettext("Un pot commun alimenté par virement — vous cochez ceux qui financent ce mois."),
+        lazy_gettext("Un pot commun alimenté par virement — tu coches ceux qui financent ce mois."),
     ),
     ("fixe", lazy_gettext("Un montant fixe"), lazy_gettext("Enveloppe décidée à l'avance, revenu irrégulier.")),
 ]
 INCOME_SOURCE_CODES = {code for code, _, _ in INCOME_SOURCES}
-
 
 def get_cap_settings(db: Session) -> CapSettings:
     """Réglages du rituel — ligne unique, créée si absente.
@@ -1588,6 +1775,11 @@ def get_cap_settings(db: Session) -> CapSettings:
         db.add(settings)
         db.commit()
     return settings
+
+
+def get_budget_start_day(db: Session) -> int:
+    """Day of the month the budget month starts on (1 unless the household chose otherwise)."""
+    return get_cap_settings(db).budget_start_day or 1
 
 
 def get_incoming_transfers_since_last_cap(
@@ -1604,8 +1796,8 @@ def get_incoming_transfers_since_last_cap(
     """
     if account_id is None:
         return []
-    debut = _previous_month_start(month_start)
-    _, fin = month_range(month_start.year, month_start.month)
+    period = period_of_month(month_start.year, month_start.month, get_budget_start_day(db))
+    debut, fin = period.shifted(-1).start, period.last_day
     stmt = (
         select(Transaction)
         .where(
@@ -1633,18 +1825,17 @@ def get_income_prefill(db: Session, month_start: date) -> Decimal:
     if source == "fixe":
         return settings.income_fixed_amount or Decimal("0.00")
 
+    period = period_of_month(month_start.year, month_start.month, get_budget_start_day(db))
     if source == "recettes_courant":
-        _, fin = month_range(month_start.year, month_start.month)
-        return get_income_total(db, month_start, fin)
+        return get_income_total(db, period.start, period.last_day)
 
     if source == "virements":
         # Rien de présélectionné : c'est la liste à cocher du rituel qui
         # construit le total (voir routers/cap.py).
         return Decimal("0.00")
 
-    precedent = _previous_month_start(month_start)
-    debut, fin = month_range(precedent.year, precedent.month)
-    return get_income_total(db, debut, fin)
+    precedent = period.shifted(-1)
+    return get_income_total(db, precedent.start, precedent.last_day)
 
 
 def get_cap_allocation(db: Session, month_start: date) -> dict[str, dict]:
@@ -1784,6 +1975,7 @@ def save_cap_entry(
     planned_essentiel: Decimal,
     planned_choix: Decimal,
     planned_imprevu: Decimal,
+    savings_goal: Decimal | None = None,
     intention: str | None = None,
     reflection_unexpected: str | None = None,
     reflection_regret: str | None = None,
@@ -1800,6 +1992,7 @@ def save_cap_entry(
     entry.planned_essentiel = planned_essentiel
     entry.planned_choix = planned_choix
     entry.planned_imprevu = planned_imprevu
+    entry.savings_goal = savings_goal
     entry.intention = intention
     entry.reflection_unexpected = reflection_unexpected
     entry.reflection_regret = reflection_regret
@@ -2168,13 +2361,13 @@ def compute_twiga_score(db: Session, start: date, end: date, account_id: int | N
     total_score = budget_points + result_points + categorized_points + project_points
 
     if total_score >= 90:
-        message = _t("🦒 La girafe est fière de toi !")
+        message = _t("La girafe est fière de toi !")
     elif total_score >= 70:
-        message = _t("🦒 Tu tiens le bon bout !")
+        message = _t("Tu tiens le bon bout !")
     elif total_score >= 50:
-        message = _t("🦒 Twiga tend le cou pour voir mieux...")
+        message = _t("Twiga tend le cou pour voir mieux...")
     else:
-        message = _t("🦒 Aïe, trop de feuilles mangées ce mois-ci !")
+        message = _t("Aïe, trop de feuilles mangées ce mois-ci !")
 
     return {
         "score": total_score,
@@ -2249,11 +2442,52 @@ def get_project_movements(db: Session, project_id: int, limit: int = 10) -> list
     return list(db.execute(stmt).scalars().all())
 
 
+def compute_project_effort(db: Session, project_id: int, today: date, months: int = 3) -> Decimal:
+    """What is really put aside each month: the deposits of the last `months`
+    calendar months (the current one included) divided by `months`. Spending
+    from the project does not lower it; zero when nothing was deposited."""
+    first = today.replace(day=1)
+    for _ in range(months - 1):
+        first = (first - timedelta(days=1)).replace(day=1)
+    total = db.execute(
+        select(func.coalesce(func.sum(ProjectMovement.amount), 0)).where(
+            ProjectMovement.project_id == project_id,
+            ProjectMovement.date >= first,
+            ProjectMovement.amount > 0,
+        )
+    ).scalar_one()
+    return max(Decimal(total) / months, Decimal("0")).quantize(Decimal("0.01"))
+
+
+def project_rhythm(
+    target_amount: Decimal, current_amount: Decimal, target_date: date, effort: Decimal, today: date
+) -> dict:
+    """Where the current rhythm leads: state is "done", "none" (no regular
+    deposit), "early", "on_time" or "late"; `reach` is the month the target is
+    reached and `gap_months` how many months after the deadline (negative:
+    before it)."""
+    remaining = target_amount - current_amount
+    if remaining <= 0:
+        return {"state": "done", "reach": None, "gap_months": 0}
+    if effort <= 0:
+        return {"state": "none", "reach": None, "gap_months": 0}
+    months = math.ceil(remaining / effort)
+    index = today.year * 12 + today.month - 1 + months
+    reach = date(index // 12, index % 12 + 1, 1)
+    gap = (reach.year - target_date.year) * 12 + reach.month - target_date.month
+    state = "late" if gap > 0 else ("on_time" if gap == 0 else "early")
+    return {"state": state, "reach": reach, "gap_months": gap}
+
+
 def add_project_funds(
-    db: Session, project: Project, amount: Decimal, note: str | None
+    db: Session, project: Project, amount: Decimal, note: str | None, account_id: int | None = None
 ) -> Project:
     project.current_amount = project.current_amount + amount
-    db.add(ProjectMovement(project_id=project.id, date=date.today(), amount=amount, note=note))
+    db.add(
+        ProjectMovement(
+            project_id=project.id, date=date.today(), amount=amount, note=note, account_id=account_id
+        )
+    )
     db.commit()
     db.refresh(project)
     return project
@@ -2435,6 +2669,24 @@ def list_transactions(
     return transactions, total
 
 
+def list_all_transactions(db: Session, **filters) -> list[Transaction]:
+    # Toutes les opérations qui correspondent aux filtres de la liste (mêmes
+    # paramètres que list_transactions, sans pagination ni tri choisi) : sert
+    # l'export CSV du bouton « Exporter » d'Opérations, qui doit contenir
+    # exactement ce que les filtres en cours désignent, pas seulement la page.
+    conditions = _build_transaction_filter_conditions(db, **filters)
+    stmt = (
+        select(Transaction)
+        .options(
+            selectinload(Transaction.account),
+            selectinload(Transaction.category).selectinload(Category.parent),
+        )
+        .where(*conditions)
+        .order_by(Transaction.date, Transaction.id)
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
 def get_transactions_total_amount(
     db: Session,
     *,
@@ -2466,6 +2718,40 @@ def get_transactions_total_amount(
     )
     stmt = select(func.coalesce(func.sum(Transaction.amount), 0)).where(*conditions)
     return db.execute(stmt).scalar_one()
+
+
+def count_transactions(db: Session, **filters) -> int:
+    """How many operations the list filters designate (same keywords as list_transactions)."""
+    conditions = _build_transaction_filter_conditions(db, **filters)
+    return db.execute(select(func.count()).select_from(Transaction).where(*conditions)).scalar_one()
+
+
+def get_expense_breakdown(db: Session, **filters) -> list[dict]:
+    """Where the expenses of a selection go, by top-level category, biggest first.
+
+    `filters` are the list filters (a `type_filter` among them is ignored: the
+    breakdown is always about expenses). Operations without a category are
+    gathered under `category: None`. Amounts are positive.
+    """
+    filters = {**filters, "type_filter": "expense"}
+    conditions = _build_transaction_filter_conditions(db, **filters)
+    rows = db.execute(
+        select(Transaction.category_id, func.sum(-Transaction.amount))
+        .where(*conditions)
+        .group_by(Transaction.category_id)
+    ).all()
+    categories = {c.id: c for c in db.execute(select(Category)).scalars().all()}
+    totals: dict[int | None, Decimal] = {}
+    for category_id, total in rows:
+        category = categories.get(category_id)
+        top = resolve_top_level_category(category) if category is not None else None
+        key = top.id if top is not None else None
+        totals[key] = totals.get(key, Decimal("0.00")) + total
+    return sorted(
+        ({"category": categories.get(key), "total": total} for key, total in totals.items()),
+        key=lambda entry: entry["total"],
+        reverse=True,
+    )
 
 
 def group_transactions_by_date(transactions: list[Transaction]) -> list[dict]:
@@ -2636,6 +2922,15 @@ def get_or_create_app_state(db: Session) -> AppState:
     return state
 
 
+def mark_backup_done(db: Session, when: datetime | None = None) -> datetime:
+    # Retient la date de la dernière sauvegarde complète (heure locale du
+    # serveur, comme le reste des dates de l'application).
+    state = get_or_create_app_state(db)
+    state.last_backup_at = when or datetime.now()
+    db.commit()
+    return state.last_backup_at
+
+
 def mark_routine_seen(db: Session, month_start: date) -> None:
     state = get_or_create_app_state(db)
     state.last_routine_month = month_start
@@ -2714,12 +3009,18 @@ def set_user_role(db: Session, user_id: int, role: str) -> None:
     db.commit()
 
 
-def set_user_password(db: Session, user_id: int, password: str) -> None:
+def set_user_password(db: Session, user_id: int, password: str, keep_session_id: int | None = None) -> None:
+    # A new password signs the account out everywhere (the fingerprint inside every
+    # token changes) and closes its sessions with it, except `keep_session_id`: the
+    # device where the user is changing it.
+    from backend.sessions import close_other_sessions
+
     user = get_user(db, user_id)
     if user is None:
         return
     user.hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     db.commit()
+    close_other_sessions(db, user_id, keep_session_id)
 
 
 def set_user_active(db: Session, user_id: int, is_active: bool) -> None:
@@ -2993,6 +3294,40 @@ def suggest_backlog_category(
     }
 
 
+def suggest_categories_for_transactions(
+    db: Session, transactions: list[Transaction]
+) -> dict[int, dict]:
+    # Même moteur que suggest_category_with_confidence (règle explicite
+    # d'abord, sinon similarité floue), mais l'échantillon d'historique et
+    # les catégories ne sont chargés qu'une fois pour tout le lot : la liste
+    # « À suivre » et la carte Enveloppes du Panorama proposent une catégorie
+    # pour plusieurs opérations à la fois. Seules les opérations qui ont une
+    # proposition figurent dans le résultat (clé : id de l'opération).
+    if not transactions:
+        return {}
+    samples = get_categorized_label_samples(db)
+    categories_by_id = {c.id: c for c in db.execute(select(Category)).scalars().all()}
+    # The rules are read once for the whole batch (find_matching_rule would ask
+    # the database again for every operation); same order, same first match.
+    rules = db.execute(select(Rule).options(selectinload(Rule.category))).scalars().all()
+    suggestions: dict[int, dict] = {}
+    for transaction in transactions:
+        label_lower = transaction.raw_label.lower()
+        matched_rule = next((rule for rule in rules if rule.keyword.lower() in label_lower), None)
+        if matched_rule is not None:
+            suggestions[transaction.id] = {
+                "category": matched_rule.category,
+                "based_on_label": None,
+                "confidence": 100,
+                "rule_keyword": matched_rule.keyword,
+            }
+            continue
+        suggestion = suggest_backlog_category(transaction, samples, categories_by_id)
+        if suggestion is not None:
+            suggestions[transaction.id] = suggestion
+    return suggestions
+
+
 def suggest_category_with_confidence(db: Session, transaction: Transaction) -> dict | None:
     # Source de suggestion unique pour La Savane (une transaction à la
     # fois) : une règle explicite (mot-clé défini par l'utilisateur) prime
@@ -3003,7 +3338,12 @@ def suggest_category_with_confidence(db: Session, transaction: Transaction) -> d
     # deux logiques divergentes.
     matched_rule = find_matching_rule(db, transaction.raw_label)
     if matched_rule is not None:
-        return {"category": matched_rule.category, "based_on_label": None, "confidence": 100}
+        return {
+            "category": matched_rule.category,
+            "based_on_label": None,
+            "confidence": 100,
+            "rule_keyword": matched_rule.keyword,
+        }
 
     samples = get_categorized_label_samples(db)
     categories_by_id = {c.id: c for c in db.execute(select(Category)).scalars().all()}
@@ -3114,6 +3454,34 @@ def count_pending_rule_suggestions(db: Session) -> int:
     return db.scalar(
         select(func.count()).select_from(RuleSuggestion).where(RuleSuggestion.dismissed.is_(False))
     ) or 0
+
+
+def count_transactions_matching_keyword(db: Session, keyword: str) -> int:
+    """How many operations a keyword catches: the same criterion as a rule (the raw
+    label contains it, case aside). Used to show a rule's reach before it is saved."""
+    keyword = (keyword or "").strip()
+    if not keyword:
+        return 0
+    pattern = f"%{_escape_like(keyword)}%"
+    return db.execute(
+        select(func.count()).select_from(Transaction).where(Transaction.raw_label.ilike(pattern, escape="\\"))
+    ).scalar_one()
+
+
+def create_rules_from_suggestions(db: Session) -> int:
+    """Turns every pending suggestion into a rule ("Tout créer"); returns how many were made.
+
+    A suggestion whose keyword already has a rule is only cleared (create_rule
+    removes the suggestion of a keyword it just realised).
+    """
+    created = 0
+    for suggestion in list_pending_rule_suggestions(db):
+        category = db.get(Category, suggestion.category_id)
+        if category is None:
+            continue
+        create_rule(db, suggestion.keyword, category)
+        created += 1
+    return created
 
 
 def dismiss_rule_suggestion(db: Session, suggestion_id: int) -> None:
@@ -3907,6 +4275,10 @@ def detect_recurring_patterns(db: Session, today: date | None = None) -> list[di
                 "frequency_label": _RECURRING_FREQUENCY_LABELS_FR[frequency],
                 "frequency_days": _RECURRING_FREQUENCY_CANONICAL_DAYS[frequency],
                 "last_date": last_tx.date,
+                # What the other way's "Mon mois" prints for a fixed charge: the
+                # label as written on the last occurrence and the account it hit.
+                "last_label": last_tx.label or last_tx.raw_label,
+                "last_account": last_tx.account.name if last_tx.account else "",
                 "next_expected": _next_expected_recurring_date(last_tx.date, frequency, today),
                 "seen_this_month": any(
                     t.date.year == today.year and t.date.month == today.month for t in txs
@@ -4056,3 +4428,19 @@ def merge_recurring_patterns(
     return canonical_label
 
 
+
+
+def delete_all_transactions(db: Session) -> int:
+    """"Zone sensible": removes every transaction of the household (and what
+    hangs on them: receipt lines, the match of pending checks). Accounts,
+    categories, rules, budgets and projects stay. Returns how many were
+    removed."""
+    db.execute(
+        update(PendingCheck)
+        .where(PendingCheck.matched_transaction_id.is_not(None))
+        .values(matched_transaction_id=None, matched_at=None)
+    )
+    db.execute(delete(ReceiptItem))
+    count = db.execute(delete(Transaction)).rowcount or 0
+    db.commit()
+    return count

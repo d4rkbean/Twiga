@@ -1,0 +1,65 @@
+{# Composants partagés des étapes de l'import. #}
+{% from "_macros/brand.html" import mascot %}
+
+{# Fil des quatre étapes. `current` va de 1 à 4 ; `second` nomme la deuxième
+   étape (« Colonnes » pour un CSV, « Aperçu » pour un OFX ou un QIF).
+   L'étape en cours est en gras, les étapes faites et en cours en trait ambre. #}
+{% macro stepper(current, second=None, third=None) %}
+{% set labels = [_("Fichier"), second or _("Colonnes"), third or _("Vérification"), _("Terminé")] %}
+<ol class="grid grid-cols-4 gap-2 sm:gap-3" aria-label="{{ _("Étapes de l'import") }}">
+  {% for label in labels %}
+  {% set n = loop.index %}
+  <li class="flex flex-col gap-2 min-w-0" {% if n == current %}aria-current="step"{% endif %}>
+    <span class="h-1 rounded-full {{ 'bg-accent' if n <= current else 'bg-sunken' }}"></span>
+    <span class="text-xs {{ 'font-semibold text-primary' if n == current else 'text-secondary' }} truncate">{{ n }}. {{ label }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endmacro %}
+
+{# Rangée de navigation sous la carte d'une étape : « Précédent » à gauche
+   (désactivé à la première étape), « Continuer » à droite quand l'étape en a
+   un. `back_url` est une URL htmx ; `next_form` l'id du formulaire que
+   « Continuer » envoie (le bouton vit hors du formulaire, attribut form). #}
+{% macro step_nav(back_url=None, next_form=None, next_disabled=False) %}
+<div class="flex items-center justify-between gap-3">
+  {% if back_url %}
+  <button type="button" hx-get="{{ back_url }}" hx-target="#import-wizard" hx-swap="innerHTML" class="btn btn-secondary border-border-strong">
+    {{ icon('arrow-narrow-left', size=18) }} {{ _("Précédent") }}
+  </button>
+  {% else %}
+  <button type="button" disabled class="btn btn-secondary border-border-strong">
+    {{ icon('arrow-narrow-left', size=18) }} {{ _("Précédent") }}
+  </button>
+  {% endif %}
+  {% if next_form %}
+  <button type="submit" form="{{ next_form }}" id="import-next" class="btn btn-primary px-8" {% if next_disabled %}disabled{% endif %}>
+    {{ _("Continuer") }} {{ icon('arrow-narrow-right', size=18) }}
+  </button>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{# Scène de l'étape de vérification : la girafe attend, puis tend le cou
+   pendant l'envoi. À poser dans un élément Alpine qui déclare `busy`, que le
+   formulaire passe à vrai (@htmx:before-request). C'est le seul mouvement de
+   l'écran, et il s'arrête si l'utilisateur a demandé moins d'animation. #}
+{% macro scene(title, text) %}
+<style>
+  @keyframes import-sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2.5deg); } }
+  @media (prefers-reduced-motion: no-preference) {
+    .import-sway { animation: import-sway 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+  }
+</style>
+<div class="flex items-center gap-4">
+  <div class="shrink-0 w-[88px] flex justify-center">
+    <span x-show="!busy">{{ mascot("default", 72) }}</span>
+    <span x-show="busy" style="display: none;" class="import-sway">{{ mascot("waiting", 72) }}</span>
+  </div>
+  <div class="min-w-0 flex flex-col gap-1" aria-live="polite">
+    <h2 x-show="!busy" class="text-replique">{{ title }}</h2>
+    <p x-show="!busy" class="text-sm text-secondary">{{ text }}</p>
+    <h2 x-show="busy" style="display: none;" class="text-replique">{{ _("Twiga tend le cou...") }}</h2>
+  </div>
+</div>
+{% endmacro %}

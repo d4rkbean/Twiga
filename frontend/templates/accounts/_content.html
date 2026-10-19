@@ -1,9 +1,33 @@
-<div id="accounts-content" class="flex flex-col gap-3">
+{# Colonnes de la liste (bureau) : compte, type, solde, actions. Les lignes
+   (_row.html) reprennent la même grille ; sur mobile chaque compte est une
+   carte à deux lignes. #}
+<section id="accounts-content" class="card p-0 overflow-hidden flex flex-col max-lg:bg-transparent max-lg:shadow-none max-lg:overflow-visible max-lg:gap-3">
+  <div class="flex items-baseline justify-between gap-2 lg:px-6 lg:pt-6 lg:pb-3">
+    <h2 class="text-section-title">{{ _("Comptes existants") }}</h2>
+    <p class="hidden lg:block text-xs text-secondary">{% trans count=items | length %}{{ count }} au total{% endtrans %}</p>
+  </div>
+
+  {% if items %}
+  <div class="hidden lg:grid grid-cols-[minmax(0,3fr)_minmax(0,1.5fr)_minmax(0,1.5fr)_170px] gap-x-3 bg-sunken px-6 py-2 text-xs font-medium text-secondary">
+    <span>{{ _("Compte") }}</span>
+    <span>{{ _("Type") }}</span>
+    <span class="text-right">{{ _("Solde") }}</span>
+    <span></span>
+  </div>
+  {% endif %}
+
   {% for item in items %}
+  {% set first_row = loop.first %}
   {% include "accounts/_row.html" %}
   {% else %}
-  <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center">{{ _("Aucun compte pour l'instant.") }}</p>
-  </div>
+  <p class="text-sm text-secondary text-center px-4 pb-6 lg:px-6">{{ _("Aucun compte pour l'instant.") }}</p>
   {% endfor %}
-</div>
+
+  {% if items %}
+  <div class="hidden lg:grid items-center gap-3 bg-sunken px-4 lg:px-6 py-3 font-semibold lg:grid-cols-[minmax(0,3fr)_minmax(0,1.5fr)_minmax(0,1.5fr)_170px]">
+    <span class="lg:col-span-2">{{ _("Total") }}</span>
+    <span class="amount-blur tabular-nums lg:text-right">{{ items | sum(attribute="balance") | eur }}</span>
+    <span class="hidden lg:block"></span>
+  </div>
+  {% endif %}
+</section>

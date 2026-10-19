@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs, back_link %}
+
+{#- The icon of a mode: a row of 50 px pastilles, one checked. The radios stay on the keyboard. -#}
+{% macro icon_picker(selected, label_id) %}
+<div role="radiogroup" aria-labelledby="{{ label_id }}" class="flex flex-wrap gap-2">
+  {% for icon_name in picker_icons %}
+  <label class="cursor-pointer">
+    <input type="radio" name="icon" value="{{ icon_name }}" class="sr-only peer" {% if selected == icon_name %}checked{% endif %} aria-label="{{ icon_name }}" />
+    <span class="w-[50px] h-[50px] rounded-xl border border-field bg-container text-primary flex items-center justify-center peer-checked:border-2 peer-checked:border-accent peer-checked:bg-accent-soft peer-checked:text-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink">{{ icon(icon_name, size=20) }}</span>
+  </label>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% block title %}{{ _("Modes de paiement — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("payment_methods", [
+  tour_step('[data-tour="payment-methods-list"]', _("Tes modes de paiement"), _("Carte, virement, chèque, espèces : les modes que Twiga propose sur une opération. Le crayon change le nom et l'icône."), "credit-card", position="bottom"),
+  tour_step('[data-tour="payment-methods-detect"]', _("Détecter les modes manquants"), _("Twiga lit le libellé des opérations sans mode et leur en attribue un. Les opérations déjà renseignées ne bougent pas."), "search", position="bottom", write=True),
+  tour_step('[data-tour="payment-methods-add"]', _("Ajouter un mode"), _("Donne un nom et choisis une icône. Un mode ajouté n'est pas reconnu seul : tu le choisis à la main sur l'opération."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="payment-methods-how"]', _("Comment le mode est reconnu"), _("Il lit le libellé de l'opération, avec quelques exemples. Si deux mots se croisent, le premier de la liste l'emporte."), "help-circle", position="left", alt_position="top"),
+]) }}{% endblock %}
+
+{% block content %}
+{% set write = can_edit("/payment-methods/create") %}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": false},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": true},
+  ]) }}
+  {{ back_link("/settings", _("Paramètres")) }}
+  {% include "other_way/payment_methods/_head.html" %}
+  <div id="detect-payment-result" aria-live="polite"></div>
+
+  {% if write %}
+  <form x-show="adding" style="display: none" method="post" action="/payment-methods/create" class="card flex flex-col gap-4">
+    <h2 class="text-section-title">{{ _("Ajouter") }}</h2>
+    <label class="form-group">
+      <span class="form-label">{{ _("Nom") }}</span>
+      <input id="new-method-name" name="name" required autocomplete="off" class="input-base" />
+    </label>
+    <div class="form-group">
+      <span class="form-label" id="add-icon-label">{{ _("Icône") }}</span>
+      {{ icon_picker("credit-card", "add-icon-label") }}
+    </div>
+    <div class="flex flex-col-reverse gap-2 sm:flex-row">
+      <button type="button" @click="adding = false" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+      <button type="submit" class="btn btn-primary sm:flex-[2]">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
+    <section data-tour="payment-methods-list" class="flex flex-col gap-3 min-w-0" aria-labelledby="methods-title">
+      <h2 id="methods-title" class="text-section-title">{{ _("Tes modes de paiement") }} <span class="font-normal text-secondary">· {{ methods | length }}</span></h2>
+      <div class="grid gap-[var(--space-list)] sm:grid-cols-2">
+        {% for pm in methods %}
+        <div x-data="{ mode: 'view' }" class="card !p-3">
+          <div x-show="mode === 'view'" class="flex items-center gap-3">
+            <span class="w-10 h-10 shrink-0 rounded-full bg-sunken text-secondary flex items-center justify-center">{{ icon(get_payment_method_icon_name(pm.name), size=18) }}</span>
+            <span class="flex-1 min-w-0 truncate font-semibold">{{ pm.name | pm_label }}</span>
+            {% if write %}
+            <button type="button" @click="mode = 'edit'" aria-label="{{ _("Modifier") }} {{ pm.name | pm_label }}" class="w-[50px] h-[50px] shrink-0 rounded-xl text-secondary flex items-center justify-center hover:bg-sunken">{{ icon('pencil', size=18) }}</button>
+            <button type="button" @click="mode = 'confirm'" aria-label="{{ _("Supprimer") }} {{ pm.name | pm_label }}" class="w-[50px] h-[50px] shrink-0 rounded-xl text-secondary flex items-center justify-center hover:bg-sunken">{{ icon('trash', size=18) }}</button>
+            {% endif %}
+          </div>
+
+          {% if write %}
+          <form method="post" action="/payment-methods/{{ pm.id }}/update" x-show="mode === 'edit'" style="display: none" class="flex flex-col gap-3 p-1">
+            <p class="font-semibold">{{ _("Modifier le mode de paiement") }}</p>
+            <label class="form-group">
+              <span class="form-label">{{ _("Nom") }}</span>
+              <input name="name" value="{{ pm.name }}" required autocomplete="off" class="input-base" />
+            </label>
+            <div class="form-group">
+              <span class="form-label" id="edit-icon-{{ pm.id }}">{{ _("Icône") }}</span>
+              {{ icon_picker(get_payment_method_icon_name(pm.name), "edit-icon-" ~ pm.id) }}
+            </div>
+            <div class="flex flex-col-reverse gap-2 sm:flex-row">
+              <button type="button" @click="mode = 'view'" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+              <button type="submit" class="btn btn-secondary border-accent-ink text-accent-ink font-semibold sm:flex-1">{{ _("Enregistrer") }}</button>
+            </div>
+          </form>
+
+          <form method="post" action="/payment-methods/{{ pm.id }}/delete" x-show="mode === 'confirm'" style="display: none" class="flex flex-col gap-3 p-1" role="alertdialog">
+            <div class="flex flex-col gap-1">
+              <p class="font-semibold">{% trans name=pm.name | pm_label %}Supprimer « {{ name }} » ?{% endtrans %}</p>
+              <p class="text-sm text-secondary">{{ _("Les opérations qui l'utilisent déjà ne sont pas modifiées.") }}</p>
+            </div>
+            <div class="flex flex-col-reverse gap-2 sm:flex-row">
+              <button type="button" @click="mode = 'view'" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Non, garder") }}</button>
+              <button type="submit" class="btn btn-danger sm:flex-1">{{ icon('trash', size=18) }} {{ _("Oui, supprimer") }}</button>
+            </div>
+          </form>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="card sm:col-span-2 text-sm text-secondary text-center">{{ _("Aucun mode de paiement pour l'instant. Ajoute le premier avec le formulaire.") }}</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <aside data-tour="payment-methods-how" class="card flex flex-col gap-3 min-w-0" aria-labelledby="how-title">
+      <h2 id="how-title" class="text-section-title">{{ _("Comment Twiga reconnaît le mode") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Il lit le libellé de l'opération. Si deux mots se croisent (VIREMENT SEPA), le premier de la liste l'emporte.") }}</p>
+      <ul class="border-t border-border">
+        {% for words, name in examples %}
+        <li class="flex items-baseline justify-between gap-3 py-2 border-b border-border text-sm">
+          <span class="font-mono text-xs break-words">{{ words }}</span>
+          <span class="inline-flex items-center gap-1 font-semibold whitespace-nowrap">{{ icon('arrow-narrow-right', size=14) }} {{ name | pm_label }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="text-sm text-secondary">{{ _("Un mode que tu ajoutes (Wero, PayPal...) n'est pas reconnu seul : tu le choisis à la main.") }}</p>
+    </aside>
+  </div>
+</main>
+{% endblock %}

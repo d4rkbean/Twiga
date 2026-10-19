@@ -1,30 +1,33 @@
 <div id="detect-transfers-content" class="flex flex-col gap-3">
   {% if pairs %}
+  {% set confirm_all_message %}{% trans pairs=pairs | length %}Confirmer les {{ pairs }} virement(s) détecté(s) ?{% endtrans %}{% endset %}
   <form
     hx-post="/accounts/detect-transfers/confirm-all"
     hx-target="#detect-transfers-content"
     hx-swap="outerHTML"
-    hx-confirm="Confirmer les {{ pairs | length }} virement(s) détecté(s) ?"
+    hx-confirm="{{ confirm_all_message }}"
   >
-    <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      {{ icon('check') }} {% trans pairs=pairs | length %}Tout confirmer ({{ pairs }}){% endtrans %}
+    <button type="submit" class="btn btn-primary w-full lg:w-auto lg:px-8">
+      {{ icon('check', size=18) }} {% trans pairs=pairs | length %}Tout confirmer ({{ pairs }}){% endtrans %}
     </button>
   </form>
   {% endif %}
 
   {% for pair in pairs %}
-  <div data-pair class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2">
-    <p class="text-sm font-semibold text-primary">
-      {{ icon('repeat') }} {{ pair.negative.account.name }} {{ icon('arrow-narrow-right', size=14) }} {{ pair.positive.account.name }}
-    </p>
-    <p class="text-sm text-secondary">
-      <span class="amount-blur text-danger font-medium">{{ pair.negative.amount | eur }}</span>
-      {% trans date=pair.negative.date | fr_date %}le {{ date }}{% endtrans %}
-      {{ icon('arrows-left-right') }}
-      <span class="amount-blur text-success font-medium">+{{ pair.positive.amount | eur }}</span>
-      {% trans date=pair.positive.date | fr_date %}le {{ date }}{% endtrans %}
-    </p>
-    <div class="flex gap-2">
+  <div data-pair class="card flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col gap-1 min-w-0">
+      <p class="text-sm font-semibold text-primary flex items-center gap-2">
+        {{ icon('repeat', size=16) }} {{ pair.negative.account.name }} {{ icon('arrow-narrow-right', size=14) }} {{ pair.positive.account.name }}
+      </p>
+      <p class="text-sm text-secondary tabular-nums">
+        <span class="amount-blur text-primary font-medium">{{ pair.negative.amount | eur }}</span>
+        {% trans date=pair.negative.date | fr_date %}le {{ date }}{% endtrans %}
+        {{ icon('arrows-left-right', size=14) }}
+        <span class="amount-blur text-primary font-medium">+{{ pair.positive.amount | eur }}</span>
+        {% trans date=pair.positive.date | fr_date %}le {{ date }}{% endtrans %}
+      </p>
+    </div>
+    <div class="flex gap-2 lg:shrink-0">
       <form
         hx-post="/accounts/detect-transfers/confirm"
         hx-target="#detect-transfers-content"
@@ -33,22 +36,22 @@
       >
         <input type="hidden" name="tx_a_id" value="{{ pair.negative.id }}" />
         <input type="hidden" name="tx_b_id" value="{{ pair.positive.id }}" />
-        <button type="submit" class="w-full min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-          {{ icon('check') }} {{ _("Confirmer") }}
+        <button type="submit" class="btn btn-secondary border-border-strong w-full">
+          {{ icon('check', size=18) }} {{ _("Confirmer") }}
         </button>
       </form>
       <button
         type="button"
         @click="$el.closest('[data-pair]').remove()"
-        class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+        class="btn btn-secondary border-border-strong flex-1"
       >
-        {{ icon('x') }} {{ _("Ignorer") }}
+        {{ icon('x', size=18) }} {{ _("Ignorer") }}
       </button>
     </div>
   </div>
   {% else %}
-  <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center">{{ icon('confetti') }} {{ _("Aucun virement interne non confirmé détecté.") }}</p>
+  <div class="card">
+    <p class="text-sm text-secondary text-center">{{ _("Aucun virement interne non confirmé détecté.") }}</p>
   </div>
   {% endfor %}
 </div>

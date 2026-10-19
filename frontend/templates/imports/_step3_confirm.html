@@ -1,12 +1,24 @@
-<div class="bg-container rounded-xl shadow-sm p-6 flex flex-col gap-4" x-data="{ count: {{ unique_count }} }">
-  <h2 class="text-xl font-bold text-primary">{{ _("Étape 3 — Vérifier") }}</h2>
+{% from "imports/_stepper.html" import stepper, scene, step_nav %}
+{{ stepper(3, _("Colonnes") if format == "csv" else _("Aperçu")) }}
+<div class="card flex flex-col gap-4" data-tour="import-review" x-data="{ count: {{ unique_count }}, busy: false }">
+  {% set summary %}{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} opérations à importer, {{ duplicate_count }} doublons écartés.{% endtrans %}{% endset %}
+  {{ scene(_("Tout est prêt."), summary) }}
 
-  <div class="flex flex-col gap-1 text-sm">
-    <p class="text-primary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s){% endtrans %}</p>
-    <p class="text-secondary">{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s){% endtrans %}</p>
+  <h3 class="sr-only">{{ _("Aperçu avant import") }}</h3>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("Lignes lues") }}</p><p class="text-xl font-semibold tabular-nums">{{ total_count }}</p></div>
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("Doublons ignorés") }}</p><p class="text-xl font-semibold tabular-nums">{{ duplicate_count }}</p></div>
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("Virements exclus") }}</p><p class="text-xl font-semibold tabular-nums">{{ transfer_count }}</p></div>
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("À importer") }}</p><p class="text-xl font-semibold tabular-nums" x-text="count">{{ unique_count }}</p></div>
   </div>
 
-  <form hx-post="/imports/{{ import_id }}/execute" hx-target="#import-wizard" hx-swap="innerHTML" class="flex flex-col gap-4">
+  <form
+    hx-post="/imports/{{ import_id }}/execute"
+    hx-target="#import-wizard"
+    hx-swap="innerHTML"
+    @htmx:before-request="busy = true"
+    class="flex flex-col gap-4"
+  >
     <input type="hidden" name="format" value="{{ format }}" />
     <input type="hidden" name="account_id" value="{{ account.id }}" />
     {% if format == "csv" %}
@@ -17,18 +29,20 @@
     {% endif %}
 
     {% if unique %}
-    <!-- Décochée par défaut : jamais, c'est le cas d'usage principal
-         (importer tout ce qui est nouveau). Décocher reste possible ligne
-         par ligne pour exclure une opération précise avant l'import, sans
-         devoir la supprimer après coup depuis Opérations. -->
+    <!-- Cochées par défaut : importer tout ce qui est nouveau est le cas
+         d'usage principal. Décocher reste possible ligne par ligne pour
+         exclure une opération précise avant l'import, sans devoir la
+         supprimer après coup depuis Opérations. -->
+    <h3 class="text-sm font-semibold text-primary">{{ _("Vérifier ligne par ligne") }}</h3>
     <div class="overflow-y-auto max-h-80 rounded-xl border border-border">
       <table class="w-full text-sm">
         <thead>
-          <tr class="bg-page">
-            <th class="w-10 px-3 py-2"></th>
-            <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Date") }}</th>
-            <th class="text-left text-secondary font-medium px-3 py-2">{{ _("Libellé") }}</th>
-            <th class="text-right text-secondary font-medium px-3 py-2">{{ _("Montant") }}</th>
+          <tr class="bg-sunken">
+            <th scope="col" class="w-12 px-3 py-2"><span class="sr-only">{{ _("Inclure") }}</span></th>
+            <th scope="col" class="hidden sm:table-cell text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Date") }}</th>
+            <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Libellé") }}</th>
+            <th scope="col" class="text-right text-secondary text-xs font-medium px-3 py-2">{{ _("Montant") }}</th>
+            <th scope="col" class="hidden md:table-cell text-left text-secondary text-xs font-medium px-3 py-2">{{ _("État") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -40,18 +54,26 @@
                 name="include"
                 value="{{ idx }}"
                 checked
-                class="w-5 h-5 flex-shrink-0"
+                aria-label="{{ tx.label }}"
+                class="w-5 h-5 flex-shrink-0 accent-[var(--color-accent-ink)]"
                 @change="count += $event.target.checked ? 1 : -1"
               />
             </td>
-            <td class="text-primary px-3 py-2 whitespace-nowrap">{{ tx.date | fr_date }}</td>
+            <td class="hidden sm:table-cell text-secondary px-3 py-2 whitespace-nowrap tabular-nums">{{ tx.date | fr_date }}</td>
             <td class="text-primary px-3 py-2">
               {{ tx.label }}
+              <span class="block sm:hidden text-xs text-secondary tabular-nums">{{ tx.date | fr_date }}</span>
               {% if tx.transfer_account %}
               <span class="block text-xs text-secondary">{{ icon('repeat', size=12) }} {% trans transfer_account=tx.transfer_account %}Virement détecté ↔ {{ transfer_account }}{% endtrans %}</span>
               {% endif %}
             </td>
-            <td class="{{ 'text-success' if tx.amount > 0 else 'text-danger' }} font-medium px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
+            <td class="amount-blur text-primary font-semibold tabular-nums px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
+            {% set state = states[idx] %}
+            <td class="hidden md:table-cell px-3 py-2 whitespace-nowrap">
+              {% if state[0] == "rule" %}<span class="badge badge-info">{{ _("Règle") }}</span>
+              {% elif state[0] == "transfer" %}<span class="badge badge-neutral">{% trans account=state[1] %}Virement détecté ↔ {{ account }}{% endtrans %}</span>
+              {% else %}<span class="badge badge-warning">{{ _("À trier") }}</span>{% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -66,29 +88,31 @@
          reste possible et une opération légitime ne doit pas disparaître
          silencieusement. -->
     <details class="rounded-xl border border-border">
-      <summary class="cursor-pointer select-none px-3 py-2 text-sm text-secondary font-medium">
-        {% trans duplicate_count=duplicate_count %}Doublons ignorés ({{ duplicate_count }}){% endtrans %}
+      <summary class="cursor-pointer select-none px-3 min-h-[50px] flex items-center text-sm text-secondary font-medium">
+        {% trans duplicate_count=duplicate_count %}{{ duplicate_count }} doublons écartés{% endtrans %}
       </summary>
       <div class="overflow-y-auto max-h-64 border-t border-border">
         <table class="w-full text-sm">
           <tbody>
             {% for idx, tx in duplicates %}
             <tr class="border-t border-border first:border-t-0 opacity-70">
-              <td class="px-3 py-2 align-top">
+              <td class="px-3 py-2 align-top w-12">
                 <input
                   type="checkbox"
                   name="force_include"
                   value="{{ idx }}"
-                  class="w-5 h-5 flex-shrink-0"
+                  aria-label="{{ tx.label }}"
+                  class="w-5 h-5 flex-shrink-0 accent-[var(--color-accent-ink)]"
                   @change="count += $event.target.checked ? 1 : -1"
                 />
               </td>
-              <td class="text-primary px-3 py-2 whitespace-nowrap align-top">{{ tx.date | fr_date }}</td>
+              <td class="hidden sm:table-cell text-secondary px-3 py-2 whitespace-nowrap align-top tabular-nums">{{ tx.date | fr_date }}</td>
               <td class="text-primary px-3 py-2 align-top">
                 {{ tx.label }}
+                <span class="block sm:hidden text-xs text-secondary tabular-nums">{{ tx.date | fr_date }}</span>
                 <span class="block text-xs text-secondary">{{ _("Déjà présente en base") }}</span>
               </td>
-              <td class="{{ 'text-success' if tx.amount > 0 else 'text-danger' }} font-medium px-3 py-2 text-right whitespace-nowrap align-top">{{ tx.amount | eur }}</td>
+              <td class="amount-blur text-primary font-semibold tabular-nums px-3 py-2 text-right whitespace-nowrap align-top">{{ tx.amount | eur }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -99,21 +123,13 @@
 
     <button
       type="submit"
-      class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold w-full disabled:opacity-50"
-      :disabled="count === 0"
+      class="btn btn-primary w-full lg:w-auto lg:self-end lg:px-8"
+      :disabled="count === 0 || busy"
     >
       {{ _("Importer") }} <span x-text="count"></span> {{ _("opération(s)") }}
     </button>
-    <p class="htmx-indicator text-sm text-secondary text-center pt-2"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Twiga tend le cou...") }}</p>
   </form>
 
-  <!-- Filet de sécurité, surtout quand unique_count == 0 (le bouton
-       ci-dessus est alors désactivé, sans autre issue) : repartir sur un
-       autre fichier sans devoir retourner par Paramètres. -->
-  <a
-    href="/imports/new"
-    class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium flex items-center justify-center"
-  >
-    {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
-  </a>
+  <p class="text-xs text-secondary">{{ _("Coche une ligne pour l'ajouter quand même à l'import.") }}</p>
 </div>
+{{ step_nav("/imports/back?import_id=" ~ import_id ~ "&format=" ~ format ~ "&account_id=" ~ account.id) }}

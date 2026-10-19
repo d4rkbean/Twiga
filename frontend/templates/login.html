@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% from "_macros/brand.html" import mascot %}
 
-{% block title %}{{ _("Connexion — Twiga 🦒") }}{% endblock %}
+{% block title %}{{ _("Connexion — Twiga") }}{% endblock %}
 
 {% block sidebar %}{% endblock %}
 {% block header %}{% endblock %}
@@ -15,50 +16,68 @@
 {% block body_chrome %}{% endblock %}
 {% block body_offset %}{% endblock %}
 
-{# Seul écran de l'application à porter le pelage en pleine page : aucune
-   donnée à lire ici, donc rien avec quoi le motif puisse entrer en
-   concurrence. Voir design-system.css, `body.pelage`. #}
-{% block body_brand %}{{ _("pelage") }}{% endblock %}
-
 {% block content %}
-{# Pas de bg-page ici : <body> porte déjà ce fond, et un aplat opaque sur ce
-   <main> recouvrait entièrement le motif de pelage (body::before, z-index
-   -1) — il ne restait visible que dans les marges du body, d'où une large
-   zone grise au centre de l'écran de connexion. #}
-<main class="min-h-screen flex items-center justify-center p-4">
-  {# Cadre blanc posé sur le pelage : sans surface propre, les champs
-     flottaient directement sur le motif et le formulaire n'avait plus de
-     contenant. Bordure 1px en plus de l'ombre au repos — la carte se pose
-     ici sur un fond texturé, pas sur l'aplat de page habituel. #}
-  <div class="w-full max-w-sm bg-container border border-border rounded-xl shadow-sm p-6 flex flex-col items-center gap-2">
-    <img
-      src="/static/icons/twiga-logo.svg"
-      alt="{{ _("Twiga") }}"
-      class="w-32 h-32 mb-2"
-      style="width:128px; height:128px;"
-    />
-    <h1 class="text-3xl font-extrabold tracking-tight text-primary">{{ _("TWIGA") }}</h1>
-    <p class="text-sm text-secondary italic mb-4">{{ _("Voir loin. Voir juste.") }}</p>
-    <form hx-post="/login" hx-target="#login-error" hx-swap="innerHTML" class="w-full flex flex-col gap-3">
-      <label for="login-username" class="sr-only">{{ _("Nom d'utilisateur") }}</label>
-      <input
-        id="login-username"
-        type="text"
-        name="username"
-        placeholder="{{ _("Nom d'utilisateur") }}"
-        autocomplete="username"
-        required
-        autofocus
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3 text-center"
-      />
-      {% with field_name = "password", field_label = _("Mot de passe"), field_placeholder = _("Mot de passe"), field_autocomplete = "current-password", field_input_class = "text-center" %}
-      {% include "_password_field.html" %}
-      {% endwith %}
-      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-        {{ _("Se connecter") }}
-      </button>
-      <div id="login-error"></div>
-    </form>
-  </div>
+{# Deux moitiés au bureau : la marque et ce que Twiga promet à gauche, le
+   formulaire à droite. Sur mobile, la marque passe au-dessus du formulaire et
+   les promesses disparaissent. Le formulaire reste le formulaire classique
+   (identifiant + mot de passe) ; les tuiles de comptes viendront plus tard,
+   derrière un réglage. #}
+<main class="min-h-screen grid grid-cols-1 lg:grid-cols-2">
+  <section class="flex flex-col items-center justify-end px-4 pt-10 pb-4 lg:bg-sunken lg:items-start lg:justify-center lg:px-16 lg:py-16 lg:border-r lg:border-border">
+    <div class="flex flex-col items-center gap-2 lg:items-start lg:gap-3 lg:max-w-md">
+      {{ mascot(size=96, label=true) }}
+      <p class="font-display text-4xl lg:text-6xl font-extrabold tracking-tight text-primary leading-none">{{ _("Twiga") }}</p>
+      <p class="text-lg text-secondary">{{ _("Voir loin. Voir juste.") }}</p>
+    </div>
+
+    <ul class="hidden lg:flex flex-col gap-5 mt-12 max-w-md">
+      <li class="flex items-start gap-3">
+        <span class="mt-0.5 text-secondary">{{ icon('home', size=20) }}</span>
+        <span class="flex flex-col"><strong class="text-sm font-semibold text-primary">{{ _("100 %% local") }}</strong><span class="text-sm text-secondary">{{ _("Twiga tourne sur ton serveur, chez toi. Aucun service tiers, aucune télémétrie.") }}</span></span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="mt-0.5 text-secondary">{{ icon('lock', size=20) }}</span>
+        <span class="flex flex-col"><strong class="text-sm font-semibold text-primary">{{ _("Pas de connexion bancaire") }}</strong><span class="text-sm text-secondary">{{ _("Tu importes tes relevés toi-même : personne d'autre n'a accès à tes comptes.") }}</span></span>
+      </li>
+      <li class="flex items-start gap-3">
+        <span class="mt-0.5 text-secondary">{{ icon('users', size=20) }}</span>
+        <span class="flex flex-col"><strong class="text-sm font-semibold text-primary">{{ _("Pour le foyer") }}</strong><span class="text-sm text-secondary">{{ _("Un compte par personne, avec ses droits : administrateur, éditeur ou lecteur.") }}</span></span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="flex flex-col items-center justify-start lg:justify-center gap-4 px-4 pb-10 lg:p-16">
+    <div class="w-full max-w-sm card border border-border p-6 flex flex-col gap-4 lg:p-8">
+      <h1 class="text-page-title">{{ _("Connexion") }}</h1>
+      <form hx-post="/login" hx-target="#login-error" hx-swap="innerHTML" class="w-full flex flex-col gap-4">
+        <label class="form-group">
+          <span class="form-label">{{ _("Nom d'utilisateur") }}</span>
+          <input
+            id="login-username"
+            type="text"
+            name="username"
+            autocomplete="username"
+            required
+            autofocus
+            class="input-base"
+          />
+        </label>
+        <div class="form-group">
+          <span class="form-label">{{ _("Mot de passe") }}</span>
+          {% with field_name = "password", field_label = _("Mot de passe"), field_autocomplete = "current-password" %}
+          {% include "_password_field.html" %}
+          {% endwith %}
+        </div>
+        <button type="submit" class="btn btn-primary">
+          {{ _("Se connecter") }}
+        </button>
+        <div id="login-error" aria-live="polite"></div>
+      </form>
+    </div>
+    <p class="flex flex-col items-center gap-1 text-xs text-secondary text-center max-w-sm">
+      <span class="shrink-0">{{ icon('lock', size=14) }}</span>
+      <span>{{ _("Instance privée, hébergée chez toi. Aucune donnée ne quitte ton réseau.") }}</span>
+    </p>
+  </section>
 </main>
 {% endblock %}

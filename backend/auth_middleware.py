@@ -7,6 +7,7 @@ from starlette.responses import RedirectResponse, Response
 from backend import auth
 from backend.database import SessionLocal
 from backend.i18n import gettext as _t
+from backend.templating import flash_html
 
 _PUBLIC_PATHS = {"/login", "/health"}
 _PUBLIC_PREFIXES = ("/static/",)
@@ -33,7 +34,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # Depends(get_db)).
         db = SessionLocal()
         try:
-            user = auth.authenticate_request(db, token)
+            user, session_id, new_token = auth.authenticate_session(
+                db, token, request.headers.get("user-agent")
+            )
         finally:
             db.close()
 
@@ -47,7 +50,26 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # cookie ni retaper la Session (voir backend/routers/auth.py,
         # get_current_user, qui lit ceci).
         request.state.user = user
-        return await call_next(request)
+        # The row of the session this request belongs to (Mon profil marks it "Cet
+        # appareil" and never offers to close it), and the cookie value to use when a
+        # route needs to sign it again (password change).
+        request.state.session_id = session_id
+        request.state.session_token = new_token or token
+        response = await call_next(request)
+        # A token issued before the sessions table was converted just now: the browser
+        # gets the new one, unless the route already answered with its own cookie
+        # (sign-out, password change).
+        if new_token and not any(
+            header.startswith(auth.SESSION_COOKIE_NAME + "=") for header in response.headers.getlist("set-cookie")
+        ):
+            response.set_cookie(
+                auth.SESSION_COOKIE_NAME,
+                new_token,
+                max_age=auth.SESSION_MAX_AGE,
+                httponly=True,
+                samesite="lax",
+            )
+        return response
 
     @staticmethod
     def _unauthenticated_response(request: Request) -> Response:
@@ -66,7 +88,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         message = _t("Action réservée à un rôle supérieur.")
         if request.headers.get("HX-Request") == "true":
             return Response(
-                content=f'<p class="text-sm text-danger py-2">🔒 {message}</p>',
+                content=flash_html("error", message),
                 status_code=403,
                 media_type="text/html",
             )

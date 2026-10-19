@@ -1,13 +1,14 @@
 import os
 from decimal import Decimal
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from backend import auth, crud
+from backend import auth, budget_month, crud, settings_hub
 from backend.auth_middleware import AuthMiddleware
 from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
@@ -34,8 +35,8 @@ from backend.routers import (
     transactions,
     users as users_router,
 )
-from backend.templating import templates
-from backend.i18n import gettext as _t, ngettext
+from backend.templating import flash_html, templates, user_display_name
+from backend.i18n import current_language, gettext as _t, ngettext
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -66,6 +67,11 @@ def load_session_secret() -> None:
     db = SessionLocal()
     try:
         auth.load_session_secret(db)
+        if auth.AUTH_ENABLED:
+            # Sessions older than their cookie (30 days) are of no use any more.
+            from backend.sessions import purge_expired_sessions
+
+            purge_expired_sessions(db)
     finally:
         db.close()
 
@@ -126,9 +132,26 @@ def design_system(request: Request):
     return templates.TemplateResponse("design_system.html", {"request": request})
 
 
+def _household_label(users: list) -> str:
+    """"Foyer d'Alex et Sam": the first names of the household, with the
+    French elision ("d'Alex" but "de Sam")."""
+    names = [user_display_name(user) for user in users if user.is_active]
+    if not names:
+        return ""
+    joined = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " " + _t("et") + " " + names[-1]
+    if current_language() == "fr":
+        return (_t("Foyer d'%(names)s") if joined[:1].lower() in "aeiouyhàâéèêîô" else _t("Foyer de %(names)s")) % {
+            "names": joined
+        }
+    return _t("Foyer de %(names)s") % {"names": joined}
+
+
 @app.get("/settings", response_class=HTMLResponse)
 def settings(request: Request, db: Session = Depends(get_db)):
     cap_settings = crud.get_cap_settings(db)
+    users = crud.list_users(db)
+    rules = crud.get_rules_with_usage(db)
+    balances = crud.get_account_balances(db)
     return templates.TemplateResponse(
         "settings.html",
         {
@@ -137,8 +160,74 @@ def settings(request: Request, db: Session = Depends(get_db)):
             "cap_settings": cap_settings,
             "income_sources": crud.INCOME_SOURCES,
             "accounts": crud.list_accounts(db),
+            "last_backup_at": crud.get_or_create_app_state(db).last_backup_at,
+            "household_label": _household_label(users),
+            "users": users,
+            "account_balances": balances,
+            "accounts_total": sum((balance for _account, balance in balances), Decimal("0")),
+            "categories": crud.get_categories_tree(db),
+            "rules": rules[:6],
+            "recurring_count": crud.get_recurring_patterns_overview(db)["recurring_active_count"],
+            "pending_checks_count": len(crud.get_outstanding_pending_checks(db)),
+            # The other way's hub (sentence, tiles, search examples); Classic ignores them.
+            **settings_hub.hub_context(db, auth.get_current_user(request)),
         },
     )
+
+
+def _require_same_origin(request: Request) -> None:
+    """Refuse a request sent by another site. Browsers add `Origin` to every
+    cross-site POST, so a page elsewhere cannot trigger these routes even
+    when authentication is off and nobody is signed in."""
+    origin = request.headers.get("origin")
+    if origin is None:
+        return
+    if urlsplit(origin).netloc != request.headers.get("host", ""):
+        raise HTTPException(status_code=403, detail=_t("Requête refusée : elle ne vient pas de Twiga."))
+
+
+@app.post("/settings/login-accounts", response_class=HTMLResponse)
+def save_login_accounts(
+    request: Request, show: str = Form(""), db: Session = Depends(get_db)
+):
+    """"Afficher les comptes sur la page de connexion" (Sécurité): administrator only.
+    Off by default; when on, the other way's login offers the household as tiles."""
+    _require_same_origin(request)
+    current_user = auth.get_current_user(request)
+    if auth.AUTH_ENABLED and (current_user is None or current_user.role != "admin"):
+        raise HTTPException(status_code=403, detail=_t("Réservé à l'administrateur."))
+    crud.get_or_create_app_state(db).show_login_accounts = show == "on"
+    db.commit()
+    return HTMLResponse(content=flash_html("success", _t("Réglage enregistré")))
+
+
+@app.post("/settings/budget-start-day", response_class=HTMLResponse)
+def save_budget_start_day(budget_start_day: int = Form(...), db: Session = Depends(get_db)):
+    """"Début du mois budgétaire" (Préférences): the day the budget month
+    starts on. Saved as soon as it is picked."""
+    if budget_start_day not in budget_month.BUDGET_START_DAYS:
+        raise HTTPException(status_code=400, detail=_t("Jour de début invalide."))
+    crud.get_cap_settings(db).budget_start_day = budget_start_day
+    db.commit()
+    return HTMLResponse(content=flash_html("success", _t("Réglage enregistré")))
+
+
+@app.post("/settings/delete-all-transactions", response_class=HTMLResponse)
+def delete_all_transactions(
+    request: Request, confirm: str = Form(""), db: Session = Depends(get_db)
+):
+    """"Zone sensible": deletes every transaction. Administrator only, and
+    only after the second confirmation of the screen (the `confirm` field is
+    sent by its "Oui, tout supprimer" button alone)."""
+    _require_same_origin(request)
+    current_user = auth.get_current_user(request)
+    if auth.AUTH_ENABLED and (current_user is None or current_user.role != "admin"):
+        raise HTTPException(status_code=403, detail=_t("Réservé à l'administrateur."))
+    if confirm != "yes":
+        raise HTTPException(status_code=400, detail=_t("Confirmation manquante."))
+    count = crud.delete_all_transactions(db)
+    message = ngettext("%(n)s opération supprimée", "%(n)s opérations supprimées", count) % {"n": count}
+    return HTMLResponse(content=flash_html("success", message))
 
 
 @app.post("/settings/cap-income-source", response_class=HTMLResponse)
@@ -164,21 +253,16 @@ def save_cap_income_source(
     except (ArithmeticError, ValueError):
         settings_row.income_fixed_amount = None
     db.commit()
-    return HTMLResponse(content=_t('<p class="text-sm text-success py-2">✓ Réglage enregistré</p>'))
+    return HTMLResponse(content=flash_html("success", _t("Réglage enregistré")))
 
 
 @app.post("/settings/detect-payment-methods", response_class=HTMLResponse)
 def detect_payment_methods(db: Session = Depends(get_db)):
     updated_count = crud.detect_missing_payment_methods(db)
-    return HTMLResponse(
-        content=(
-            '<p class="text-sm text-success py-2">'
-            + ngettext(
-                "✓ %(n)s transaction mise à jour</p>", "✓ %(n)s transactions mises à jour</p>", updated_count
-            )
-            % {"n": updated_count}
-        )
-    )
+    message = ngettext("%(n)s transaction mise à jour", "%(n)s transactions mises à jour", updated_count) % {
+        "n": updated_count
+    }
+    return HTMLResponse(content=flash_html("success", message))
 
 
 @app.post("/settings/change-password", response_class=HTMLResponse)
@@ -193,28 +277,33 @@ def change_password(
     # peut changer le sien — voir auth._SELF_SERVICE_PATHS) ; réinitialiser
     # le mot de passe d'un AUTRE utilisateur passe par Paramètres >
     # Utilisateurs (admin uniquement, voir backend/routers/users.py).
-    error = '<p class="text-sm text-danger py-2">{}</p>'
+    def error(message: str) -> str:
+        return flash_html("error", message)
+
     current_user = auth.get_current_user(request)
     if not auth.AUTH_ENABLED or current_user is None:
-        return HTMLResponse(error.format(_t("Authentification désactivée.")), status_code=400)
+        return HTMLResponse(error(_t("Authentification désactivée.")), status_code=400)
     if auth.verify_password(db, current_user.username, current_password) is None:
-        return HTMLResponse(error.format(_t("Mot de passe actuel incorrect.")), status_code=401)
+        return HTMLResponse(error(_t("Mot de passe actuel incorrect.")), status_code=401)
     if new_password != confirm_password:
-        return HTMLResponse(error.format(_t("Les nouveaux mots de passe ne correspondent pas.")), status_code=400)
+        return HTMLResponse(error(_t("Les nouveaux mots de passe ne correspondent pas.")), status_code=400)
     if len(new_password) < 8:
-        return HTMLResponse(error.format(_t("Le nouveau mot de passe doit faire au moins 8 caractères.")), status_code=400)
+        return HTMLResponse(error(_t("Le nouveau mot de passe doit faire au moins 8 caractères.")), status_code=400)
 
-    crud.set_user_password(db, current_user.id, new_password)
-    db.refresh(current_user)
+    # Every other session of the account is closed; this one stays open.
+    crud.set_user_password(db, current_user.id, new_password, keep_session_id=getattr(request.state, "session_id", None))
+    # current_user comes from the middleware's closed database session: read the account
+    # again (with the new password fingerprint) instead of refreshing a detached object.
+    current_user = crud.get_user(db, current_user.id)
 
     # Le jeton de session embarque une empreinte du mot de passe (voir
     # backend/auth.py, authenticate_request) : changer le mot de passe
     # invalide donc le cookie actuel, on en réémet un nouveau tout de suite
     # pour ne pas déconnecter l'utilisateur qui vient de changer le sien.
-    response = HTMLResponse(_t('<p class="text-sm text-success py-2">✓ Mot de passe modifié.</p>'))
+    response = HTMLResponse(flash_html("success", _t("Mot de passe modifié.")))
     response.set_cookie(
         auth.SESSION_COOKIE_NAME,
-        auth.create_session_token(current_user),
+        auth.create_session_token(current_user, auth.session_id_of_token(getattr(request.state, "session_token", None))),
         max_age=auth.SESSION_MAX_AGE,
         httponly=True,
         samesite="lax",

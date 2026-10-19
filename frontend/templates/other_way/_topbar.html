@@ -1,0 +1,167 @@
+{% from "_macros/brand.html" import mascot %}
+{% from "other_way/_icons.html" import shell_icon %}
+{% import "other_way/_shell_data.html" as shell with context %}
+{#- La barre du haut de « L'autre voie » (56px, fixe) et les feuilles qu'elle
+    ouvre. Sur ordinateur : logo, quatre destinations au centre, puis la
+    recherche, l'œil, Aide et l'avatar. Sur mobile : le titre de la page, la
+    loupe, l'œil et l'avatar (les destinations sont dans _bottom_nav.html).
+
+    Pas d'aplat ambre ici : l'ambre reste à l'action principale de chaque
+    écran, et l'import vit sous Plus > Alimenter. Destination active = ambre
+    doux + texte accent-ink.
+
+    L'état (quel menu est ouvert) est `shell`, sur <body> : voir
+    static/js/other-way.js. -#}
+{% set outlined_button = "min-h-[50px] min-w-[50px] px-3 items-center justify-center gap-2 rounded-xl border border-border-strong bg-container text-sm font-medium text-primary hover:bg-sunken" %}
+<header
+  class="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-container border-b border-border flex items-center gap-2 pl-4 pr-1 lg:gap-4 lg:px-6 {{ 'max-lg:hidden' if shell_focus is defined and shell_focus else '' }}"
+  @keydown.window="onShellKey($event)"
+>
+  {# Mobile : le titre de l'écran, à la place du logo. Un <p>, pas un titre :
+     la page porte déjà le sien. Un écran enfant (Budgets) offre le retour vers
+     son parent et peut ajouter une ligne sous le titre (voir _shell_data.html). #}
+  {% if shell_back is defined and shell_back %}
+  <a href="{{ shell_back }}" aria-label="{{ _("Retour") }}" class="lg:hidden -ml-3 w-[50px] h-[50px] flex-shrink-0 flex items-center justify-center text-primary">{{ icon("arrow-left") }}</a>
+  {% endif %}
+  <div class="lg:hidden flex-1 min-w-0 flex flex-col {{ '-ml-2' if shell_back is defined and shell_back else '' }}">
+    <p class="lg:hidden truncate font-display text-xl font-extrabold tracking-tight leading-tight text-primary">{{ shell.shell_title }}</p>
+    {% if shell_subtitle is defined and shell_subtitle %}<p class="lg:hidden truncate text-xs text-secondary leading-tight">{{ shell_subtitle }}</p>{% endif %}
+  </div>
+
+  <a id="tour-b-logo" href="/" class="hidden lg:flex items-center gap-2.5 flex-shrink-0" aria-label="{{ _("Twiga — retour à l'accueil") }}">
+    {{ mascot(size=34) }}
+    <span class="font-display text-lg font-extrabold tracking-[0.04em] text-primary">{{ _("TWIGA") }}</span>
+  </a>
+
+  <nav id="tour-b-nav" aria-label="{{ _("Navigation principale") }}" class="hidden lg:flex items-center gap-1 mx-auto">
+    {% for destination in shell.destinations %}
+    {% set active = shell.shell_active == destination.key %}
+    <a
+      href="{{ destination.href }}"
+      {% if active %}aria-current="page"{% endif %}
+      class="min-h-[50px] px-4 inline-flex items-center rounded-xl text-sm {{ 'bg-accent-soft text-accent-ink font-semibold' if active else 'text-primary font-medium hover:bg-sunken' }}"
+    >{{ destination.label }}{% if destination.key == "savane" %}
+      {#- The number of operations to sort (same source as the Classic sidebar), empty when there is
+          nothing left. Reloaded after any successful POST of the page (sorting, undo, rule...). -#}
+      <span
+        id="savane-count-top"
+        class="ml-2 tabular-nums empty:hidden"
+        data-noblur="1"
+        hx-get="/dashboard/sidebar-pending"
+        hx-trigger="load, htmx:afterRequest[detail.successful && detail.requestConfig.verb == 'post'] from:body delay:400ms"
+        hx-swap="innerHTML"
+        aria-live="polite"
+      ></span>{% endif %}</a>
+    {% endfor %}
+    <button
+      id="tour-b-plus"
+      type="button"
+      aria-haspopup="dialog"
+      :aria-expanded="shell === 'more'"
+      {% if shell.shell_active == "more" %}aria-current="page"{% endif %}
+      @click="toggleShell('more')"
+      class="min-h-[50px] px-4 inline-flex items-center gap-1.5 rounded-xl text-sm {{ 'bg-accent-soft text-accent-ink font-semibold' if shell.shell_active == 'more' else 'text-primary font-medium hover:bg-sunken' }}"
+    >
+      {{ _("Plus") }}
+      <span :class="shell === 'more' ? 'rotate-180' : ''" class="transition-transform">{{ shell_icon("chevron-down", size=16) }}</span>
+    </button>
+  </nav>
+
+  <div class="flex items-center gap-1 lg:gap-2 flex-shrink-0">
+    {# Recherche : un champ factice sur ordinateur, qui ouvre la même feuille
+       que la loupe du mobile (la recherche globale, voir _search_sheet.html). #}
+    <button
+      id="tour-b-search"
+      type="button"
+      aria-haspopup="dialog"
+      @click="openShell('search')"
+      class="hidden lg:flex items-center gap-2 min-h-[50px] w-[200px] xl:w-[300px] px-3 rounded-xl border border-field bg-container text-sm text-secondary"
+    >
+      {{ shell_icon("search", size=18) }}
+      <span class="flex-1 text-left truncate">{{ _("Rechercher...") }}</span>
+      <kbd class="hidden xl:inline text-xs font-mono font-semibold text-secondary border border-border-strong rounded-md px-1.5">Ctrl+K</kbd>
+    </button>
+    <button
+      id="tour-b-search-icon"
+      type="button"
+      aria-label="{{ _("Recherche") }}"
+      aria-haspopup="dialog"
+      @click="openShell('search')"
+      class="lg:hidden w-[50px] h-[50px] flex items-center justify-center text-primary"
+    >{{ shell_icon("search") }}</button>
+
+    {# L'œil : toujours à portée, sur mobile comme sur ordinateur (un geste
+       immédiat dans les transports). Même état `privacy` que la Classique. #}
+    <button
+      type="button"
+      aria-label="{{ _("Basculer le mode confidentialité") }}"
+      @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
+      class="lg:hidden w-[50px] h-[50px] flex items-center justify-center text-primary"
+    >
+      <span x-show="!privacy">{{ icon("eye") }}</span><span x-show="privacy" style="display: none;">{{ icon("eye-off") }}</span>
+    </button>
+    <button
+      type="button"
+      aria-label="{{ _("Basculer le mode confidentialité") }}"
+      @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
+      class="hidden lg:inline-flex {{ outlined_button }}"
+    >
+      <span x-show="!privacy">{{ icon("eye") }}</span><span x-show="privacy" style="display: none;">{{ icon("eye-off") }}</span>
+      <span class="hidden xl:inline" x-text="privacy ? '{{ _("Afficher les montants") | jsq }}' : '{{ _("Masquer les montants") | jsq }}'">{{ _("Masquer les montants") }}</span>
+    </button>
+
+    <button
+      id="tour-b-help"
+      type="button"
+      aria-haspopup="dialog"
+      aria-label="{{ _("Aide") }}"
+      @click="openShell('help')"
+      class="{{ 'hidden lg:inline-flex' if shell.current_user else 'inline-flex' }} {{ outlined_button }}"
+    >
+      {{ shell_icon("help") }}<span class="hidden xl:inline">{{ _("Aide") }}</span>
+    </button>
+
+    {% if shell.current_user %}
+    <button
+      id="tour-b-avatar"
+      type="button"
+      aria-haspopup="dialog"
+      :aria-expanded="shell === 'user'"
+      aria-label="{{ _("Menu utilisateur") }}"
+      title="{{ user_display_name(shell.current_user) }}"
+      @click="toggleShell('user')"
+      class="w-[50px] h-[50px] flex items-center justify-center flex-shrink-0"
+    >
+      <span class="w-[38px] h-[38px] rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-xs font-semibold">{{ user_initials(shell.current_user) }}</span>
+    </button>
+    {% else %}
+    {# Authentification désactivée : pas de profil, donc pas de menu
+       d'avatar ; le thème reste à un geste. #}
+    <button
+      type="button"
+      onclick="window.toggleTheme()"
+      aria-label="{{ _("Basculer entre thème clair et sombre") }}"
+      class="inline-flex {{ outlined_button }}"
+    >
+      {{ icon("sun", cls="icon-theme-light") }}{{ icon("moon", cls="icon-theme-dark") }}
+    </button>
+    {% endif %}
+  </div>
+</header>
+
+{# Voile derrière les feuilles. Transparent pour Plus et l'avatar sur
+   ordinateur (ils se posent sous la barre, sans assombrir la page) ; la
+   recherche et l'aide, qui sont des fenêtres, assombrissent partout. #}
+<div
+  x-show="shell !== null"
+  style="display: none;"
+  @click="closeShell()"
+  :class="(shell === 'more' || shell === 'user') ? 'lg:bg-transparent' : ''"
+  class="print:hidden fixed inset-0 z-[8999] bg-scrim"
+  aria-hidden="true"
+></div>
+
+{% include "other_way/_more_menu.html" %}
+{% if shell.current_user %}{% include "other_way/_avatar_menu.html" %}{% endif %}
+{% include "other_way/_help_sheet.html" %}
+{% include "other_way/_search_sheet.html" %}

@@ -1,29 +1,18 @@
+{% from "_macros/signed_amount.html" import signed %}
+{# Le suivi du mois vit sur « Mon mois » (cap/mid.html), qui le montre par
+   pilier ET par catégorie. Le répéter ici brouillerait le rôle de cette
+   page : ici on AJUSTE le plan, on ne le regarde pas. #}
 <div class="flex flex-col gap-4">
-
-  {# Le suivi du mois vit désormais sur « Mon mois » (cap/mid.html), qui le
-     montre par pilier ET par catégorie. Le répéter ici en faisait une
-     cinquième redite du même mois dans l'application, et brouillait le rôle
-     de cette page : ici on AJUSTE le plan, on ne le regarde pas. #}
-  <div class="flex justify-end">
-    <button
-      type="button"
-      hx-post="/budgets/copy-previous?month={{ month }}&year={{ year }}"
-      hx-target="#budgets-content"
-      hx-swap="innerHTML"
-      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4"
-    >
-      {{ icon('clipboard-copy') }} {{ _("Copier le mois précédent") }}
-    </button>
-  </div>
 
   <form
     hx-post="/budgets/save?month={{ month }}&year={{ year }}"
     hx-target="#budgets-content"
     hx-swap="innerHTML"
-    class="flex flex-col gap-3"
+    class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start"
     x-data="{
       income: {{ month_resources }},
       savingsWithdrawal: {{ '%.2f' % savings_withdrawal }},
+      step: 10,
       amounts: {
         {% for category in categories %}{{ category.id }}: {{ '%.2f' % (budgets.get(category.id) or 0) }}{% if not loop.last %},{% endif %}{% endfor %}
       },
@@ -33,97 +22,157 @@
         return Object.values(this.amounts).reduce((sum, v) => sum + (Number(v) || 0), 0)
       },
       get totalPct() { return this.available ? this.total / this.available * 100 : 0 },
-      fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' },
+      bump(id, direction) {
+        this.amounts[id] = Math.max(0, Math.round(((Number(this.amounts[id]) || 0) + direction * this.step) * 100) / 100)
+      },
+      bumpWithdrawal(direction) {
+        this.savingsWithdrawal = Math.max(0, Math.round(((Number(this.savingsWithdrawal) || 0) + direction * this.step) * 100) / 100)
+      },
+      num(text) { var n = parseFloat(String(text).replace(/\s/g, '').replace(',', '.')); return isNaN(n) ? 0 : n },
+      fmt2(v) { return (Number(v) || 0).toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
+      fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('-', '−') + ' €' },
     }"
   >
-    {# Affiché même quand la référence est inconnue : ce bloc porte aussi le
-       prélèvement sur épargne, qui n'a aucune raison de disparaître. Avec la
-       stratégie « virements », la proposition vaut 0 tant que le cap du mois
-       n'a pas été fixé — les virements se cochent dans le rituel. #}
-    <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-2">
-      {# Même nombre que le rituel : cette page et Le Cap éditent le même
-         plan, elles ne peuvent pas proposer deux bases de répartition. #}
-      {% if month_resources %}
-      <p class="text-sm text-secondary">
-        {{ icon('currency-euro', size=16) }} {% trans period_label=period_label %}Ressources de {{ period_label }} :{% endtrans %}
-        <span class="text-primary font-medium">{{ month_resources | eur }}</span>
-        {% if resources_from_cap %}
-        {{ _("— le montant fixé dans Le Cap.") }}
+    <div class="flex flex-col gap-4 min-w-0">
+
+      {# Affiché même quand la référence est inconnue : ce bloc porte aussi le
+         prélèvement sur épargne, qui n'a aucune raison de disparaître. Avec la
+         stratégie « virements », la proposition vaut 0 tant que le cap du mois
+         n'a pas été fixé — les virements se cochent dans le rituel. #}
+      <div class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
+        {# Même nombre que le rituel : cette page et Le Cap éditent le même
+           plan, elles ne peuvent pas proposer deux bases de répartition. #}
+        {% if month_resources %}
+        <p class="text-sm text-secondary">
+          {{ _("Ressources du mois :") }}
+          <span class="amount-blur text-primary font-semibold">{{ month_resources | eur }}</span>
+          {% if resources_from_cap %}
+          {{ _("— le montant fixé dans Le Cap.") }}
+          {% else %}
+          {{ _("— proposé d'après ton réglage, tant que le cap du mois n'est pas fixé.") }}
+          {% endif %}
+          · <a href="/settings" class="font-medium text-primary underline">{{ _("Changer la source des ressources") }}</a>
+        </p>
         {% else %}
-        {{ _("— proposé d'après votre réglage, tant que le cap du mois n'est pas fixé.") }}
+        <p class="text-sm text-secondary">
+          {% trans period_label=period_label %}Ressources de {{ period_label }} non définies.{% endtrans %}
+          <a href="/cap" class="font-medium text-primary underline">{{ _("Fixer le cap du mois →") }}</a>
+          {{ _("pour les poser, ou répartis librement ci-dessous.") }}
+        </p>
         {% endif %}
-      </p>
+
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-3 border-t border-border">
+          <div class="flex flex-col">
+            <label for="savings-withdrawal" class="text-sm font-semibold text-primary">{{ _("Prélèvement sur épargne prévu ce mois-ci") }}</label>
+            <p class="amount-blur text-xs text-secondary" x-show="available" style="display: none;">
+              {{ _("= Disponible à répartir :") }} <span class="font-semibold text-primary" x-text="fmt(available)"></span>
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" @click="bumpWithdrawal(-1)" aria-label="{{ _("Diminuer") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('minus') }}</button>
+            <span class="amount-blur inline-flex items-center gap-1 font-semibold tabular-nums text-primary">
+              <input
+                id="savings-withdrawal"
+                type="text"
+                inputmode="decimal"
+                name="savings_withdrawal"
+                value="{% if savings_withdrawal %}{{ '%.2f' % savings_withdrawal }}{% endif %}"
+                placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+                x-effect="document.activeElement === $el || ($el.value = fmt2(savingsWithdrawal))"
+                @input="savingsWithdrawal = num($event.target.value)"
+                @blur="$el.value = fmt2(savingsWithdrawal)"
+                class="h-[50px] w-[92px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums font-semibold hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+              />&euro;
+            </span>
+            <button type="button" @click="bumpWithdrawal(1)" aria-label="{{ _("Augmenter") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('plus') }}</button>
+          </div>
+        </div>
+      </div>
+
+      {% if categories %}
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="{{ _("Pas de réglage") }}">
+        <span class="text-sm text-secondary mr-1">{{ _("Pas de réglage") }}</span>
+        {% for value in (10, 50, 100) %}
+        <button
+          type="button"
+          @click="step = {{ value }}"
+          :aria-pressed="step === {{ value }}"
+          class="min-h-[50px] min-w-[64px] px-4 rounded-xl border border-border-strong bg-container text-primary text-sm font-medium aria-pressed:bg-accent-soft aria-pressed:border-accent-ink aria-pressed:text-accent-ink aria-pressed:font-semibold"
+        >{{ value }} €</button>
+        {% endfor %}
+      </div>
+
+      <div data-tour="budgets-groups" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5">
+        {% for group in groups %}
+        <section aria-labelledby="group-{{ group.code }}" class="flex flex-col">
+          <h2 id="group-{{ group.code }}" class="text-section-title pb-1">{{ group.label }}</h2>
+          {% for category in group.categories %}
+          {% set existing = budgets.get(category.id) %}
+          <div class="flex items-center justify-between gap-3 min-h-[56px] border-t border-border">
+            <div class="flex flex-col min-w-0">
+              <label for="amount-{{ category.id }}" class="text-sm font-medium text-primary [overflow-wrap:anywhere] lg:truncate">{{ category.icon or icon('tag', size=16) }} {{ category.name | category_display }}</label>
+              <span
+                class="text-xs text-secondary tabular-nums"
+                x-show="available"
+                style="display: none;"
+                x-text="pct({{ category.id }}).toFixed(0) + ' %'"
+              ></span>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button type="button" @click="bump({{ category.id }}, -1)" aria-label="{{ _("Diminuer") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('minus') }}</button>
+              <span class="amount-blur inline-flex items-center gap-1 font-semibold tabular-nums text-primary">
+                <input
+                  id="amount-{{ category.id }}"
+                  type="text"
+                  inputmode="decimal"
+                  name="amount_{{ category.id }}"
+                  value="{% if existing is not none %}{{ '%.2f' % existing }}{% endif %}"
+                  placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+                  x-effect="document.activeElement === $el || ($el.value = fmt2(amounts[{{ category.id }}]))"
+                  @input="amounts[{{ category.id }}] = num($event.target.value)"
+                  @blur="$el.value = fmt2(amounts[{{ category.id }}])"
+                  class="h-[50px] w-[76px] sm:w-[92px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums font-semibold hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+                />&euro;
+              </span>
+              <button type="button" @click="bump({{ category.id }}, 1)" aria-label="{{ _("Augmenter") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('plus') }}</button>
+            </div>
+          </div>
+          {% endfor %}
+        </section>
+        {% endfor %}
+        <p class="text-xs text-secondary">
+          {{ _("L'Imprévu (une réserve sans détail) et l'Épargne se fixent dans") }} <a href="/cap" class="font-medium text-primary underline">{{ _("Le Cap") }}</a>.
+          {{ _("Le pilier de chaque catégorie se règle dans") }} <a href="/categories" class="font-medium text-primary underline">{{ _("Catégories") }}</a>.
+        </p>
+      </div>
       {% else %}
-      <p class="text-sm text-secondary">
-        {{ icon('info-circle', size=16) }} {% trans period_label=period_label %}Ressources de {{ period_label }} non définies.{% endtrans %}
-        <a href="/cap" class="text-accent font-medium">{{ _("Fixer le cap du mois →") }}</a>
-        {{ _("pour les poser, ou répartissez librement ci-dessous.") }}
-      </p>
+      <p class="text-sm text-secondary text-center">{{ _("Aucune catégorie disponible.") }}</p>
       {% endif %}
-      <label class="flex items-center justify-between gap-2">
-        <span class="text-sm text-secondary">{{ icon('pig-money', size=16) }} {{ _("Prélèvement sur épargne prévu ce mois-ci") }}</span>
-        <input
-          type="text"
-          inputmode="decimal"
-          name="savings_withdrawal"
-          x-model.number="savingsWithdrawal"
-          value="{% if savings_withdrawal %}{{ '%.2f' % savings_withdrawal }}{% endif %}"
-          placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-          class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-page text-primary px-3"
-        />
-      </label>
-      <p class="text-sm font-medium text-primary border-t border-border pt-2" x-show="available" style="display: none;">
-        {{ _("= Disponible à répartir :") }} <span x-text="fmt(available)"></span>
-      </p>
     </div>
-
-    {% for category in categories %}
-    {% set existing = budgets.get(category.id) %}
-    <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex items-center justify-between gap-3">
-      <span class="text-primary font-medium">{{ category.icon or icon('tag', size=16) }} {{ category.name | category_display }}</span>
-      <div class="flex items-center gap-2">
-        <input
-          type="text"
-          inputmode="decimal"
-          name="amount_{{ category.id }}"
-          x-model.number="amounts[{{ category.id }}]"
-          value="{% if existing is not none %}{{ '%.2f' % existing }}{% endif %}"
-          placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-          class="w-28 text-right min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-        />
-        <span
-          class="text-xs text-secondary w-10 text-right flex-shrink-0"
-          x-show="available"
-          style="display: none;"
-          x-text="pct({{ category.id }}).toFixed(0) + ' %'"
-        ></span>
-      </div>
-    </div>
-    {% else %}
-    <p class="text-sm text-secondary text-center">{{ _("Aucune catégorie disponible.") }}</p>
-    {% endfor %}
 
     {% if categories %}
-    <div class="bg-page rounded-xl p-4 flex flex-col gap-1 border border-border">
-      <div class="flex items-center justify-between">
-        <span class="text-sm font-medium text-primary">{{ _("Total budgété") }}</span>
-        <span
-          class="text-sm font-semibold"
-          :class="totalPct > 100 ? 'text-danger' : (totalPct > 90 ? 'text-warning' : 'text-success')"
-          x-text="available ? fmt(total) + ' (' + totalPct.toFixed(0) + ' %)' : fmt(total)"
-        ></span>
+    <aside class="lg:sticky lg:top-4 flex flex-col gap-3">
+      <div class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
+        <div class="flex items-baseline justify-between gap-3">
+          <span class="text-sm text-secondary">{{ _("Total budgété") }}</span>
+          <span class="amount-blur text-sm font-semibold tabular-nums text-primary" x-text="fmt(total)"></span>
+        </div>
+        <div class="flex items-baseline justify-between gap-3 pt-3 border-t border-border" x-show="available" style="display: none;">
+          <span class="text-sm text-secondary">{{ _("Reste à répartir") }}</span>
+          <span
+            class="amount-blur text-amount-large tabular-nums"
+            :class="available - total >= 0 ? 'text-success' : 'text-danger'"
+            x-text="fmt(available - total)"
+          ></span>
+        </div>
+        <p class="text-xs font-semibold text-danger flex items-start gap-1.5" x-show="total > available" style="display: none;">
+          {{ icon('alert-triangle', size=16) }}
+          <span>{% trans period_label=period_label %}Le total dépasse les ressources de {{ period_label }}{% endtrans %}<span x-show="savingsWithdrawal" style="display: none;"> {{ _("+ le prélèvement sur épargne") }}</span>.</span>
+        </p>
+        <button type="submit" data-tour="budgets-save" class="btn btn-primary w-full">{{ _("Enregistrer") }}</button>
       </div>
-      <p class="text-xs text-secondary" x-show="available" style="display: none;" x-text="'{{ _("Reste à répartir : ") | jsq }}' + fmt(available - total)"></p>
-      <p class="text-xs text-danger font-medium" x-show="total > available" style="display: none;">
-        {{ icon('alert-triangle', size=16) }} {% trans period_label=period_label %}Le total dépasse les ressources de {{ period_label }}{% endtrans %}<span x-show="savingsWithdrawal" style="display: none;"> {{ _("+ le prélèvement sur épargne") }}</span>.
-      </p>
-    </div>
-    {% endif %}
-
-    {% if categories %}
-    <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      {{ _("Enregistrer") }}
-    </button>
+      <a href="/cap/mid" class="btn btn-secondary w-full justify-start">{{ _("Revenir à Mon mois") }}</a>
+    </aside>
     {% endif %}
   </form>
 

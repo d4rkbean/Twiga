@@ -1,300 +1,203 @@
-{% set state_include = "#backlog-search-input, #backlog-suggestion-filter" %}
+{% from "_macros/brand.html" import mascot %}
+{% from "backlog/_parts.html" import chips, visible_count, bulk_buttons, bulk_pair, last_message, sync %}
+{#
+  The list of operations to process: what htmx swaps into #backlog-list after
+  every filter change, "show more" or action. State (filters, selection) is held
+  by the Alpine component of index.html, not here.
+
+  When `oob` is true (an htmx response), the fragments that live elsewhere on
+  the page and depend on the filtered data are appended: see _parts.html.
+#}
+
+{# Rules suggested by the last filings: announced, not validated here (they are
+   saved and wait in the Rules page, where they are handled at leisure). #}
+{% if rule_suggestions %}
 <div
-  id="backlog-content"
-  class="flex flex-col gap-3"
-  x-data="{ selected: [], pageIds: [{{ items | map(attribute='transaction_id') | join(',') }}] }"
+  x-data="{ visible: true }"
+  x-init="setTimeout(() => visible = false, 8000)"
+  x-show="visible"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  class="rule-suggestion-popup m-3"
 >
-  <div class="flex items-center justify-between gap-2">
-    <p class="text-sm text-secondary">
-      {% trans total=total, v="s" if total != 1 else "" %}{{ total }} transaction{{ v }} à catégoriser{% endtrans %}
-    </p>
-    <p class="text-sm text-secondary">{% trans page=page, total_pages=total_pages %}Page {{ page }} / {{ total_pages }}{% endtrans %}</p>
-  </div>
+  <p class="text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
+    {{ icon('bulb') }}
+    {% trans rule_suggestions=rule_suggestions | length, rule_suggestions2="s" if rule_suggestions | length > 1 else "" %}{{ rule_suggestions }} règle{{ rule_suggestions2 }} proposée{{ rule_suggestions2 }} pour ces opérations.{% endtrans %}
+    <a href="/rules" class="font-semibold underline">{{ _("Les valider dans Règles") }} {{ icon('arrow-narrow-right', size=14) }}</a>
+  </p>
+</div>
+{% endif %}
 
-  <div class="flex flex-col gap-2">
-    <input
-      type="search"
-      id="backlog-search-input"
-      name="search"
-      value="{{ search }}"
-      placeholder="{{ _("Rechercher par libellé (ex : ORANGE)...") }}"
-      hx-get="/backlog/content"
-      hx-trigger="input changed delay:400ms, search"
-      hx-include="#backlog-suggestion-filter"
-      hx-vals='{"page": 1}'
-      hx-target="#backlog-content"
-      hx-swap="outerHTML"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    />
-    <select
-      id="backlog-suggestion-filter"
-      name="suggestion_filter"
-      hx-get="/backlog/content"
-      hx-trigger="change"
-      hx-include="#backlog-search-input"
-      hx-vals='{"page": 1}'
-      hx-target="#backlog-content"
-      hx-swap="outerHTML"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    >
-      <option value="all" {% if suggestion_filter == "all" %}selected{% endif %}>{{ _("Tous") }}</option>
-      <option value="none" {% if suggestion_filter == "none" %}selected{% endif %}>{{ _("Sans suggestion") }}</option>
-      <option value="high" {% if suggestion_filter == "high" %}selected{% endif %}>{{ _("Avec suggestion &gt; 90%%") }}</option>
-    </select>
-  </div>
-
-  {% if items %}
-  <label class="flex items-center gap-2 min-h-[50px] px-1">
-    <input
-      type="checkbox"
-      class="w-5 h-5"
-      @change="selected = $event.target.checked ? [...pageIds] : []"
-      :checked="pageIds.length > 0 && selected.length === pageIds.length"
-    />
-    <span class="text-sm text-secondary font-medium">{{ _("Tout sélectionner (cette page)") }}</span>
+{# Header: select all (the displayed rows), how many are displayed, group switch. #}
+<div class="flex flex-wrap items-center justify-between border-b border-border pr-4 lg:gap-x-4">
+  <label class="flex min-h-[50px] cursor-pointer items-center">
+    <span class="flex h-[50px] w-[50px] flex-none items-center justify-center">
+      <input
+        type="checkbox"
+        class="check-box"
+        aria-label="{{ _("Tout sélectionner") }}"
+        @change="toggleAll($event.target.checked)"
+        :checked="allSelected"
+      />
+    </span>
+    <span class="-ml-1.5 mr-2.5 text-sm text-primary">{{ _("Tout sélectionner") }}</span>
+    <span class="text-xs tabular-nums text-secondary">{% trans shown=rows | length, total=rows_total %}{{ shown }} sur {{ total }}{% endtrans %}</span>
   </label>
-  {% endif %}
-
-  {# Catégorisation de masse : on ANNONCE les règles proposées, on ne les
-     fait plus valider ici. Chaque validation groupée en produisait autant
-     qu'il y avait d'opérations, et elles s'empilaient à l'écran plus vite
-     qu'on ne pouvait les traiter — l'essentiel du travail passait donc à
-     la trappe. Elles sont désormais persistées (voir models.RuleSuggestion)
-     et attendent dans la page Règles, où on les traite quand on a le temps.
-     La Savane, elle, garde sa proposition immédiate : une carte à la fois,
-     c'est le bon moment pour décider. #}
-  {% if rule_suggestions %}
-  <div
-    x-data="{ visible: true }"
-    x-init="setTimeout(() => visible = false, 8000)"
-    x-show="visible"
-    x-transition:leave="transition ease-in duration-150"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0"
-    class="rule-suggestion-popup"
+  <button
+    type="button"
+    role="switch"
+    :aria-checked="group"
+    @click="toggleGroup()"
+    class="-mr-4 flex min-h-[50px] w-full items-center justify-between gap-2.5 border-t border-border px-4 text-sm text-primary lg:mr-0 lg:w-auto lg:border-t-0 lg:px-0"
   >
-    <p class="text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
-      {{ icon('bulb') }}
-      {% trans rule_suggestions=rule_suggestions | length, rule_suggestions2="s" if rule_suggestions | length > 1 else "" %}{{ rule_suggestions }} règle{{ rule_suggestions2 }} proposée{{ rule_suggestions2 }} pour ces opérations.{% endtrans %}
-      <a href="/rules" class="font-semibold underline">{{ _("Les valider dans Règles") }} {{ icon('arrow-narrow-right', size=14) }}</a>
-    </p>
-  </div>
-  {% endif %}
+    {{ _("Regrouper les libellés similaires") }}
+    <span class="relative h-[26px] w-11 flex-none rounded-full transition-colors" :class="group ? 'bg-accent' : 'bg-field'">
+      <span class="absolute top-0.5 h-[22px] w-[22px] rounded-full bg-container transition-all" :class="group ? 'left-[22px]' : 'left-0.5'"></span>
+    </span>
+  </button>
+</div>
 
-  {% if items %}
-  <div class="flex gap-2">
-    <form
-      hx-post="/backlog/bulk-validate"
-      hx-include="{{ state_include }}"
-      hx-target="#backlog-content"
-      hx-swap="outerHTML"
-      hx-confirm="{{ _("Valider toutes les suggestions à plus de 90%% de confiance sur cette page ?") }}"
-      class="flex-1"
-    >
-      <input type="hidden" name="min_confidence" value="90" />
-      <input type="hidden" name="page" value="{{ page }}" />
-      <button type="submit" class="w-full min-h-[50px] rounded-xl bg-success text-on-accent font-medium">
-        {{ icon('check') }} {{ _("Tout valider &gt; 90%%") }}
-      </button>
-    </form>
-    <form
-      hx-post="/backlog/bulk-reject"
-      hx-include="{{ state_include }}"
-      hx-target="#backlog-content"
-      hx-swap="outerHTML"
-      hx-confirm="{{ _("Rejeter toutes les suggestions à moins de 70%% de confiance sur cette page ?") }}"
-      class="flex-1"
-    >
-      <input type="hidden" name="max_confidence" value="70" />
-      <input type="hidden" name="page" value="{{ page }}" />
-      <button type="submit" class="w-full min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium">
-        {{ icon('x') }} {{ _("Tout rejeter &lt; 70%%") }}
-      </button>
-    </form>
-  </div>
-  {% endif %}
+{# Phones: the two bulk buttons sit above the rows (on a computer they are in the side panel). #}
+<div data-tour="backlog-bulk-pair" class="flex gap-2 border-b border-border px-4 py-3 lg:hidden">
+  {{ bulk_pair(counts, "flex-1") }}
+</div>
 
-  {% for item in items %}
-  {% set suggestion = item.suggestion %}
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-2">
-    <div class="flex items-start justify-between gap-2">
-      <div class="flex items-start gap-2 min-w-0">
+{% if rows %}
+<ul data-tour="backlog-row" class="flex flex-col">
+  {% for row in rows %}
+  {% set suggestion = row.suggestion %}
+  {% set klass = "high" if row.confidence is not none and row.confidence >= 90 else ("mid" if row.confidence is not none and row.confidence >= 70 else "low") %}
+  {% set ids = row.ids | join(",") %}
+  <li
+    data-row-ids="{{ ids }}"
+    class="border-b border-border py-2 pl-1 pr-4 last:border-b-0"
+    :class="rowSelected('{{ ids }}') ? 'bg-accent-soft' : ''"
+  >
+    <div class="grid grid-cols-[50px_minmax(0,1fr)_auto] items-start gap-y-1 lg:grid-cols-[50px_minmax(0,1fr)_auto_auto] lg:items-center lg:gap-x-2">
+      <label class="flex h-[50px] w-[50px] cursor-pointer items-center justify-center">
         <input
           type="checkbox"
-          name="selected_ids"
-          value="{{ item.transaction_id }}"
-          x-model.number="selected"
-          class="w-5 h-5 mt-1 flex-shrink-0"
+          class="check-box"
+          aria-label="{{ _("Sélectionner cette opération") }}"
+          @change="toggleRow('{{ ids }}', $event.target.checked)"
+          :checked="rowSelected('{{ ids }}')"
         />
-        <div class="flex flex-col min-w-0">
-          <span class="text-primary font-medium truncate">{{ item.label or _("(sans libellé)") }}</span>
-          <span class="text-xs text-secondary truncate">{{ item.date | fr_date }} · {{ item.account_name }}</span>
-          {% if suggestion %}
-          <span class="text-xs text-secondary truncate">{% trans based_on_label=suggestion.based_on_label %}Basé sur : "{{ based_on_label }}"{% endtrans %}</span>
+      </label>
+
+      <div class="min-w-0 pt-0.5 lg:py-1">
+        <div class="flex items-baseline gap-2">
+          <span class="truncate font-semibold text-primary">{{ row.label or _("(sans libellé)") }}</span>
+          {% if row.count > 1 %}<span class="text-secondary">×{{ row.count }}</span>{% endif %}
+        </div>
+        <div class="text-xs text-secondary">
+          {% if row.count == 1 %}
+          {{ row['items'][0].date | short_date }} · {{ row['items'][0].account_name }}
+          {% else %}
+          {% trans n=row.count %}{{ n }} opération{% pluralize %}{{ n }} opérations{% endtrans %} · {{ row['items'] | map(attribute="date") | map("short_date") | join(", ") }}
           {% endif %}
         </div>
-      </div>
-      <span class="{{ 'text-success' if item.amount > 0 else 'text-danger' }} font-bold whitespace-nowrap">
-        {{ "+" if item.amount > 0 else "" }}{{ item.amount | eur }}
-      </span>
-    </div>
-
-    <div id="backlog-row-actions-{{ item.transaction_id }}" class="flex flex-col gap-2">
-      <div class="flex items-center gap-2 min-h-[28px]">
         {% if suggestion %}
-        <span class="flex items-center gap-1 text-sm flex-wrap">
-          <span
-            class="inline-block w-2 h-2 rounded-full flex-shrink-0"
-            style="background-color: {{ suggestion.category_id | category_color }}"
-          ></span>
-          <span class="text-primary">{{ suggestion.category_icon or "" }} {{ suggestion.category_name }}</span>
-          <span
-            class="{{ 'text-success' if suggestion.confidence >= 85 else ('text-warning' if suggestion.confidence >= 70 else 'text-danger') }} font-semibold"
-          >
-            {{ suggestion.confidence }}%
-            {{ icon('circle-check', size=16) if suggestion.confidence >= 85 else icon('alert-triangle', size=16) }}
+        <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span class="flex min-w-0 items-start gap-2">
+            <span class="mt-[7px] h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ suggestion.category_top_id | category_color }}" aria-hidden="true"></span>
+            <span class="text-primary">{{ suggestion.category_path }}</span>
           </span>
-        </span>
+          <span
+            class="badge {{ 'badge-positive' if klass == 'high' else ('badge-warning' if klass == 'mid' else 'badge-negative') }} font-semibold"
+            title="{% trans based_on_label=suggestion.based_on_label %}Basé sur : « {{ based_on_label }} »{% endtrans %}"
+          >
+            {{ row.confidence }} % · {{ _("sûre") if klass == "high" else (_("probable") if klass == "mid" else _("incertaine")) }}
+          </span>
+        </div>
         {% else %}
-        <span class="text-sm text-secondary">{{ _("Aucune suggestion") }}</span>
+        <div class="mt-1.5 text-sm text-secondary">{{ _("Sans suggestion, choisis une catégorie.") }}</div>
         {% endif %}
       </div>
 
-      <div class="flex gap-2">
+      <span class="amount-blur whitespace-nowrap pl-2 pt-0.5 text-right font-semibold tabular-nums text-primary lg:min-w-[92px] lg:pt-0">
+        {{ "+" if row.amount > 0 else "" }}{{ row.amount | eur }}
+      </span>
+
+      {% set pick_title %}{% trans label=row.label %}Ranger « {{ label }} » dans…{% endtrans %}{% endset %}
+      <div class="col-span-2 col-start-2 flex gap-1.5 lg:col-span-1 lg:col-start-4 lg:row-start-1">
         {% if suggestion %}
-        <form
-          hx-post="/backlog/{{ item.transaction_id }}/validate"
-          hx-include="{{ state_include }}"
-          hx-target="#backlog-content"
-          hx-swap="outerHTML"
-          class="flex-1"
-        >
-          <input type="hidden" name="category_id" value="{{ suggestion.category_id }}" />
-          <input type="hidden" name="page" value="{{ page }}" />
-          <button
-            type="submit"
-            aria-label="{{ _("Valider la suggestion") }}"
-            class="w-full min-h-[50px] rounded-xl bg-success text-on-accent font-semibold text-lg"
-          >
-            {{ icon('check') }}
-          </button>
-        </form>
-        {% endif %}
-        <form
-          hx-post="/backlog/{{ item.transaction_id }}/reject"
-          hx-include="{{ state_include }}"
-          hx-target="#backlog-content"
-          hx-swap="outerHTML"
-          class="flex-1"
-        >
-          <input type="hidden" name="page" value="{{ page }}" />
-          <button
-            type="submit"
-            aria-label="{{ _("Rejeter la suggestion") }}"
-            class="w-full min-h-[50px] rounded-xl bg-container border border-border text-danger font-semibold text-lg"
-          >
-            {{ icon('x') }}
-          </button>
-        </form>
         <button
           type="button"
-          hx-get="/backlog/{{ item.transaction_id }}/category-select"
-          hx-vals='{"page": {{ page }}}'
-          hx-target="#backlog-row-actions-{{ item.transaction_id }}"
+          hx-post="/backlog/validate"
+          hx-vals='{"ids": "{{ ids }}"}'
+          hx-include="#backlog-form"
+          hx-target="#backlog-list"
           hx-swap="innerHTML"
-          aria-label="{{ _("Changer la catégorie") }}"
-          class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-semibold text-lg"
+          aria-label="{% trans label=row.label, path=suggestion.category_path %}Ranger {{ label }} dans {{ path }}{% endtrans %}"
+          class="btn btn-secondary flex-1 border-border-strong lg:w-[50px] lg:flex-none lg:px-0"
         >
-          ?
+          {{ icon('check') }}<span class="lg:sr-only">{{ _("Ranger") }}</span>
+        </button>
+        {% else %}
+        <button
+          type="button"
+          data-pick-title="{{ pick_title }}"
+          @click="openPick('{{ ids }}', $el.dataset.pickTitle)"
+          aria-label="{% trans label=row.label %}Choisir une catégorie pour {{ label }}{% endtrans %}"
+          class="btn btn-secondary flex-1 border-border-strong lg:w-[50px] lg:flex-none lg:px-0"
+        >
+          {{ icon('check') }}<span class="lg:sr-only">{{ _("Ranger") }}</span>
+        </button>
+        {% endif %}
+        <button
+          type="button"
+          hx-post="/backlog/reject"
+          hx-vals='{"ids": "{{ ids }}"}'
+          hx-include="#backlog-form"
+          hx-target="#backlog-list"
+          hx-swap="innerHTML"
+          aria-label="{{ _("Écarter la suggestion") }}"
+          class="btn btn-secondary flex-1 border-border-strong lg:w-[50px] lg:flex-none lg:px-0"
+        >
+          {{ icon('x') }}<span class="lg:sr-only">{{ _("Écarter") }}</span>
+        </button>
+        <button
+          type="button"
+          data-pick-title="{{ pick_title }}"
+          @click="openPick('{{ ids }}', $el.dataset.pickTitle)"
+          aria-label="{{ _("Choisir une autre catégorie") }}"
+          class="btn btn-secondary w-[50px] flex-none border-border-strong px-0"
+        >
+          {{ icon('tag') }}
         </button>
       </div>
     </div>
-  </div>
-  {% else %}
-  <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center">{{ icon('confetti') }} {{ _("Backlog vide — tout est catégorisé !") }}</p>
-  </div>
+  </li>
   {% endfor %}
-
-  {% if items %}
-  <div class="flex items-center justify-between gap-2 pt-2">
-    <button
-      type="button"
-      hx-get="/backlog/content"
-      hx-vals='{"page": {{ page - 1 }}}'
-      hx-include="{{ state_include }}"
-      hx-target="#backlog-content"
-      hx-swap="outerHTML"
-      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4 disabled:opacity-50"
-      {% if page <= 1 %}disabled{% endif %}
-    >
-      {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
-    </button>
-    <span class="text-sm text-secondary">{% trans page=page, total_pages=total_pages %}Page {{ page }} / {{ total_pages }}{% endtrans %}</span>
-    <button
-      type="button"
-      hx-get="/backlog/content"
-      hx-vals='{"page": {{ page + 1 }}}'
-      hx-include="{{ state_include }}"
-      hx-target="#backlog-content"
-      hx-swap="outerHTML"
-      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium px-4 disabled:opacity-50"
-      {% if page >= total_pages %}disabled{% endif %}
-    >
-      {{ _("Suivant") }} {{ icon('arrow-narrow-right') }}
-    </button>
-  </div>
+</ul>
+{% else %}
+<div class="flex flex-col items-center gap-2 px-6 py-10 text-center">
+  {{ mascot('done', 96) }}
+  {% if pending_total == 0 %}
+  <h2 class="mt-2 font-display text-[26px] font-extrabold tracking-tight text-primary">{{ _("Twiga a tout brouté !") }}</h2>
+  <p class="text-secondary">{{ _("Toutes les suggestions sont rangées.") }}</p>
+  {% else %}
+  <h2 class="mt-2 font-display text-[26px] font-extrabold tracking-tight text-primary">{{ _("Rien à traiter ici") }}</h2>
+  <p class="text-secondary">{{ _("Aucune opération ne correspond à ces filtres.") }}</p>
   {% endif %}
-
-  <div
-    x-show="selected.length >= 2"
-    x-transition
-    style="display: none;"
-    class="fixed bottom-16 inset-x-0 z-20 flex justify-center px-4"
-  >
-    <div class="w-full max-w-lg bg-container border border-border rounded-xl shadow-lg p-3 flex flex-col gap-2">
-      <p class="text-sm font-semibold text-primary text-center">
-        <span x-text="selected.length"></span> {{ _("transactions sélectionnées") }}
-      </p>
-      <select
-        id="bulk-parent-category"
-        name="parent_category_id"
-        hx-get="/transactions/subcategories?field_name=category_id&element_id=bulk-subcategory-select&allow_empty=false"
-        hx-target="#bulk-subcategory-select"
-        hx-swap="outerHTML"
-        hx-trigger="change"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      >
-        <option value="" selected disabled>{{ _("Catégorie...") }}</option>
-        {% for category in parent_categories %}
-        <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
-        {% endfor %}
-      </select>
-      {% with parent = none, subcategories = [], selected_category_id = none, field_name = "category_id", element_id = "bulk-subcategory-select", allow_empty = false %}
-      {% include "transactions/_subcategory_select.html" %}
-      {% endwith %}
-      <select
-        id="bulk-payment-method"
-        name="payment_method"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      >
-        <option value="">{{ _("Mode de paiement (optionnel)") }}</option>
-        {% for code, meta in payment_methods.items() %}
-        <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
-        {% endfor %}
-      </select>
-      <button
-        type="button"
-        hx-post="/backlog/bulk-apply"
-        hx-include="[name='selected_ids'], #bulk-subcategory-select, #bulk-payment-method, {{ state_include }}"
-        hx-vals='{"page": {{ page }}}'
-        hx-target="#backlog-content"
-        hx-swap="outerHTML"
-        hx-confirm="{{ _("Appliquer ces modifications aux opérations sélectionnées ?") }}"
-        class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
-      >
-        {{ icon('check') }} {{ _("Appliquer") }}
-      </button>
-    </div>
-  </div>
+  <a href="/transactions/inbox" class="btn btn-secondary mt-2 border-border-strong px-5">{{ _("Retour à La Savane") }}</a>
 </div>
+{% endif %}
+
+{% if remaining %}
+<div class="flex justify-center p-2">
+  <button type="button" @click="showMore()" class="btn btn-secondary border-border-strong px-5">
+    {% trans n=remaining %}Afficher les {{ n }} suivantes{% endtrans %}
+  </button>
+</div>
+{% endif %}
+
+{% if oob %}
+{{ chips(counts, true) }}
+{{ visible_count(visible_total, true) }}
+{{ bulk_buttons(counts, true) }}
+{{ last_message(last, "d", "mt-3.5 hidden border-t border-border pt-3.5 lg:block", true) }}
+{{ last_message(last, "m", "lg:hidden", true) }}
+{{ sync(rows, visible_ids, true) }}
+{% endif %}

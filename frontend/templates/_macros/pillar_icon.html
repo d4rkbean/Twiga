@@ -1,0 +1,11 @@
+{#
+  Icône Tabler d'un pilier du Cap (essentiel, choix, imprévu), à la place des
+  pictogrammes emoji de backend/pillars.py : les emoji restent réservés aux
+  icônes de catégorie saisies par l'utilisateur.
+
+    {% from "_macros/pillar_icon.html" import pillar_icon %}
+    {{ pillar_icon("essentiel") }}
+#}
+{% macro pillar_icon(key, size=18, cls="") -%}
+{{ icon({"essentiel": "home", "choix": "star", "imprevu": "urgent", "savings": "pig-money"}.get(key, "star"), size=size, cls=cls) }}
+{%- endmacro %}

@@ -1,189 +1,134 @@
-<form
-  hx-post="/transactions/{{ transaction.id }}/update?{{ filter_qs }}"
-  hx-target="#transactions-content"
-  hx-swap="innerHTML"
-  hx-on:htmx:after-request="if(event.target === this && event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
-  class="flex flex-col gap-4 p-6"
->
-  <h2 class="text-xl font-bold text-primary">{{ _("Modifier l'opération") }}</h2>
-
-  <div class="flex flex-col gap-2 rounded-xl border-2 border-accent p-3">
-    <label class="flex flex-col gap-1">
-      <span class="text-sm font-semibold text-accent flex items-center gap-1" >{{ icon('edit', size=16) }}{{ _("Libellé simplifié") }}</span>
-      <input
-        type="text"
-        name="label"
-        required
-        value="{{ transaction.label }}"
-        class="text-lg font-medium min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      />
-    </label>
-    {% if transaction.raw_label != transaction.label %}
-    <p class="text-xs text-secondary break-words">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>
-    {% endif %}
+{#
+  The detail of an operation, read view (the panel on the right of the list on
+  a computer, a bottom sheet on a phone). The edit form is `_edit.html`, opened
+  by "Modifier l'opération". Quick gestures save at once: the "unexpected
+  expense" switch, the note (when the field loses focus), "Change the category".
+#}
+{% set category = transaction.category %}
+<div class="flex flex-col gap-3.5 p-5 pt-2 lg:pt-5">
+  <div class="-mr-3 flex justify-end lg:hidden">
+    <button type="button" onclick="window.closeTransactionDetail()" aria-label="{{ _("Fermer") }}" class="flex h-[50px] w-[50px] items-center justify-center text-primary">{{ icon('x') }}</button>
   </div>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Catégorie") }}</span>
-    <select
-      name="parent_category_id"
-      hx-get="/transactions/subcategories"
-      hx-target="#subcategory-select"
-      hx-swap="outerHTML"
-      hx-trigger="change"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    >
-      <option value="">{{ _("Non catégorisé") }}</option>
-      {% for category in parent_categories %}
-      <option value="{{ category.id }}" {% if category.id == current_parent_id %}selected{% endif %}>
-        {{ category.icon or "" }} {{ category.name }}
-      </option>
-      {% endfor %}
-    </select>
-  </label>
+  <p class="text-xs text-secondary first-letter:uppercase">{{ transaction.date | long_date }}</p>
+  <h2 class="-mt-2 font-display text-[26px] font-extrabold leading-[1.15] tracking-tight text-primary">{{ transaction.label or _("(sans libellé)") }}</h2>
+  {# The sign says the verdict; the colour only doubles it. #}
+  <p class="amount-blur text-[38px] font-extrabold leading-none tabular-nums {{ 'text-danger' if transaction.amount < 0 else 'text-success' }}">
+    {{ "+" if transaction.amount > 0 else "" }}{{ transaction.amount | eur }}
+  </p>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Sous-catégorie") }}</span>
-    {% include "transactions/_subcategory_select.html" %}
-  </label>
+  <dl class="grid grid-cols-[auto_1fr] items-start gap-x-4 gap-y-3 text-sm">
+    <dt class="text-xs text-secondary">{{ _("Compte") }}</dt>
+    <dd class="flex items-center justify-end gap-2 text-right">
+      <span class="h-2 w-2 flex-none rounded-full" style="background-color: {{ transaction.account | account_color }}" aria-hidden="true"></span>
+      {{ transaction.account.name }}
+    </dd>
+    <dt class="text-xs text-secondary">{{ _("Catégorie") }}</dt>
+    <dd class="flex flex-wrap items-center justify-end gap-1.5 text-right">
+      {% if category %}
+      <span>{{ category.parent.name ~ " › " ~ category.name if category.parent else category.name }}</span>
+      {% else %}
+      <span class="badge badge-neutral font-semibold">{{ _("À trier") }}</span>
+      {% endif %}
+      {% if transaction.is_transfer %}<span class="badge badge-neutral">{{ icon('repeat', size=12) }}{{ _("Virement") }}</span>{% endif %}
+    </dd>
+    <dt class="text-xs text-secondary">{{ _("Mode de paiement") }}</dt>
+    <dd class="text-right">{{ (transaction.payment_method | pm_label) if transaction.payment_method else _("— (non défini)") }}</dd>
+    <dt class="text-xs text-secondary">{{ _("Libellé bancaire") }}</dt>
+    <dd class="break-words text-right font-mono text-xs [overflow-wrap:anywhere]">{{ transaction.raw_label }}</dd>
+  </dl>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Mode de paiement") }}</span>
-    <select
-      name="payment_method"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    >
-      <option value="" {% if not transaction.payment_method %}selected{% endif %}>{{ _("— (non défini)") }}</option>
-      {% for code, meta in payment_methods.items() %}
-      <option value="{{ code }}" {% if transaction.payment_method == code %}selected{% endif %}>
-        {{ meta.icon }} {{ meta.label }}
-      </option>
-      {% endfor %}
-    </select>
-  </label>
+  <button
+    type="button"
+    role="switch"
+    aria-checked="{{ 'true' if transaction.is_unexpected else 'false' }}"
+    hx-post="/transactions/{{ transaction.id }}/set-unexpected?{{ filter_qs }}"
+    hx-vals='{"value": "{{ 0 if transaction.is_unexpected else 1 }}"}'
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    class="flex min-h-[50px] w-full items-center justify-between gap-3 text-left text-sm text-primary"
+  >
+    {{ _("Dépense imprévue") }}
+    <span class="relative h-[26px] w-11 flex-none rounded-full {{ 'bg-accent' if transaction.is_unexpected else 'bg-field' }}">
+      <span class="absolute top-0.5 h-[22px] w-[22px] rounded-full bg-container {{ 'left-[22px]' if transaction.is_unexpected else 'left-0.5' }}"></span>
+    </span>
+  </button>
 
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Compte") }}</span>
-    <select
-      name="account_id"
-      required
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    >
-      {% for account in accounts %}
-      <option value="{{ account.id }}" {% if account.id == transaction.account_id %}selected{% endif %}>
-        {{ account.name }}
-      </option>
-      {% endfor %}
-    </select>
-  </label>
-
-  <label class="flex items-center gap-2 min-h-[50px]">
-    <input
-      type="checkbox"
-      name="is_transfer"
-      {% if transaction.is_transfer %}checked{% endif %}
-      class="w-5 h-5"
-    />
-    <span class="text-sm text-primary flex items-center gap-1" >{{ icon('repeat', size=16) }}{{ _("Virement interne entre comptes") }}</span>
-  </label>
-
-  <label class="flex items-center gap-2 min-h-[50px]">
-    <input
-      type="checkbox"
-      name="is_unexpected"
-      {% if transaction.is_unexpected %}checked{% endif %}
-      class="w-5 h-5"
-    />
-    <span class="text-sm text-primary flex items-center gap-1" >{{ icon('urgent', size=16) }}{{ _("Dépense imprévue") }}</span>
-  </label>
-
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Montant") }}</span>
-    <div class="flex gap-2">
-      <button
-        type="button"
-        aria-label="{{ _("Inverser le signe (dépense / recette)") }}"
-        onclick="var i=this.nextElementSibling; var v=i.value.trim(); i.value = v.startsWith('-') ? v.slice(1) : ('-' + v); i.focus();"
-        class="min-h-[50px] w-14 flex-shrink-0 rounded-xl border border-border bg-container text-primary text-2xl font-bold"
-      >
-        ±
-      </button>
-      <input
-        type="text"
-        inputmode="decimal"
-        name="amount"
-        required
-        value="{{ '%.2f' % transaction.amount }}"
-        class="flex-1 min-w-0 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      />
-    </div>
-  </label>
-
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary">{{ _("Date") }}</span>
-    <input
-      type="date"
-      name="date"
-      required
-      value="{{ transaction.date.isoformat() }}"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    />
-  </label>
-
-  <label class="flex flex-col gap-1">
-    <span class="text-sm text-secondary flex items-center gap-1" >{{ icon('note', size=16) }}{{ _("Note") }}</span>
+  <div class="form-group">
+    <label for="detail-note" class="form-label text-primary">{{ _("Note") }}</label>
     <textarea
+      id="detail-note"
       name="note"
-      rows="2"
-      placeholder="{{ _("Remboursement Pierre...") }}"
-      class="rounded-xl border border-border bg-container text-primary px-3 py-2"
+      rows="3"
+      placeholder="{{ _("Ajouter une note") }}"
+      hx-post="/transactions/{{ transaction.id }}/set-note?{{ filter_qs }}"
+      hx-trigger="change"
+      hx-target="#transactions-content"
+      hx-swap="innerHTML"
+      class="input-base py-2"
     >{{ transaction.note or "" }}</textarea>
-  </label>
+  </div>
 
-  <div class="flex flex-col gap-2">
-    <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
-      {{ _("Enregistrer") }}
+  {% include "transactions/_receipt.html" %}
+
+  <div x-data="{ open: false }" class="flex flex-col gap-1">
+    <button type="button" @click="open = !open" :aria-expanded="open" class="btn btn-secondary w-full border-border-strong">
+      {{ icon('tag') }} {{ _("Changer la catégorie") }}
     </button>
+    <div x-show="open" style="display: none;" class="max-h-[340px] overflow-y-auto rounded-xl border border-border">
+      {% for parent in parent_categories %}
+      {% set color = parent.id | category_color %}
+      {% if parent.children %}
+      <button type="button" hx-post="/transactions/{{ transaction.id }}/set-category?{{ filter_qs }}" hx-vals='{"category_id": "{{ parent.id }}"}' hx-target="#transactions-content" hx-swap="innerHTML" class="flex min-h-[50px] w-full items-center gap-2.5 border-b border-border px-3.5 text-left text-sm last:border-b-0">
+        <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ color }}" aria-hidden="true"></span>
+        {% trans name=parent.name %}{{ name }} (général){% endtrans %}
+      </button>
+      {% for child in parent.children %}
+      <button type="button" hx-post="/transactions/{{ transaction.id }}/set-category?{{ filter_qs }}" hx-vals='{"category_id": "{{ child.id }}"}' hx-target="#transactions-content" hx-swap="innerHTML" class="flex min-h-[50px] w-full items-center gap-2.5 border-b border-border px-3.5 text-left text-sm last:border-b-0">
+        <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ color }}" aria-hidden="true"></span>
+        {{ parent.name }} › {{ child.name }}
+      </button>
+      {% endfor %}
+      {% else %}
+      <button type="button" hx-post="/transactions/{{ transaction.id }}/set-category?{{ filter_qs }}" hx-vals='{"category_id": "{{ parent.id }}"}' hx-target="#transactions-content" hx-swap="innerHTML" class="flex min-h-[50px] w-full items-center gap-2.5 border-b border-border px-3.5 text-left text-sm last:border-b-0">
+        <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ color }}" aria-hidden="true"></span>
+        {{ parent.name }}
+      </button>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if not transaction.validated %}
+  <a href="/transactions/inbox" class="btn btn-primary w-full">{{ icon('inbox') }} {{ _("Ranger dans La Savane") }}</a>
+  {% endif %}
+
+  <div class="flex flex-col gap-2 border-t border-border pt-3.5">
     <button
       type="button"
-      onclick="this.closest('dialog').close()"
-      class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
-    >
-      {{ _("Annuler") }}
-    </button>
+      hx-get="/transactions/{{ transaction.id }}/edit?{{ filter_qs }}"
+      hx-target="#transaction-detail-content"
+      hx-swap="innerHTML"
+      class="btn btn-secondary w-full border-border-strong"
+    >{{ _("Modifier l'opération") }}</button>
+    {% if transaction.validated %}
+    <button
+      type="button"
+      hx-post="/transactions/{{ transaction.id }}/unvalidate?{{ filter_qs }}"
+      hx-target="#transactions-content"
+      hx-swap="innerHTML"
+      hx-confirm="{{ _("Remettre cette opération dans La Savane pour la recatégoriser ?") }}"
+      class="btn btn-secondary w-full border-border-strong"
+    >{{ icon('arrow-back-up') }} {{ _("Remettre dans La Savane (non validée)") }}</button>
+    {% endif %}
+    <button
+      type="button"
+      hx-post="/transactions/{{ transaction.id }}/delete?{{ filter_qs }}"
+      hx-target="#transactions-content"
+      hx-swap="innerHTML"
+      hx-confirm="{{ _("Supprimer définitivement cette opération ?") }}"
+      hx-on:htmx:after-request="if (event.detail.successful) window.closeTransactionDetail()"
+      class="btn btn-danger w-full"
+    >{{ icon('trash') }} {{ _("Supprimer cette transaction") }}</button>
   </div>
-</form>
-
-<div class="px-6">
-  {% include "transactions/_receipt.html" %}
 </div>
-
-{% if transaction.validated %}
-<form
-  hx-post="/transactions/{{ transaction.id }}/unvalidate?{{ filter_qs }}"
-  hx-target="#transactions-content"
-  hx-swap="innerHTML"
-  hx-on:htmx:after-request="if(event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
-  class="px-6"
->
-  <button
-    type="submit"
-    class="min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium w-full"
-  >
-    {{ icon('arrow-back-up') }} {{ _("Remettre dans La Savane (non validée)") }}
-  </button>
-</form>
-{% endif %}
-
-<form
-  hx-post="/transactions/{{ transaction.id }}/delete?{{ filter_qs }}"
-  hx-target="#transactions-content"
-  hx-swap="innerHTML"
-  hx-confirm="{{ _("Supprimer définitivement cette opération ?") }}"
-  hx-on:htmx:after-request="if(event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
-  class="px-6 pb-6 pt-2"
->
-  <button type="submit" class="min-h-[50px] rounded-xl text-danger font-medium w-full">
-    {{ icon('trash') }} {{ _("Supprimer cette transaction") }}
-  </button>
-</form>

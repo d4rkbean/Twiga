@@ -3,59 +3,62 @@
   hx-post="/rules/{{ rule.id }}/update"
   hx-target="#rules-content"
   hx-swap="outerHTML"
-  class="bg-container rounded-xl shadow-sm border-2 border-accent p-4 flex flex-col gap-3"
+  class="border-t border-border bg-sunken/50 px-4 lg:px-6 py-4 flex flex-col gap-3"
 >
-  <input
-    type="text"
-    name="keyword"
-    value="{{ rule.keyword }}"
-    required
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-  />
-  <select
-    name="parent_category_id"
-    required
-    hx-get="/transactions/subcategories?field_name=category_id&element_id=edit-rule-subcategory-{{ rule.id }}&allow_empty=false"
-    hx-target="#edit-rule-subcategory-{{ rule.id }}"
-    hx-swap="outerHTML"
-    hx-trigger="change"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-  >
-    <option value="" disabled>{{ _("Choisir une catégorie...") }}</option>
-    {% for category in parent_categories %}
-    <option value="{{ category.id }}" {% if category.id == current_parent_id %}selected{% endif %}>
-      {{ category.icon or "" }} {{ category.name }}
-    </option>
-    {% endfor %}
-  </select>
-  {% with field_name = "category_id", element_id = "edit-rule-subcategory-" ~ rule.id, allow_empty = false %}
-  {% include "transactions/_subcategory_select.html" %}
-  {% endwith %}
-  <select
-    name="payment_method"
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-  >
-    <option value="" {% if not rule.payment_method %}selected{% endif %}>{{ _("Mode de paiement (optionnel)") }}</option>
-    {% for code, meta in payment_methods.items() %}
-    <option value="{{ code }}" {% if rule.payment_method == code %}selected{% endif %}>{{ meta.icon }} {{ meta.label }}</option>
-    {% endfor %}
-  </select>
-  <div class="flex flex-col gap-1">
-    <select
-      name="receipt_family"
-      class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    >
-      <option value="" {% if not rule.receipt_family %}selected{% endif %}>{{ _("Rayon de ticket auto (optionnel)") }}</option>
-      {% for code, icon, label in receipt_families %}
-      <option value="{{ code }}" {% if rule.receipt_family == code %}selected{% endif %}>{{ icon }} {{ label }}</option>
-      {% endfor %}
-    </select>
-    <p class="text-xs text-secondary px-1">
-      {{ _("Pour un commerce à famille de produit unique (boulangerie...) : ajoute automatiquement une ligne de ticket couvrant tout le montant — uniquement pris en compte si la catégorie choisie ci-dessus est Courses.") }}
-    </p>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+    <label class="form-group">
+      <span class="form-label">{{ _("Mot-clé (ex : CARREFOUR)") }}</span>
+      <input type="text" name="keyword" value="{{ rule.keyword }}" required class="input-base" />
+    </label>
+    <label class="form-group">
+      <span class="form-label">{{ _("Catégorie") }}</span>
+      <span class="select-field"><select
+        name="parent_category_id"
+        required
+        hx-get="/transactions/subcategories?field_name=category_id&element_id=edit-rule-subcategory-{{ rule.id }}&allow_empty=false"
+        hx-target="#edit-rule-subcategory-{{ rule.id }}"
+        hx-swap="outerHTML"
+        hx-trigger="change"
+        class="input-base"
+      >
+        <option value="" disabled>{{ _("Choisir une catégorie...") }}</option>
+        {% for category in parent_categories %}
+        <option value="{{ category.id }}" {% if category.id == current_parent_id %}selected{% endif %}>
+          {{ category.icon or "" }} {{ category.name }}
+        </option>
+        {% endfor %}
+      </select></span>
+    </label>
+    <div class="form-group">
+      <span class="form-label">{{ _("Sous-catégorie") }}</span>
+      {% with field_name = "category_id", element_id = "edit-rule-subcategory-" ~ rule.id, allow_empty = false %}
+      {% include "transactions/_subcategory_select.html" %}
+      {% endwith %}
+    </div>
+    <label class="form-group">
+      <span class="form-label">{{ _("Mode de paiement (optionnel)") }}</span>
+      <span class="select-field"><select name="payment_method" class="input-base">
+        <option value="" {% if not rule.payment_method %}selected{% endif %}>{{ _("Mode de paiement (optionnel)") }}</option>
+        {% for code, meta in payment_methods.items() %}
+        <option value="{{ code }}" {% if rule.payment_method == code %}selected{% endif %}>{{ meta.label }}</option>
+        {% endfor %}
+      </select></span>
+    </label>
   </div>
+  <label class="form-group">
+    <span class="form-label">{{ _("Rayon de ticket auto (optionnel)") }}</span>
+    <span class="select-field"><select name="receipt_family" class="input-base">
+      <option value="" {% if not rule.receipt_family %}selected{% endif %}>{{ _("Rayon de ticket auto (optionnel)") }}</option>
+      {% for code, family_icon, label in receipt_families %}
+      <option value="{{ code }}" {% if rule.receipt_family == code %}selected{% endif %}>{{ family_icon }} {{ label }}</option>
+      {% endfor %}
+    </select></span>
+    <span class="input-hint">
+      {{ _("Pour un commerce à famille de produit unique (boulangerie...) : ajoute automatiquement une ligne de ticket couvrant tout le montant — uniquement pris en compte si la catégorie choisie ci-dessus est Courses.") }}
+    </span>
+  </label>
   <div class="flex gap-2">
-    <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+    <button type="submit" class="btn btn-primary flex-1 lg:flex-none lg:px-8">
       {{ _("Enregistrer") }}
     </button>
     <button
@@ -63,7 +66,7 @@
       hx-get="/rules/{{ rule.id }}/row"
       hx-target="#rule-row-{{ rule.id }}"
       hx-swap="outerHTML"
-      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      class="btn btn-secondary border-border-strong flex-1 lg:flex-none lg:px-8"
     >
       {{ _("Annuler") }}
     </button>

@@ -3,18 +3,19 @@
   hx-post="/categories/{{ category.id }}/update"
   hx-target="#categories-content"
   hx-swap="outerHTML"
-  class="rounded-xl border-2 border-accent p-3 flex flex-col gap-2 {{ 'pl-6' if is_child else '' }}"
+  class="px-4 lg:px-6 py-3 border-t border-border bg-sunken/50 {{ 'pl-8 lg:pl-14' if is_child else '' }} flex flex-col gap-2 lg:flex-row lg:items-center"
 >
   <input
     type="text"
     name="name"
     value="{{ category.name }}"
+    aria-label="{{ _("Nom de la catégorie") }}"
     required
     autofocus
-    class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    class="input-base lg:flex-1"
   />
   <div class="flex gap-2">
-    <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+    <button type="submit" class="btn btn-primary flex-1 lg:flex-none lg:px-8">
       {{ _("Enregistrer") }}
     </button>
     <button
@@ -22,7 +23,7 @@
       hx-get="/categories/{{ category.id }}/row?is_child={{ 'true' if is_child else 'false' }}"
       hx-target="#category-row-{{ category.id }}"
       hx-swap="outerHTML"
-      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      class="btn btn-secondary border-border-strong flex-1 lg:flex-none lg:px-8"
     >
       {{ _("Annuler") }}
     </button>

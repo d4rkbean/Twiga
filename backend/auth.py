@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 import secrets
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -82,37 +83,174 @@ def verify_password(db: "Session", username: str, password: str) -> "User | None
     return user
 
 
-def create_session_token(user: "User") -> str:
-    return _serializer.dumps({"user_id": user.id, "pwv": _password_fingerprint(user.hashed_password)})
+def create_session_token(user: "User", sid: str | None = None) -> str:
+    # Signed cookie value. `sid` is the secret session id whose SHA-256 is kept in
+    # user_sessions (see open_session); without it the token is the stateless
+    # format issued before that table existed ("legacy"), which authenticate_session
+    # converts into a session the first time it is presented.
+    payload = {"user_id": user.id, "pwv": _password_fingerprint(user.hashed_password)}
+    if sid is not None:
+        payload["sid"] = sid
+    return _serializer.dumps(payload)
 
 
-def _decode_session_token(token: str | None) -> dict | None:
+def session_id_of_token(token: str | None) -> str | None:
+    # The secret session id carried by a (valid) token, to sign it again with a new
+    # password fingerprint without changing the session.
+    decoded = _decode_session_token(token)
+    return decoded[0].get("sid") if decoded else None
+
+
+def _hash(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def open_session(db: "Session", user: "User", user_agent: str | None) -> str:
+    # Called at sign-in: records the device in user_sessions and returns the cookie
+    # value. Also the moment expired sessions are cleaned up.
+    from backend.models import UserSession
+    from backend.sessions import purge_expired_sessions
+
+    purge_expired_sessions(db)
+    sid = secrets.token_urlsafe(32)
+    now = datetime.utcnow()
+    db.add(
+        UserSession(
+            user_id=user.id,
+            token_hash=_hash(sid),
+            user_agent=(user_agent or "")[:255],
+            created_at=now,
+            last_seen_at=now,
+        )
+    )
+    db.commit()
+    db.refresh(user)
+    return create_session_token(user, sid)
+
+
+def _decode_session_token(token: str | None) -> tuple[dict, datetime] | None:
+    # (payload, moment it was signed, naive UTC) or None when forged or too old.
     if not token:
         return None
     try:
-        return _serializer.loads(token, max_age=SESSION_MAX_AGE)
+        payload, signed_at = _serializer.loads(token, max_age=SESSION_MAX_AGE, return_timestamp=True)
     except (BadSignature, SignatureExpired):
         return None
-
-
-def authenticate_request(db: "Session", token: str | None) -> "User | None":
-    # Vérification complète appelée par AuthMiddleware à CHAQUE requête :
-    # jeton valide ET utilisateur toujours actif ET mot de passe inchangé
-    # depuis la connexion (empreinte). Une DB déjà consultée pour is_active
-    # rend le rôle TOUJOURS lu à jour (pas figé dans le jeton) : un
-    # changement de rôle par un admin prend effet à la requête suivante,
-    # sans obliger l'utilisateur concerné à se reconnecter.
-    payload = _decode_session_token(token)
-    if payload is None:
+    if not isinstance(payload, dict):
         return None
+    return payload, signed_at.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+class _Resolved:
+    # What a token stands for: the user, the session row it belongs to (None for a
+    # legacy token not converted yet), and for that case the data to convert it.
+    def __init__(self, user, session, legacy_hash=None, signed_at=None):
+        self.user = user
+        self.session = session
+        self.legacy_hash = legacy_hash
+        self.signed_at = signed_at
+
+
+def _resolve(db: "Session", token: str | None) -> "_Resolved | None":
+    # Complete check, read-only: valid signature, active user, password unchanged since
+    # sign-in (fingerprint), and, for a token with a session id, a live session row of
+    # THAT user. The role is read from the database each time (never frozen in the
+    # token): a role change takes effect on the next request.
+    decoded = _decode_session_token(token)
+    if decoded is None:
+        return None
+    payload, signed_at = decoded
+    from sqlalchemy import select
+
     from backend import crud
+    from backend.models import UserSession
+    from backend.sessions import SESSION_LIFETIME
 
     user = crud.get_user(db, payload.get("user_id"))
     if user is None or not user.is_active:
         return None
     if _password_fingerprint(user.hashed_password) != payload.get("pwv"):
         return None
-    return user
+
+    oldest = datetime.utcnow() - SESSION_LIFETIME
+    sid = payload.get("sid")
+    if sid is not None:
+        row = db.scalar(select(UserSession).where(UserSession.token_hash == _hash(str(sid))))
+        if row is None or row.user_id != user.id or row.revoked_at is not None or row.created_at < oldest:
+            return None
+        return _Resolved(user, row)
+
+    # Token issued before the sessions table: accepted once, then converted.
+    legacy_hash = _hash(token)
+    row = db.scalar(select(UserSession).where(UserSession.legacy_hash == legacy_hash))
+    if row is not None:
+        if row.user_id != user.id or row.revoked_at is not None or row.created_at < oldest:
+            return None
+        return _Resolved(user, row)
+    return _Resolved(user, None, legacy_hash, signed_at)
+
+
+def authenticate_request(db: "Session", token: str | None) -> "User | None":
+    # Read-only check (login page): who is this cookie, if anyone.
+    resolved = _resolve(db, token)
+    return resolved.user if resolved else None
+
+
+def authenticate_session(
+    db: "Session", token: str | None, user_agent: str | None
+) -> "tuple[User | None, int | None, str | None]":
+    # Complete check called by AuthMiddleware on EVERY request. Returns (user,
+    # session row id, new cookie value or None):
+    #  - a closed or unknown session gives (None, None, None): signed out;
+    #  - a legacy token is converted into a session row and a new cookie is returned;
+    #  - the last activity is written at most once per minute.
+    resolved = _resolve(db, token)
+    if resolved is None:
+        return None, None, None
+    from sqlalchemy import update
+    from sqlalchemy.exc import IntegrityError
+
+    from backend.models import UserSession
+    from backend.sessions import TOUCH_INTERVAL
+
+    user = resolved.user
+    new_token = None
+    session = resolved.session
+    now = datetime.utcnow()
+    if session is None:
+        sid = secrets.token_urlsafe(32)
+        session = UserSession(
+            user_id=user.id,
+            token_hash=_hash(sid),
+            legacy_hash=resolved.legacy_hash,
+            user_agent=(user_agent or "")[:255],
+            created_at=min(resolved.signed_at, now),
+            last_seen_at=now,
+        )
+        db.add(session)
+        try:
+            db.commit()
+        except IntegrityError:
+            # Another request carrying the same old token converted it first: join it.
+            db.rollback()
+            again = _resolve(db, token)
+            if again is None or again.session is None:
+                return None, None, None
+            user, session = again.user, again.session
+        else:
+            new_token = create_session_token(user, sid)
+    session_id = session.id
+    result = db.execute(
+        update(UserSession)
+        .where(UserSession.id == session_id, UserSession.last_seen_at < now - TOUCH_INTERVAL)
+        .values(last_seen_at=now)
+    )
+    if result.rowcount:
+        db.commit()
+    # Committing expired the instances: reload the user so it can be read after the
+    # database session is closed.
+    db.refresh(user)
+    return user, session_id, new_token
 
 
 def get_current_user(request: Request) -> "User | None":
@@ -137,13 +275,13 @@ def get_current_user(request: Request) -> "User | None":
 #           délibérée plutôt qu'une extension non demandée de ses droits.
 # admin   : accès complet, sans restriction.
 #
-# /settings/change-password, /profile/update, /profile/tour-seen et /logout restent accessibles
+# /settings/change-password, /profile/update, /profile/tour-seen, /profile/screen-tour-seen et /logout restent accessibles
 # à N'IMPORTE QUEL rôle authentifié (changer son propre mot de passe/profil,
 # se déconnecter) : ce sont des actions sur soi-même, pas sur les données de
 # l'application. GET /profile n'a pas besoin d'être listé ici : déjà
 # autorisé pour tout rôle par la règle GET/HEAD générale ci-dessous (pas un
 # préfixe admin-only).
-_SELF_SERVICE_PATHS = {"/settings/change-password", "/profile/update", "/profile/tour-seen", "/profile/preferences", "/logout"}
+_SELF_SERVICE_PATHS = {"/settings/change-password", "/profile/update", "/profile/tour-seen", "/profile/screen-tour-seen", "/profile/preferences", "/profile/sessions/close", "/profile/sessions/close-others", "/logout"}
 
 # Préfixes réservés à l'admin même en LECTURE (pas seulement en écriture) :
 # assistant d'import et gestion des utilisateurs n'ont pas d'intérêt à être

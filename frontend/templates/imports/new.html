@@ -1,12 +1,56 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _("Importer un fichier — Twiga 🦒") }}{% endblock %}
+{# Cet écran a sa propre action principale en ambre plein : « Importer », dans
+   l'en-tête de la coque, passe en secondaire (un seul ambre plein par écran). #}
+{% set demote_import = true %}
+
+{% block title %}{{ _("Importer un fichier — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("import", [
+  tour_step('[data-tour="import-drop"]', _("Déposer ton fichier"), _("Dépose un fichier QIF, CSV ou OFX, ou clique pour le choisir. Un QIF crée tes comptes et tes catégories tout seul."), "upload", position="bottom", write=True),
+  tour_step("#import-account-field", _("Choisir le compte"), _("Pour un CSV ou un OFX, indique de quel compte vient le relevé. Un QIF n'en a pas besoin : il contient déjà les comptes."), "building-bank", position="top", write=True),
+  tour_step("#import-step2-form", _("Contrôler ce qui a été lu"), _("Pour un CSV, vérifie quelle colonne porte la date, le libellé et le montant. Twiga propose déjà un choix."), "adjustments", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="import-review"]', _("Vérifier avant d'importer"), _("Twiga écarte les doublons et repère les virements. Décoche une ligne pour ne pas l'importer, puis lance l'import."), "circle-check", position="top", optional=True, write=True),
+  tour_step("#import-history", _("Derniers imports"), _("Chaque fichier importé est listé ici, avec ses doublons écartés et le nombre d'opérations ajoutées."), "clock", position="top"),
+]) }}{% endblock %}
 
 {% block content %}
-<main class="min-h-screen flex items-start justify-center p-4">
-  <h1 class="sr-only">{{ _("Importer un fichier") }}</h1>
-  <div id="import-wizard" class="w-full max-w-md mt-8">
-    {% include "imports/_step1_file.html" %}
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
+  <div class="flex flex-col gap-1">
+    <h1 class="text-page-title">{{ _("Importer un relevé") }}</h1>
+    <p class="text-sm text-secondary">{{ _("QIF, CSV ou OFX. Tout reste sur ton serveur.") }}</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
+    <div class="flex flex-col gap-4 min-w-0">
+      <div id="import-wizard" class="flex flex-col gap-4 min-w-0">
+        {% include "imports/_step1_file.html" %}
+      </div>
+      {% include "imports/_history.html" %}
+    </div>
+
+    <aside class="hidden lg:flex flex-col gap-4">
+      <section class="card flex flex-col gap-2">
+        <h2 class="text-section-title">{{ _("Fichier") }}</h2>
+        <div id="import-file-empty" class="flex flex-col gap-2">
+          <p class="text-sm text-secondary">{{ _("Aucun fichier choisi.") }}</p>
+          <p class="text-xs text-secondary">{{ _("Formats reconnus : QIF (export HomeBank), CSV de la plupart des banques, OFX. Les doublons sont détectés sur la date, le montant et le libellé.") }}</p>
+        </div>
+        <dl id="import-file-details" class="hidden flex flex-col text-sm">
+          <div class="flex justify-between gap-3 py-2 border-b border-border"><dt class="text-secondary">{{ _("Nom") }}</dt><dd data-file="name" class="font-medium text-right break-all"></dd></div>
+          <div class="flex justify-between gap-3 py-2 border-b border-border"><dt class="text-secondary">{{ _("Contenu") }}</dt><dd data-file="size" class="font-medium text-right"></dd></div>
+          <div class="flex justify-between gap-3 py-2"><dt class="text-secondary">{{ _("Compte") }}</dt><dd data-file="account" class="font-medium text-right"></dd></div>
+        </dl>
+      </section>
+      <section class="card flex flex-col gap-1">
+        <h2 class="text-section-title mb-1">{{ _("Ce que Twiga vérifie") }}</h2>
+        <ul class="flex flex-col divide-y divide-border">
+          <li class="flex items-start gap-3 py-3 text-sm"><span class="mt-0.5 text-secondary">{{ icon('clipboard-copy', size=18) }}</span><span>{{ _("Doublons : même date, même montant, même libellé") }}</span></li>
+          <li class="flex items-start gap-3 py-3 text-sm"><span class="mt-0.5 text-secondary">{{ icon('tool', size=18) }}</span><span>{{ _("Tes règles de rangement, appliquées d'office") }}</span></li>
+          <li class="flex items-start gap-3 py-3 text-sm"><span class="mt-0.5 text-secondary">{{ icon('building-bank', size=18) }}</span><span>{{ _("Virements internes et chèques, rapprochés tout seuls") }}</span></li>
+        </ul>
+      </section>
+    </aside>
   </div>
 </main>
 {% endblock %}

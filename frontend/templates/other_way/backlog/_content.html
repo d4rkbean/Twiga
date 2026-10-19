@@ -1,0 +1,201 @@
+{% from "_macros/brand.html" import mascot %}
+{% from "backlog/_parts.html" import head, chips, confidence_chips, pending_line, summary, last_message, sync %}
+{#
+  The lot by category (the other way): what htmx swaps into #backlog-list after
+  every filter change, page change or action. State (filters, lines left aside,
+  selection) is held by the Alpine component of index.html, not here. When `oob`
+  is true (an htmx response) the fragments that live elsewhere on the page and
+  depend on the filtered data are appended: see _parts.html.
+#}
+
+{% macro row_text(row) -%}
+{% set suggestion = row.suggestion %}
+{% set sure = row.sure %}
+<span class="min-w-0 flex-1">
+  <span class="flex items-baseline gap-2">
+    <span class="truncate font-medium text-primary">{{ row.label or _("(sans libellé)") }}</span>
+    {% if row.count > 1 %}<span class="text-secondary">×{{ row.count }}</span>{% endif %}
+  </span>
+  <span class="block truncate text-xs text-secondary">
+    {% if suggestion %}{{ suggestion.category_name }} · {{ row.confidence }} % · {% endif %}{% if row.count == 1 %}{{ row['items'][0].date | short_date }} · {{ row['items'][0].account_name }}{% else %}{% trans n=row.count %}{{ n }} opérations{% endtrans %}{% endif %}
+  </span>
+  {% if not sure %}
+  <span class="mt-1 inline-flex">
+    {% if suggestion and suggestion.history_total and suggestion.history_in < suggestion.history_total and row.confidence >= 70 %}<span class="badge badge-warning font-semibold">{% trans n=suggestion.history_in, total=suggestion.history_total %}Rangée là {{ n }} fois sur {{ total }}{% endtrans %}</span>
+    {% elif suggestion %}<span class="badge {{ 'badge-warning' if row.confidence >= 70 else 'badge-negative' }} font-semibold">{{ row.confidence }} % · {{ _("probable") if row.confidence >= 70 else _("incertaine") }}</span>
+    {% else %}<span class="badge badge-neutral font-semibold">{{ _("Sans suggestion") }}</span>{% endif %}
+  </span>
+  {% endif %}
+</span>
+<span class="flex-none text-right">
+  <span class="amount-blur block whitespace-nowrap font-semibold tabular-nums text-primary">{{ "+" if row.amount > 0 else "" }}{{ row.amount | eur }}</span>
+  {% if row['items'][0].payment_method %}<span class="block text-xs text-secondary">{{ row['items'][0].payment_method | pm_label }}</span>{% endif %}
+</span>
+{%- endmacro %}
+
+{# Rules suggested by the last filings: announced, saved, validated at leisure in Règles. #}
+{% if rule_suggestions %}
+<div
+  x-data="{ visible: true }"
+  x-init="setTimeout(() => visible = false, 8000)"
+  x-show="visible"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  class="rule-suggestion-popup mb-3"
+>
+  <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+    {{ icon('bulb') }}
+    {% trans count=rule_suggestions | length %}{{ count }} règle proposée pour ces opérations.{% pluralize %}{{ count }} règles proposées pour ces opérations.{% endtrans %}
+    <a href="/rules" class="font-semibold underline">{{ _("Les valider dans Règles") }} {{ icon('arrow-narrow-right', size=14) }}</a>
+  </p>
+</div>
+{% endif %}
+
+{% if groups %}
+<div class="grid items-start gap-[var(--space-block)] xl:grid-cols-2 min-[1700px]:grid-cols-3">
+  {% for group in groups %}
+  {% set lot_csv = group.lot_ids | join(",") %}
+  <section class="overflow-hidden rounded-xl border border-border bg-container shadow-sm" aria-label="{{ group.name or _("Sans suggestion") }}">
+    <header class="flex flex-col gap-2 px-4 pb-3 pt-4">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 class="flex min-w-0 flex-1 basis-[55%] items-center gap-2.5 font-display text-lg font-extrabold tracking-tight text-primary">
+          {% if group.top_id %}<span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ group.top_id | category_color }}" aria-hidden="true"></span>{% endif %}
+          <span class="truncate">{{ group.name or _("Sans suggestion") }}</span>
+          <span class="amount-blur ml-auto flex-none whitespace-nowrap text-base font-bold tabular-nums">{{ group.total | eur }}</span>
+        </h2>
+        {% if group.lot_ids %}
+        <button
+          type="button"
+          x-show="mode === 'lot' && groupCount('{{ lot_csv }}') > 0"
+          @click="fileGroup('{{ lot_csv }}')"
+          class="btn btn-secondary flex-none border-border-strong px-4"
+        >{{ _("Ranger ce groupe") }}</button>
+        {% endif %}
+      </div>
+      <p class="text-xs text-secondary">
+        {% if group.top_id %}
+        {% trans n=group.count %}{{ n }} opération{% pluralize %}{{ n }} opérations{% endtrans %}{% if group.min_confidence is not none %} · {% trans pct=group.min_confidence %}dès {{ pct }} %{% endtrans %}{% endif %}{% if group.payments %} · {% trans methods=(group.payments | map("pm_label") | join(", ")) %}par {{ methods }}{% endtrans %}{% endif %}
+        {% else %}
+        {{ _("Pas de catégorie à proposer : ouvre la ligne avec la flèche pour en choisir une.") }}
+        {% endif %}
+      </p>
+    </header>
+    <ul class="flex flex-col">
+      {% for row in group.rows %}
+      {% set ids = row.ids | join(",") %}
+      {% set sure = row.sure %}
+      {% set suggestion = row.suggestion %}
+      {% set pick_title %}{% trans label=row.label %}Ranger « {{ label }} » dans…{% endtrans %}{% endset %}
+      <li data-row-ids="{{ ids }}" class="border-t border-border" :class="rowSelected('{{ ids }}') && mode === 'select' ? 'bg-accent-soft' : ''">
+        <div class="flex items-stretch">
+          {# Lot mode: a touch leaves a sure line aside (and takes it back); an unsure one opens. #}
+          <button
+            type="button"
+            x-show="mode === 'lot'"
+            {% if sure %}
+            @click="toggleLot('{{ ids }}')"
+            :aria-pressed="inLot('{{ ids }}')"
+            aria-label="{% trans label=row.label %}Laisser « {{ label }} » de côté{% endtrans %}"
+            {% else %}
+            @click="openRow = openRow === '{{ ids }}' ? null : '{{ ids }}'"
+            {% endif %}
+            class="flex min-h-[var(--row-touch)] min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left"
+            {% if sure %}:class="inLot('{{ ids }}') ? '' : 'opacity-60'"{% endif %}
+          >
+            {% if sure %}
+            <span
+              class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full border"
+              :class="inLot('{{ ids }}') ? 'border-accent bg-accent-soft text-accent-ink' : 'border-field bg-container text-transparent'"
+              aria-hidden="true"
+            >{{ icon('check', size=15) }}</span>
+            {% endif %}
+            {{ row_text(row) }}
+          </button>
+          {# Selection mode: a box, the line is touched for the bulk bar. #}
+          <label x-show="mode === 'select'" style="display: none;" class="flex min-h-[var(--row-touch)] min-w-0 flex-1 cursor-pointer items-center gap-3 py-2 pl-4">
+            <input type="checkbox" class="check-box" aria-label="{{ _("Sélectionner cette opération") }}" @change="toggleRow('{{ ids }}')" :checked="rowSelected('{{ ids }}')" />
+            {{ row_text(row) }}
+          </label>
+          <button
+            type="button"
+            @click="openRow = openRow === '{{ ids }}' ? null : '{{ ids }}'"
+            :aria-expanded="openRow === '{{ ids }}'"
+            aria-label="{{ _("Ouvrir cette ligne pour la corriger") }}"
+            class="flex w-[50px] flex-none items-center justify-center text-secondary"
+          ><span :class="openRow === '{{ ids }}' ? 'rotate-180' : ''" class="transition-transform">{{ icon('chevron-down', size=18) }}</span></button>
+        </div>
+
+        <div x-show="openRow === '{{ ids }}'" style="display: none;" class="flex flex-col gap-3 border-t border-border bg-page px-4 py-4">
+          <p class="break-words text-xs text-secondary">{{ _("Libellé brut :") }} <span class="font-mono [overflow-wrap:anywhere]">{{ row['items'][0].raw_label }}</span></p>
+          {% if suggestion and suggestion.based_on_label %}
+          <p class="text-xs text-secondary">{% trans label=suggestion.based_on_label %}Basé sur : « {{ label }} »{% endtrans %}</p>
+          {% endif %}
+          <div class="flex flex-wrap gap-2">
+            {% if suggestion %}
+            <button type="button" @click="fileRow('{{ ids }}')" class="btn btn-secondary border-border-strong font-semibold">{{ icon('check', size=18) }} {% trans path=suggestion.category_path %}Ranger dans {{ path }}{% endtrans %}</button>
+            {% endif %}
+            <button type="button" data-pick-title="{{ pick_title }}" @click="openPick('{{ ids }}', $el.dataset.pickTitle)" class="btn btn-secondary border-border-strong">{{ icon('tag', size=18) }} {{ _("Changer la catégorie") }}</button>
+          </div>
+          <div class="flex flex-col gap-2">
+            <p class="text-xs font-medium text-primary">{{ _("Mode de paiement") }} <span class="font-normal italic text-secondary">{{ _("(facultatif)") }}</span></p>
+            <div class="flex flex-wrap gap-2">
+              {% for code, meta in payment_methods.items() %}
+              <button
+                type="button"
+                data-code="{{ code }}"
+                @click="payRow('{{ ids }}', $el.dataset.code)"
+                class="min-h-[50px] rounded-full border px-4 text-sm {{ 'border-accent bg-accent-soft font-semibold text-accent-ink' if row['items'][0].payment_method == code else 'border-border-strong bg-container text-primary' }}"
+              >{{ meta.label }}</button>
+              {% endfor %}
+            </div>
+            {% if suggestion %}<p class="text-xs text-secondary">{{ _("Choisir un mode de paiement range aussi la ligne dans la catégorie proposée.") }}</p>{% endif %}
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            {% if suggestion %}
+            <button type="button" @click="rejectRow('{{ ids }}')" aria-label="{{ _("Écarter la suggestion") }}" class="btn btn-ghost px-4 text-secondary">{{ icon('x', size=18) }} {{ _("Ne plus proposer") }}</button>
+            {% endif %}
+            <button type="button" @click="openRow = null" class="btn btn-ghost px-4">{{ _("Fermer") }}</button>
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+      {% if group.hidden_rows %}
+      <li class="border-t border-border px-4 py-3 text-xs text-secondary">{% trans n=group.hidden_rows %}+ {{ n }} autres lignes : cherche un libellé ou filtre pour les voir.{% endtrans %}</li>
+      {% endif %}
+    </ul>
+  </section>
+  {% endfor %}
+</div>
+
+{% if pages > 1 %}
+<nav class="flex items-center justify-between gap-3 pt-4" aria-label="{{ _("Pages") }}">
+  <button type="button" @click="goTo({{ page - 1 }})" class="btn btn-secondary border-border-strong px-5" {% if page <= 1 %}disabled{% endif %}>{{ _("Précédent") }}</button>
+  <span class="text-sm text-secondary">{% trans page=page, total=pages %}Page {{ page }} / {{ total }}{% endtrans %}</span>
+  <button type="button" @click="goTo({{ page + 1 }})" class="btn btn-secondary border-border-strong px-5" {% if page >= pages %}disabled{% endif %}>{{ _("Suivant") }}</button>
+</nav>
+{% endif %}
+<p class="pt-4 text-xs text-secondary">{{ _("Touche une ligne pour la laisser de côté : elle reviendra en question, à décider toi-même. La flèche à droite de chaque ligne l'ouvre pour la corriger.") }}</p>
+{% else %}
+<div class="flex flex-col items-center gap-2 rounded-xl border border-border bg-container px-6 py-10 text-center shadow-sm">
+  {{ mascot('done', 96) }}
+  {% if pending_total == 0 %}
+  <h2 class="mt-2 font-display text-[26px] font-extrabold tracking-tight text-primary">{{ _("Twiga a tout brouté !") }}</h2>
+  <p class="text-secondary">{{ _("Toutes les suggestions sont rangées.") }}</p>
+  {% else %}
+  <h2 class="mt-2 font-display text-[26px] font-extrabold tracking-tight text-primary">{{ _("Rien à traiter ici") }}</h2>
+  <p class="text-secondary">{{ _("Aucune opération ne correspond à ces filtres.") }}</p>
+  {% endif %}
+  <a href="/transactions/inbox" class="btn btn-secondary mt-2 border-border-strong px-5">{{ _("Retour à La Savane") }}</a>
+</div>
+{% endif %}
+
+{% if oob %}
+{{ head(answer, lot_count, true) }}
+{{ chips(counts, true) }}
+{{ confidence_chips(counts, true) }}
+{{ pending_line(pending_total, true) }}
+{{ summary(lot_count, lot_total, lot_categories, lot_category_max, lot_payments, doubt_count, true) }}
+{{ last_message(last, true) }}
+{{ sync(shown_ids, visible_ids, lot_ids, true) }}
+{% endif %}

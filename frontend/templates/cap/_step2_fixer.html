@@ -1,19 +1,12 @@
-{% include "cap/_progress_dots.html" %}
+{% from "_macros/stepper_field.html" import stepper_field %}
 
-{% if first_use %}
-<div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-2 text-center">
-  <p class="text-lg font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:20px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Bienvenue dans Le Cap !") }}</p>
-  <p class="text-sm text-secondary">
-    {{ _("Chaque mois, prenez 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
-  </p>
-</div>
-{% endif %}
 
 {#
   Le plan du mois se décide à DEUX niveaux sur un seul écran : l'enveloppe du
-  pilier, et son détail par catégorie. Ce qui est enregistré, ce sont les
-  montants par catégorie (champs amount_<id>, table budgets) — les totaux de
-  pilier n'en sont que la somme, recalculée côté serveur à l'enregistrement.
+  pilier (le total en tête de section), et son détail par catégorie. Ce qui est
+  enregistré, ce sont les montants par catégorie (champs amount_<id>, table
+  budgets) — les totaux de pilier n'en sont que la somme, recalculée côté
+  serveur à l'enregistrement.
 
   Deux mouvements, réconciliés en direct par Alpine :
     - on change l'enveloppe d'un pilier  -> elle se répartit entre ses
@@ -25,22 +18,19 @@
   imprévue y bascule quelle que soit sa catégorie). On ne prévoit pas DANS
   QUOI tombera un imprévu, seulement combien on lui réserve.
 #}
-<form
-  hx-post="/cap/save"
-  hx-target="#cap-wizard"
-  hx-swap="innerHTML"
-  class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4"
+{% set review_colors = {"essentiel": "var(--color-chart-1)", "choix": "var(--color-chart-3)", "imprevu": "var(--color-chart-6)"} %}
+<div
   x-data="{
     income: {{ prefill_income }},
     imprevu: {{ '%.2f' % prefill_imprevu }},
     prelevement: {{ '%.2f' % savings_withdrawal }},
+    goal: {{ '%.2f' % (prefill_savings_goal or 0) }},
     /* Les virements cochés s'ajoutent au champ « ressources du mois », qui
        reste librement modifiable ensuite : on additionne au lieu de piloter
        le champ, pour ne jamais écraser une saisie manuelle. */
     cocher(actif, montant) {
       this.income = Math.round((Number(this.income) + (actif ? montant : -montant)) * 100) / 100
     },
-    ouverts: {},
     groupes: {
       {% for g in groupes %}
       '{{ g.code }}': {
@@ -74,10 +64,11 @@
     reinitialiser(code) {
       this.groupes[code].lignes.forEach(l => { l.montant = l.repere })
     },
-    get totalDepenses() {
+    get catsTotal() {
       return {{ groupes | map(attribute='code') | list | tojson | forceescape }}
-        .reduce((s, c) => s + this.totalGroupe(c), 0) + (Number(this.imprevu) || 0)
+        .reduce((s, c) => s + this.totalGroupe(c), 0)
     },
+    get totalDepenses() { return this.catsTotal + (Number(this.imprevu) || 0) },
     /* Deux nombres distincts, et la nuance compte :
        - `savings` : ce qu'on ajoute réellement à l'épargne ce mois-ci
          (négatif = on y puise) ;
@@ -86,177 +77,213 @@
          par un prélèvement assumé n'est pas une alerte. */
     get savings() { return this.income - this.totalDepenses },
     get couvert() { return this.income + (Number(this.prelevement) || 0) - this.totalDepenses },
-    fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €' },
-    intentionLength: 0,
+    intentionLength: {{ (intention_value | default('')) | length }},
+    /* Panneau « en direct » : tout est recalculé ici, dans le navigateur, à
+       partir des mêmes champs que le formulaire — aucune requête. Le mois
+       écoulé (réel et ce qui attend dans La Savane) ne bouge pas pendant la
+       saisie ; c'est le plan qui change. */
+    precedent: {{ previous_actuals | tojson | forceescape }},
+    attente: {{ previous_pending | tojson | forceescape }},
+    piliers: [
+      { code: 'essentiel', label: {{ groupes[0].label | tojson | forceescape }}, color: 'var(--color-chart-1)' },
+      { code: 'choix', label: {{ groupes[1].label | tojson | forceescape }}, color: 'var(--color-chart-3)' },
+      { code: 'imprevu', label: {{ _("Imprévus") | tojson | forceescape }}, color: 'var(--color-chart-6)' },
+    ],
+    prevu(code) {
+      return code === 'imprevu' ? (Number(this.imprevu) || 0) : this.totalGroupe(code)
+    },
+    get reviewRows() {
+      return this.piliers.map(p => ({
+        code: p.code, label: p.label, color: p.color,
+        spent: Number(this.precedent[p.code]) || 0,
+        pending: Number(this.attente[p.code]) || 0,
+        planned: this.prevu(p.code),
+      }))
+    },
   }"
+  class="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start"
 >
-  <h2 class="text-lg font-bold text-primary flex items-center gap-2">{{ icon('target') }}{% trans current_month_label=current_month_label %}Fixer le cap de {{ current_month_label }}{% endtrans %}</h2>
+<div class="flex flex-col gap-5 min-w-0">
+{% include "cap/_progress_dots.html" %}
+{% if first_use %}
+<div x-data="{ shown: true }" x-show="shown" class="card card-amber flex flex-wrap items-center gap-x-4 gap-y-3">
+  <div class="flex-1 basis-[240px] flex flex-col gap-1">
+    <p class="text-section-title">{{ _("Bienvenue dans Le Cap !") }}</p>
+    <p class="text-sm text-primary">
+      {{ _("Chaque mois, prends 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") }}
+    </p>
+  </div>
+  <button type="button" @click="shown = false" class="btn btn-secondary flex-shrink-0">{{ _("Compris") }}</button>
+</div>
+{% endif %}
+<form
+  id="cap-plan"
+  hx-post="/cap/save"
+  hx-target="#cap-wizard"
+  hx-swap="innerHTML"
+  class="flex flex-col gap-5"
+>
+  <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5" aria-labelledby="fix-title">
+    <div class="flex flex-col gap-1">
+      <h2 id="fix-title" class="text-section-title">{{ fix_title }}</h2>
+      <p class="text-sm text-secondary">{{ _("L'épargne prévue se recalcule pendant que tu ajustes.") }}</p>
+    </div>
 
-  {# Ressources du mois. Le champ est toujours saisissable — c'est sa valeur,
-     et elle seule, que le suivi comparera aux dépenses. Ce qui change selon
-     le réglage (voir models.CapSettings), c'est uniquement ce qu'on propose.
+    {# Ressources du mois. Le champ est toujours saisissable — c'est sa valeur,
+       et elle seule, que le suivi comparera aux dépenses. Ce qui change selon
+       le réglage (voir models.CapSettings), c'est uniquement ce qu'on propose.
 
-     Cas « virements » : la liste des virements reçus depuis le mois
-     précédent, à cocher. Rien n'est pré-coché, parce qu'aucune fenêtre
-     automatique ne distingue de façon fiable un virement de fin de mois qui
-     finance le mois suivant d'un rajout fait pour le mois courant. #}
-  <div class="flex flex-col gap-2">
-    <label class="flex flex-col gap-1">
-      <span class="text-xs text-secondary">{{ icon('currency-euro', size=14) }} {{ _("Ressources du mois") }}</span>
-      <input
-        type="number" step="0.01" name="planned_income" x-model.number="income"
-        class="min-h-[50px] rounded-xl border border-border bg-page text-primary px-3"
-      />
-    </label>
+       Cas « virements » : la liste des virements reçus depuis le mois
+       précédent, à cocher. Rien n'est pré-coché, parce qu'aucune fenêtre
+       automatique ne distingue de façon fiable un virement de fin de mois qui
+       finance le mois suivant d'un rajout fait pour le mois courant. #}
+    <div data-tour="cap-income" class="flex flex-col gap-2">
+      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border p-4">
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-semibold text-primary">{{ _("Ressources du mois") }}</span>
+          <span class="text-xs text-secondary">
+            {% if income_source == "virements" %}{{ _("Les virements cochés ci-dessous s'ajoutent à ce montant.") }}
+            {% elif income_source == "fixe" %}{% trans %}Montant fixe défini dans <a href="/settings" class="font-medium text-primary underline">Paramètres</a>.{% endtrans %}
+            {% elif income_source == "recettes_courant" %}{% trans current_month_label=current_month_label %}D'après les recettes de {{ current_month_label }} à ce jour.{% endtrans %}
+            {% else %}{% trans previous_month_label=previous_month_label %}D'après les recettes de {{ previous_month_label }}.{% endtrans %}{% endif %}
+          </span>
+        </div>
+        {{ stepper_field("income", 100, name="planned_income", minus=_("Baisser les ressources de 100 €"), plus=_("Augmenter les ressources de 100 €"), label=_("Ressources du mois")) }}
+      </div>
 
-    {% if income_source == "virements" %}
-    {% if virements %}
-    <div class="rounded-xl border border-border overflow-hidden">
-      <p class="text-xs text-secondary px-3 py-2 bg-page">
-        {% trans current_month_label=current_month_label %}Cochez les virements qui financent {{ current_month_label }}{% endtrans %}
+      {% if income_source == "virements" %}
+      {% if virements %}
+      <div class="flex flex-col">
+        <p class="text-xs text-secondary pb-2">
+          {% trans current_month_label=current_month_label %}Coche les virements qui financent {{ current_month_label }}{% endtrans %}
+        </p>
+        <div class="flex flex-col max-h-64 overflow-y-auto border-t border-border">
+          {% for v in virements %}
+          <label class="flex items-center gap-3 min-h-[50px] border-b border-border cursor-pointer">
+            <input
+              type="checkbox"
+              value="{{ '%.2f' % v.amount }}"
+              @change="cocher($event.target.checked, Number($event.target.value))"
+              class="w-5 h-5 flex-shrink-0"
+            />
+            <span class="flex flex-col min-w-0 flex-1">
+              <span class="text-sm text-primary truncate">{{ v.label }}</span>
+              <span class="text-xs text-secondary">{{ v.date | fr_date }}</span>
+            </span>
+            <span class="amount-blur text-sm font-semibold text-primary tabular-nums flex-shrink-0">
+              {{ v.amount | eur }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <p class="text-xs text-secondary">
+        {{ icon('info-circle', size=14) }} {% trans previous_month_label=previous_month_label %}Aucun virement reçu sur le compte choisi depuis {{ previous_month_label }}.{% endtrans %}
       </p>
-      <div class="flex flex-col divide-y divide-border max-h-64 overflow-y-auto">
-        {% for v in virements %}
-        <label class="flex items-center gap-3 px-3 py-2 min-h-[46px] cursor-pointer">
-          <input
-            type="checkbox"
-            value="{{ '%.2f' % v.amount }}"
-            @change="cocher($event.target.checked, Number($event.target.value))"
-            class="w-5 h-5 flex-shrink-0"
-          />
-          <span class="flex flex-col min-w-0 flex-1">
-            <span class="text-sm text-primary truncate">{{ v.label }}</span>
-            <span class="text-xs text-secondary">{{ v.date | fr_date }}</span>
-          </span>
-          <span class="amount-blur text-sm font-semibold text-primary tabular-nums flex-shrink-0">
-            {{ v.amount | eur }}
-          </span>
-        </label>
-        {% endfor %}
+      {% endif %}
+      {% endif %}
+
+      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border p-4">
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-semibold text-primary">{{ _("Prélèvement sur épargne") }}</span>
+          <span class="text-xs text-secondary">{{ _("Ce que tu sors de l'épargne pour financer ce mois") }}</span>
+        </div>
+        {{ stepper_field("prelevement", 50, name="savings_withdrawal", minus=_("Baisser le prélèvement de 50 €"), plus=_("Augmenter le prélèvement de 50 €"), label=_("Prélèvement sur épargne")) }}
       </div>
     </div>
-    {% else %}
-    <p class="text-xs text-secondary">
-      {{ icon('info-circle', size=14) }} {% trans previous_month_label=previous_month_label %}Aucun virement reçu sur le compte choisi depuis {{ previous_month_label }}.{% endtrans %}
-    </p>
-    {% endif %}
-    {% elif income_source == "fixe" %}
-    <span class="text-xs text-secondary">{{ _("Montant fixe défini dans Paramètres.") }}</span>
-    {% elif income_source == "recettes_courant" %}
-    <span class="text-xs text-secondary">{% trans current_month_label=current_month_label %}D'après les recettes de {{ current_month_label }} à ce jour.{% endtrans %}</span>
-    {% else %}
-    <span class="text-xs text-secondary">{% trans previous_month_label=previous_month_label %}D'après les recettes de {{ previous_month_label }}.{% endtrans %}</span>
-    {% endif %}
-  </div>
 
-  {% for g in groupes %}
-  {% set code = g.code %}
-  <div class="rounded-xl border border-border overflow-hidden">
-    <div class="flex items-center gap-2 px-3 py-2 bg-page">
-      <button
-        type="button"
-        @click="ouverts['{{ code }}'] = !ouverts['{{ code }}']"
-        class="flex items-center gap-2 text-sm font-semibold text-primary min-h-[40px] flex-1 text-left"
-        :aria-expanded="ouverts['{{ code }}'] ? 'true' : 'false'"
-      >
-        {{ icon('home' if code == 'essentiel' else 'star', size=16) }}
-        {{ g.label }}
-        <span class="text-xs font-normal text-secondary">{% trans categories=g.categories | length, categories2='s' if g.categories | length > 1 else '' %}{{ categories }} catégorie{{ categories2 }}{% endtrans %}</span>
-        <span class="text-secondary ml-auto" x-text="ouverts['{{ code }}'] ? '▾' : '▸'">▸</span>
-      </button>
-      <input
-        type="number" step="0.01" inputmode="decimal"
-        aria-label="Enveloppe {{ g.label }}"
-        :value="totalGroupe('{{ code }}').toFixed(2)"
-        @change="repartir('{{ code }}', Number($event.target.value) || 0)"
-        class="w-28 min-h-[40px] rounded-lg border border-border bg-container text-primary px-2 text-right font-semibold tabular-nums"
-      />
-    </div>
-
-    <div x-show="ouverts['{{ code }}']" style="display: none;" class="flex flex-col divide-y divide-border">
-      {% for l in g.categories %}
-      <label class="flex items-center justify-between gap-2 px-3 py-2">
-        <span class="text-sm text-primary min-w-0 truncate">
-          {{ l.category.icon or icon('tag', size=14) }} {{ l.category.name | category_display }}
-        </span>
-        <span class="flex items-center gap-2 flex-shrink-0">
-          <span class="text-xs text-secondary whitespace-nowrap" title="{{ _("Dépense habituelle, médiane des 3 derniers mois") }}">
-            {% if l.typical %}~ {{ l.typical | eur }}{% endif %}
-          </span>
+    {# Les piliers : l'enveloppe se règle en tête de section (elle se répartit
+       entre les catégories), le détail par catégorie se règle dessous. #}
+    {% for g in groupes %}
+    {% set code = g.code %}
+    <div {% if loop.first %}data-tour="cap-pillar" {% endif %}class="flex flex-col">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-sm font-semibold text-primary">{{ g.label }}</h3>
+        <span class="amount-blur inline-flex items-center gap-1 text-sm text-secondary tabular-nums">
           <input
-            type="number" step="0.01" inputmode="decimal"
-            name="amount_{{ l.category.id }}"
-            x-model.number="groupes['{{ code }}'].lignes[{{ loop.index0 }}].montant"
-            class="w-24 min-h-[40px] rounded-lg border border-border bg-page text-primary px-2 text-right tabular-nums"
-          />
+            type="text" inputmode="decimal"
+            aria-label="{{ _("Enveloppe") }} {{ g.label }}"
+            x-effect="document.activeElement === $el || ($el.value = twigaCap.fmt2(totalGroupe('{{ code }}')))"
+            @change="repartir('{{ code }}', twigaCap.num($event.target.value)); $el.value = twigaCap.fmt2(totalGroupe('{{ code }}'))"
+            class="h-[50px] w-[104px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+          />&euro;
         </span>
-      </label>
+      </div>
+      {% for l in g.categories %}
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 min-h-[66px] py-2 border-t border-border">
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-medium text-primary truncate">{{ l.category.icon or "" }} {{ l.category.name | category_display }}</span>
+          {% if l.typical %}<span class="amount-blur text-xs text-secondary" title="{{ _("Dépense habituelle, médiane des 3 derniers mois") }}">{% trans amount=l.typical | eur %}dépense habituelle : {{ amount }}{% endtrans %}</span>{% endif %}
+        </div>
+        {% set model = "groupes['" ~ code ~ "'].lignes[" ~ loop.index0 ~ "].montant" %}
+        {{ stepper_field(model, 10, name="amount_" ~ l.category.id, minus=_("Baisser de 10 €"), plus=_("Augmenter de 10 €"), label=l.category.name | category_display) }}
+      </div>
       {% endfor %}
-      <div class="flex items-center justify-between gap-2 px-3 py-2">
+      <div class="flex items-center justify-between gap-2 border-t border-border">
         <button
           type="button"
           @click="reinitialiser('{{ code }}')"
-          class="text-xs text-accent font-medium min-h-[36px]"
+          class="min-h-[50px] inline-flex items-center gap-1.5 text-xs text-primary font-medium"
         >
           {{ icon('clipboard-copy', size=14) }} {% trans previous_month_label=previous_month_label %}Reprendre {{ previous_month_label }}{% endtrans %}
         </button>
-        <span class="text-xs text-secondary tabular-nums" x-text="'Total : ' + fmt(totalGroupe('{{ code }}'))"></span>
       </div>
     </div>
-  </div>
-  {% endfor %}
+    {% endfor %}
 
-  <label class="flex items-center justify-between gap-2 min-h-[46px] rounded-xl border border-border px-3">
-    <span class="text-sm text-primary">
-      {{ icon('urgent', size=16) }} {{ _("Imprévus") }}
-      <span class="block text-xs text-secondary">{{ _("Une réserve, sans détail — un imprévu n'a pas de catégorie prévue") }}</span>
-    </span>
-    <input
-      type="number" step="0.01" name="planned_imprevu" x-model.number="imprevu"
-      class="w-28 min-h-[40px] rounded-lg border border-border bg-page text-primary px-2 text-right font-semibold tabular-nums"
-    />
-  </label>
+    <div class="flex flex-col">
+      <h3 class="text-sm font-semibold text-primary pb-1">{{ _("Imprévus") }}</h3>
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 min-h-[66px] py-2 border-t border-border">
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-medium text-primary">{{ _("Réserve") }}</span>
+          <span class="text-xs text-secondary">{{ _("Une réserve, sans détail — un imprévu n'a pas de catégorie prévue") }}</span>
+        </div>
+        {{ stepper_field("imprevu", 10, name="planned_imprevu", minus=_("Baisser la réserve de 10 €"), plus=_("Augmenter la réserve de 10 €"), label=_("Réserve")) }}
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 min-h-[66px] py-2 border-t border-border">
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-medium text-primary">{{ _("Objectif d'épargne") }}</span>
+          <span class="text-xs text-secondary">{{ _("Par pas de 100 €") }}</span>
+        </div>
+        {{ stepper_field("goal", 100, name="savings_goal", minus=_("Baisser l'objectif de 100 €"), plus=_("Augmenter l'objectif de 100 €"), label=_("Objectif d'épargne")) }}
+      </div>
+    </div>
 
-  <label class="flex items-center justify-between gap-2 min-h-[46px] rounded-xl border border-border px-3">
-    <span class="text-sm text-primary">
-      {{ icon('pig-money', size=16) }} {{ _("Prélèvement sur épargne") }}
-      <span class="block text-xs text-secondary">{{ _("Ce que vous sortez de l'épargne pour financer ce mois") }}</span>
-    </span>
-    <input
-      type="number" step="0.01" name="savings_withdrawal" x-model.number="prelevement"
-      class="w-28 min-h-[40px] rounded-lg border border-border bg-page text-primary px-2 text-right font-semibold tabular-nums"
-    />
-  </label>
+    <div class="border-t border-border pt-4 flex flex-col gap-2">
+      <div class="flex items-baseline justify-between gap-3">
+        <span class="text-sm font-semibold text-primary">{{ _("Épargne prévue") }}</span>
+        <span
+          class="amount-blur text-amount-large tabular-nums"
+          :class="savings >= 0 ? 'text-success' : 'text-danger'"
+          x-text="(savings > 0 ? '+' : '') + twigaCap.fmt(savings)"
+          aria-live="polite"
+        ></span>
+      </div>
+      {# L'alerte porte sur la trésorerie, pas sur l'épargne : puiser dans
+         l'épargne quand on l'a décidé n'est pas une erreur, c'est le but du
+         champ ci-dessus. Le message change donc selon que le déficit est couvert
+         ou non. #}
+      <p x-show="savings < 0 && couvert >= 0" style="display: none;" class="alert alert-neutral">
+        {{ icon('info-circle', size=18) }} <span>{{ _("Déficit couvert par le prélèvement sur épargne.") }}</span>
+      </p>
+      <p x-show="couvert < 0" style="display: none;" class="alert alert-danger font-medium">
+        {{ icon('alert-triangle', size=18) }} <span>{{ _("Dépenses supérieures aux revenus") }} <span x-show="prelevement > 0">{{ _("et au prélèvement") }}</span> !</span>
+      </p>
+    </div>
+  </section>
 
-  <div class="border-t border-border pt-3 flex items-center justify-between">
-    <span class="text-sm font-semibold text-primary">{{ icon('pig-money', size=16) }} {{ _("Épargne prévue") }}</span>
-    <span
-      class="text-lg font-bold tabular-nums"
-      :class="savings >= 0 ? 'text-success' : 'text-danger'"
-      x-text="fmt(savings)"
-    ></span>
-  </div>
-  {# L'alerte porte sur la trésorerie, pas sur l'épargne : puiser dans
-     l'épargne quand on l'a décidé n'est pas une erreur, c'est le but du
-     champ ci-dessus. Le message change donc selon que le déficit est couvert
-     ou non. #}
-  <p x-show="savings < 0 && couvert >= 0" style="display: none;" class="text-sm text-secondary">
-    {{ icon('info-circle', size=16) }} {{ _("Déficit couvert par le prélèvement sur épargne.") }}
-  </p>
-  <p x-show="couvert < 0" style="display: none;" class="text-sm text-danger font-medium">
-    {{ icon('alert-triangle', size=16) }} {{ _("Dépenses supérieures aux revenus") }} <span x-show="prelevement > 0">{{ _("et au prélèvement") }}</span> !
-  </p>
-
-  <label class="flex flex-col gap-1 mt-2">
-    <span class="text-sm font-semibold text-primary">{{ icon('writing', size=16) }} {% trans current_month_label=current_month_label %}Notre intention pour {{ current_month_label }} :{% endtrans %}</span>
+  <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-2" aria-labelledby="intention-title">
+    <label for="intention" id="intention-title" class="text-section-title">{% trans current_month_label=current_month_label_lower %}Notre intention pour {{ current_month_label }} :{% endtrans %}</label>
+    <p class="text-sm text-secondary">{{ _("Une ou deux phrases, que tu retrouveras en ouvrant Mon mois.") }}</p>
     <textarea
-      name="intention" rows="3" maxlength="500"
+      id="intention" name="intention" rows="3" maxlength="500"
       @input="intentionLength = $event.target.value.length"
       placeholder="{{ _("Ce mois-ci, nous voulons...") }}"
-      class="rounded-xl border border-border bg-page text-primary px-3 py-2 text-sm"
-    ></textarea>
-    <span class="text-xs text-secondary text-right" x-text="intentionLength + ' / 500'"></span>
-  </label>
+      class="rounded-xl border border-field bg-container text-primary px-3 py-2 text-sm"
+    >{{ intention_value | default('') }}</textarea>
+    <span class="text-xs text-secondary">{{ _("500 caractères au maximum.") }}</span>
+  </section>
 
   {# Réponses de réflexion saisies à l'étape 1, transmises telles quelles
      jusqu'à la sauvegarde finale (/cap/save) — absentes du contexte au tout
@@ -266,18 +293,23 @@
   <input type="hidden" name="reflection_proud" value="{{ reflection_proud | default('') }}" />
   <input type="hidden" name="reflection_worked_well" value="{{ reflection_worked_well | default('') }}" />
 
-  <div class="flex gap-2 mt-2">
+  <div class="flex flex-wrap items-center justify-between gap-2">
     {% if not first_use %}
     <button
       type="button"
       hx-post="/cap/step1" hx-target="#cap-wizard" hx-swap="innerHTML"
-      class="flex-1 min-h-[50px] rounded-xl bg-container border border-border text-primary font-medium"
+      class="btn btn-secondary"
     >
       {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
     </button>
+    {% else %}
+    <button type="button" disabled class="btn btn-secondary">{{ icon('arrow-narrow-left') }} {{ _("Précédent") }}</button>
     {% endif %}
-    <button type="submit" class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
+    <button type="submit" data-tour="cap-save" class="btn btn-primary">
       {{ _("Fixer le cap") }} {{ icon('arrow-narrow-right') }}
     </button>
   </div>
 </form>
+</div>
+{% include "cap/_aside.html" %}
+</div>

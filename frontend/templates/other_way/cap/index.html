@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "other_way/_plan_kit.html" import neighbours %}
+
+{#- Le Cap de L'autre voie : un rituel guidé, six étapes sur ordinateur et une chose
+    à la fois sur mobile. La page n'est que la coque ; tout le rituel vit dans
+    #cap-wizard, que les trois échanges du serveur (/cap/step1, /cap/step2, /cap/save)
+    remplacent. Sur mobile le rituel prend tout l'écran : sa barre du haut remplace
+    celle de la coque (`shell_focus`) et son pied remplace la barre du bas. -#}
+{% set shell_focus = true %}
+{% set shell_page_title = cap_title %}
+{% block title %}{{ _("Le Cap — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("cap", [
+  tour_step('[data-tour="cap-frise"]', _("Les six étapes du rituel"), _("Bilan, Un mot, Ressources, Les piliers, Épargne, Intention. Touche une étape déjà vue pour y revenir."), "list-details", position="bottom", alt_target='[data-tour="cap-counter"]', optional=True),
+  tour_step('[data-tour="cap-bilan"]', _("Le bilan du mois écoulé"), _("Recettes, dépenses et reste du mois passé. Voir le détail ouvre le prévu, le réel et l'écart. Continuer passe à la suite."), "chart-bar", position="bottom", optional=True),
+  tour_step('[data-tour="cap-word"]', _("Un mot sur le mois"), _("Quatre questions facultatives : les imprévus, les regrets, les fiertés, ce qui a bien marché."), "writing", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-income"]', _("Les ressources du mois"), _("Vérifie ce qui doit rentrer ce mois-ci : tout le reste du plan s'en déduit."), "coins", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="cap-pillar-essentiel"]', _("Les montants d'un pilier"), _("Pour Essentiel puis Choix, règle chaque catégorie. Pars du plan du mois passé ou de ce qu'il a coûté."), "adjustments", position="top", alt_target='[data-tour="cap-pillar-choix"]', optional=True, write=True),
+  tour_step('[data-tour="cap-savings"]', _("L'épargne du mois"), _("Fixe ce que tu veux mettre de côté. Une alerte te prévient si le plan ne tient pas."), "pig-money", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-intent"]', _("L'intention du mois"), _("Une phrase pour te donner un cap. Les idées tirées du mois passé aident à démarrer."), "flag", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-recap"]', _("Le cap est fixé"), _("Le récapitulatif de ce que tu viens de décider : ressources, piliers, épargne visée et intention."), "circle-check", position="bottom", optional=True),
+  tour_step('[data-tour="cap-after"]', _("Et maintenant"), _("Va au Panorama, suis le mois dans Mon mois, ou reprends le cap si tu veux le corriger."), "arrow-right", position="top", optional=True),
+]) }}{% endblock %}
+{% block shell_head %}{{ super() }}
+  <script src="{{ static_url('/static/js/cap-flow.js') }}" defer></script>
+{% endblock %}
+{% block body_chrome %}pt-[64px] pb-[120px] lg:pb-0{% endblock %}
+
+{% block content %}
+{{ neighbours(_("Le Cap, écrans voisins"), [
+  {"href": "/cap", "label": _("Le Cap"), "current": true},
+  {"href": "/projects", "label": _("Projets"), "current": false},
+]) }}
+<main class="flex flex-col gap-5 px-4 pt-5 pb-6 lg:px-10 lg:pt-8 lg:pb-10">
+  <div id="cap-wizard">
+    {% include step_template %}
+  </div>
+</main>
+{% endblock %}

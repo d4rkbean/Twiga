@@ -1,10 +1,10 @@
 /* Popup flottant de suggestion de règle (catégorisation en masse / La
    Savane). Avant ce fichier, la suggestion s'affichait en haut de
    _content.html : invisible sans remonter tout en haut de la page quand on
-   traite des éléments plus bas dans la liste. Couleurs volontairement
-   fixes (pas les tokens sémantiques du thème) : c'est une notification
-   ponctuelle qui doit se détacher du reste de la page, dans les deux
-   thèmes, comme la bulle de la visite guidée. */
+   traite des éléments plus bas dans la liste. Même facture que la bulle de la
+   visite guidée : une carte (surface, bordure forte, ombre flottante) qui se
+   détache du reste de la page par son ombre, dans les deux thèmes, avec les
+   jetons de design-system.css. */
 
 @keyframes rule-suggestion-slide-up {
   from {
@@ -24,28 +24,33 @@
   transform: translateX(-50%);
   z-index: 30;
   width: min(90vw, 420px);
-  background: #1e1e2e;
-  color: #f4e6cf;
-  border: 2px solid #d4a96a;
+  background: var(--color-container);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.75rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-lg);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  animation: rule-suggestion-slide-up 0.25s ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rule-suggestion-popup {
+    animation: rule-suggestion-slide-up var(--duration-slow) var(--ease-out);
+  }
 }
 
 .rule-suggestion-item + .rule-suggestion-item {
   padding-top: 0.75rem;
   margin-top: 0.25rem;
-  border-top: 1px solid rgba(244, 230, 207, 0.2);
+  border-top: 1px solid var(--color-border);
 }
 
 .rule-suggestion-popup input[type="text"] {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(244, 230, 207, 0.3);
-  color: #f4e6cf;
+  background: var(--color-container);
+  border: 1px solid var(--color-field);
+  color: var(--color-primary);
   border-radius: 0.75rem;
   padding: 0 0.75rem;
   min-height: 50px;
@@ -54,19 +59,76 @@
 .rule-suggestion-btn-secondary {
   flex: 1;
   min-height: 50px;
-  background: transparent;
-  border: 1px solid rgba(244, 230, 207, 0.3);
-  color: #f4e6cf;
+  background: var(--color-container);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-primary);
   border-radius: 0.75rem;
   font-weight: 600;
 }
 
 .rule-suggestion-btn-secondary:hover {
-  background: rgba(244, 230, 207, 0.1);
+  background: var(--color-sunken);
 }
 
 @media (max-width: 480px) {
   .rule-suggestion-popup {
     width: calc(100vw - 2rem);
+  }
+}
+
+/* « Non merci » : l'action de repli du popup, sans contour (la suggestion
+   n'a qu'une action, « Créer la règle », en bouton secondaire). */
+.rule-suggestion-btn-ghost {
+  flex: 1;
+  min-height: 50px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-secondary);
+  border-radius: 0.75rem;
+  font-weight: 500;
+}
+
+.rule-suggestion-btn-ghost:hover {
+  background: var(--color-sunken);
+}
+
+/* Indication d'un raccourci clavier (La Savane, desktop) : une touche
+   dessinée en petit, posée à côté du libellé de l'action. Purement
+   indicative (aria-hidden côté gabarit) ; les raccourcis eux-mêmes vivent
+   dans inbox-shortcuts.js. Les jetons gardent le contraste dans les deux
+   thèmes ; ce n'est jamais un contrôle. */
+/* Cases à cocher et boutons radio : l'ambre foncé de l'état actif plutôt que
+   le bleu natif du navigateur (listes d'opérations et de traitement en masse). */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-accent-ink);
+}
+
+@layer components {
+  /* En @layer components, comme .btn : une feuille hors couche battrait les
+     utilitaires (hidden, sm:inline-flex) qui règlent son affichage. */
+  .kbd-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.375rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 0.375rem;
+    background: var(--color-container);
+    color: var(--color-secondary);
+    font-family: ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* Sur l'aplat ambré de « Valider », la touche reprend le ton du bouton. */
+  .btn-primary .kbd-hint {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--color-on-accent) 45%, transparent);
+    color: var(--color-on-accent);
   }
 }

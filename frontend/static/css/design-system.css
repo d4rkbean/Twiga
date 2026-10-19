@@ -1,25 +1,108 @@
-@import "tailwindcss";
+/* Sources des classes utilitaires, listées une à une plutôt que laissées à la
+   détection automatique de Tailwind : celle-ci lit aussi le CSS compilé
+   (frontend/static/vendor/tailwind.min.css) et la documentation, si bien
+   qu'une classe disparue des gabarits restait dans le fichier compilé build
+   après build. Le HTML produit côté Python (fragments renvoyés par les routes)
+   compte aussi, d'où backend/. Chemins relatifs à ce fichier. */
+@import "tailwindcss" source(none);
+@source "../../templates";
+@source "../../../backend";
+@source "../js";
+@source "../sw.js";
+
+/* Police d'affichage : Bricolage Grotesque (SIL OFL 1.1, voir
+   frontend/static/fonts/OFL.txt), servie par l'application elle-même, jamais
+   par un CDN. Deux graisses seulement (700, 800), sous-ensemble latin +
+   latin-1 + € et −, fixées au corps optique 32 : ~18 Ko chacune. Réservée aux
+   titres de page, aux titres de section et aux répliques de la girafe ; tout
+   le reste reste en police système (--font-sans, inchangée). */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/bricolage-grotesque-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/static/fonts/bricolage-grotesque-800.woff2") format("woff2");
+}
 
 @theme {
-  --color-page: #f9f9f9;
+  --color-page: #faf8f5;
   --color-container: #ffffff;
+  --color-sunken: #f3f0eb;  /* creux : rails, zones en retrait, cases */
   --color-primary: #111827;
   --color-secondary: #585e6a;  /* assombri : le motif de fond passe
      derrière ce texte et lui mangeait du contraste (4,04:1 à 10 %
-     d'opacité, sous le seuil de 4,5). Tient 4,64:1 sur la plaque la plus
-     sombre du pelage à 22 %, et 6,51:1 sur les cartes blanches. */
-  --color-border: #e5e7eb;
+     d'opacité, sous le seuil de 4,5). Tient plus de 4,5:1 sur la plaque la
+     plus sombre du pelage à 22 %, et 6,5:1 sur les cartes blanches. */
+  --color-border: #e7e2da;
+  --color-border-strong: #d6cfc4;
+  /* Contour des champs de saisie : 3,4:1 sur la surface, le seuil de 3:1
+     qu'exige WCAG 1.4.11 pour qu'un champ se distingue de son fond. */
+  --color-field: #848a94;
   /* Palette "girafe" : tan/ambre (couleur des taches) comme accent, brun
      foncé comme couleur de texte/premier plan sur cet accent — le brun a
-     bien plus de contraste que du blanc sur un ambre aussi clair. Valeurs
-     identiques en clair et en sombre (un ton moyen comme #D4A96A se lit bien
-     sur les deux fonds), donc pas besoin de les redéfinir dans .dark
-     ci-dessous. */
+     bien plus de contraste que du blanc sur un ambre aussi clair.
+     L'ambre est RARE : action principale et état actif, rien d'autre.
+       accent        aplat de l'action principale (identique clair/sombre)
+       accent-hover  son survol
+       on-accent     texte et icônes posés sur l'aplat
+       accent-ink    l'ambre quand il sert de TEXTE ou de trait fin (état
+                     actif, anneau de focus) : #d4a96a sur fond clair ne tient
+                     que 2:1, ce brun-ambre tient 5,3:1
+       accent-soft   fond d'un état actif (pastille, ligne de menu) */
   --color-accent: #d4a96a;
-  --color-on-accent: #5c3d1e;
-  --color-success: #16a34a;
-  --color-warning: #f59e0b;
-  --color-danger: #dc2626;
+  --color-accent-hover: #c99a58;
+  --color-on-accent: #4a2f12;
+  --color-accent-ink: #8a5a1f;
+  --color-accent-soft: #f7efe3;
+  /* Verdicts : une couleur de texte et un fond doux par verdict. Le feu
+     tricolore ne désigne qu'un verdict calculé (signe d'un montant, seuil
+     franchi) et se double toujours d'un mot. warning-gauge est l'orange vif
+     des jauges (un aplat, pas un texte : #f59e0b ne tient pas 4,5:1). */
+  --color-success: #13703a;
+  --color-success-soft: #eaf6ee;
+  --color-warning: #a14a07;
+  --color-warning-gauge: #f59e0b;
+  --color-warning-soft: #fdf3e3;
+  --color-danger: #c81e1e;
+  --color-danger-soft: #fdecec;
+  --color-info: #1d4ed8;
+  --color-info-soft: #eef3fd;
+  /* Voile derrière les feuilles, dialogues et la visite guidée. */
+  --color-scrim: rgb(0 0 0 / 0.5);
+
+  /* Palette de données des graphiques (séries, parts) : huit teintes sans
+     ambre ni vert/rouge de verdict, lues en JavaScript par cssColor(). */
+  --color-chart-1: #2563eb;
+  --color-chart-2: #0d9488;
+  --color-chart-3: #9333ea;
+  --color-chart-4: #db2777;
+  --color-chart-5: #65a30d;
+  --color-chart-6: #ea580c;
+  --color-chart-7: #0891b2;
+  --color-chart-8: #64748b;
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Un seul rayon, 12px (rounded-xl). */
+  --radius-xl: 12px;
+  /* Deux niveaux d'ombre, teintés brun plutôt que noir : repos (cartes) et
+     flottant (menus, boîtes de dialogue, panneaux). shadow-sm et shadow-lg
+     de Tailwind pointent dessus : les gabarits n'ont rien à changer. */
+  --shadow-sm: 0 1px 2px rgb(60 40 20 / 0.06);
+  --shadow-lg: 0 12px 24px -6px rgb(60 40 20 / 0.16);
+
+  /* Mouvement : une seule courbe (arrivée vive, fin douce) et trois durées. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
 }
 
 /* Mode sombre : bascule via la classe .dark posée sur <html> (gérée par le
@@ -41,19 +124,65 @@
      réécriture et rend aussi les contrôles natifs, barres de défilement et
      curseurs de saisie cohérents avec le thème. */
   color-scheme: dark;
-  --color-page: #0f172a;
-  --color-container: #1e293b;
-  --color-primary: #f1f5f9;
-  --color-secondary: #94a3b8;
-  --color-border: #334155;
-  /* Légèrement éclaircies pour rester lisibles sur fond sombre (le vert/
-     orange/rouge du mode clair perdent en contraste sur un fond navy). */
-  --color-success: #22c55e;
-  --color-warning: #fbbf24;
-  --color-danger: #f87171;
+  /* Palette sombre « chaude » : bruns profonds, jamais de bleu nuit. Pas
+     d'ombre pour l'élévation, c'est la teinte qui la porte : la page, puis
+     la surface plus claire, puis le creux plus sombre. */
+  --color-page: #17130f;
+  --color-container: #211c17;
+  --color-sunken: #120f0c;
+  --color-primary: #efe7da;
+  --color-secondary: #b0a595;
+  --color-border: #463d33;
+  --color-border-strong: #5a4f42;
+  --color-field: #8d8272;
+  /* Ambre : l'aplat reste identique au clair. Texte posé dessus : brun très
+     sombre ; ambre en texte ou en trait fin : plus clair que l'aplat. */
+  --color-accent-hover: #c99a58;
+  --color-on-accent: #2b1a08;
+  --color-accent-ink: #e2bd80;
+  --color-accent-soft: #382a17;
+  /* Verdicts : texte clair sur fond doux sombre de la même teinte. */
+  --color-success: #6fcf93;
+  --color-success-soft: #14301f;
+  --color-warning: #f2a65a;
+  --color-warning-gauge: #f59e0b;
+  --color-warning-soft: #3b2610;
+  --color-danger: #ff8f87;
+  --color-danger-soft: #3f1b19;
+  --color-info: #7fb2f5;
+  --color-info-soft: #172a45;
+  /* Données : teintes éclaircies pour tenir sur la surface sombre. */
+  --color-chart-1: #5b8def;
+  --color-chart-2: #2dc4b0;
+  --color-chart-3: #b77df0;
+  --color-chart-4: #f06aa8;
+  --color-chart-5: #8fcf3a;
+  --color-chart-6: #f28a4a;
+  --color-chart-7: #36bfd8;
+  --color-chart-8: #94a3b8;
+  --color-scrim: rgb(8 6 4 / 0.66);
+  /* Ombres quasi nulles : l'élévation passe par la teinte. */
+  --shadow-sm: 0 0 0 transparent;
+  --shadow-lg: 0 8px 16px -10px rgb(0 0 0 / 0.4);
 }
 
 @layer base {
+  /* Changement de thème en cercle (View Transitions, voir revealTheme dans
+     base.html) : on supprime le fondu par défaut entre l'ancienne et la
+     nouvelle image, c'est le script qui anime le rayon du cercle. La nouvelle
+     image passe au-dessus de l'ancienne. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  ::view-transition-old(root) {
+    z-index: 1;
+  }
+  ::view-transition-new(root) {
+    z-index: 2;
+  }
+
   /* Pendant clair de color-scheme (voir le bloc .dark ci-dessus, non layered
      donc prioritaire quand la classe est présente). */
   :root {
@@ -107,8 +236,39 @@
      produirait un halo disgracieux à chaque tap sur mobile. outline-offset
      positif pour ne jamais chevaucher le texte/l'icône du contrôle. */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-accent-ink);
     outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 40%, var(--color-container));
+    color: var(--color-on-accent);
+  }
+
+  /* Titres de page et de section : Bricolage Grotesque 800, serré de 2 %.
+     Une classe de graisse posée sur le titre (font-bold...) reste prioritaire. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* Les boîtes de dialogue modales se centrent par margin:auto (feuille de
+     style du navigateur) ; le preflight Tailwind remet toutes les marges à 0
+     et les collait en haut à gauche de l'écran. Les utilitaires (lg:m-0 du
+     panneau latéral des opérations...) restent prioritaires. */
+  dialog {
+    margin: auto;
+  }
+
+  /* La girafe en ligne (macro mascot, _macros/brand.html) : le preflight
+     Tailwind pose display:block sur les <svg>, ce qui renverrait le texte
+     voisin à la ligne. Même correctif que .twiga-icon plus bas. */
+  .twiga-mascot {
+    display: inline-block;
+    vertical-align: -0.2em;
+    flex-shrink: 0;
   }
 
   /* Pendant la requête HTMX déclenchée par l'élément (classe ajoutée
@@ -129,6 +289,58 @@
   .htmx-added,
   .htmx-settling {
     opacity: 0;
+  }
+
+  /* Mouvement : fondu + léger glissé, 0,3 s, courbe --ease-out. Réservé à
+     ceux qui n'ont pas demandé moins d'animation : sans cette préférence, ni
+     la page, ni les contenus insérés, ni l'indicateur d'envoi ne glissent
+     (le fondu d'opacité ci-dessus, lui, reste). */
+  @keyframes twiga-rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* Entrée de page : les enfants directs de <main>, pas <main> lui-même —
+       une transformation sur <main> ferait de lui le repère de ses
+       descendants en position:fixed pendant l'animation (barre d'actions de
+       la catégorisation en masse). Les éléments fixes eux-mêmes en sont
+       exclus. `backwards` et non `both` : avec `both` l'animation terminée
+       garde une transformation (matrice identité) qui fait de l'enfant le
+       repère des éléments fixes qu'il contient (barre et feuilles de
+       l'écran Opérations, dans le fragment de liste). */
+    main > :not(.fixed):not(dialog) {
+      animation: twiga-rise var(--duration-slow) var(--ease-out) backwards;
+    }
+
+    /* Contenu inséré par htmx (swap) : même glissé que l'entrée de page. */
+    .htmx-added,
+    .htmx-settling {
+      transform: translateY(8px);
+    }
+
+    * {
+      transition-timing-function: var(--ease-out);
+    }
+
+    /* Indicateur d'envoi (« Twiga tend le cou… » pendant un import) : il
+       apparaît en glissant au lieu de surgir. htmx pose lui-même opacity 0/1
+       et sa propre transition en 200 ms ; le sélecteur à trois classes
+       l'emporte sur le sien, quel que soit l'ordre de chargement. */
+    .htmx-indicator {
+      transform: translateY(6px);
+    }
+    body .htmx-request .htmx-indicator,
+    body .htmx-request.htmx-indicator {
+      transform: none;
+      transition: opacity var(--duration-slow) var(--ease-out), transform var(--duration-slow) var(--ease-out);
+    }
   }
 
   /* Mode confidentialité (case à cocher Paramètres + bouton 👁️ de
@@ -268,15 +480,23 @@
     color: var(--color-on-accent);
     font-weight: 600;
   }
+  /* Survol : l'ambre se fonce d'un cran (accent-hover) ; le filtre de
+     luminosité commun à tous les boutons serait un second assombrissement. */
+  @media (hover: hover) {
+    .btn-primary:not(:disabled):hover {
+      background-color: var(--color-accent-hover);
+      filter: none;
+    }
+  }
   .btn-secondary {
     background-color: var(--color-container);
     border-color: var(--color-border);
     color: var(--color-primary);
   }
   /* Contour et non aplat : il n'existe pas de token de premier plan sur
-     danger, et du blanc sur le rouge clair du thème sombre (#f87171)
+     danger, et du blanc sur le rouge clair du thème sombre (#ff8f87)
      tomberait à 2,3:1. En contour, le rouge sur la surface tient 4,5:1
-     en clair et 5,9:1 en sombre. */
+     en clair et 7:1 en sombre. */
   .btn-danger {
     background-color: var(--color-container);
     border-color: var(--color-danger);
@@ -284,7 +504,7 @@
   }
   .btn-ghost { background-color: transparent; color: var(--color-primary); }
   @media (hover: hover) {
-    .btn-ghost:hover { background-color: var(--color-page); }
+    .btn-ghost:hover { background-color: var(--color-sunken); }
   }
 
   /* ---------- CHAMPS ---------- */
@@ -292,13 +512,14 @@
     min-height: 50px;
     width: 100%;
     border-radius: 12px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-field);
     background-color: var(--color-container);
     color: var(--color-primary);
     padding-inline: 0.75rem;
     font-size: 0.875rem;
   }
   .input-base::placeholder { color: var(--color-secondary); }
+  .input-base:disabled { opacity: 0.5; color: var(--color-secondary); cursor: not-allowed; }
   .input-error { border-color: var(--color-danger); }
   .input-hint { font-size: 0.75rem; color: var(--color-secondary); }
   .input-message { font-size: 0.75rem; color: var(--color-danger); }
@@ -307,18 +528,123 @@
   .form-label { font-size: 0.75rem; font-weight: 500; color: var(--color-secondary); }
   .form-section { display: flex; flex-direction: column; gap: 0.75rem; }
 
+  /* Case à cocher de la créa : 22 px, coins de 6, ambre doux coché avec la
+     coche brune. Posée dans une cible de 50 px (le label ou le bouton qui
+     l'entoure), jamais seule. */
+  .check-box {
+    appearance: none;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    border-radius: 6px;
+    border: 1.5px solid var(--color-field);
+    background-color: var(--color-container);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 14px;
+    cursor: pointer;
+    transition: background-color var(--duration-fast), border-color var(--duration-fast);
+  }
+  .check-box:checked {
+    border-color: var(--color-accent-ink);
+    background-color: var(--color-accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a2f12' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5l10 -10'/%3E%3C/svg%3E");
+  }
+  .check-box:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
+
+  /* Liste déroulante habillée comme la maquette : le champ de 50 px avec un
+     chevron à droite, jamais le contrôle natif brut.
+         <div class="select-field"><select class="input-base">...</select></div> */
+  .select-field { position: relative; }
+  .select-field > select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: 2.5rem;
+    cursor: pointer;
+  }
+  .select-field::after {
+    content: "";
+    position: absolute;
+    inset-inline-end: 0.875rem;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    background-color: var(--color-secondary);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+
+  /* Pastille de choix (filtre, compte, montant rapide) : 50 px, la pastille
+     active porte le liseré et le fond ambre doux de la maquette. */
+  .chip {
+    min-height: 50px;
+    border-radius: 12px;
+    border: 1px solid var(--color-field);
+    background-color: var(--color-container);
+    color: var(--color-primary);
+    padding-inline: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .chip[aria-checked="true"], .chip[aria-pressed="true"], .chip.is-active {
+    border: 2px solid var(--color-accent);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-ink);
+    font-weight: 600;
+  }
+
+  /* Interrupteur : une piste de 44 x 24 px et son bouton rond. Se pose dans une
+     cible de 50 px (le <label> ou le <button role="switch"> qui l'entoure) ;
+     l'état se lit à la case cochée voisine (`input:checked + .switch`) ou à
+     aria-checked sur le bouton parent. Ambre doux quand il est actif, comme la
+     pastille choisie. */
+  .switch {
+    position: relative;
+    flex: none;
+    display: inline-block;
+    width: 2.75rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    background-color: var(--color-field);
+    transition: background-color var(--duration-fast);
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background-color: var(--color-container);
+    transition: transform var(--duration-fast);
+  }
+  input:checked + .switch,
+  [aria-checked="true"] > .switch {
+    background-color: var(--color-accent);
+  }
+  input:checked + .switch::after,
+  [aria-checked="true"] > .switch::after {
+    transform: translateX(1.25rem);
+  }
+  input:focus-visible + .switch { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
+
   /* ---------- CARTES ---------- */
   .card {
     background-color: var(--color-container);
     border-radius: 12px;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-card);
   }
-  .card-compact { padding: 0.75rem; }
+  .card-compact { padding: calc(var(--space-card) * 0.75); }
   /* Fond ambré très dilué plutôt qu'un liseré latéral de 4px : le liseré
      est l'anti-motif "side-tab", signalé par le détecteur du projet. */
   .card-amber {
-    background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-container));
+    background-color: var(--color-accent-soft);
   }
 
   /* ---------- BADGES ---------- */
@@ -334,17 +660,18 @@
   }
   .badge-positive {
     color: var(--color-success);
-    background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
+    background-color: var(--color-success-soft);
   }
   .badge-negative {
     color: var(--color-danger);
-    background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    background-color: var(--color-danger-soft);
   }
   .badge-warning {
     color: var(--color-warning);
-    background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    background-color: var(--color-warning-soft);
   }
-  .badge-neutral { color: var(--color-secondary); background-color: var(--color-page); }
+  .badge-neutral { color: var(--color-secondary); background-color: var(--color-sunken); }
+  .badge-info { color: var(--color-info); background-color: var(--color-info-soft); }
   .badge-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
 
   /* ---------- ALERTES ---------- */
@@ -360,21 +687,47 @@
   }
   .alert-success {
     border-color: var(--color-success);
-    background-color: color-mix(in srgb, var(--color-success) 10%, var(--color-container));
+    background-color: var(--color-success-soft);
   }
   .alert-warning {
     border-color: var(--color-warning);
-    background-color: color-mix(in srgb, var(--color-warning) 12%, var(--color-container));
+    background-color: var(--color-warning-soft);
   }
   .alert-danger {
     border-color: var(--color-danger);
-    background-color: color-mix(in srgb, var(--color-danger) 10%, var(--color-container));
+    background-color: var(--color-danger-soft);
   }
-  .alert-neutral { background-color: var(--color-page); }
+  .alert-neutral { background-color: var(--color-sunken); }
 
   /* ---------- TYPOGRAPHIE ---------- */
-  .text-page-title { font-size: 1.5rem; font-weight: 700; line-height: 1.25; color: var(--color-primary); }
-  .text-section-title { font-size: 1.125rem; font-weight: 600; line-height: 1.4; color: var(--color-primary); }
+  .text-page-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--color-primary);
+  }
+  @media (min-width: 1024px) {
+    .text-page-title { font-size: 2.125rem; line-height: 1.1; }
+  }
+  .text-section-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: var(--color-primary);
+  }
+  /* Réplique de la girafe (macro mascot_line) : même police, un cran de plus. */
+  .text-replique {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--color-primary);
+  }
   .text-card-title { font-size: 1rem; font-weight: 500; line-height: 1.4; color: var(--color-primary); }
   .text-body { font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--color-primary); }
   .text-small { font-size: 0.75rem; line-height: 1.4; color: var(--color-secondary); }
@@ -389,12 +742,12 @@
     width: 100%;
     height: 0.5rem;
     border-radius: 9999px;
-    background-color: var(--color-page);
+    background-color: var(--color-sunken);
     overflow: hidden;
   }
   .progress-fill { height: 100%; border-radius: 9999px; }
   .progress-green { background-color: var(--color-success); }
-  .progress-orange { background-color: var(--color-warning); }
+  .progress-orange { background-color: var(--color-warning-gauge); }
   .progress-red { background-color: var(--color-danger); }
   .progress-amber { background-color: var(--color-accent); }
 
@@ -416,7 +769,7 @@
     .table-row:hover { background-color: var(--color-page); }
   }
   .table-row-selected {
-    background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    background-color: var(--color-accent-soft);
   }
 }
 
@@ -456,6 +809,12 @@
 .icon-theme-dark { display: none; }
 .dark .icon-theme-light { display: none; }
 .dark .icon-theme-dark { display: inline-block; }
+/* Le nom du thème courant (« Clair » / « Sombre ») dans le menu de l'avatar de
+   « L'autre voie » : même principe que les icônes, deux textes dont le CSS
+   n'affiche que le bon. */
+.theme-label-dark { display: none; }
+.dark .theme-label-light { display: none; }
+.dark .theme-label-dark { display: inline; }
 
 /* Cartes de choix (Paramètres > Préférences : langue, format) : le radio est
    masqué (sr-only) et toute la carte se clique. L'état coché se lit à la
@@ -475,13 +834,13 @@
 }
 
 .choice-card:has(input:checked) {
-  border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-container));
-  box-shadow: inset 0 0 0 1px var(--color-accent);
+  border-color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--color-accent-ink);
 }
 
 .choice-card:has(input:focus-visible) {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-accent-ink);
   outline-offset: 2px;
 }
 
@@ -505,4 +864,125 @@
   .settings-columns {
     column-count: 3;
   }
+}
+
+/* Girafe sur fond sombre : un liseré clair (#f0e2c8) suit la silhouette pour
+   la détacher du brun du fond. Ombre portée sans décalage appliquée au dessin
+   entier, doublée pour qu'un trait d'un pixel reste visible ; les formes ne
+   sont pas touchées, et rien en mode clair. */
+.dark .twiga-mascot {
+  filter: drop-shadow(0 0 1px #f0e2c8) drop-shadow(0 0 1px #f0e2c8);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DENSITÉ — Compact / Normal / Aéré (préférence d'affichage par compte,
+   portée par <html data-density="...">, voir backend/preferences.py).
+
+   Seul l'AIR change : marges internes des cartes, écart entre blocs et entre
+   éléments de liste, hauteur des lignes. Ne bougent JAMAIS, quelle que soit
+   la densité :
+   - la taille du texte ;
+   - la hauteur des éléments touchables (50px minimum : un bouton, une case,
+     une ligne qu'on touche). Les variables --row-touch et --row-list sont
+     donc des hauteurs MINIMALES de lignes cliquables, jamais sous 50px ;
+     seules les lignes qui ne se touchent pas (--row-static) descendent plus bas.
+
+     --space-card    marge interne d'une carte ou d'un panneau
+     --space-block   écart entre blocs d'une page
+     --space-list    écart entre éléments d'une liste ou d'une grille
+     --row-pad       marge verticale d'une ligne ou d'un en-tête de groupe
+     --row-touch     hauteur minimale d'une ligne d'opération (cliquable)
+     --row-list      hauteur minimale d'une ligne de liste cliquable
+     --row-static    hauteur d'une ligne qui ne se touche pas
+
+   Le sélecteur par attribut (sans « html ») vaut aussi pour l'aperçu des
+   préférences, qui pose son propre data-density.
+   ═══════════════════════════════════════════════════════════════════ */
+:root,
+[data-density="normal"] {
+  --space-card: 1rem;
+  --space-block: 1rem;
+  --space-list: 0.75rem;
+  --row-pad: 0.5rem;
+  --row-touch: 56px;
+  --row-list: 50px;
+  --row-static: 44px;
+}
+[data-density="compact"] {
+  --space-card: 0.75rem;
+  --space-block: 0.625rem;
+  --space-list: 0.5rem;
+  --row-pad: 0.25rem;
+  --row-touch: 50px;
+  --row-list: 50px;
+  --row-static: 34px;
+}
+[data-density="comfortable"] {
+  --space-card: 1.5rem;
+  --space-block: 1.5rem;
+  --space-list: 1.125rem;
+  --row-pad: 0.875rem;
+  --row-touch: 68px;
+  --row-list: 62px;
+  --row-static: 56px;
+}
+@media (min-width: 1024px) {
+  :root,
+  [data-density="normal"] { --space-card: 1.5rem; }
+  [data-density="compact"] { --space-card: 1rem; }
+  [data-density="comfortable"] { --space-card: 2rem; }
+}
+
+/* Aperçu miniature des préférences d'affichage (profil, Paramètres) : une
+   fausse page qui prend le thème et la densité choisis avant même
+   l'enregistrement. Elle pose sa propre classe .dark et son propre
+   data-density, donc les variables ci-dessus et les jetons de couleur
+   résolvent à l'intérieur. Les hauteurs sont celles de la vraie page, à
+   40 % : on compare l'air, pas les pixels. */
+.pref-preview {
+  background: var(--color-page);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-block) * 0.6);
+}
+.pref-preview-card {
+  background: var(--color-container);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  padding: calc(var(--space-card) * 0.6);
+  display: flex;
+  flex-direction: column;
+}
+.pref-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: calc(var(--row-static) * 0.55);
+  border-bottom: 1px solid var(--color-border);
+}
+.pref-preview-row:last-child { border-bottom: 0; }
+.pref-preview-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--color-accent); flex-shrink: 0; }
+.pref-preview-bar { height: 0.375rem; border-radius: 9999px; background: var(--color-border-strong); }
+
+/* Aperçu en thème clair : quand la page est en sombre, les jetons de <html>
+   sont sombres ; l'aperçu redéfinit ici, avec leurs valeurs claires, ceux
+   qu'il utilise. Mêmes valeurs que le bloc @theme en haut de ce fichier. */
+.pref-preview.pref-light {
+  --color-page: #faf8f5;
+  --color-container: #ffffff;
+  --color-primary: #111827;
+  --color-border: #e7e2da;
+  --color-border-strong: #d6cfc4;
+  --color-accent: #d4a96a;
+  --shadow-sm: 0 1px 2px rgb(60 40 20 / 0.06);
+}
+
+/* Choix indisponible (« L'autre voie », pas encore développée). */
+.choice-card:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

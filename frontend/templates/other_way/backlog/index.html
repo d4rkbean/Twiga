@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% from "_macros/menu.html" import dropdown %}
+{% from "backlog/_parts.html" import head, chips, confidence_chips, pending_line, summary, last_message, sync %}
+{% from "backlog/_picker.html" import picker_list %}
+
+{#- Traitement en masse de « L'autre voie » : le lot revu par catégorie. La phrase de
+    Twiga d'abord, « Tout ranger (N) » comme seule action principale, puis la
+    recherche, les trois vues de la file (Tout, Sans suggestion, Sûrs) et « Ajuster
+    le lot », où restent les réglages fins : confiance, compte, catégorie, regroupement
+    des libellés, rejet des suggestions peu sûres, sélection des lignes. -#}
+{% block title %}{{ _("Traitement en masse — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("backlog", [
+  tour_step("#backlog-search-input", _("Retrouver une ligne"), _("Tape un bout de libellé, par exemple ORANGE, pour ne garder que les lignes qui correspondent."), "search", position="bottom"),
+  tour_step("#backlog-chips", _("Les trois vues de la file"), _("Tout, Sans suggestion ou Sûrs : choisis ce que la file te montre. Les chiffres disent combien de lignes chaque vue contient."), "filter", position="bottom"),
+  tour_step("#backlog-adjust-btn", _("Ajuster le lot"), _("Filtre par compte ou par catégorie, regroupe les libellés, écarte les suggestions peu sûres ou choisis des lignes à la main."), "adjustments", position="bottom", alt_target='[data-tour="backlog-adjust-mobile"]'),
+  tour_step("#backlog-list", _("Les lignes par catégorie"), _("Touche une ligne sûre pour la laisser de côté. La flèche ouvre la ligne pour changer sa catégorie ou son mode de paiement."), "tag", position="top", write=True),
+  tour_step("#backlog-file-all", _("Tout ranger d'un coup"), _("Range d'un coup les lignes cochées du lot. Une ligne laissée de côté reste en question."), "check", position="bottom", optional=True, write=True),
+  tour_step("#backlog-summary", _("Le résumé du lot"), _("Le montant encore à ranger, sa répartition par catégorie et par mode de paiement, et ce qui reste à décider."), "chart-bar", position="left", optional=True),
+]) }}{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_url('/static/js/masse-b.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+{% set board = {
+  "q": state.search,
+  "conf": state.suggestion_filter,
+  "acc": state.account_id | string if state.account_id else "",
+  "cat": state.category_id | string if state.category_id else "",
+  "group": state.group,
+  "page": page,
+  "shownIds": shown_ids,
+  "lotIds": lot_ids,
+  "labels": {
+    "categoryWord": _("Catégorie :"),
+    "paymentWord": _("Paiement :"),
+    "proposed": _("celle proposée"),
+    "none": _("aucun"),
+  },
+} %}
+{% set account_options = [("", _("Tous les comptes"))] %}
+{% for account in accounts %}{% if account_options.append((account.id | string, account.name)) %}{% endif %}{% endfor %}
+{% set category_options = [("", _("Toutes les catégories"))] %}
+{% for parent in parent_categories %}{% if category_options.append((parent.id | string, parent.name)) %}{% endif %}{% endfor %}
+{% set select_title = _("Ranger la sélection dans…") %}
+<main
+  class="flex flex-col gap-[var(--space-block)] px-4 pb-28 pt-4 lg:px-8 lg:pb-8 lg:pt-6"
+  x-data="masseBoard({{ board | tojson | forceescape }})"
+  @keydown.escape.window="pick = null; openRow = null"
+>
+  {{ head(answer, lot_count) }}
+
+  {# State carried by every request: the filters, bound to the component. #}
+  <form id="backlog-form" x-ref="form" hx-get="/backlog/content" hx-trigger="refresh" hx-target="#backlog-list" hx-swap="innerHTML" hidden>
+    <input type="hidden" name="search" :value="q" />
+    <input type="hidden" name="suggestion_filter" :value="conf" />
+    <input type="hidden" name="account" :value="acc" />
+    <input type="hidden" name="category" :value="cat" />
+    <input type="hidden" name="group" :value="group ? '1' : ''" />
+    <input type="hidden" name="limit" value="{{ state.limit }}" />
+    <input type="hidden" name="page" :value="page" />
+    <input type="hidden" name="apply_category_id" :value="bcat ? bcat.id : ''" />
+    <input type="hidden" name="apply_payment_method" :value="pay" />
+  </form>
+  <div id="backlog-selection" hidden>
+    <template x-for="id in selected" :key="id"><input type="hidden" name="selected_ids" :value="id" /></template>
+  </div>
+
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+    <div class="relative lg:flex-1">
+      <span class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-secondary">{{ icon('search', size=18) }}</span>
+      <input
+        type="text"
+        id="backlog-search-input"
+        x-model="q"
+        @input.debounce.400ms="filterChanged()"
+        value="{{ state.search }}"
+        placeholder="{{ _("Rechercher par libellé (ex : ORANGE)...") }}"
+        aria-label="{{ _("Rechercher par libellé") }}"
+        autocomplete="off"
+        class="input-base pl-[42px] pr-[50px]"
+      />
+      <button type="button" x-show="q" style="display: none;" @click="q = ''; filterChanged()" aria-label="{{ _("Effacer la recherche") }}" class="absolute inset-y-0 right-0 flex w-[50px] items-center justify-center text-secondary">{{ icon('x', size=18) }}</button>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      {{ chips(counts) }}
+      <button
+        type="button"
+        id="backlog-adjust-btn"
+        @click="adjust = !adjust"
+        :aria-expanded="adjust"
+        class="relative flex min-h-[50px] items-center gap-2 rounded-xl border border-border-strong bg-container px-4 text-sm font-medium text-primary max-lg:hidden"
+      >{{ _("Ajuster le lot") }} <span :class="adjust ? 'rotate-180' : ''" class="transition-transform">{{ icon('chevron-down', size=18) }}</span></button>
+    </div>
+  </div>
+  <div class="flex items-center justify-between gap-3">
+    {{ pending_line(pending_total) }}
+    <button
+      type="button"
+      @click="adjust = !adjust"
+      :aria-expanded="adjust"
+      data-tour="backlog-adjust-mobile"
+      class="flex min-h-[50px] items-center gap-1.5 text-sm font-semibold text-accent-ink lg:hidden"
+    >{{ _("Ajuster le lot") }} <span :class="adjust ? 'rotate-180' : ''" class="transition-transform">{{ icon('chevron-down', size=18) }}</span></button>
+  </div>
+
+  {{ last_message(last) }}
+
+  {# « Ajuster le lot »: the fine settings. #}
+  <section x-show="adjust" style="display: none;" aria-label="{{ _("Ajuster le lot") }}" class="flex flex-col gap-5 rounded-xl border border-border bg-container p-4 shadow-sm lg:p-5">
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="font-display text-lg font-extrabold tracking-tight text-primary">{{ _("Ajuster le lot") }}</h2>
+      <button type="button" @click="reset()" class="min-h-[50px] px-1 text-sm font-medium text-accent-ink">{{ _("Réinitialiser") }}</button>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-3">
+      <div class="flex flex-col gap-2">
+        <p class="text-xs font-medium text-primary">{{ _("Quelles lignes montrer") }}</p>
+        {{ confidence_chips(counts) }}
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-primary">{{ _("Compte") }}</span>
+          {{ dropdown(none, account_options, model="acc", change="setAcc()", popover=true, aria=_("Compte")) }}
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-primary">{{ _("Catégorie suggérée") }}</span>
+          {{ dropdown(none, category_options, model="cat", change="setCat()", popover=true, aria=_("Catégorie suggérée")) }}
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="group"
+          @click="toggleGroup()"
+          class="flex min-h-[50px] w-full items-center justify-between gap-2.5 text-left text-sm text-primary"
+        >
+          {{ _("Regrouper les libellés similaires") }}
+          <span class="relative h-[26px] w-11 flex-none rounded-full transition-colors" :class="group ? 'bg-accent' : 'bg-field'">
+            <span class="absolute top-0.5 h-[22px] w-[22px] rounded-full bg-container transition-all" :class="group ? 'left-[22px]' : 'left-0.5'"></span>
+          </span>
+        </button>
+      </div>
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-2">
+          <p class="text-xs font-medium text-primary">{{ _("Écarter les suggestions peu sûres") }}</p>
+          <p class="text-sm text-secondary">{% trans n=counts["low"] %}{{ n }} à moins de 70 %. Elles quittent cette vue et reviennent en question.{% endtrans %}</p>
+          <div x-show="!askReject">
+            <button type="button" @click="askReject = true" {% if not counts["low"] %}disabled{% endif %} class="btn btn-secondary border-border-strong">{{ _("Tout rejeter < 70 %%") }}</button>
+          </div>
+          <div x-show="askReject" style="display: none;" class="flex flex-col gap-2">
+            <p class="text-sm font-medium text-primary">{{ _("Rejeter toutes les suggestions à moins de 70 %% de confiance sur cette page ?") }}</p>
+            <div class="flex gap-2">
+              <button type="button" @click="rejectUnsure()" class="btn btn-secondary flex-1 border-border-strong font-semibold">{{ _("Oui, les rejeter") }}</button>
+              <button type="button" @click="askReject = false" class="btn btn-ghost flex-1">{{ _("Non, garder") }}</button>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <p class="text-xs font-medium text-primary">{{ _("Choisir les lignes soi-même") }}</p>
+          <p class="text-sm text-secondary">{{ _("Pour donner la même catégorie ou le même mode de paiement à plusieurs lignes d'un coup.") }}</p>
+          <div><button type="button" @click="startSelect()" class="btn btn-secondary border-border-strong">{{ icon('list-details', size=18) }} {{ _("Sélectionner des lignes") }}</button></div>
+        </div>
+      </div>
+    </div>
+    <p class="text-xs text-secondary">{{ _("Les suggestions sont calculées d'après tes opérations déjà rangées, de la plus sûre à la moins sûre. « Tout ranger » prend les lignes cochées.") }}</p>
+  </section>
+
+  {# The selection by hand: the bulk bar. #}
+  <section x-show="mode === 'select'" style="display: none;" aria-label="{{ _("Catégorisation en masse") }}" class="flex flex-col gap-4 rounded-xl border border-border bg-accent-soft p-4 lg:p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="font-semibold text-primary tabular-nums">
+        <span x-text="selected.length">0</span>
+        <span x-show="selected.length <= 1">{{ _("sélectionnée") }}</span><span x-show="selected.length > 1" style="display: none;">{{ _("sélectionnées") }}</span>
+      </p>
+      <div class="flex items-center gap-2">
+        <button type="button" @click="toggleAll()" class="min-h-[50px] px-3 text-sm font-medium text-accent-ink">{{ _("Tout sélectionner (cette page)") }}</button>
+        <button type="button" @click="endSelect()" class="btn btn-secondary border-border-strong px-5">{{ _("Terminer") }}</button>
+      </div>
+    </div>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div class="flex flex-col gap-2">
+        <p class="text-xs font-medium text-primary">{{ _("Catégorie") }}</p>
+        <button type="button" data-pick-title="{{ select_title }}" @click="openPickSelection($el.dataset.pickTitle)" :disabled="selected.length === 0" class="btn btn-secondary justify-between border-border-strong text-left">
+          <span class="truncate" x-text="bcat ? bcat.path : '{{ _("celle proposée") | jsq }}'">{{ _("celle proposée") }}</span>{{ icon('tag', size=18) }}
+        </button>
+      </div>
+      <div class="flex flex-col gap-2">
+        <p class="text-xs font-medium text-primary">{{ _("Mode de paiement (optionnel)") }}</p>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" @click="setPay('')" :aria-pressed="pay === ''" :class="pay === '' ? 'border-accent bg-container font-semibold text-accent-ink' : 'border-border-strong bg-container text-primary'" class="min-h-[50px] rounded-full border px-4 text-sm">{{ _("Aucun") }}</button>
+          {% for code, meta in payment_methods.items() %}
+          <button type="button" data-code="{{ code }}" @click="setPay($el.dataset.code)" :aria-pressed="pay === $el.dataset.code" :class="pay === $el.dataset.code ? 'border-accent bg-container font-semibold text-accent-ink' : 'border-border-strong bg-container text-primary'" class="min-h-[50px] rounded-full border px-4 text-sm">{{ meta.label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <p class="text-xs text-secondary">{{ _("Catégorie et mode de paiement s'appliquent séparément : l'un sans l'autre suffit.") }}</p>
+    <p class="text-xs text-secondary" x-text="summary">{{ _("Catégorie :") }} {{ _("celle proposée") }} · {{ _("Paiement :") }} {{ _("aucun") }}</p>
+    <div x-show="!askApply">
+      <button type="button" @click="askApply = true" :disabled="selected.length === 0" class="btn btn-secondary border-border-strong font-semibold">{{ icon('check', size=18) }} {{ _("Appliquer à la sélection") }}</button>
+    </div>
+    <div x-show="askApply" style="display: none;" class="flex flex-col gap-2">
+      <p class="text-sm font-medium text-primary">{{ _("Appliquer ces modifications aux opérations sélectionnées ?") }}</p>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          hx-post="/backlog/bulk-apply"
+          hx-include="#backlog-form, #backlog-selection"
+          hx-target="#backlog-list"
+          hx-swap="innerHTML"
+          @htmx:after-request="if ($event.detail.successful) applied()"
+          class="btn btn-secondary flex-1 border-border-strong font-semibold"
+        >{{ _("Oui, appliquer") }}</button>
+        <button type="button" @click="askApply = false" class="btn btn-ghost flex-1">{{ _("Non, revenir") }}</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex flex-col gap-[var(--space-block)] lg:flex-row lg:items-start">
+    <div id="backlog-list" class="min-w-0 lg:flex-1">
+      {% include "backlog/_content.html" %}
+    </div>
+    <div class="lg:sticky lg:top-[72px] lg:w-[340px] lg:flex-none">
+      {{ summary(lot_count, lot_total, lot_categories, lot_category_max, lot_payments, doubt_count) }}
+    </div>
+  </div>
+
+  {# The category list: a sheet on a phone, a dialog on a computer. #}
+  <div x-show="pick" style="display: none;" class="fixed inset-0 z-50 flex flex-col justify-end bg-scrim lg:items-center lg:justify-center" @click.self="closePick()">
+    <div role="dialog" aria-label="{{ _("Choisir une catégorie") }}" class="flex flex-col gap-2 rounded-t-xl bg-container px-4 pb-4 pt-2 shadow-lg lg:w-[480px] lg:rounded-xl lg:p-5">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="min-w-0 text-base font-semibold text-primary" x-text="pick && pick.title"></h2>
+        <button type="button" @click="closePick()" aria-label="{{ _("Fermer") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</button>
+      </div>
+      {{ picker_list(parent_categories) }}
+    </div>
+  </div>
+
+  {{ sync(shown_ids, visible_ids, lot_ids) }}
+</main>
+{% endblock %}

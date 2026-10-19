@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs, back_link %}
+
+{% block title %}{{ _("Règles — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("rules", [
+  tour_step("#rules-content", _("Tes règles de rangement"), _("Quand un libellé contient le mot-clé, l'opération prend la catégorie de la règle. Les plus utilisées sont en haut."), "tag", position="bottom"),
+  tour_step('[data-tour="rules-pending"]', _("Les règles proposées"), _("Twiga propose une règle quand tu ranges souvent le même libellé. Crée-la, ou ignore-la."), "bulb", position="bottom", optional=True, write=True),
+  tour_step("#rules-head", _("Ajouter une règle"), _("Un mot-clé, une catégorie, et au besoin un mode de paiement. Le formulaire te dit combien d'opérations le mot-clé attrape."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="rules-test"]', _("Tester un libellé"), _("Colle un libellé de ton relevé : Twiga dit quelle règle s'appliquerait, sans rien modifier."), "zoom-in", position="left", alt_position="top"),
+]) }}{% endblock %}
+
+{% block content %}
+{% set write = can_edit("/rules/create") %}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": false},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": true},
+  ]) }}
+  {{ back_link("/settings", _("Paramètres")) }}
+  {% include "other_way/rules/_head.html" %}
+
+  {#- A new rule: keyword (with what it catches), category, optional payment mode and aisle. -#}
+  {% if write %}
+  <form x-show="adding" style="display: none" hx-post="/rules/create" hx-target="#rules-content" hx-swap="outerHTML"
+        @htmx:after-request="if ($event.detail.successful) { adding = false; $el.reset(); }" class="card flex flex-col gap-4">
+    <h2 class="text-section-title">{{ _("Ajouter une règle") }}</h2>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div class="form-group">
+        <label class="form-group">
+          <span class="form-label">{{ _("Mot-clé (ex : CARREFOUR)") }}</span>
+          <input id="new-rule-keyword" type="text" name="keyword" required autocomplete="off" class="input-base font-mono"
+                 hx-post="/rules/count" hx-trigger="keyup changed delay:300ms" hx-target="#new-rule-count" hx-swap="innerHTML" />
+        </label>
+        <div id="new-rule-count" aria-live="polite"><p class="text-sm text-secondary">{{ _("Saisis un mot-clé pour voir ce qu'il attrape.") }}</p></div>
+      </div>
+      <label class="form-group">
+        <span class="form-label">{{ _("Catégorie") }}</span>
+        <span class="select-field"><select name="parent_category_id" required class="input-base"
+          hx-get="/transactions/subcategories?field_name=category_id&element_id=new-rule-subcategory&allow_empty=false"
+          hx-target="#new-rule-subcategory" hx-swap="outerHTML" hx-trigger="change">
+          <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
+          {% for category in parent_categories %}<option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>{% endfor %}
+        </select></span>
+      </label>
+      <div class="form-group">
+        <span class="form-label">{{ _("Sous-catégorie") }}</span>
+        {% with parent = none, subcategories = [], selected_category_id = none, field_name = "category_id", element_id = "new-rule-subcategory", allow_empty = false %}<span class="select-field">{% include "transactions/_subcategory_select.html" %}</span>{% endwith %}
+      </div>
+      <label class="form-group">
+        <span class="form-label">{{ _("Mode de paiement (optionnel)") }}</span>
+        <span class="select-field"><select name="payment_method" class="input-base">
+          <option value="">{{ _("Mode de paiement (optionnel)") }}</option>
+          {% for code, meta in payment_methods.items() %}<option value="{{ code }}">{{ meta.label }}</option>{% endfor %}
+        </select></span>
+      </label>
+    </div>
+    <label class="form-group">
+      <span class="form-label">{{ _("Rayon de ticket auto (optionnel)") }}</span>
+      <span class="select-field"><select name="receipt_family" class="input-base">
+        <option value="">{{ _("Rayon de ticket auto (optionnel)") }}</option>
+        {% for code, family_icon, label in receipt_families %}<option value="{{ code }}">{{ label }}</option>{% endfor %}
+      </select></span>
+      <span class="input-hint">{{ _("Pour un commerce à famille de produit unique (boulangerie...) : ajoute automatiquement une ligne de ticket couvrant tout le montant — uniquement pris en compte si la catégorie choisie ci-dessus est Courses.") }}</span>
+    </label>
+    <div class="flex flex-col-reverse gap-2 sm:flex-row">
+      <button type="button" @click="adding = false" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+      <button type="submit" class="btn btn-primary sm:flex-[2]">{{ _("Ajouter la règle") }}</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+    {% include "rules/_content.html" %}
+    <aside data-tour="rules-test" class="card flex flex-col gap-3 min-w-0" aria-labelledby="test-title">
+      <h2 id="test-title" class="text-section-title">{{ _("Tester une règle") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Colle un libellé : je dis quelle règle s'appliquerait.") }}</p>
+      <form hx-post="/rules/test" hx-target="#rule-test-result" hx-swap="innerHTML" class="flex flex-col gap-2 sm:flex-row">
+        <input type="text" name="label" placeholder="{{ _("Libellé à tester (ex : CARREFOUR MARKET PARIS)") }}" aria-label="{{ _("Libellé à tester (ex : CARREFOUR MARKET PARIS)") }}" required autocomplete="off" class="input-base sm:flex-1" />
+        <button type="submit" class="btn btn-secondary border-border-strong">{{ _("Tester") }}</button>
+      </form>
+      <div id="rule-test-result" aria-live="polite"><p class="text-sm text-secondary">{{ _("Saisis un libellé pour voir quelle règle s'appliquerait.") }}</p></div>
+    </aside>
+  </div>
+</main>
+{% endblock %}

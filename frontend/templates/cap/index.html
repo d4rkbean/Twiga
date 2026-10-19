@@ -1,15 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _("Le Cap — Twiga 🦒") }}{% endblock %}
+{% block title %}{{ _("Le Cap — Twiga") }}{% endblock %}
+
+{# Le rituel a ses propres boutons d'action (« Suivant », « Fixer le cap ») :
+   c'est lui qui porte l'ambre plein de l'écran, Importer passe en secondaire. #}
+{% set demote_import = true %}
+
+{% block extra_head %}
+<script>
+  {# Petits outils partagés par les trois étapes et leur panneau de droite :
+     mise en forme des montants, lecture d'un montant tapé, et le verdict d'un
+     pilier (toujours une couleur ET un mot). #}
+  window.twigaCap = {
+    locale: function () { return document.documentElement.dataset.numberLocale || "fr-FR"; },
+    fmt: function (v) { return (Number(v) || 0).toLocaleString(this.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace("-", "−") + " €"; },
+    fmt2: function (v) { return (Number(v) || 0).toLocaleString(this.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+    num: function (text) { var n = parseFloat(String(text).replace(/\s/g, "").replace(",", ".")); return isNaN(n) ? 0 : n; },
+    word: function (pct) { return pct > 100 ? {{ _("dépassé") | tojson }} : pct >= 75 ? {{ _("à surveiller") | tojson }} : {{ _("dans le rythme") | tojson }}; },
+    tone: function (pct) { return pct > 100 ? "text-danger" : pct >= 75 ? "text-warning" : "text-success"; },
+    ratio: function (row) { return row.planned > 0 ? Math.round(((Number(row.spent) || 0) + (Number(row.pending) || 0)) / row.planned * 100) : null; },
+    spentWidth: function (row) { return row.planned > 0 ? Math.min(Math.round((Number(row.spent) || 0) / row.planned * 100), 100) : 0; },
+    pendingWidth: function (row) { return Math.max(0, Math.min(this.ratio(row) || 0, 100) - this.spentWidth(row)); },
+  };
+</script>
+{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("cap", [
+  tour_step('[data-tour="cap-bilan-figures"]', _("Le bilan du mois écoulé"), _("Recettes, dépenses et résultat du mois dernier, avec l'écart par rapport à ce qui était prévu."), "chart-bar", position="bottom", optional=True),
+  tour_step('[data-tour="cap-bilan-table"]', _("Où est parti l'argent"), _("Le tableau compare chaque pilier au prévu. Clique Essentiel ou Choix pour voir les catégories derrière."), "list-details", position="top", optional=True),
+  tour_step("#cap-reflection", _("Un mot sur le mois"), _("Note ce qui t'a surpris ou rendu fier. Tes réponses sont gardées jusqu'au bouton Fixer le cap."), "pencil", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-income"]', _("Les ressources du mois"), _("Vérifie ce que tu comptes recevoir, et ce que tu prélèves éventuellement sur l'épargne. Les boutons plus et moins ajustent le montant."), "currency-euro", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="cap-pillar"]', _("Un montant par catégorie"), _("Règle l'enveloppe d'un pilier, elle se répartit entre ses catégories, ou ajuste chaque catégorie une à une."), "adjustments", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-live"]', _("Le plan en direct"), _("Ce panneau recalcule l'épargne prévue pendant que tu ajustes, et montre le mois écoulé pilier par pilier."), "scale", position="left"),
+  tour_step("#intention", _("L'intention du mois"), _("Écris une ou deux phrases pour le mois qui vient. Tu les retrouveras en ouvrant Mon mois."), "writing", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-save"]', _("Fixer le cap"), _("Ce bouton enregistre le plan et l'intention. Rien n'est gardé avant."), "device-floppy", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-done"]', _("Le cap est fixé"), _("Le résumé du plan est là. Va au Panorama, ouvre Mon mois, ou reprends le cap si tu changes d'avis."), "confetti", position="top", optional=True),
+]) }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pt-2 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ icon('compass', size=24) }} {{ _("Le Cap") }}</h1>
-    <a href="/dashboard" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Panorama") }}</a>
-  </div>
+<main class="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-8 lg:py-6">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-page-title">{{ cap_title }}</h1>
+    <p class="text-sm text-secondary">{% trans previous=previous_month_name_lower %}Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes. On regarde {{ previous }}, puis on fixe le cap.{% endtrans %}</p>
+  </header>
 
-  <div id="cap-wizard" class="flex flex-col gap-4">
+  <div id="cap-wizard" class="flex flex-col gap-5">
     {% include step_template %}
   </div>
 </main>

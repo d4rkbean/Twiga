@@ -1,75 +1,59 @@
 {% set tour = tour_context(request) %}
-{# Textes de la visite, dans la langue de l'utilisateur. Le français est la
-   langue source ; l'anglais explique en plus les noms propres (La Savane,
-   Panorama, Le Cap) et la méthode japonaise dont Le Cap s'inspire. #}
-{% set tour_texts = {
-  "welcome": {
+{# Les cinq étapes de la visite Classique, avec leurs textes dans la langue de
+   l'utilisateur. Le français est la langue source ; l'anglais explique en plus
+   les noms propres (La Savane, Panorama, Le Cap) et la méthode japonaise dont
+   Le Cap s'inspire. Cinq étapes, sans changement de page : la visite raconte la
+   boucle importer → catégoriser → piloter, puis les raccourcis. Les cibles
+   (en-tête, navigation) existent sur toutes les pages ; altTarget est leur
+   équivalent à l'autre point de rupture (barre latérale sur ordinateur).
+   skipImport : étape retirée pour un rôle sans droit d'import ou une base déjà
+   remplie (voir tour_context dans backend/templating.py). #}
+{% set tour_steps = [
+  {
+    "id": "welcome",
+    "icon": "compass",
+    "target": none,
+    "position": "center",
     "title": _("Bienvenue dans Twiga"),
     "text": "<p>"|safe ~ _("Trois temps : importer ses opérations, les catégoriser, puis suivre ses comptes.") ~ "</p><p>"|safe ~ _("Les données restent sur ce serveur. Rien n'est envoyé sur Internet.") ~ "</p>"|safe,
   },
-  "import": {
+  {
+    "id": "import",
+    "icon": "file-import",
+    "skipImport": true,
+    "target": "#tour-import",
+    "position": "bottom",
     "title": _("Importer"),
     "text": "<p>"|safe ~ _("Tout commence par un relevé bancaire : QIF, CSV ou OFX.") ~ "</p><p>"|safe ~ _("Les doublons sont détectés et ignorés.") ~ "</p>"|safe,
   },
-  "nav-savane": {
+  {
+    "id": "nav-savane",
+    "icon": "inbox",
+    "target": "#tour-nav-savane",
+    "altTarget": "#tour-sidebar-savane",
+    "position": "top",
+    "altPosition": "right",
     "title": _("La Savane"),
     "text": "<p>"|safe ~ _("Chaque nouvelle opération y attend une catégorie, une carte à la fois.") ~ "</p><p>"|safe ~ _("Les choix répétés sont mémorisés et proposés ensuite.") ~ "</p>"|safe,
   },
-  "nav-dashboard": {
+  {
+    "id": "nav-dashboard",
+    "icon": "chart-bar",
+    "target": "#tour-nav-dashboard",
+    "altTarget": "#tour-sidebar-dashboard",
+    "position": "top",
+    "altPosition": "right",
     "title": _("Panorama et Mon mois"),
     "text": "<p>"|safe ~ _("Le Panorama montre où va l'argent. Mon mois fixe ce qu'on se donne le droit de dépenser.") ~ "</p>"|safe,
   },
-  "search-icon": {
+  {
+    "id": "search-icon",
+    "icon": "search",
+    "target": "#tour-search-icon",
+    "altTarget": "#tour-desktop-search",
+    "position": "bottom",
     "title": _("Raccourcis"),
     "text": "<p>"|safe ~ _("Ctrl+K cherche une opération, une catégorie ou un projet.") ~ "</p><p>"|safe ~ _("L'icône en forme d'œil masque les montants.") ~ "</p>"|safe,
   },
-} %}
-<div
-  x-data="twigaTour()"
-  data-texts="{{ tour_texts | tojson | forceescape }}"
-  data-tracked="{{ 'true' if tour.tracked else 'false' }}"
-  data-pending="{{ 'true' if tour.pending else 'false' }}"
-  data-skip-import="{{ 'true' if tour.skip_import else 'false' }}"
->
-  <div id="tour-icons" hidden>
-    {% for name in ['compass', 'file-import', 'inbox', 'chart-bar', 'search'] %}
-    <span data-icon="{{ name }}">{{ icon(name, size=20) }}</span>
-    {% endfor %}
-  </div>
-  <div x-show="visible && !hasTarget" x-transition.opacity class="twiga-tour-overlay"></div>
-  <div x-show="visible && hasTarget" x-transition.opacity class="twiga-tour-spotlight" :style="spotlightStyle"></div>
-
-  <div
-    x-show="visible"
-    x-transition
-    x-ref="bubble"
-    role="dialog"
-    aria-live="polite"
-    :aria-label="step ? step.title : '{{ _("Visite guidée") | jsq }}'"
-    class="fixed twiga-tour-bubble"
-    :class="{ 'twiga-tour-bubble-centered': !hasTarget }"
-    :style="bubbleStyle"
-    @keydown.window.escape="visible && complete()"
-  >
-    <button
-      type="button"
-      class="twiga-tour-close"
-      @click="complete()"
-      aria-label="{{ _("Passer la visite guidée") }}"
-    >
-      {{ icon('x') }}
-    </button>
-
-    <p class="twiga-tour-progress" :aria-label="progressLabel()" x-text="progressDots()"></p>
-    <p class="twiga-tour-title"><span class="twiga-tour-title-icon" x-html="stepIcon()"></span><span x-text="step ? step.title : ''"></span></p>
-    <div class="twiga-tour-text" x-html="step ? step.text : ''"></div>
-    <div class="twiga-tour-buttons">
-      <button type="button" x-show="isFirst()" @click="complete()" class="twiga-tour-btn twiga-tour-btn-secondary">{{ _("Passer") }}</button>
-      <button type="button" x-show="!isFirst()" @click="prev()" class="twiga-tour-btn twiga-tour-btn-secondary">
-        {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
-      </button>
-      <button type="button" x-show="!isLast()" @click="next()" class="twiga-tour-btn">{{ _("Suivant →") }}</button>
-      <button type="button" x-show="isLast()" @click="complete()" class="twiga-tour-btn">{{ _("Terminer") }}</button>
-    </div>
-  </div>
-</div>
+] %}
+{% include "_tour_ui.html" %}

@@ -1,11 +1,29 @@
-<div id="categories-content" class="flex flex-col gap-4">
+{% set sub_count = namespace(total=0) %}
+{% for parent in categories %}{% set sub_count.total = sub_count.total + (parent.children | length) %}{% endfor %}
+<section id="categories-content" class="card p-0 overflow-hidden flex flex-col max-lg:bg-transparent max-lg:shadow-none max-lg:overflow-visible max-lg:gap-3">
+  <div class="flex items-baseline justify-between gap-2 lg:px-6 lg:pt-6 lg:pb-3">
+    <h2 class="text-section-title">{{ _("Catégories existantes") }}</h2>
+    {% if categories %}
+    <p class="hidden lg:block text-xs text-secondary">{% trans count=categories | length, subs=sub_count.total %}{{ count }} catégories · {{ subs }} sous-catégories{% endtrans %}</p>
+    {% endif %}
+  </div>
+
+  {% if categories %}
+  <div class="hidden lg:grid grid-cols-[minmax(0,2fr)_minmax(300px,2.5fr)_minmax(0,1.5fr)_110px] gap-x-4 bg-sunken px-6 py-2 text-xs font-medium text-secondary">
+    <span>{{ _("Catégorie") }}</span>
+    <span>{{ _("Pilier du Cap") }}</span>
+    <span>{{ _("Budgets") }}</span>
+    <span></span>
+  </div>
+  {% endif %}
+
   {% for parent in categories %}
-  <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-3" x-data="{ expanded: false }">
-    {% with category = parent, is_child = false %}
+  <div x-data="{ expanded: false }" class="max-lg:bg-container max-lg:rounded-xl max-lg:shadow-sm max-lg:overflow-hidden">
+    {% with category = parent, is_child = false, first_row = loop.first %}
     {% include "categories/_row.html" %}
     {% endwith %}
 
-    <div x-show="expanded" style="display: none;" class="flex flex-col gap-3 border-l-2 border-border ml-2">
+    <div x-show="expanded" style="display: none;">
       {% for child in parent.children %}
       {% with category = child, is_child = true %}
       {% include "categories/_row.html" %}
@@ -16,20 +34,20 @@
     </div>
   </div>
   {% else %}
-  <div class="bg-container rounded-xl shadow-sm p-6 flex flex-col items-center gap-4">
+  <div class="flex flex-col items-center gap-4 px-4 pb-8 lg:px-6">
     <p class="text-sm text-secondary text-center">{{ _("Aucune catégorie pour l'instant.") }}</p>
-    <p class="text-sm text-secondary text-center">
-      {{ _("Partez d'un jeu courant (logement, alimentation, transport, santé...) avec ses sous-catégories et leurs piliers du Cap, puis renommez ou supprimez ce qui ne vous sert pas.") }}
+    <p class="text-sm text-secondary text-center max-w-prose">
+      {{ _("Pars d'un jeu courant (logement, alimentation, transport, santé...) avec ses sous-catégories et leurs piliers du Cap, puis renomme ou supprime ce qui ne te sert pas.") }}
     </p>
     <button
       type="button"
       hx-post="/categories/starter"
       hx-target="#categories-content"
       hx-swap="outerHTML"
-      class="min-h-[50px] px-4 rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center gap-2"
+      class="btn btn-primary px-6"
     >
       {{ icon('plus', size=18) }} {{ _("Ajouter des catégories de base") }}
     </button>
   </div>
   {% endfor %}
-</div>
+</section>

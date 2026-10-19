@@ -1,77 +1,80 @@
-<div id="suspicious-content" class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
+<section id="suspicious-content" class="card flex flex-col gap-4">
   <div class="flex items-center justify-between gap-2">
-    <h2 class="text-lg font-bold text-primary flex items-center gap-2" >{{ icon('search') }}{{ _("Opérations suspectes") }}</h2>
-    <button
-      type="button"
-      hx-get="/accounts/suspicious"
-      hx-target="#suspicious-content"
-      hx-swap="outerHTML"
-      class="text-sm text-accent font-medium"
-    >
-      {{ icon('refresh') }} {{ _("Rafraîchir") }}
-    </button>
+    <h2 class="text-section-title flex items-center gap-2">{{ icon('search', size=20) }}{{ _("Opérations suspectes") }}</h2>
+    {% set checked_ago %}{% trans minutes="__N__" %}Vérifié il y a {{ minutes }} min{% endtrans %}{% endset %}
+    <div class="flex items-center gap-3">
+      <span
+        class="hidden sm:inline text-sm text-secondary"
+        aria-live="polite"
+        x-data="{ at: Date.now(), now: Date.now(), init() { setInterval(() => { this.now = Date.now(); }, 30000); }, get minutes() { return Math.floor((this.now - this.at) / 60000); } }"
+        x-text="minutes < 1 ? '{{ _("Vérifié à l'instant") | jsq }}' : '{{ checked_ago | jsq }}'.replace('__N__', minutes)"
+      >{{ _("Vérifié à l'instant") }}</span>
+      <button
+        type="button"
+        hx-get="/accounts/suspicious"
+        hx-target="#suspicious-content"
+        hx-swap="outerHTML"
+        class="btn btn-secondary border-border-strong"
+      >
+        {{ icon('refresh', size=18) }} {{ _("Rafraîchir") }}
+      </button>
+    </div>
   </div>
 
-  <div class="flex flex-col gap-2">
-    <p class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('repeat') }}{% trans duplicates_total=suspicious.duplicates_total %}Doublons potentiels ({{ duplicates_total }}){% endtrans %}</p>
-    {% for group in suspicious.duplicates %}
-    <div class="rounded-xl border border-border p-3 flex flex-col gap-1">
-      <div class="flex items-center justify-between gap-2">
-        <span class="text-sm text-primary font-medium truncate">{{ group.label or _("(sans libellé)") }}</span>
-        <span class="amount-blur text-sm font-bold whitespace-nowrap {{ 'text-success' if group.amount > 0 else 'text-danger' }}">
-          {{ group.amount | eur }}
-        </span>
-      </div>
-      <span class="text-xs text-secondary">{% trans date=group.date | fr_date, count=group.count %}{{ date }} · {{ count }} occurrences{% endtrans %}</span>
-      <div class="flex flex-col gap-0.5 pl-2 border-l-2 border-border">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="flex flex-col gap-2">
+      <h3 class="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">{{ icon('repeat', size=16) }}{% trans duplicates_total=suspicious.duplicates_total %}Doublons potentiels ({{ duplicates_total }}){% endtrans %}</h3>
+      {% for group in suspicious.duplicates %}
+      <div class="flex flex-col gap-1 py-2 border-b border-border last:border-0">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-sm text-primary font-medium truncate">{{ group.label or _("(sans libellé)") }}</span>
+          <span class="amount-blur text-sm font-semibold tabular-nums whitespace-nowrap text-primary">{{ group.amount | eur }}</span>
+        </div>
+        <span class="text-xs text-secondary">{% trans date=group.date | fr_date, count=group.count %}{{ date }} · {{ count }} occurrences{% endtrans %}</span>
         {% for tx in group.transactions %}
-        <span class="text-xs text-secondary truncate">{{ icon('arrow-narrow-right') }} {{ tx.account.name }} (#{{ tx.id }})</span>
+        <span class="text-xs text-secondary truncate">{{ tx.account.name }} (#{{ tx.id }})</span>
         {% endfor %}
       </div>
+      {% else %}
+      <p class="text-sm text-secondary">{{ _("Aucun doublon détecté.") }}</p>
+      {% endfor %}
+      {% if suspicious.duplicates_total > suspicious.duplicates | length %}
+      <p class="text-xs text-secondary">
+        {% trans duplicates=suspicious.duplicates_total - suspicious.duplicates | length, duplicates2="s" if suspicious.duplicates_total - suspicious.duplicates | length != 1 else "" %}... et {{ duplicates }} autre{{ duplicates2 }} groupe{{ duplicates2 }}{% endtrans %}
+      </p>
+      {% endif %}
     </div>
-    {% else %}
-    <p class="text-sm text-secondary">{{ _("Aucun doublon détecté.") }}</p>
-    {% endfor %}
-    {% if suspicious.duplicates_total > suspicious.duplicates | length %}
-    <p class="text-xs text-secondary text-center">
-      {% trans duplicates=suspicious.duplicates_total - suspicious.duplicates | length, duplicates2="s" if suspicious.duplicates_total - suspicious.duplicates | length != 1 else "" %}... et {{ duplicates }} autre{{ duplicates2 }} groupe{{ duplicates2 }}{% endtrans %}
-    </p>
-    {% endif %}
-  </div>
 
-  <div class="flex flex-col gap-2">
-    <p class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('chart-line') }}{% trans unusual_total=suspicious.unusual_total %}Montants hors norme (&gt; 3x la moyenne) ({{ unusual_total }}){% endtrans %}</p>
-    {% for tx in suspicious.unusual %}
-    <div class="flex items-center justify-between gap-2 rounded-xl border border-border p-3">
-      <div class="flex flex-col min-w-0">
-        <span class="text-sm text-primary font-medium truncate">{{ tx.label or _("(sans libellé)") }}</span>
-        <span class="text-xs text-secondary truncate">{{ tx.date | fr_date }} · {{ tx.account.name }}</span>
+    <div class="flex flex-col gap-2">
+      <h3 class="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">{{ icon('chart-line', size=16) }}{% trans unusual_total=suspicious.unusual_total %}Montants hors norme (&gt; 3x la moyenne) ({{ unusual_total }}){% endtrans %}</h3>
+      {% for tx in suspicious.unusual %}
+      <div class="flex items-center justify-between gap-2 py-2 border-b border-border last:border-0">
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm text-primary font-medium truncate">{{ tx.label or _("(sans libellé)") }}</span>
+          <span class="text-xs text-secondary truncate">{{ tx.date | fr_date }} · {{ tx.account.name }}</span>
+        </div>
+        <span class="amount-blur text-sm font-semibold tabular-nums whitespace-nowrap text-primary">{{ tx.amount | eur }}</span>
       </div>
-      <span class="amount-blur font-bold whitespace-nowrap {{ 'text-success' if tx.amount > 0 else 'text-danger' }}">
-        {{ tx.amount | eur }}
-      </span>
+      {% else %}
+      <p class="text-sm text-secondary">{{ _("Aucun montant hors norme détecté.") }}</p>
+      {% endfor %}
+      {% if suspicious.unusual_total > suspicious.unusual | length %}
+      <p class="text-xs text-secondary">
+        {% trans unusual=suspicious.unusual_total - suspicious.unusual | length, unusual2="s" if suspicious.unusual_total - suspicious.unusual | length != 1 else "" %}... et {{ unusual }} autre{{ unusual2 }}{% endtrans %}
+      </p>
+      {% endif %}
     </div>
-    {% else %}
-    <p class="text-sm text-secondary">{{ _("Aucun montant hors norme détecté.") }}</p>
-    {% endfor %}
-    {% if suspicious.unusual_total > suspicious.unusual | length %}
-    <p class="text-xs text-secondary text-center">
-      {% trans unusual=suspicious.unusual_total - suspicious.unusual | length, unusual2="s" if suspicious.unusual_total - suspicious.unusual | length != 1 else "" %}... et {{ unusual }} autre{{ unusual2 }}{% endtrans %}
-    </p>
-    {% endif %}
-  </div>
 
-  <div class="flex flex-col gap-2">
-    <p class="text-sm font-semibold text-primary flex items-center gap-2" >{{ icon('help-circle') }}{% trans no_account=suspicious.no_account | length %}Opérations sans compte ({{ no_account }}){% endtrans %}</p>
-    {% for tx in suspicious.no_account %}
-    <div class="flex items-center justify-between gap-2 rounded-xl border border-border p-3">
-      <span class="text-sm text-primary font-medium truncate">{{ tx.label or _("(sans libellé)") }}</span>
-      <span class="amount-blur text-sm font-bold whitespace-nowrap {{ 'text-success' if tx.amount > 0 else 'text-danger' }}">
-        {{ tx.amount | eur }}
-      </span>
+    <div class="flex flex-col gap-2">
+      <h3 class="text-sm font-semibold text-primary flex items-center gap-2 pb-2 border-b border-border">{{ icon('help-circle', size=16) }}{% trans no_account=suspicious.no_account | length %}Opérations sans compte ({{ no_account }}){% endtrans %}</h3>
+      {% for tx in suspicious.no_account %}
+      <div class="flex items-center justify-between gap-2 py-2 border-b border-border last:border-0">
+        <span class="text-sm text-primary font-medium truncate">{{ tx.label or _("(sans libellé)") }}</span>
+        <span class="amount-blur text-sm font-semibold tabular-nums whitespace-nowrap text-primary">{{ tx.amount | eur }}</span>
+      </div>
+      {% else %}
+      <p class="text-sm text-secondary">{{ _("Aucune — le schéma l'empêche structurellement (account_id obligatoire).") }}</p>
+      {% endfor %}
     </div>
-    {% else %}
-    <p class="text-sm text-secondary">{{ _("Aucune — le schéma l'empêche structurellement (account_id obligatoire).") }}</p>
-    {% endfor %}
   </div>
-</div>
+</section>

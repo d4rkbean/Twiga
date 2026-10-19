@@ -1,4 +1,4 @@
-const CACHE_NAME = "finance-dashboard-static-v3";
+const CACHE_NAME = "finance-dashboard-static-v4";
 
 // Uniquement les assets statiques (JS, CSS, icônes, manifest) : les données
 // dynamiques (transactions, soldes, dashboard...) ne sont jamais mises en
@@ -12,6 +12,8 @@ const PRECACHE_ASSETS = [
   "/static/js/inbox-shortcuts.js",
   "/static/js/transactions-selection.js",
   "/static/js/htmx-confirm.js",
+  "/static/fonts/bricolage-grotesque-700.woff2",
+  "/static/fonts/bricolage-grotesque-800.woff2",
   "/static/manifest.json",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",

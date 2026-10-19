@@ -1,11 +1,12 @@
+{% from "_macros/brand.html" import mascot %}
 <header
-  class="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-container border-b border-border flex items-center justify-between px-4"
+  class="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-container lg:bg-page border-b border-border flex items-center justify-between pl-4 pr-1 lg:pr-4"
   :class="{
     'lg:left-[240px]': sidebarMode === 'pinned',
     'lg:left-[64px]': sidebarMode === 'auto',
     'lg:left-0 lg:pl-12': sidebarMode === 'hidden',
   }"
-  x-data="{ searchOpen: false }"
+  x-data="{ searchOpen: false, density: '{{ current_density() }}' }"
   @keydown.window="
     if (($event.ctrlKey || $event.metaKey) && $event.key.toLowerCase() === 'k') {
       $event.preventDefault();
@@ -21,8 +22,8 @@
   "
 >
   <a id="tour-logo" href="/" class="flex items-center gap-2 flex-shrink-0 lg:hidden" x-show="!searchOpen" aria-label="{{ _("Twiga — retour à l'accueil") }}">
-    <img src="/static/icons/twiga-logo.svg" alt="" class="h-8 w-8" style="height:32px; width:auto;" />
-    <span class="text-lg font-extrabold tracking-tight text-primary">{{ _("TWIGA") }}</span>
+    {{ mascot(size=32) }}
+    <span class="font-display text-lg font-extrabold tracking-[0.04em] text-primary">{{ _("TWIGA") }}</span>
   </a>
 
   <div
@@ -43,13 +44,13 @@
         hx-target="#search-results"
         hx-swap="innerHTML"
         @input="if ($event.target.value.length < 2) document.getElementById('search-results').innerHTML = ''"
-        class="w-full min-h-[40px] rounded-xl border border-border bg-page text-primary px-3"
+        class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary px-3"
       />
       <button
         type="button"
         @click="searchOpen = false"
         aria-label="{{ _("Fermer la recherche") }}"
-        class="text-secondary text-lg flex-shrink-0 w-11 h-11 flex items-center justify-center"
+        class="text-primary text-lg flex-shrink-0 w-[50px] h-[50px] flex items-center justify-center"
       >
         {{ icon('x') }}
       </button>
@@ -57,19 +58,22 @@
     <div id="search-results" class="fixed top-14 inset-x-0 z-20 px-4"></div>
   </div>
 
-  <div class="flex items-center gap-1 flex-shrink-0">
+  <div class="flex items-center gap-1 lg:gap-2.5 flex-shrink-0 lg:flex-shrink lg:flex-1 lg:min-w-0">
     <!-- Desktop (lg:) : champ de recherche toujours visible (pas de
-         bascule ouvert/fermé comme sur mobile), Ctrl+K le cible directement
-         (voir @keydown.window ci-dessus). Résultats dans leur propre
-         conteneur (#search-results-desktop, positionné en dropdown 300px
-         sous ce champ) plutôt que de réutiliser #search-results : celui-ci
-         reste imbriqué dans le panneau de recherche mobile (x-show=
-         "searchOpen"), qui doit rester inchangé. -->
-    <div id="tour-desktop-search" class="hidden lg:block relative" @click.outside="searchOpen = false">
+         bascule ouvert/fermé comme sur mobile), à gauche comme sur la
+         maquette, avec sa loupe. Ctrl+K le cible directement (voir
+         @keydown.window ci-dessus). Résultats dans leur propre conteneur
+         (#search-results-desktop, positionné en dropdown sous ce champ)
+         plutôt que de réutiliser #search-results : celui-ci reste imbriqué
+         dans le panneau de recherche mobile (x-show="searchOpen"), qui doit
+         rester inchangé. -->
+    <div id="tour-desktop-search" class="hidden lg:block relative flex-1 min-w-[160px] max-w-[420px] lg:mr-auto" @click.outside="searchOpen = false">
+      <span class="absolute left-3.5 top-0 h-[46px] flex items-center text-secondary pointer-events-none">{{ icon('search', size=18) }}</span>
       <input
         type="search"
         name="q"
         x-ref="desktopSearchInput"
+        aria-label="{{ _("Rechercher...") }}"
         placeholder="{{ _("Rechercher... Ctrl+K") }}"
         autocomplete="off"
         hx-get="/search/quick"
@@ -78,38 +82,93 @@
         hx-swap="innerHTML"
         @focus="searchOpen = true"
         @input="if ($event.target.value.length < 2) document.getElementById('search-results-desktop').innerHTML = ''"
-        class="w-[300px] min-h-[40px] rounded-xl border border-border bg-page text-primary px-3 text-sm"
+        class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary pl-[42px] pr-3 text-sm"
       />
       <div
         id="search-results-desktop"
         x-show="searchOpen"
         style="display: none;"
-        class="absolute top-full right-0 mt-1 w-[300px] z-20"
+        class="absolute top-full left-0 mt-1 w-[380px] max-w-[calc(100vw-48px)] z-20"
       ></div>
     </div>
+    {# Réglages d'affichage, à droite de la recherche (maquette A) : densité,
+       thème, confidentialité, aide. Ordinateur seulement ; sur mobile, la
+       confidentialité reste dans l'en-tête et le thème dans la feuille de
+       l'avatar. Chaque geste s'applique tout de suite puis s'enregistre sur
+       le compte (POST /profile/preferences, voir base.html), sans rechargement. #}
+    <div
+      id="tour-density"
+      role="radiogroup"
+      aria-label="{{ _("Densité d'affichage") }}"
+      class="hidden lg:flex p-[3px] rounded-xl bg-sunken flex-shrink-0"
+    >
+      {% for code, label in [("compact", _("Compact")), ("normal", _("Normal")), ("comfortable", _("Aéré"))] %}
+      <button
+        type="button"
+        role="radio"
+        :aria-checked="density === '{{ code }}'"
+        @click="density = '{{ code }}'; window.twigaSetDensity('{{ code }}')"
+        :class="density === '{{ code }}' ? 'bg-container text-primary font-semibold shadow-sm' : 'text-secondary font-medium hover:text-primary'"
+        class="min-h-[40px] px-3 rounded-[9px] text-sm"
+      >{{ label }}</button>
+      {% endfor %}
+    </div>
+    <button
+      id="tour-theme-toggle"
+      type="button"
+      onclick="window.toggleTheme()"
+      aria-label="{{ _("Basculer entre thème clair et sombre") }}"
+      title="{{ _("Basculer entre thème clair et sombre") }}"
+      class="hidden lg:flex w-[46px] h-[46px] items-center justify-center rounded-xl border border-border-strong bg-container text-primary hover:bg-sunken flex-shrink-0"
+    >
+      <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
+    </button>
+    <button
+      id="tour-header-privacy"
+      type="button"
+      aria-label="{{ _("Basculer le mode confidentialité") }}"
+      title="{{ _("Basculer le mode confidentialité") }}"
+      class="hidden lg:flex w-[46px] h-[46px] items-center justify-center rounded-xl border border-border-strong bg-container text-primary hover:bg-sunken flex-shrink-0"
+      @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
+    >
+      <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
+    </button>
+    <button
+      type="button"
+      onclick="document.getElementById('twiga-help-dialog').showModal()"
+      title="{{ _("Aide &amp; raccourcis") }}"
+      class="hidden lg:flex items-center gap-2 min-h-[46px] px-3.5 rounded-xl border border-border-strong bg-container text-primary text-sm font-medium hover:bg-sunken flex-shrink-0"
+    >{{ icon('help-circle') }}{{ _("Aide") }}</button>
     {# Importer est une ACTION, pas un lieu : elle vit donc dans l'en-tête et
        non dans la navigation, alors qu'elle ouvre chaque cycle mensuel
        (import → Savane → Panorama). Elle était jusqu'ici enfouie dans
        Paramètres, deux niveaux sous la seule étape du flux qui n'avait
        aucune entrée de premier niveau.
 
-       Présente sur mobile ET bureau : l'icône seule sur petit écran (44px,
-       même cible tactile que les autres boutons de cette barre), le libellé
-       à partir de lg. Fond ambre parce que c'est la seule action primaire
-       de l'en-tête — les autres boutons y sont des bascules. #}
+       Présente sur mobile ET bureau : l'icône seule sur petit écran (cible
+       de 50px, dont un carré ambre de 40px), le libellé à partir de lg. Fond
+       ambre parce que c'est la seule action primaire de l'en-tête — les
+       autres boutons y sont des bascules.
+
+       Un écran qui a SA propre action principale (Budgets : « Enregistrer »,
+       Le Cap : les boutons du rituel) pose `{% set demote_import = true %}` en
+       tête de son gabarit : l'écran gagne, et Importer passe en secondaire —
+       un seul ambre plein par écran. #}
     <a
       id="tour-import"
       href="/imports/new"
       aria-label="{{ _("Importer des données") }}"
-      class="inline-flex items-center justify-center gap-2 w-11 h-11 lg:w-auto lg:h-auto lg:min-h-[40px] lg:px-3 rounded-xl bg-accent text-on-accent text-sm font-semibold flex-shrink-0"
+      class="inline-flex items-center justify-center w-[50px] h-[50px] lg:w-auto flex-shrink-0 text-sm font-semibold"
     >
-      {{ icon('file-import', size=18) }}<span class="hidden lg:inline">{{ _("Importer") }}</span>
+      <span class="inline-flex items-center justify-center gap-2 w-10 h-10 lg:w-auto lg:h-[50px] lg:px-4 rounded-xl {{ 'bg-container border border-border-strong text-primary hover:bg-sunken' if demote_import else 'bg-accent text-on-accent hover:bg-accent-hover' }}">
+        {{ icon('upload', size=18) }}<span class="hidden lg:inline">{{ _("Importer") }}</span>
+      </span>
     </a>
     <button
       id="tour-search-icon"
       type="button"
       aria-label="{{ _("Recherche") }}"
-      class="lg:hidden w-11 h-11 flex items-center justify-center text-lg text-secondary"
+      class="lg:hidden w-[50px] h-[50px] flex items-center justify-center text-lg text-primary"
       @click="searchOpen = !searchOpen; if (searchOpen) $nextTick(() => $refs.searchInput.focus())"
     >
       {{ icon('search') }}
@@ -123,7 +182,7 @@
       id="tour-privacy-toggle"
       type="button"
       aria-label="{{ _("Basculer le mode confidentialité") }}"
-      class="flex w-11 h-11 items-center justify-center text-lg text-secondary lg:hidden"
+      class="flex w-[50px] h-[50px] items-center justify-center text-lg text-primary lg:hidden"
       @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
     >
       <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
@@ -145,9 +204,9 @@
       type="button"
       @click="$dispatch('open-user-sheet')"
       aria-label="{{ _("Menu utilisateur") }}"
-      class="lg:hidden w-11 h-11 flex items-center justify-center flex-shrink-0"
+      class="lg:hidden w-[50px] h-[50px] flex items-center justify-center flex-shrink-0"
     >
-      <span class="w-8 h-8 rounded-full bg-accent text-on-accent flex items-center justify-center text-xs font-bold">
+      <span class="w-[34px] h-[34px] rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-xs font-semibold">
         {{ user_initials(current) }}
       </span>
     </button>
@@ -157,7 +216,7 @@
     <a
       href="/settings"
       aria-label="{{ _("Paramètres") }}"
-      class="hidden sm:flex lg:hidden w-11 h-11 items-center justify-center text-lg text-secondary"
+      class="hidden sm:flex lg:hidden w-[50px] h-[50px] items-center justify-center text-lg text-primary"
     >
       {{ icon('settings') }}
     </a>
@@ -166,7 +225,7 @@
       id="theme-toggle"
       onclick="window.toggleTheme()"
       aria-label="{{ _("Basculer entre thème clair et sombre") }}"
-      class="hidden sm:flex lg:hidden w-11 h-11 items-center justify-center text-lg text-secondary"
+      class="hidden sm:flex lg:hidden w-[50px] h-[50px] items-center justify-center text-lg text-primary"
     >
       <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
     </button>
@@ -196,7 +255,7 @@
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
     style="display: none;"
-    class="fixed inset-0 z-[9000] bg-black/60"
+    class="fixed inset-0 z-[9000] bg-scrim"
     @click="userSheetOpen = false"
   ></div>
   <div
@@ -222,7 +281,7 @@
       <span class="w-10 h-1.5 rounded-full bg-border"></span>
     </div>
     <div class="flex flex-col overflow-y-auto" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
-      {% with show_theme_row = true %}{% include "_user_menu_content.html" %}{% endwith %}
+      {% with show_theme_row = true, sheet = true %}{% include "_user_menu_content.html" %}{% endwith %}
     </div>
   </div>
 </div>

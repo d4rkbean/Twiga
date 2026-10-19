@@ -1,27 +1,39 @@
+{% from "_macros/brand.html" import mascot, mascot_line %}
+{% from "_macros/signed_amount.html" import signed %}
+{% from "cap/_panel_state.html" import panel_state with context %}
+<div x-data="{{ panel_state() }}" class="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+<div class="flex flex-col gap-5 min-w-0">
 {% include "cap/_progress_dots.html" %}
 
-<div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4 text-center">
-  <h2 class="text-lg font-bold text-primary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:22px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("Le cap est fixé !") }}</h2>
+<section data-tour="cap-done" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5" aria-live="polite">
+  <div class="flex items-center gap-4">
+    {{ mascot("cap", size=88) }}
+    <div class="flex flex-col gap-1">
+      <h2 class="text-replique">{{ mascot_line("cap") }}</h2>
+      <p class="text-sm text-secondary">{{ _("La girafe veille sur ta route.") }}</p>
+    </div>
+  </div>
 
-  {% if entry.intention %}
-  <blockquote class="text-primary italic border-l-2 border-accent pl-3 text-left">
-    ❝ {{ entry.intention }} ❞
-  </blockquote>
-  {% endif %}
-
-  <div class="flex flex-col gap-1.5 text-sm text-left">
-    <p class="flex justify-between"><span class="text-primary">{{ icon('home', size=16) }} {{ _("Essentiel") }}</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_essentiel | eur }}</span></p>
-    <p class="flex justify-between"><span class="text-primary">{{ icon('star', size=16) }} {{ _("Choix") }}</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_choix | eur }}</span></p>
-    <p class="flex justify-between"><span class="text-primary">{{ icon('urgent', size=16) }} {{ _("Imprévus") }}</span> <span class="amount-blur font-semibold text-primary">{{ entry.planned_imprevu | eur }}</span></p>
-    <p class="flex justify-between border-t border-border pt-1.5">
-      <span class="text-primary font-semibold">{{ icon('pig-money', size=16) }} {{ _("Épargne visée") }}</span>
-      <span class="amount-blur font-bold text-success">{{ (entry.planned_income - entry.planned_essentiel - entry.planned_choix - entry.planned_imprevu) | eur }}</span>
+  <div class="flex flex-col text-sm">
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="text-primary">{{ _("Essentiel") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_essentiel | eur }}</span></p>
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="text-primary">{{ _("Choix") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_choix | eur }}</span></p>
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="text-primary">{{ _("Imprévus") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_imprevu | eur }}</span></p>
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border">
+      <span class="text-primary font-semibold">{{ _("Épargne visée") }}</span>
+      <span class="amount-blur text-amount tabular-nums text-primary">{{ signed(entry.planned_income - entry.planned_essentiel - entry.planned_choix - entry.planned_imprevu, plus=true) }}</span>
     </p>
   </div>
 
-  <p class="text-sm text-secondary"><img src="/static/icons/twiga-logo.svg" alt="" style="height:16px;width:auto;display:inline-block;vertical-align:-3px" /> {{ _("La girafe veille sur votre route.") }}</p>
+  {% if entry.intention %}
+  <p class="text-primary italic text-lg">« {{ entry.intention }} »</p>
+  {% endif %}
 
-  <a href="/dashboard" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold flex items-center justify-center">
-    {{ icon('arrow-narrow-right') }} {{ _("Aller au Panorama") }}
-  </a>
+  <div class="flex flex-wrap items-center gap-2">
+    <a href="/dashboard" class="btn btn-primary">{{ _("Aller au Panorama") }} {{ icon('arrow-narrow-right') }}</a>
+    <a href="/cap/mid" class="btn btn-secondary">{{ _("Voir Mon mois") }}</a>
+    <button type="button" hx-get="/cap/reopen" hx-target="#cap-wizard" hx-swap="innerHTML" class="btn btn-secondary">{{ _("Reprendre le cap") }}</button>
+  </div>
+</section>
+</div>
+{% include "cap/_aside.html" %}
 </div>

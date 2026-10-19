@@ -1,36 +1,70 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _("Budgets — Twiga 🦒") }}{% endblock %}
+{% block title %}{{ _("Budgets — Twiga") }}{% endblock %}
+
+{# Budgets est l'écran où l'on RÈGLE le plan : « Enregistrer » y est l'action
+   principale, donc le seul ambre plein de la page. L'en-tête de la coque
+   (« Importer ») passe alors en bouton secondaire. #}
+{% set demote_import = true %}
+
+{% block tour_steps %}{{ screen_tour("budgets", [
+  tour_step("#budgets-filters", _("Choisir le mois"), _("Les flèches changent de mois. Le plan affiché est celui de ce mois."), "calendar", position="bottom"),
+  tour_step('[data-tour="budgets-copy"]', _("Repartir du mois dernier"), _("Copie le plan du mois précédent : tu n'ajustes que ce qui change."), "clipboard-copy", position="bottom", write=True),
+  tour_step('[data-tour="budgets-groups"]', _("Un montant par catégorie"), [_("Tape un montant, ou avance par pas de 10, 50 ou 100 €."), _("Le pourcentage montre la part de tes ressources que ça représente.")], "adjustments", position="top"),
+  tour_step('[data-tour="budgets-save"]', _("Enregistrer le plan"), _("Rien n'est gardé tant que tu n'as pas enregistré. Le reste à répartir t'indique ce qu'il te reste."), "device-floppy", position="left", alt_position="top", write=True),
+]) }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto">
-  <h1 class="text-2xl font-bold text-primary">{{ _("Budgets") }}</h1>
+<main class="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-8 lg:py-6">
+  <header class="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-page-title">{{ _("Budgets") }}</h1>
+      <p class="text-sm text-secondary">{{ _("Ajuste le plan du mois, catégorie par catégorie.") }}</p>
+    </div>
 
-  <form
-    id="budgets-filters"
-    hx-get="/budgets/content"
-    hx-trigger="change"
-    hx-target="#budgets-content"
-    hx-swap="innerHTML"
-    class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex gap-2"
-  >
-    <select
-      name="month"
-      class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+    {# Le mois se change par les flèches : elles mettent à jour deux champs
+       cachés puis déclenchent le même « change » qu'avaient les deux listes
+       déroulantes, donc le même hx-get vers /budgets/content. #}
+    <form
+      id="budgets-filters"
+      hx-get="/budgets/content"
+      hx-trigger="change"
+      hx-target="#budgets-content"
+      hx-swap="innerHTML"
+      class="flex flex-wrap items-center gap-3"
+      x-data='{
+        month: {{ month }},
+        year: {{ year }},
+        names: {{ month_options | map(attribute=1) | list | tojson }},
+        go(step) {
+          var month = this.month + step;
+          var year = this.year;
+          if (month < 1) { month = 12; year -= 1; }
+          if (month > 12) { month = 1; year += 1; }
+          this.month = month;
+          this.year = year;
+          this.$nextTick(() => this.$refs.month.dispatchEvent(new Event("change", { bubbles: true })));
+        },
+      }'
     >
-      {% for index, name in month_options %}
-      <option value="{{ index }}" {% if index == month %}selected{% endif %}>{{ name }}</option>
-      {% endfor %}
-    </select>
-    <select
-      name="year"
-      class="flex-1 min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-    >
-      {% for y in years %}
-      <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-      {% endfor %}
-    </select>
-  </form>
+      <input type="hidden" name="month" x-ref="month" :value="month" value="{{ month }}" />
+      <input type="hidden" name="year" :value="year" value="{{ year }}" />
+      <div class="flex items-center gap-3">
+        <button type="button" @click="go(-1)" aria-label="{{ _("Mois précédent") }}" class="w-[50px] h-[50px] flex-shrink-0 rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center rotate-180">{{ icon('chevron-right') }}</button>
+        <span class="min-w-[9.5rem] text-center font-semibold text-primary" x-text="names[month - 1].toLowerCase() + ' ' + year">{{ period_label | lower }}</span>
+        <button type="button" @click="go(1)" aria-label="{{ _("Mois suivant") }}" class="w-[50px] h-[50px] flex-shrink-0 rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('chevron-right') }}</button>
+      </div>
+      {# Copie le plan du mois précédent dans le mois affiché : l'adresse suit le
+         mois choisi aux flèches (htmx lit l'attribut au moment du clic). #}
+      <button
+        type="button"
+        :hx-post="'/budgets/copy-previous?month=' + month + '&year=' + year"
+        hx-post="/budgets/copy-previous?month={{ month }}&year={{ year }}"
+        data-tour="budgets-copy"
+        class="btn btn-secondary whitespace-nowrap"
+      >{{ _("Copier le mois précédent") }}</button>
+    </form>
+  </header>
 
   <div id="budgets-content">
     {% include "budgets/_content.html" %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs, back_link %}
+
+{% block title %}{{ _("Chèques & paiements en attente — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("checks", [
+  tour_step('[data-tour="checks-waiting"]', _("Les paiements en attente"), _("Chèques et paiements émis, pas encore débités, du plus ancien au plus récent. Le badge dit depuis combien de jours ils attendent."), "receipt", position="bottom"),
+  tour_step('[data-tour="checks-add"]', _("Enregistrer un paiement émis"), _("Note le numéro du chèque ou le moyen de paiement, le montant, le compte et la catégorie, le jour où tu le fais."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="checks-matched"]', _("Les derniers rapprochés"), _("Les paiements que Twiga a retrouvés dans un relevé importé, déjà rangés dans leur catégorie."), "circle-check", position="top", optional=True),
+  tour_step('[data-tour="checks-how"]', _("Le rapprochement automatique"), _("Quand l'opération arrive par un import, Twiga retrouve le montant et le numéro, puis la range tout seul sans passer par La Savane."), "refresh", position="left", alt_position="top"),
+]) }}{% endblock %}
+
+{% block content %}
+{% set write = can_edit("/checks/create") %}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": false},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": true},
+  ]) }}
+  {{ back_link("/settings", _("Paramètres")) }}
+
+  {% if write %}
+  {#- Registering a payment that was issued: a number (cheque) or a payment mode, the amount, the account, the category. -#}
+  <form x-show="adding" style="display: none" hx-post="/checks/create" hx-target="#checks-content" hx-swap="outerHTML"
+        class="card flex flex-col gap-4" x-data="{ method: '', account: '', parent: '', child: '', number: '' }"
+        @htmx:after-request="if ($event.detail.successful) { $el.reset(); method = ''; account = ''; parent = ''; child = ''; number = ''; adding = false; }">
+    <h2 class="text-section-title">{{ _("Enregistrer un paiement émis") }}</h2>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <label class="form-group">
+        <span class="form-label">{{ _("Numéro de chèque (si chèque)") }}</span>
+        <input id="check-number" type="text" name="check_number" x-model="number" autocomplete="off" class="input-base" />
+      </label>
+      <label class="form-group">
+        <span class="form-label">{{ _("Montant") }}</span>
+        <input type="text" inputmode="decimal" name="amount" required autocomplete="off" class="input-base tabular-nums" />
+      </label>
+      <label class="form-group">
+        <span class="form-label">{{ _("Date d'émission") }}</span>
+        <input type="date" name="issued_date" required value="{{ today }}" class="input-base" />
+      </label>
+      <label class="form-group">
+        <span class="form-label">{{ _("Destinataire / motif (optionnel)") }}</span>
+        <input type="text" name="recipient" autocomplete="off" class="input-base" />
+      </label>
+    </div>
+
+    <div class="form-group">
+      <span class="form-label" id="check-method-label">{{ _("Moyen de paiement (si pas de chèque)") }}</span>
+      <input type="hidden" name="payment_method" :value="method" />
+      <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-method-label">
+        {% for code, meta in payment_methods.items() %}
+        <button type="button" role="radio" @click="method = method === '{{ code }}' ? '' : '{{ code }}'" :aria-checked="method === '{{ code }}'" class="chip inline-flex items-center gap-2">{{ icon(get_payment_method_icon_name(code), size=18) }} {{ meta.label }}</button>
+        {% endfor %}
+      </div>
+      <span class="input-hint">{{ _("Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque, ou moyen de paiement (Wero, PayPal...).") }}</span>
+    </div>
+
+    <div class="form-group">
+      <span class="form-label" id="check-account-label">{{ _("Compte débité...") }}</span>
+      <input type="hidden" name="account_id" :value="account" />
+      <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-account-label">
+        {% for account in accounts %}<button type="button" role="radio" @click="account = '{{ account.id }}'" :aria-checked="account === '{{ account.id }}'" class="chip">{{ account.name }}</button>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <span class="form-label" id="check-category-label">{{ _("Catégorie...") }}</span>
+      <input type="hidden" name="category_id" :value="child || parent" />
+      <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-category-label">
+        {% for category in parent_categories %}<button type="button" role="radio" @click="parent = '{{ category.id }}'; child = ''" :aria-checked="parent === '{{ category.id }}'" class="chip">{{ category.name | category_display }}</button>{% endfor %}
+      </div>
+      {% for category in parent_categories if category.children %}
+      <div class="flex flex-col gap-2 pt-2" x-show="parent === '{{ category.id }}'" style="display: none;">
+        <span class="form-label" id="check-sub-label-{{ category.id }}">{{ _("Sous-catégorie") }}</span>
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-sub-label-{{ category.id }}">
+          {% for sub in category.children %}<button type="button" role="radio" @click="child = child === '{{ sub.id }}' ? '' : '{{ sub.id }}'" :aria-checked="child === '{{ sub.id }}'" class="chip">{{ sub.name | category_display }}</button>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="flex flex-col-reverse gap-2 sm:flex-row">
+      <button type="button" @click="adding = false" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+      <button type="submit" :disabled="!(account && (child || parent) && (number.trim() || method))" class="btn btn-primary sm:flex-[2] disabled:opacity-60">{{ _("Enregistrer le paiement") }}</button>
+    </div>
+  </form>
+  {% endif %}
+
+  {% include "checks/_content.html" %}
+</main>
+{% endblock %}

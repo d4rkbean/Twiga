@@ -1,0 +1,139 @@
+{#-
+  Pièces communes aux deux moitiés du rituel du Cap de L'autre voie (le bilan et
+  le plan) : les textes dont la page a besoin dans le navigateur, la frise, la barre
+  du haut du mobile, le pied de navigation et le champ de montant réglable.
+
+    {% from "other_way/cap/_flow_kit.html" import flow_texts, frise, mobile_bar, flow_footer, stepper with context %}
+
+  Tout ce qui est dit à l'écran passe par la traduction ; les textes que le
+  navigateur recompose pendant la saisie portent des jetons ({amount}, {pillar}...)
+  que static/js/cap-flow.js remplace.
+-#}
+{% from "_macros/brand.html" import mascot %}
+
+{% macro flow_texts() -%}
+{
+  "next": {{ _("Continuer") | tojson }},
+  "fix": {{ _("Fixer le cap") | tojson }},
+  "keep": {{ _("Oui, garder %(amount)s", amount="{amount}") | tojson }},
+  "set": {{ _("Fixer %(amount)s", amount="{amount}") | tojson }},
+  "ok": {{ _("Dans les clous") | tojson }},
+  "watch": {{ _("À surveiller") | tojson }},
+  "almost": {{ _("Presque épuisé") | tojson }},
+  "exceeded": {{ _("Dépassé") | tojson }},
+  "names": {"essentiel": {{ _("Essentiel") | tojson }}, "choix": {{ _("Choix") | tojson }}, "imprevu": {{ _("Imprévus") | tojson }}},
+  "feelings": [{{ _("est confortable") | tojson }}, {{ _("sera juste") | tojson }}, {{ _("sera très juste") | tojson }}, {{ _("ne suffira pas") | tojson }}],
+  "welcome": {{ _("Bienvenue dans Le Cap ! Cinq minutes, à deux, pour choisir où va l'argent de %(month)s.", month=month_current_lower) | tojson }},
+  "welcomeDetail": {{ _("Chaque mois, prends 5 minutes à deux pour faire le bilan et fixer ensemble le cap budgétaire du mois qui vient. Commençons par ce mois-ci.") | tojson }},
+  "incomeAnswer": {{ _("%(month)s démarre avec %(amount)s de ressources.", month=month_current, amount="{amount}") | tojson }},
+  "incomeNone": {{ _("%(month)s n'a pas encore de ressources.", month=month_current) | tojson }},
+  "incomeDetail": {{ _("Tu peux ajuster le montant.") | tojson }},
+  "incomeNoneDetail": {{ _("Choisis d'où elles viennent, ou saisis le montant à la main.") | tojson }},
+  "pillar": {{ _("%(pillar)s : %(amount)s %(feeling)s.", pillar="{pillar}", amount="{amount}", feeling="{feeling}") | tojson }},
+  "pillarDetail": {{ _("À l'allure de %(month)s, ce pilier serait consommé à %(percent)s.", month=month_previous_lower, percent="{percent}") | tojson }},
+  "piles": {{ _("Avec ces piliers, %(amount)s peuvent partir de côté.", amount="{amount}") | tojson }},
+  "pilesOver": {{ _("Ces piliers dépassent tes ressources de %(amount)s.", amount="{amount}") | tojson }},
+  "pilesDetail": {{ _("Essentiel %(essentiel)s, Choix %(choix)s, Imprévus %(imprevu)s. Chaque montant est comparé à ce que %(month)s a coûté.", essentiel="{essentiel}", choix="{choix}", imprevu="{imprevu}", month=month_previous_lower) | tojson }},
+  "savLeft": {{ _("Il resterait %(amount)s de côté en %(month)s.", amount="{amount}", month=month_current_lower) | tojson }},
+  "savDeficit": {{ _("Le déficit de %(amount)s est couvert par l'épargne.", amount="{amount}") | tojson }},
+  "savOver": {{ _("Les dépenses dépassent les ressources de %(amount)s%(withdrawal)s.", amount="{amount}", withdrawal="{withdrawal}") | tojson }},
+  "withWithdrawal": {{ _(", prélèvement compris") | tojson }},
+  "savWith": {{ _("Tu pioches %(amount)s dans l'épargne pour financer le mois.", amount="{amount}") | tojson }},
+  "savAsk": {{ _("Et si tu piochais dans l'épargne ? Le champ ci-dessous change cette phrase aussitôt.") | tojson }},
+  "intentAnswer": {{ _("Un geste simple suffit pour %(month)s.", month=month_current_lower) | tojson }},
+  "intentDetail": {{ _("Choisis une idée, ou écris la tienne.") | tojson }},
+  "liveOk": {{ _("Plan tenable") | tojson }},
+  "liveCovered": {{ _("Déficit couvert") | tojson }},
+  "liveOver": {{ _("Dépenses supérieures aux revenus") | tojson }},
+  "alertOver": {{ _("Dépenses supérieures aux revenus") | tojson }},
+  "alertWithdrawal": {{ _("et au prélèvement") | tojson }},
+  "alertCovered": {{ _("Déficit couvert par le prélèvement sur épargne.") | tojson }}
+}
+{%- endmacro %}
+
+{#- La frise : six étapes nommées, cliquables pour revenir sur celles déjà vues.
+    L'étape en cours est en gras et en ambre-encre ; une étape ignorée (premier Cap)
+    reste visible mais éteinte. Ordinateur seulement : sur mobile, le compteur de la
+    barre du haut la remplace. -#}
+{% macro frise(labels, review_link=false) -%}
+<ol data-tour="cap-frise" class="hidden lg:grid grid-cols-6 gap-4" aria-label="{{ _("Étapes du rituel") }}">
+  {% for label in labels %}
+  {% set g = loop.index0 %}
+  <li :aria-current="group === {{ g }} ? 'step' : null">
+    <button
+      type="button"
+      {% if review_link and g < 2 %}hx-post="/cap/step1" hx-include="#cap-flow" hx-target="#cap-wizard" hx-swap="innerHTML"{% else %}@click="goGroup({{ g }})" :disabled="!canGoGroup({{ g }})"{% endif %}
+      :aria-label="'{{ _("Étape %(n)s, %(label)s", n=loop.index, label=label) | jsq }}' + (groupState({{ g }}) === 'current' ? '{{ _(", en cours") | jsq }}' : '') + (groupState({{ g }}) === 'skipped' ? '{{ _(", ignorée au premier Cap") | jsq }}' : '')"
+      class="flex w-full flex-col gap-2 text-left disabled:cursor-default"
+    >
+      <span class="h-1.5 rounded-full" :class="groupState({{ g }}) === 'current' || groupState({{ g }}) === 'seen' ? 'bg-accent' : 'bg-border'"></span>
+      <span class="min-h-[28px] text-sm" :class="{ 'font-semibold text-accent-ink': groupState({{ g }}) === 'current', 'font-medium text-primary underline': groupState({{ g }}) === 'seen', 'font-medium text-secondary': groupState({{ g }}) === 'todo' || groupState({{ g }}) === 'skipped' }">{{ loop.index }}. {{ label }}</span>
+    </button>
+  </li>
+  {% endfor %}
+</ol>
+{%- endmacro %}
+
+{#- Mobile : la barre du haut du rituel (fermer, avancement, compteur qui ouvre la
+    liste des étapes, l'œil et l'avatar) remplace celle de la coque, et le pied de
+    navigation remplace la barre du bas : le rituel prend tout l'écran. -#}
+{% macro mobile_bar(step_labels) -%}
+<div class="print:hidden lg:hidden fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-container pl-1 pr-1">
+  <a href="/dashboard" aria-label="{{ _("Quitter le rituel") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</a>
+  <div class="progress-base h-2.5 flex-1" role="progressbar" :aria-valuenow="Math.round(progress)" aria-valuemin="0" aria-valuemax="100" aria-label="{{ _("Avancement du rituel") }}"><div class="progress-fill" :style="'width: ' + progress + '%; background: var(--color-accent)'"></div></div>
+  <button type="button" data-tour="cap-counter" @click="stepsSheet = true" aria-haspopup="dialog" class="inline-flex min-h-[50px] flex-none items-center gap-1 px-2 text-sm font-semibold tabular-nums text-primary"><span x-text="counter"></span>{{ icon('chevron-down', size=16) }}</button>
+  <button type="button" aria-label="{{ _("Basculer le mode confidentialité") }}" @click="privacy = !privacy; localStorage.setItem('privacy', privacy)" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary"><span x-show="!privacy">{{ icon("eye") }}</span><span x-show="privacy" style="display: none;">{{ icon("eye-off") }}</span></button>
+  {% if get_current_user(request) %}
+  <button type="button" aria-haspopup="dialog" aria-label="{{ _("Menu utilisateur") }}" @click="toggleShell('user')" class="flex h-[50px] w-[50px] flex-none items-center justify-center"><span class="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent-ink">{{ user_initials(get_current_user(request)) }}</span></button>
+  {% endif %}
+</div>
+
+{# La liste des étapes : celles déjà vues se rouvrent d'un geste. #}
+<div x-show="stepsSheet" style="display: none;" @click="stepsSheet = false" class="lg:hidden fixed inset-0 z-[9000] bg-scrim" aria-hidden="true"></div>
+<div x-show="stepsSheet" style="display: none;" role="dialog" aria-label="{{ _("Les étapes du rituel") }}" class="lg:hidden fixed inset-x-0 bottom-0 z-[9001] flex max-h-[85vh] flex-col gap-3 overflow-y-auto rounded-t-xl bg-container p-4 shadow-lg">
+  <div class="flex items-center justify-between gap-3"><h2 class="text-section-title">{{ _("Les étapes") }}</h2><button type="button" @click="stepsSheet = false" class="min-h-[50px] px-2 text-sm font-medium text-accent-ink underline">{{ _("Fermer") }}</button></div>
+  {% for k, label in step_labels %}
+  <button type="button" @click="stepState({{ k }}) !== 'todo' && goStep({{ k }})" :disabled="stepState({{ k }}) === 'todo'" :aria-current="stepState({{ k }}) === 'current' ? 'step' : null" class="flex min-h-[54px] w-full items-center gap-3 rounded-xl border px-3.5 text-left disabled:cursor-default" :class="{ 'border-accent-ink bg-accent-soft text-accent-ink': stepState({{ k }}) === 'current', 'border-border-strong bg-container text-primary': stepState({{ k }}) === 'seen', 'border-dashed border-border-strong bg-page text-secondary': stepState({{ k }}) === 'todo' }">
+    <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full text-[13px] font-semibold tabular-nums" :class="stepState({{ k }}) === 'todo' ? 'bg-border text-secondary' : 'bg-accent text-on-accent'">{{ loop.index }}</span>
+    <span class="flex-1 text-sm font-medium">{{ label }}</span>
+    <span class="text-xs text-secondary" x-text="stepState({{ k }}) === 'current' ? '{{ _("En cours") | jsq }}' : (stepState({{ k }}) === 'seen' ? '{{ _("Déjà vue") | jsq }}' : '{{ _("À venir") | jsq }}')"></span>
+  </button>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{#- Le pied : « Précédent » et « Continuer » (ou « Fixer le cap »). Un seul bouton
+    ambre, qui change de libellé ; sur mobile il se pose en barre fixe en bas. -#}
+{% macro flow_footer(note=none, review_back=false) -%}
+<div class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-30 max-lg:flex-col max-lg:border-t max-lg:border-border max-lg:bg-container max-lg:px-4 max-lg:pb-3 max-lg:pt-3 flex items-center gap-3 lg:gap-5">
+  <button type="button" @click="next()" class="btn btn-primary w-full lg:w-auto lg:min-w-60"><span x-text="nextLabel">{{ _("Continuer") }}</span> {{ icon('arrow-right', size=18) }}</button>
+  <button type="button" @click="back()" x-show="!isFirst" style="display: none;" class="btn btn-secondary max-lg:order-first max-lg:w-full lg:order-last">{{ icon('arrow-left', size=18) }} {{ _("Précédent") }}</button>
+  {% if review_back %}
+  {# Au premier geste de la seconde moitié : retour au bilan, en gardant ce qui a été écrit. #}
+  <button type="button" hx-post="/cap/step1" hx-include="#cap-flow" hx-target="#cap-wizard" hx-swap="innerHTML" x-show="isFirst" style="display: none;" class="btn btn-secondary max-lg:order-first max-lg:w-full lg:order-last">{{ icon('arrow-left', size=18) }} {{ _("Précédent") }}</button>
+  {% endif %}
+  {% if note %}{{ note }}{% endif %}
+</div>
+{%- endmacro %}
+
+{#- Un montant réglable : [−] valeur € [+], 50 px. `value` est une expression Alpine
+    (un nombre), `assign` l'affectation d'un montant saisi (`__v__` en est le nombre),
+    `less` et `more` les gestes des boutons. Le champ montre « 1 855,19 » ; ce qui part
+    au serveur est dans des champs cachés à côté. -#}
+{% macro stepper(value, assign, less, more, minus_label, plus_label, label) -%}
+<span class="inline-flex flex-none items-center gap-2">
+  <button type="button" @click="{{ less }}" aria-label="{{ minus_label }}" class="flex h-[50px] w-[50px] items-center justify-center rounded-xl border border-border-strong bg-container text-primary">{{ icon('minus') }}</button>
+  <span class="amount-blur inline-flex items-center gap-1 font-semibold tabular-nums text-primary">
+    <input
+      type="text"
+      inputmode="decimal"
+      aria-label="{{ label }}"
+      x-effect="document.activeElement === $el || ($el.value = fmt2({{ value }}))"
+      @input="{{ assign | replace('__v__', 'num($event.target.value)') }}"
+      @blur="$el.value = fmt2({{ value }})"
+      class="h-[50px] w-[108px] rounded-xl border border-field bg-container px-2 text-right text-base font-semibold tabular-nums focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+    />&euro;
+  </span>
+  <button type="button" @click="{{ more }}" aria-label="{{ plus_label }}" class="flex h-[50px] w-[50px] items-center justify-center rounded-xl border border-border-strong bg-container text-primary">{{ icon('plus') }}</button>
+</span>
+{%- endmacro %}

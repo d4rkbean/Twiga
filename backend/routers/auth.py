@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from backend import auth, crud
+from backend import answers, auth, crud, sessions
+from backend.templating import user_display_name, user_initials, user_role_label
 from backend.database import get_db
-from backend.templating import templates
+from backend.templating import flash_html, templates
 from backend.i18n import gettext as _t
 
 router = APIRouter(tags=["auth"])
@@ -49,7 +50,29 @@ def login_page(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url="/")
     if auth.authenticate_request(db, request.cookies.get(auth.SESSION_COOKIE_NAME)):
         return RedirectResponse(url="/dashboard")
-    return templates.TemplateResponse("login.html", {"request": request})
+    # "Afficher les comptes sur la page de connexion" (Paramètres, off by default): only
+    # when the administrator turned it on does this public page name the household.
+    show_accounts = crud.get_or_create_app_state(db).show_login_accounts
+    accounts = (
+        [
+            {
+                "username": user.username,
+                "name": user_display_name(user),
+                "initials": user_initials(user),
+                "role": user_role_label(user.role),
+            }
+            for user in crud.list_users(db)
+            if user.is_active
+        ]
+        if show_accounts
+        else []
+    )
+    context = {
+        "request": request,
+        "login_accounts": accounts,
+        "login_title": answers.login_title(bool(accounts)),
+    }
+    return templates.TemplateResponse("login.html", context)
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -65,7 +88,7 @@ def login_submit(
     key = (_client_ip(request), username.strip().lower())
     if _is_locked_out(key):
         return HTMLResponse(
-            _t('<p class="text-sm text-danger">Trop de tentatives. Réessaie dans quelques minutes.</p>'),
+            flash_html("error", _t("Trop de tentatives. Réessaie dans quelques minutes.")),
             status_code=429,
         )
 
@@ -73,7 +96,7 @@ def login_submit(
     if user is None:
         _record_failed_attempt(key)
         return HTMLResponse(
-            _t('<p class="text-sm text-danger">Nom d\'utilisateur ou mot de passe incorrect.</p>'),
+            flash_html("error", _t("Nom d'utilisateur ou mot de passe incorrect.")),
             status_code=401,
         )
     _clear_failed_attempts(key)
@@ -82,7 +105,7 @@ def login_submit(
     response.headers["HX-Redirect"] = "/dashboard"
     response.set_cookie(
         auth.SESSION_COOKIE_NAME,
-        auth.create_session_token(user),
+        auth.open_session(db, user, request.headers.get("user-agent")),
         max_age=auth.SESSION_MAX_AGE,
         httponly=True,
         samesite="lax",
@@ -91,9 +114,14 @@ def login_submit(
 
 
 @router.post("/logout")
-def logout():
+def logout(request: Request, db: Session = Depends(get_db)):
     if not auth.AUTH_ENABLED:
         return RedirectResponse(url="/")
+    # Only this device's session is closed; the others stay open.
+    current_user = auth.get_current_user(request)
+    session_id = getattr(request.state, "session_id", None)
+    if current_user is not None and session_id is not None:
+        sessions.close_session(db, current_user.id, session_id)
     response = HTMLResponse(status_code=200)
     response.headers["HX-Redirect"] = "/login"
     response.delete_cookie(auth.SESSION_COOKIE_NAME)

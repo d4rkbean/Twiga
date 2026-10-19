@@ -1,0 +1,13 @@
+{#
+  Montant signé pour l'affichage : le signe moins typographique « − » (U+2212)
+  que le filtre `eur` produit déjà, et un « + » optionnel devant un montant
+  positif. Les exports CSV passent par `format_amount_for_export`
+  (backend/formatting.py) et gardent un tiret ASCII.
+
+    {% from "_macros/signed_amount.html" import signed %}
+    {{ signed(total) }}            −1 765,84 €
+    {{ signed(result, plus=true) }} +2 882,16 €
+#}
+{% macro signed(value, plus=false) -%}
+{%- if plus and value > 0 %}+{% endif %}{{ value | eur }}
+{%- endmacro %}

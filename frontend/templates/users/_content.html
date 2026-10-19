@@ -2,84 +2,95 @@
 <div id="users-content" class="flex flex-col gap-3">
 
   {% if error %}
-  <p class="text-sm text-danger py-2">{{ icon('shield-lock', size=16) }} {{ error }}</p>
+  {% with kind = "error", message = error %}{% include "_flash.html" %}{% endwith %}
   {% endif %}
   {% if success %}
-  <p class="text-sm text-success py-2">{{ icon('check', size=16) }} {{ success }}</p>
+  {% with kind = "success", message = success %}{% include "_flash.html" %}{% endwith %}
   {% endif %}
 
   {% set current = get_current_user(request) %}
   {% for user in users %}
-  <div class="bg-container rounded-xl shadow-sm p-4 flex flex-col gap-3">
-    <div class="flex items-center justify-between gap-2">
-      <span class="font-medium text-primary truncate">
-        {{ user.username }}{% if current and current.id == user.id %} <span class="text-xs text-secondary">{{ _("(vous)") }}</span>{% endif %}
-      </span>
-      <span class="text-xs text-secondary whitespace-nowrap">
-        {% if user.last_login %}{% trans M=user.last_login.strftime("%d/%m/%Y %H:%M") %}Connecté {{ M }}{% endtrans %}{% else %}{{ _("Jamais connecté") }}{% endif %}
-      </span>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <select
-        name="role"
-        hx-post="/users/{{ user.id }}/role"
-        hx-target="#users-content"
-        hx-swap="outerHTML"
-        hx-trigger="change"
-        class="flex-1 min-h-[46px] rounded-xl border border-border bg-container text-primary px-3 text-sm"
-      >
-        {% for role in ["admin", "editor", "viewer"] %}
-        <option value="{{ role }}" {% if role == user.role %}selected{% endif %}>{{ role_labels[role] }}</option>
-        {% endfor %}
-      </select>
-      <label class="flex items-center gap-2 flex-shrink-0 min-h-[46px]">
+  <div class="card flex flex-col gap-4">
+    <div class="flex items-center gap-3">
+      <span class="w-10 h-10 shrink-0 rounded-full bg-accent-soft text-accent-ink text-xs font-semibold flex items-center justify-center">{{ user_initials(user) }}</span>
+      <div class="flex flex-col min-w-0 flex-1">
+        <span class="font-semibold text-primary truncate">
+          {{ user.display_name or user.username }}{% if current and current.id == user.id %} <span class="text-xs font-normal text-secondary">{{ _("(toi)") }}</span>{% endif %}
+        </span>
+        <span class="text-xs text-secondary">
+          {% if user.last_login %}{% trans M=user.last_login.strftime("%d/%m/%Y %H:%M") %}Connecté {{ M }}{% endtrans %}{% else %}{{ _("Jamais connecté") }}{% endif %}
+        </span>
+      </div>
+      <label class="flex items-center gap-3 shrink-0 min-h-[50px] cursor-pointer">
+        <span class="text-xs text-secondary">{{ _("Actif") }}</span>
         <input
           type="checkbox"
+          role="switch"
           name="is_active"
           {% if user.is_active %}checked{% endif %}
           hx-post="/users/{{ user.id }}/active"
           hx-target="#users-content"
           hx-swap="outerHTML"
           hx-trigger="change"
-          class="w-5 h-5"
+          class="peer sr-only"
         />
-        <span class="text-xs text-secondary whitespace-nowrap">{{ _("Actif") }}</span>
+        <span
+          aria-hidden="true"
+          class="relative shrink-0 w-11 h-6 rounded-full bg-field transition-colors peer-checked:bg-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-container after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"
+        ></span>
       </label>
+    </div>
+
+    <div role="radiogroup" {% if loop.first %}data-tour="users-role" {% endif %}aria-label="{{ _("Rôle") }}" class="flex gap-1 rounded-xl bg-sunken p-1">
+      {% for role in ["admin", "editor", "viewer"] %}
+      <label class="flex-1 min-w-0">
+        <input
+          type="radio"
+          name="role-{{ user.id }}"
+          value="{{ role }}"
+          class="peer sr-only"
+          {% if role == user.role %}checked{% endif %}
+          hx-post="/users/{{ user.id }}/role"
+          hx-vals='{"role": "{{ role }}"}'
+          hx-target="#users-content"
+          hx-swap="outerHTML"
+          hx-trigger="change"
+        />
+        <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center text-center text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-container peer-checked:text-primary peer-checked:shadow-sm peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">{{ role_labels[role] }}</span>
+      </label>
+      {% endfor %}
     </div>
 
     <form
       hx-post="/users/{{ user.id }}/password"
       hx-target="#users-content"
       hx-swap="outerHTML"
-      class="flex gap-2"
+      class="flex flex-col gap-2 sm:flex-row"
     >
-      {% with field_name = "new_password", field_id = "new_password-" ~ user.id, field_label = _("Nouveau mot de passe pour %(username)s", username=user.username), field_placeholder = _("Nouveau mot de passe"), field_autocomplete = "new-password", field_minlength = 8, field_wrapper_class = "flex-1", field_height_class = "min-h-[46px] text-sm" %}
+      {% with field_name = "new_password", field_id = "new_password-" ~ user.id, field_label = _("Nouveau mot de passe pour %(username)s", username=user.username), field_placeholder = _("Nouveau mot de passe"), field_autocomplete = "new-password", field_minlength = 8, field_wrapper_class = "flex-1" %}
       {% include "_password_field.html" %}
       {% endwith %}
-      <button
-        type="submit"
-        class="min-h-[46px] px-3 rounded-xl bg-container border border-border text-primary text-sm font-medium whitespace-nowrap"
-      >
+      <button type="submit" class="btn btn-secondary border-border-strong whitespace-nowrap">
         {{ icon('key', size=16) }} {{ _("Réinitialiser") }}
       </button>
     </form>
 
     {% if not current or current.id != user.id %}
+    {% set confirm_message %}{% trans username=user.username %}Supprimer l'utilisateur {{ username }} ? Cette action est irréversible.{% endtrans %}{% endset %}
     <button
       type="button"
       hx-post="/users/{{ user.id }}/delete"
       hx-target="#users-content"
       hx-swap="outerHTML"
-      hx-confirm="Supprimer l'utilisateur {{ user.username }} ? Cette action est irréversible."
-      class="min-h-[46px] rounded-xl bg-container border border-border text-danger text-sm font-medium"
+      hx-confirm="{{ confirm_message }}"
+      class="btn btn-danger self-start"
     >
       {{ icon('trash', size=16) }} {{ _("Supprimer") }}
     </button>
     {% endif %}
   </div>
   {% else %}
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6">
+  <div class="card">
     <p class="text-sm text-secondary text-center">{{ _("Aucun utilisateur.") }}</p>
   </div>
   {% endfor %}

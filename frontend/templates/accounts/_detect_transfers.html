@@ -1,16 +1,20 @@
 {% extends "base.html" %}
+{% from "_macros/page.html" import page_header %}
 
-{% block title %}{{ _("Détecter les virements — Twiga 🦒") }}{% endblock %}
+{# Cet écran a sa propre action principale en ambre plein : « Importer », dans
+   l'en-tête de la coque, passe en secondaire (un seul ambre plein par écran). #}
+{% set demote_import = true %}
+
+{% block title %}{{ _("Détecter les virements — Twiga") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pt-2 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ _("Détecter les virements") }}</h1>
-    <a href="/accounts" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Comptes") }}</a>
-  </div>
-  <p class="text-sm text-secondary">
-    {{ _("Recherche, sur tout l'historique, des paires de transactions qui se ressemblent comme un virement interne entre deux de tes comptes (montant opposé, ± 3 jours, ± 1 € de tolérance).") }}
-  </p>
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
+  {{ page_header(
+    _("Détecter les virements"),
+    subtitle=_("Recherche, sur tout l'historique, des paires de transactions qui se ressemblent comme un virement interne entre deux de tes comptes (montant opposé, ± 3 jours, ± 1 € de tolérance)."),
+    back_href="/accounts",
+    back_label=_("Comptes"),
+  ) }}
 
   {% include "accounts/_detect_transfers_content.html" %}
 </main>

@@ -1,0 +1,20 @@
+{# The next operations of the queue, in the order La Savane presents them.
+   Read-only: the app has no gesture « jump to this one », so the list does not
+   promise a click. The proposed category, when there is one, is the one the
+   card would show (and the date), as the tooltip of the row. #}
+<ul id="inbox-upcoming-list" {% if oob %}hx-swap-oob="true"{% endif %} class="flex flex-col border-t border-border">
+  {% for item in upcoming %}
+  {% set row = item.transaction %}
+  <li
+    class="flex min-h-[50px] items-center gap-2.5 border-b border-border px-4 last:border-b-0 {{ 'bg-accent-soft' if row.id == current_id else '' }}"
+    {% if row.id == current_id %}aria-current="true"{% endif %}
+    title="{{ row.date | fr_date }}{% if item.category %} · {{ item.category.name | category_display }}{% endif %}"
+  >
+    <span class="inline-block h-2 w-2 flex-none rounded-full" style="background-color: {{ row.account | account_color }};" aria-hidden="true"></span>
+    <span class="min-w-0 flex-1 truncate text-sm {{ 'font-semibold' if row.id == current_id else '' }} text-primary">{{ row.label or row.raw_label }}</span>
+    <span class="amount-blur flex-none text-sm font-medium tabular-nums text-primary">{{ "+" if row.amount > 0 else "" }}{{ row.amount | eur }}</span>
+  </li>
+  {% else %}
+  <li class="px-4 py-3 text-sm text-secondary">{{ _("Rien à suivre : La Savane est vide.") }}</li>
+  {% endfor %}
+</ul>

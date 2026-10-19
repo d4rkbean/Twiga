@@ -4,14 +4,14 @@
 {% set category = matched_rule.category %}
 {% set top_level = category.parent if category.parent else category %}
 {% set subcategory_name = category.name if category.parent else none %}
-<div class="rounded-xl bg-page p-3 flex flex-col gap-1">
-  <p class="text-sm text-success font-medium">{{ icon('circle-check', size=16) }} {% trans keyword=matched_rule.keyword %}Règle correspondante : "{{ keyword }}"{% endtrans %}</p>
-  <p class="text-sm text-primary">
-    {{ icon('arrow-narrow-right') }} {{ top_level.icon or "" }} {{ top_level.name }}{% if subcategory_name %} › {{ subcategory_name }}{% endif %}
+<div class="rounded-xl bg-sunken p-3 flex flex-col gap-1">
+  <p class="text-sm text-success font-medium flex items-center gap-2">{{ icon('circle-check', size=16) }} {% trans keyword=matched_rule.keyword %}Règle correspondante : "{{ keyword }}"{% endtrans %}</p>
+  <p class="text-sm text-primary flex items-center gap-2">
+    {{ icon('arrow-narrow-right', size=16) }} {{ top_level.icon or "" }} {{ top_level.name }}{% if subcategory_name %} › {{ subcategory_name }}{% endif %}
   </p>
 </div>
 {% else %}
-<div class="rounded-xl bg-page p-3">
-  <p class="text-sm text-secondary">{{ icon('circle-x', size=16) }} {{ _("Aucune règle ne correspond à ce libellé.") }}</p>
+<div class="rounded-xl bg-sunken p-3">
+  <p class="text-sm text-secondary flex items-center gap-2">{{ icon('circle-x', size=16) }} {{ _("Aucune règle ne correspond à ce libellé.") }}</p>
 </div>
 {% endif %}

@@ -1,96 +1,118 @@
 {% extends "base.html" %}
+{% from "_macros/page.html" import page_header %}
 
-{% block title %}{{ _("Chèques & paiements en attente — Twiga 🦒") }}{% endblock %}
+{# Cet écran a sa propre action principale en ambre plein : « Importer », dans
+   l'en-tête de la coque, passe en secondaire (un seul ambre plein par écran). #}
+{% set demote_import = true %}
+
+{% block title %}{{ _("Chèques & paiements en attente — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("checks", [
+  tour_step('[data-tour="checks-form"]', _("Noter un paiement émis"), _("Tu viens d'émettre un chèque ou un virement : note le montant, la date, le compte débité et la catégorie."), "writing", position="bottom", write=True),
+  tour_step('[data-tour="checks-method"]', _("Chèque ou autre moyen"), _("Indique le numéro du chèque, ou choisis un moyen de paiement comme Wero ou PayPal. L'un des deux suffit."), "credit-card", position="top", write=True),
+  tour_step('[data-tour="checks-pending"]', _("Les paiements en attente"), _("Dès que le débit est importé, Twiga le retrouve et le range dans la catégorie choisie. Annuler en retire un de la liste."), "clock", position="top"),
+  tour_step('[data-tour="checks-matched"]', _("Récemment rapprochés"), _("Les paiements dont le débit a été retrouvé à l'import, rangés tout seuls dans leur catégorie."), "circle-check", position="top", optional=True),
+]) }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-primary">{{ _("Chèques & paiements en attente") }}</h1>
-    <a href="/settings" class="text-sm text-accent font-medium">{{ icon('arrow-narrow-left') }} {{ _("Paramètres") }}</a>
-  </div>
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
+  {{ page_header(
+    _("Chèques & paiements en attente"),
+    subtitle=_("Un chèque ou un virement émis est rapproché tout seul à l'import, dès que son débit apparaît."),
+    back_href="/settings",
+    back_label=_("Paramètres"),
+  ) }}
 
-  <div class="bg-container rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-3">
-    <h2 class="text-lg font-bold text-primary">{{ _("Enregistrer un paiement émis") }}</h2>
-    <p class="text-sm text-secondary">
-      {{ _("Dès que ce paiement sera débité (montant retrouvé, ET numéro de chèque ou moyen de paiement identifié dans le libellé d'une opération importée), il sera automatiquement catégorisé — sans passer par La Savane. Utile aussi pour les paiements via un intermédiaire (Wero, PayPal...) dont le libellé bancaire ne dit jamais à qui/pourquoi.") }}
-    </p>
+  <section data-tour="checks-form" class="card flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <h2 class="text-section-title">{{ _("Enregistrer un paiement émis") }}</h2>
+      <p class="text-sm text-secondary max-w-prose">
+        {{ _("Dès que ce paiement sera débité (montant retrouvé, ET numéro de chèque ou moyen de paiement identifié dans le libellé d'une opération importée), il sera automatiquement catégorisé — sans passer par La Savane. Utile aussi pour les paiements via un intermédiaire (Wero, PayPal...) dont le libellé bancaire ne dit jamais à qui/pourquoi.") }}
+      </p>
+    </div>
     <form
       hx-post="/checks/create"
       hx-target="#checks-content"
       hx-swap="outerHTML"
-      class="flex flex-col gap-3"
+      class="flex flex-col gap-4"
+      x-data="{ method: '', account: '', parent: '', child: '', number: '' }"
+      hx-on::after-request="if (event.detail.successful) { this.reset(); Object.assign(Alpine.$data(this), { method: '', account: '', parent: '', child: '', number: '' }); }"
     >
-      <input
-        type="text"
-        name="check_number"
-        placeholder="{{ _("Numéro de chèque (si chèque)") }}"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      />
-      <select
-        name="payment_method"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      >
-        <option value="" selected>{{ _("— Moyen de paiement (si pas de chèque) —") }}</option>
-        {% for code, meta in payment_methods.items() %}
-        <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <label class="form-group">
+          <span class="form-label">{{ _("Numéro de chèque (si chèque)") }}</span>
+          <input type="text" name="check_number" x-model="number" placeholder="{{ _("Numéro de chèque (si chèque)") }}" autocomplete="off" class="input-base" />
+        </label>
+        <label class="form-group">
+          <span class="form-label">{{ _("Montant") }}</span>
+          <input type="text" inputmode="decimal" name="amount" required placeholder="{{ _("Montant") }}" autocomplete="off" class="input-base" />
+        </label>
+        <label class="form-group">
+          <span class="form-label">{{ _("Date d'émission") }}</span>
+          <input type="date" name="issued_date" required value="{{ today }}" class="input-base" />
+        </label>
+        <label class="form-group">
+          <span class="form-label">{{ _("Destinataire / motif (optionnel)") }}</span>
+          <input type="text" name="recipient" placeholder="{{ _("Destinataire / motif (optionnel)") }}" autocomplete="off" class="input-base" />
+        </label>
+      </div>
+
+      <div data-tour="checks-method" class="form-group">
+        <span class="form-label" id="check-method-label">{{ _("Moyen de paiement (si pas de chèque)") }}</span>
+        <input type="hidden" name="payment_method" :value="method" />
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-method-label">
+          {% for code, meta in payment_methods.items() %}
+          <button
+            type="button"
+            role="radio"
+            @click="method = method === '{{ code }}' ? '' : '{{ code }}'"
+            :aria-checked="method === '{{ code }}'"
+            class="chip inline-flex items-center gap-2"
+          >{{ icon(get_payment_method_icon_name(code), size=18) }} {{ meta.label }}</button>
+          {% endfor %}
+        </div>
+        <span class="input-hint">{{ _("Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque, ou moyen de paiement (Wero, PayPal...).") }}</span>
+      </div>
+
+      <div class="form-group">
+        <span class="form-label" id="check-account-label">{{ _("Compte débité...") }}</span>
+        <input type="hidden" name="account_id" :value="account" />
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-account-label">
+          {% for account in accounts %}
+          <button type="button" role="radio" @click="account = '{{ account.id }}'" :aria-checked="account === '{{ account.id }}'" class="chip">{{ account.name }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <span class="form-label" id="check-category-label">{{ _("Catégorie...") }}</span>
+        <input type="hidden" name="category_id" :value="child || parent" />
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-category-label">
+          {% for category in parent_categories %}
+          <button type="button" role="radio" @click="parent = '{{ category.id }}'; child = ''" :aria-checked="parent === '{{ category.id }}'" class="chip">{{ category.icon or "" }} {{ category.name | category_display }}</button>
+          {% endfor %}
+        </div>
+        {% for category in parent_categories if category.children %}
+        <div class="flex flex-col gap-2 pt-2" x-show="parent === '{{ category.id }}'" style="display: none;">
+          <span class="form-label" id="check-sub-label-{{ category.id }}">{{ _("Sous-catégorie") }}</span>
+          <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-sub-label-{{ category.id }}">
+            {% for sub in category.children %}
+            <button type="button" role="radio" @click="child = child === '{{ sub.id }}' ? '' : '{{ sub.id }}'" :aria-checked="child === '{{ sub.id }}'" class="chip">{{ sub.icon or "" }} {{ sub.name | category_display }}</button>
+            {% endfor %}
+          </div>
+        </div>
         {% endfor %}
-      </select>
-      <p class="text-xs text-secondary -mt-1">
-        {{ _("Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque, ou moyen de paiement (Wero, PayPal...).") }}
-      </p>
-      <input
-        type="text"
-        inputmode="decimal"
-        name="amount"
-        placeholder="{{ _("Montant") }}"
-        required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      />
-      <input
-        type="date"
-        name="issued_date"
-        aria-label="{{ _("Date d'émission") }}"
-        required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      />
-      <input
-        type="text"
-        name="recipient"
-        placeholder="{{ _("Destinataire / motif (optionnel)") }}"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      />
-      <select
-        name="account_id"
-        required
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
+      </div>
+
+      <button
+        type="submit"
+        :disabled="!(account && (child || parent) && (number.trim() || method))"
+        class="btn btn-primary w-full lg:w-auto lg:self-start lg:px-8 disabled:opacity-60"
       >
-        <option value="" disabled selected>{{ _("Compte débité...") }}</option>
-        {% for account in accounts %}
-        <option value="{{ account.id }}">{{ account.name }}</option>
-        {% endfor %}
-      </select>
-      <select
-        name="parent_category_id"
-        required
-        hx-get="/transactions/subcategories?field_name=category_id&element_id=new-check-subcategory&allow_empty=false"
-        hx-target="#new-check-subcategory"
-        hx-swap="outerHTML"
-        hx-trigger="change"
-        class="min-h-[50px] rounded-xl border border-border bg-container text-primary px-3"
-      >
-        <option value="" disabled selected>{{ _("Catégorie...") }}</option>
-        {% for category in parent_categories %}
-        <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
-        {% endfor %}
-      </select>
-      {% with parent = none, subcategories = [], selected_category_id = none, field_name = "category_id", element_id = "new-check-subcategory", allow_empty = false %}
-      {% include "transactions/_subcategory_select.html" %}
-      {% endwith %}
-      <button type="submit" class="min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold">
         {{ _("Enregistrer le paiement") }}
       </button>
     </form>
-  </div>
+  </section>
 
   {% include "checks/_content.html" %}
 </main>

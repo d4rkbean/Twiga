@@ -57,10 +57,9 @@ main {
    (pas de vert/rouge) : un rapport pensé pour une imprimante N&B, où ces
    deux couleurs peuvent se convertir en gris trop proches pour rester
    distinguables. Aucune perte d'information dans cette appli : chaque
-   usage de .text-success/.text-danger est déjà doublé d'un signe non
-   dépendant de la couleur (le "-" natif de format_amount pour les
-   montants négatifs, les flèches ▲/▼ des évolutions, les puces 🟢/🔴 des
-   messages de statut). */
+   usage de .text-success/.text-danger est déjà doublé d'un mot (« en
+   hausse », « dépassé », « dans la cible »…) ou d'un signe (le « − » des
+   montants négatifs, le « + » des positifs). */
 .text-success,
 .text-danger {
   color: #000000 !important;
@@ -72,7 +71,7 @@ main {
   page-break-inside: avoid;
 }
 
-/* Les 5 onglets de détail (masqués à l'écran via x-show tant qu'inactifs,
+/* Les 7 onglets de détail (masqués à l'écran via x-show tant qu'inactifs,
    Alpine pose display:none en style inline) doivent tous s'imprimer à la
    suite, pas seulement celui actif à l'écran — un rapport imprimé est
    complet. Ciblé précisément sur .report-tab-panel (pas [x-show] en
@@ -85,7 +84,7 @@ main {
 }
 
 /* Saut de page avant le premier onglet de détail (Dépenses) : sépare
-   proprement le résumé (métriques héros, score, cashflow) des 5 onglets
+   proprement le résumé (métriques héros, score, cashflow) des 7 onglets
    détaillés qui suivent, plutôt qu'un forçage entre CHAQUE carte (gâcherait
    du papier pour un rapport qui tient déjà sur peu de pages). */
 .report-tab-panel:first-of-type {
@@ -94,14 +93,14 @@ main {
 }
 
 /* En-tête d'impression (reports/_content.html, "EN-TÊTE D'IMPRESSION") :
-   le contenu ("🦒 TWIGA — Rapport ...", déjà le bon libellé de période —
+   le contenu ("TWIGA — Rapport ...", déjà le bon libellé de période —
    décalé le cas échéant, voir period_bar_label côté serveur) existe déjà en
    HTML, pas besoin d'un ::before + attr(data-period) pour ça. Seule la mise
-   en forme (soulignement ambre, espacement) manquait. */
+   en forme (filet noir, espacement) manquait. */
 .print-report-header {
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #d4a96a;
+  border-bottom: 1px solid #000000;
 }
 
 /* Les graphiques Chart.js (canvas) doivent rester lisibles et ne jamais se

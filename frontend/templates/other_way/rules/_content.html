@@ -1,0 +1,56 @@
+{#- The proposals that wait for an opinion, then the rules, the most used first. Replaced
+    as a whole by every action of the screen (#rules-content). -#}
+{% set write = can_edit("/rules/create") %}
+<div id="rules-content" class="flex flex-col gap-5 min-w-0">
+  {% if pending_suggestions %}
+  <section data-tour="rules-pending" class="card flex flex-col gap-2" aria-labelledby="pending-title">
+    <div class="flex items-center gap-2">
+      <h2 id="pending-title" class="text-section-title">{{ _("En attente de validation") }}</h2>
+      <span class="badge badge-warning">{{ pending_suggestions | length }}</span>
+    </div>
+    <ul class="border-t border-border">
+      {% for suggestion in pending_suggestions %}
+      {% set found = (suggestion_usage or {}).get(suggestion.id) %}
+      <li class="py-3 flex flex-col gap-2 border-b border-border last:border-0 lg:flex-row lg:items-center lg:gap-4">
+        <div class="min-w-0 flex-1 flex flex-col gap-0.5">
+          <p class="text-sm">
+            {{ _("Si le libellé contient") }} <span class="font-mono font-semibold">« {{ suggestion.keyword }} »</span>
+            <span class="inline-block align-middle text-secondary">{{ icon('arrow-narrow-right', size=16) }}</span>
+            <span class="inline-flex items-center gap-1.5 font-semibold"><span class="w-2 h-2 rounded-full" style="background-color: {{ suggestion.category.id | category_color }}"></span>{{ suggestion.category.name | category_display }}</span>
+            {% if suggestion.occurrences > 1 %}<span class="text-xs text-secondary">{% trans n=suggestion.occurrences %}— proposée {{ n }} fois{% endtrans %}</span>{% endif %}
+          </p>
+          {% if found %}<p class="text-xs text-secondary">{% trans n=found %}Présent dans {{ n }} opération de ton historique.{% pluralize %}Présent dans {{ n }} opérations de ton historique.{% endtrans %}</p>{% endif %}
+        </div>
+        {% if write %}
+        <div class="grid grid-cols-2 gap-2 lg:w-[16rem] shrink-0">
+          <form hx-post="/rules/create" hx-target="#rules-content" hx-swap="outerHTML">
+            <input type="hidden" name="keyword" value="{{ suggestion.keyword }}" />
+            <input type="hidden" name="category_id" value="{{ suggestion.category_id }}" />
+            <button type="submit" class="btn btn-secondary border-border-strong w-full">{{ icon('check', size=16) }} {{ _("Créer") }}</button>
+          </form>
+          <button type="button" hx-post="/rules/suggestions/{{ suggestion.id }}/dismiss" hx-target="#rules-content" hx-swap="outerHTML" class="btn btn-ghost text-secondary">{{ icon('x', size=16) }} {{ _("Ignorer") }}</button>
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="card flex flex-col gap-2" aria-labelledby="rules-title">
+    <div class="flex flex-wrap items-baseline gap-x-3">
+      <h2 id="rules-title" class="text-section-title">{{ _("Règles") }} <span class="font-normal text-secondary">· {{ rules_with_usage | length }}</span></h2>
+      {% if rules_with_usage %}<p class="text-xs text-secondary">{{ _("Les plus utilisées d'abord") }}</p>{% endif %}
+    </div>
+    <ul class="border-t border-border">
+      {% for item in rules_with_usage %}
+      <li class="border-b border-border last:border-0">
+        {% with rule = item.rule, usage_count = item.usage_count %}{% include "rules/_row.html" %}{% endwith %}
+      </li>
+      {% else %}
+      <li class="py-4 text-sm text-secondary">{{ _("Aucune règle pour l'instant. Ajoutes-en une ci-dessus, ou valide des transactions dans La Savane pour qu'une règle te soit proposée automatiquement.") }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% if request.headers.get("HX-Request") %}<span hidden x-init="window.dispatchEvent(new CustomEvent('rules-changed'))"></span>{% endif %}
+</div>

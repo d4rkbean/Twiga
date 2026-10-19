@@ -14,3 +14,11 @@ node_modules/
 
 # Sauvegardes (données financières réelles) : jamais dans git
 backups/
+
+# Local tooling and anything that could hold real financial data
+.claude/
+*.sql
+*.dump
+*.db
+*.ofx
+*.qif

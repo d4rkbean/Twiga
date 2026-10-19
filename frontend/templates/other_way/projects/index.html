@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs %}
+
+{% block title %}{{ _("Projets — Twiga") }}{% endblock %}
+
+{% block tour_steps %}{{ screen_tour("projects", [
+  tour_step('[data-tour="projects-card"]', _("Un projet, d'un coup d'œil"), _("Ce qui est de côté, la date où ton rythme actuel atteint la cible, ce qu'il manque et l'effort mensuel pour tenir l'échéance."), "pig-money", position="bottom", optional=True),
+  tour_step('[data-tour="projects-track"]', _("Le chemin jusqu'à la date"), _("D'aujourd'hui à l'échéance : le point coloré marque le mois où tu atteins la cible, la barre fine l'échéance."), "target", position="top", optional=True),
+  tour_step('[data-tour="projects-actions"]', _("Ajouter, dépenser, modifier"), _("Ajouter verse de l'argent depuis un compte, Dépenser le sort du projet, Modifier change la cible, la date ou supprime."), "plus", position="top", optional=True, write=True),
+  tour_step('[data-tour="projects-new"]', _("Créer un nouveau projet"), _("Donne un nom, un montant cible et une échéance : Twiga calcule tout de suite l'effort mensuel."), "star", position="top", write=True),
+  tour_step('[data-tour="projects-history"]', _("L'historique des mouvements"), _("Les entrées et sorties de tes projets, les plus récentes d'abord. Filtre par projet avec les pastilles."), "list-details", position="top", optional=True),
+]) }}{% endblock %}
+
+{% block content %}
+{#- Everything below the tabs lives in #projects-list: each action returns
+    projects/_list.html, and the sentence of Twiga must follow. -#}
+<main class="flex flex-col gap-5 px-4 pb-6 lg:px-8 lg:pb-8">
+  {{ section_tabs([
+    {"label": _("Le Cap"), "href": "/cap", "active": false},
+    {"label": _("Projets"), "href": "/projects", "active": true},
+  ]) }}
+  <div id="projects-list" class="flex flex-col gap-5">
+    {% include "projects/_list.html" %}
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Checks made before the request leaves: an amount must be above 0, and a
+  // spending cannot exceed what the project holds.
+  function parseAmount(raw) {
+    return parseFloat(String(raw || "").replace(/\s/g, "").replace(",", "."));
+  }
+  function blockSubmit(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+  function projectForm() {
+    return {
+      err: "",
+      check(event) {
+        const goal = parseAmount(event.target.elements.target_amount.value);
+        if (!(goal > 0)) {
+          this.err = {{ _("Indique un montant cible supérieur à 0.") | tojson }};
+          blockSubmit(event);
+        } else {
+          this.err = "";
+        }
+      },
+    };
+  }
+  function movementForm(action, saved, savedLabel) {
+    return {
+      amount: "",
+      err: "",
+      check(event) {
+        const value = parseAmount(this.amount);
+        if (!(value > 0)) {
+          this.err = {{ _("Indique un montant supérieur à 0.") | tojson }};
+          blockSubmit(event);
+        } else if (action === "spend" && value > saved + 0.004) {
+          this.err = {{ _("Le montant dépasse l'épargne du projet") | tojson }} + " (" + savedLabel + ").";
+          blockSubmit(event);
+        } else {
+          this.err = "";
+        }
+      },
+    };
+  }
+</script>
+<script>
+  // Coming from the global search (/projects#project-card-N): scroll to the
+  // card and highlight it for a moment.
+  (function () {
+    if (!location.hash) return;
+    var target = document.querySelector(location.hash);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.add("ring-2", "ring-accent");
+    setTimeout(function () {
+      target.classList.remove("ring-2", "ring-accent");
+    }, 2500);
+  })();
+</script>
+{% endblock %}

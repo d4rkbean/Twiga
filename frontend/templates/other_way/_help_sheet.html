@@ -1,0 +1,45 @@
+{% from "other_way/_icons.html" import shell_icon %}
+{#- L'aide : une feuille avec trois portes. Elle ne recopie rien : la visite
+    guidée se relance par startTwigaTour() (tour.js), et les raccourcis et le
+    « À propos » ouvrent les dialogues déjà présents dans _layout.html
+    (twiga-help-dialog, twiga-about-dialog), qui portent la liste exacte des
+    raccourcis. Fenêtre au centre sur ordinateur, feuille du bas sur mobile. -#}
+{% set row_class = "min-h-[50px] w-full flex items-center gap-3 px-4 rounded-xl border border-border bg-container text-sm font-medium text-primary hover:bg-sunken text-left" %}
+<div
+  x-show="shell === 'help'"
+  style="display: none;"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0 translate-y-2"
+  x-transition:enter-end="opacity-100 translate-y-0"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100 translate-y-0"
+  x-transition:leave-end="opacity-0 translate-y-2"
+  role="dialog"
+  aria-modal="true"
+  aria-label="{{ _("Aide &amp; raccourcis") }}"
+  class="print:hidden fixed z-[9000] inset-x-0 bottom-0 max-h-[88vh] flex flex-col overflow-hidden bg-container text-primary shadow-lg rounded-t-2xl border-t border-border lg:inset-x-auto lg:bottom-auto lg:top-24 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:max-w-[calc(100%-2rem)] lg:rounded-xl lg:border"
+>
+  <div class="flex-shrink-0 px-4 pt-2 pb-1">
+    <span class="lg:hidden mx-auto block w-10 h-1.5 rounded-full bg-border"></span>
+    <div class="flex items-center justify-between pt-2">
+      <h2 class="font-display text-xl font-extrabold tracking-tight">{{ _("Aide &amp; raccourcis") }}</h2>
+      <button type="button" @click="closeShell()" class="min-h-[50px] px-4 rounded-xl border border-border-strong bg-container text-sm font-medium text-primary hover:bg-sunken">{{ _("Fermer") }}</button>
+    </div>
+  </div>
+  <div class="overflow-y-auto flex flex-col gap-2 p-4" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+    {% if screen_tour_data %}
+    <button type="button" data-help-screen-tour @click="closeShell()" onclick="window.startScreenTour()" class="{{ row_class }}">
+      <span class="text-secondary">{{ shell_icon("tour") }}</span><span class="flex-1">{{ _("Visite de cet écran") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>
+    </button>
+    {% endif %}
+    <button type="button" @click="closeShell()" onclick="window.startTwigaTour()" class="{{ row_class }}">
+      <span class="text-secondary">{{ shell_icon("help") }}</span><span class="flex-1">{{ _("Revoir la visite de bienvenue") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>
+    </button>
+    <button type="button" @click="closeShell()" onclick="document.getElementById('twiga-help-dialog').showModal()" class="{{ row_class }}">
+      <span class="text-secondary">{{ shell_icon("keyboard") }}</span><span class="flex-1">{{ _("Raccourcis clavier") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>
+    </button>
+    <button type="button" @click="closeShell()" onclick="document.getElementById('twiga-about-dialog').showModal()" class="{{ row_class }}">
+      <span class="text-secondary">{{ shell_icon("about") }}</span><span class="flex-1">{{ _("À propos de Twiga") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>
+    </button>
+  </div>
+</div>
