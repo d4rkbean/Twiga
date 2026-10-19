@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from backend import auth, budget_month, crud
+from backend import auth, budget_month, crud, settings_hub
 from backend.auth_middleware import AuthMiddleware
 from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
@@ -163,8 +163,24 @@ def settings(request: Request, db: Session = Depends(get_db)):
             "rules": rules[:6],
             "recurring_count": crud.get_recurring_patterns_overview(db)["recurring_active_count"],
             "pending_checks_count": len(crud.get_outstanding_pending_checks(db)),
+            # The other way's hub (sentence, tiles, search examples); Classic ignores them.
+            **settings_hub.hub_context(db, auth.get_current_user(request)),
         },
     )
+
+
+@app.post("/settings/login-accounts", response_class=HTMLResponse)
+def save_login_accounts(
+    request: Request, show: str = Form(""), db: Session = Depends(get_db)
+):
+    """"Afficher les comptes sur la page de connexion" (Sécurité): administrator only.
+    Off by default; when on, the other way's login offers the household as tiles."""
+    current_user = auth.get_current_user(request)
+    if auth.AUTH_ENABLED and (current_user is None or current_user.role != "admin"):
+        raise HTTPException(status_code=403, detail=_t("Réservé à l'administrateur."))
+    crud.get_or_create_app_state(db).show_login_accounts = show == "on"
+    db.commit()
+    return HTMLResponse(content=flash_html("success", _t("Réglage enregistré")))
 
 
 @app.post("/settings/budget-start-day", response_class=HTMLResponse)
