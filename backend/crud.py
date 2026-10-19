@@ -3214,14 +3214,19 @@ def suggest_categories_for_transactions(
         return {}
     samples = get_categorized_label_samples(db)
     categories_by_id = {c.id: c for c in db.execute(select(Category)).scalars().all()}
+    # The rules are read once for the whole batch (find_matching_rule would ask
+    # the database again for every operation); same order, same first match.
+    rules = db.execute(select(Rule).options(selectinload(Rule.category))).scalars().all()
     suggestions: dict[int, dict] = {}
     for transaction in transactions:
-        matched_rule = find_matching_rule(db, transaction.raw_label)
+        label_lower = transaction.raw_label.lower()
+        matched_rule = next((rule for rule in rules if rule.keyword.lower() in label_lower), None)
         if matched_rule is not None:
             suggestions[transaction.id] = {
                 "category": matched_rule.category,
                 "based_on_label": None,
                 "confidence": 100,
+                "rule_keyword": matched_rule.keyword,
             }
             continue
         suggestion = suggest_backlog_category(transaction, samples, categories_by_id)
@@ -3240,7 +3245,12 @@ def suggest_category_with_confidence(db: Session, transaction: Transaction) -> d
     # deux logiques divergentes.
     matched_rule = find_matching_rule(db, transaction.raw_label)
     if matched_rule is not None:
-        return {"category": matched_rule.category, "based_on_label": None, "confidence": 100}
+        return {
+            "category": matched_rule.category,
+            "based_on_label": None,
+            "confidence": 100,
+            "rule_keyword": matched_rule.keyword,
+        }
 
     samples = get_categorized_label_samples(db)
     categories_by_id = {c.id: c for c in db.execute(select(Category)).scalars().all()}

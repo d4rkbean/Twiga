@@ -1,0 +1,229 @@
+{% from "_macros/brand.html" import mascot %}
+{#- La question (the other way): one operation at a time, with Twiga's proposal and
+    the reason for it. « Oui » files the proposal (with the payment method and
+    the label shown), « Autre » opens the categories, « Passer » puts it aside,
+    « Imprévu » is a switch added to the decision, « Annuler » takes the last
+    filing back. The ids of the buttons are the ones inbox-shortcuts.js clicks.
+    On a phone the card is the whole screen: the question on top, the proposal
+    and the buttons at the bottom, within reach of the thumb. -#}
+{% if transaction is none %}
+<div id="transaction-card" class="flex flex-col items-center gap-3 rounded-xl border border-border bg-container p-6 text-center shadow-sm">
+  {{ mascot('done', 96) }}
+  <h2 class="font-display text-xl font-extrabold tracking-tight text-primary">{{ _("Les questions sont réglées.") }}</h2>
+  <p class="text-secondary">{{ _("Il reste le lot à ranger, à gauche.") }}</p>
+</div>
+{% else %}
+{% set payment_labels = {} %}
+{% for code, meta in payment_methods.items() %}{% if payment_labels.update({code: meta.label}) %}{% endif %}{% endfor %}
+{% set suggested_path = ((suggested_category.parent.name | category_display) ~ " › " ~ (suggested_category.name | category_display)) if suggested_category and suggested_category.parent else ((suggested_category.name | category_display) if suggested_category else "") %}
+{% set state = {
+  "label": transaction.label or transaction.raw_label,
+  "raw": transaction.raw_label,
+  "unexpected": transaction.is_unexpected,
+  "pay": suggested_payment_method or transaction.payment_method or "",
+  "payLabels": payment_labels,
+  "possibleTransfer": possible_transfer,
+} %}
+<div
+  id="transaction-card"
+  x-data="twigaQuestion({{ state | tojson | forceescape }})"
+  @touchstart="onStart($event)"
+  @touchmove="onMove($event)"
+  @touchend="onEnd()"
+  :style="dragX ? 'transform: translateX(' + dragX + 'px) rotate(' + (dragX / 20) + 'deg); transition: ' + (dragging ? 'none' : 'transform 0.3s ease') + ';' : ''"
+  class="flex flex-col rounded-xl border border-border bg-container shadow-sm max-lg:min-h-[calc(100dvh-210px)]"
+>
+  <input type="hidden" id="simplified-label" name="label" :value="label" />
+  <input type="hidden" id="inbox-unexpected" name="unexpected" :value="unexpected ? '1' : ''" />
+
+  <div class="flex items-center gap-3 px-5 pt-4 lg:px-6">
+    <h2 class="font-display text-lg font-extrabold tracking-tight text-primary">{{ _("Une question à la fois") }}</h2>
+    <span class="ml-auto text-xs tabular-nums text-secondary">{% trans position=q_position, total=q_total %}{{ position }} sur {{ total }}{% endtrans %}</span>
+  </div>
+  <div class="mx-5 mt-3 flex items-center gap-3 lg:mx-6" role="img" aria-label="{% trans done=q_done, total=q_total %}{{ done }} questions sur {{ total }} répondues{% endtrans %}">
+    <span class="flex-none">{{ mascot(size=26) }}</span>
+    <span class="h-2 flex-1 rounded-full bg-sunken"><span class="block h-full rounded-full bg-secondary" style="width: {{ q_percent }}%;"></span></span>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-4 px-5 pb-5 pt-4 lg:px-6">
+    <p class="flex items-center gap-2 text-xs font-medium text-secondary">
+      <span class="inline-block h-2 w-2 flex-none rounded-full" style="background-color: {{ transaction.account | account_color }};"></span>
+      <span class="truncate">{{ transaction.account.name }}</span>
+      <span class="whitespace-nowrap tabular-nums">{{ transaction.date | fr_date }}</span>
+    </p>
+
+    <div>
+      <div x-show="!editing" class="flex items-start gap-2">
+        <h3 class="min-w-0 flex-1 border-b border-field pb-1 font-display text-[26px] font-extrabold leading-tight tracking-tight text-primary [overflow-wrap:anywhere] lg:text-[28px]" x-text="label">{{ transaction.label or transaction.raw_label }}</h3>
+        <button type="button" @click="edit()" aria-label="{{ _("Modifier le libellé") }}" class="btn btn-secondary w-[50px] flex-none px-0">{{ icon('pencil', size=18) }}</button>
+      </div>
+      <div x-show="editing" style="display: none;" class="flex flex-col gap-3 rounded-xl border border-border bg-page p-3">
+        <label for="question-label-input" class="form-label">{{ _("Libellé de l'opération") }}</label>
+        <input
+          id="question-label-input"
+          type="text"
+          x-ref="labelInput"
+          x-model="draft"
+          maxlength="255"
+          @keydown.enter.prevent="saveLabel()"
+          @keydown.escape.stop="cancelLabel()"
+          class="input-base"
+        />
+        {% if label_proposals %}
+        <p class="form-label">{{ _("Propositions, d'un toucher") }}</p>
+        <div class="flex flex-col gap-2">
+          {% for proposal in label_proposals %}
+          <button type="button" data-text="{{ proposal.text }}" @click="propose($el.dataset.text)" class="btn btn-secondary justify-between gap-3 border-border-strong text-left">
+            <span class="min-w-0 truncate font-medium">{{ proposal.text }}</span>
+            <span class="flex-none text-xs font-normal text-secondary">{{ _("d'après ton historique") if proposal.source == "history" else _("libellé bancaire nettoyé") }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="flex gap-2">
+          <button type="button" @click="saveLabel()" class="btn btn-secondary flex-1 border-border-strong font-semibold">{{ _("Enregistrer") }}</button>
+          <button type="button" @click="cancelLabel()" class="btn btn-ghost flex-1">{{ _("Annuler") }}</button>
+        </div>
+      </div>
+      <p x-show="label !== raw" class="mt-1.5 break-words text-xs text-secondary">{{ _("Libellé brut :") }} <span class="font-mono">{{ transaction.raw_label }}</span></p>
+    </div>
+
+    <p class="amount-blur text-[40px] font-extrabold leading-none tabular-nums lg:text-[46px] {{ 'text-danger' if transaction.amount < 0 else 'text-success' }}">
+      {{ "+" if transaction.amount > 0 else "" }}{{ transaction.amount | eur }}
+    </p>
+
+    {% if card_budget_alert %}
+    {% set alert = card_budget_alert %}
+    <div class="flex flex-col items-start gap-1">
+      <div data-budget-alert data-key="dismissed_budget_alert_{{ alert.category_id }}_{{ budget_month_key }}" class="alert w-full items-center {{ 'alert-danger' if alert.percentage >= 100 else 'alert-warning' }}">
+        <span class="flex-none {{ 'text-danger' if alert.percentage >= 100 else 'text-warning' }}">{{ icon('alert-triangle', size=18) }}</span>
+        <p class="min-w-0 flex-1 text-sm font-medium text-primary">
+          {% if alert.percentage >= 100 %}{% trans name=alert.category_name %}{{ name }} : dépassé !{% endtrans %}
+          {% else %}{% trans name=alert.category_name, pct=alert.percentage | round | int %}{{ name }} : {{ pct }} % consommé{% endtrans %}{% endif %}
+          <span class="amount-blur font-normal text-secondary">({{ alert.spent | eur }} / {{ alert.budget | eur }})</span>
+          <a href="/budgets" class="ml-1 font-semibold underline">{{ _("Voir les budgets") }}</a>
+        </p>
+        <button type="button" data-budget-dismiss aria-label="{{ _("Ignorer cette alerte") }}" class="btn btn-ghost -my-2 -mr-2 w-[50px] flex-none px-0 text-secondary">{{ icon('x', size=18) }}</button>
+      </div>
+      <button type="button" hidden data-budget-reveal data-prefix="dismissed_budget_alert_" data-suffix="_{{ budget_month_key }}" class="inline-flex min-h-[50px] items-center gap-2 text-xs font-medium text-secondary">{{ icon('bell', size=16) }} {{ _("Voir les alertes budget masquées") }}</button>
+    </div>
+    {% endif %}
+
+    <div class="mt-auto flex flex-col gap-3">
+      {% if possible_transfer %}
+      <div x-show="!transferDismissed" role="alert" class="flex flex-col gap-3">
+        <p class="flex items-start gap-2 font-medium text-primary">{{ icon('alert-triangle', size=18) }} {{ _("Ça ressemble à un virement entre tes comptes.") }}</p>
+        <p class="text-xs text-secondary">{{ _("Possible virement interne — compte destinataire pas encore importé ?") }}</p>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            hx-post="/transactions/{{ transaction.id }}/mark-transfer"
+            hx-include="#simplified-label, #nav-history, #nav-qdone"
+            hx-target="#inbox-board"
+            hx-swap="outerHTML"
+            class="btn btn-secondary flex-1 border-border-strong font-semibold"
+          >{{ icon('repeat', size=18) }} {{ _("Marquer comme virement") }}</button>
+          <button type="button" @click="transferDismissed = true" class="btn btn-secondary flex-1 border-border-strong">{{ _("Traiter normalement") }}</button>
+        </div>
+        <p class="text-xs text-secondary">{{ _("Marqué comme virement, il sort des recettes et des dépenses.") }}</p>
+      </div>
+      {% endif %}
+
+      <div x-show="transferDismissed" {% if possible_transfer %}style="display: none;"{% endif %} class="flex flex-col gap-3">
+        {% if suggested_category %}
+        <div class="category-suggestion flex flex-col gap-3">
+          <div class="flex items-end gap-3">
+            <span class="flex-none">{{ mascot(size=46) }}</span>
+            <div class="min-w-0 flex-1 rounded-xl border border-border bg-page px-4 py-3">
+              <p class="font-display text-lg font-extrabold leading-snug tracking-tight text-primary">{% trans path=suggested_path %}Plutôt {{ path }} ?{% endtrans %}</p>
+              {% if reason %}<p class="mt-0.5 text-sm text-secondary">{{ reason }}</p>{% endif %}
+            </div>
+          </div>
+
+          <div class="relative">
+            <input type="hidden" id="inbox-payment" name="payment_method" :value="pay" />
+            <button
+              type="button"
+              @click="payOpen = !payOpen"
+              :aria-expanded="payOpen"
+              aria-haspopup="listbox"
+              class="input-base flex items-center gap-3 text-left"
+            >
+              <span class="flex-none text-secondary">{{ icon('credit-card', size=18) }}</span>
+              <span class="min-w-0 flex-1 truncate" x-text="pay ? payText : '{{ _("Mode de paiement (facultatif)") | jsq }}'">{{ _("Mode de paiement (facultatif)") }}</span>
+              <span :class="payOpen ? 'rotate-180' : ''" class="flex-none text-secondary transition-transform">{{ icon('chevron-down', size=18) }}</span>
+            </button>
+            <div x-show="payOpen" style="display: none;" role="listbox" class="mt-1 overflow-hidden rounded-xl border border-border bg-container">
+              <button type="button" role="option" @click="choosePay('')" :aria-selected="pay === ''" :class="pay === '' ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm">{{ _("Aucun") }}</button>
+              {% for code, meta in payment_methods.items() %}
+              <button type="button" role="option" data-code="{{ code }}" @click="choosePay($el.dataset.code)" :aria-selected="pay === $el.dataset.code" :class="pay === $el.dataset.code ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center gap-2.5 border-b border-border px-3.5 text-left text-sm last:border-b-0">{{ icon(get_payment_method_icon_name(code), size=18) }} {{ meta.label }}</button>
+              {% endfor %}
+            </div>
+            {% if suggested_payment_method %}
+            <p x-show="pay === '{{ suggested_payment_method }}'" class="mt-1 text-xs text-secondary">{{ _("Repris de ta règle.") }}</p>
+            {% endif %}
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              type="button"
+              hx-get="/transactions/{{ transaction.id }}/categories"
+              hx-target=".category-suggestion"
+              hx-swap="outerHTML"
+              class="btn btn-secondary basis-[34%] border-border-strong"
+            >{{ _("Autre") }}</button>
+            <button
+              type="button"
+              id="inbox-validate-btn"
+              hx-post="/transactions/{{ transaction.id }}/finalize/{{ suggested_category.id }}"
+              hx-include="#simplified-label, #nav-history, #nav-qdone, #inbox-unexpected, #inbox-payment"
+              hx-target="#inbox-board"
+              hx-swap="outerHTML"
+              class="btn {{ 'btn-primary' if not lot_count else 'btn-secondary border-border-strong font-semibold' }} min-w-0 flex-1 gap-2"
+            >
+              {{ icon('check', size=18) }}
+              <span class="min-w-0 truncate">{% trans name=(suggested_category.name | category_display) %}Oui, {{ name }}{% endtrans %}</span>
+              <kbd class="kbd-hint hidden border-current lg:inline-flex" aria-hidden="true">{{ _("Entrée") }}</kbd>
+            </button>
+          </div>
+        </div>
+        {% else %}
+        {% include "inbox/_categories_grid.html" %}
+        {% endif %}
+
+        <div class="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            id="inbox-skip-btn"
+            hx-post="/transactions/{{ transaction.id }}/skip"
+            hx-include="#simplified-label, #nav-history, #nav-qdone"
+            hx-target="#inbox-board"
+            hx-swap="outerHTML"
+            class="btn btn-secondary gap-1.5 border-border-strong px-2"
+          >{{ _("Passer") }} <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Espace") }}</kbd></button>
+          <button
+            type="button"
+            id="inbox-unexpected-btn"
+            @click="unexpected = !unexpected"
+            :aria-pressed="unexpected"
+            class="btn btn-secondary gap-1.5 border-border-strong px-2 aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink"
+          >{{ icon('urgent', size=18) }} {{ _("Imprévu") }}</button>
+          <button
+            type="button"
+            id="inbox-previous-btn"
+            {% if history %}
+            hx-post="/transactions/undo"
+            hx-include="#nav-history, #nav-qdone"
+            hx-target="#inbox-board"
+            hx-swap="outerHTML"
+            {% else %}disabled{% endif %}
+            class="btn btn-secondary gap-1.5 border-border-strong px-2"
+          >{{ _("Annuler") }} <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">←</kbd></button>
+        </div>
+        <p x-show="unexpected" style="display: none;" class="text-xs text-secondary">{{ _("Elle garde sa catégorie et compte dans le pilier Imprévus du Cap.") }}</p>
+        <p class="text-center text-xs text-secondary lg:hidden">{{ _("Glisse la carte : à droite Oui, à gauche Passer.") }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

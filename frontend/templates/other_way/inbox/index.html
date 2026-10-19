@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{#- La Savane de « L'autre voie » : la réponse de Twiga d'abord, puis le lot (ce
+    que Twiga reconnaît à coup sûr, rangé d'un geste), la question du moment
+    (une à la fois) et la séance. Sur mobile, une seule de ces étapes à la fois :
+    le lot, la décision ou le bilan, selon `stage`.
+
+    Les actions de la page remplacent `#inbox-board` (le lot, la question, la
+    séance ou le bilan) et, hors bande, `#inbox-head` (la réponse et son action
+    principale) : voir _card_with_counter.html. Les bandeaux du mois ne bougent
+    pas pendant la séance. -#}
+{% block title %}{{ _("La Savane — Twiga") }}{% endblock %}
+
+{% block content %}
+<main class="group/main flex flex-col gap-[var(--space-block)] px-4 pb-6 pt-4 max-lg:has-[#inbox-board[data-stage=lot]]:pb-28 lg:px-8 lg:pt-6">
+  {% include "inbox/_head.html" %}
+
+  {% if show_routine_banner or show_le_cap_midmonth_banner or (pending_count > 0 and budget_alerts) %}
+  <section aria-label="{{ _("Bandeaux du mois") }}" class="flex items-start gap-3 max-lg:-mx-4 max-lg:overflow-x-auto max-lg:px-4 max-lg:pb-1 max-lg:group-has-[#inbox-board[data-stage=decision]]/main:hidden lg:flex-wrap">
+    {% include "inbox/_routine_banner.html" %}
+    {% include "inbox/_le_cap_midmonth_banner.html" %}
+    {% if pending_count > 0 and budget_alerts %}
+    <div x-data="{ open: false }" class="min-w-0 max-lg:w-[85%] max-lg:flex-none lg:min-w-[320px]">
+      <button
+        type="button"
+        @click="open = !open"
+        :aria-expanded="open"
+        class="flex min-h-[50px] w-full items-center gap-3 rounded-xl border border-border bg-container px-4 text-left shadow-sm"
+      >
+        {{ icon('alert-triangle', size=18) }}
+        <span class="flex-1 font-medium">{% trans count=budget_alerts | length %}Budget : {{ count }} à surveiller{% endtrans %}</span>
+        <span :class="open ? 'rotate-180' : ''" class="text-secondary transition-transform">{{ icon('chevron-down', size=18) }}</span>
+      </button>
+      <div x-show="open" style="display: none;" class="mt-2 flex flex-col gap-2 rounded-xl border border-border bg-container p-4 shadow-sm">
+        {% include "inbox/_budget_alerts.html" %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% include "inbox/_board.html" %}
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ static_url('/static/js/savane-b.js') }}"></script>
+<script src="{{ static_url('/static/js/inbox-shortcuts.js') }}" defer></script>
+{% endblock %}
