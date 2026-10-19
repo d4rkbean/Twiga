@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 04:45+0000\n"
+"POT-Creation-Date: 2026-10-19 05:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -36,6 +36,10 @@ msgstr "%(account_from)s %(size)s %(account_to)s: %(count)s transfer%(v)s ("
 #, python-format
 msgid "%(amount)s à trier"
 msgstr "%(amount)s to sort"
+
+#, python-format
+msgid "%(amount)s €"
+msgstr "€%(amount)s"
 
 #, python-format
 msgid "%(budget_danger_count)s budget%(v)s dépassé%(v)s"
@@ -901,6 +905,9 @@ msgstr "Authentication disabled."
 
 msgid "Autre"
 msgstr "Other"
+
+msgid "Autre montant…"
+msgstr "Other amount…"
 
 msgid "Autres"
 msgstr "Others"
