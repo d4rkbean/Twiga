@@ -30,6 +30,16 @@ def test_the_profile_previews_the_display_and_keeps_the_account_gestures(clients
     assert "Sessions ouvertes" not in body  # that block comes later
 
 
+def test_every_password_field_of_the_profile_has_its_eye(clients, other_way):
+    html = page_of(clients, "editor", "/profile")
+
+    assert html.count(":aria-label=\"show ? 'Masquer le mot de passe' : 'Afficher le mot de passe'\"") == 3
+    for name, suffix in (("current_password", "current"), ("new_password", "new"), ("confirm_password", "confirm")):
+        assert f'id="password-field-profile-{suffix}"' in html and f'name="{name}"' in html
+    # The fields are bound to the form, which keeps the button off until all is in order.
+    assert html.count('x-model="cur"') == 1 and html.count('x-model="pw"') == 1 and html.count('x-model="pw2"') == 1
+
+
 def test_the_profile_is_open_to_every_role(clients, other_way):
     for role in ("admin", "editor", "viewer"):
         assert page_of(clients, role, "/profile")
