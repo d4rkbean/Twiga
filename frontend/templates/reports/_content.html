@@ -180,11 +180,21 @@
 
   {# CASHFLOW — toujours visible, 12 mois glissants jusqu'au mois en cours,
      indépendant de l'onglet de détail actif ci-dessous. #}
-  <section aria-labelledby="cashflow-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-2">
-    <h2 id="cashflow-title" class="text-section-title">{{ _("Flux financier — 12 derniers mois") }}</h2>
-    <div class="h-64 lg:h-[360px]">
+  <section aria-labelledby="cashflow-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+      <h2 id="cashflow-title" class="text-section-title">{{ _("Flux financier — 12 derniers mois") }}</h2>
+      <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-chart-2"></span>{{ _("Recettes") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-chart-1"></span>{{ _("Dépenses") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-4 h-0.5 rounded-full bg-chart-3"></span>{{ _("Résultat cumulé") }}</span>
+      </p>
+    </div>
+    <div class="h-64 lg:h-[320px]">
       <canvas id="report-cashflow-chart" role="img" aria-label="{{ _("Recettes, dépenses et résultat cumulé sur les douze derniers mois") }}"></canvas>
     </div>
+    {# Le mois choisi sur le graphique : ses chiffres, ses plus grosses dépenses,
+       et le lien qui ouvre le rapport de ce mois. #}
+    <div id="cashflow-readout" aria-live="polite" class="rounded-xl bg-sunken p-4 flex flex-col gap-2 text-sm text-primary"></div>
   </section>
 
   {# ONGLETS DE DÉTAIL — état géré entièrement côté client (Alpine), toutes
@@ -213,12 +223,15 @@
   >
     {% if expense_rows %}
     <div class="flex flex-col lg:flex-row gap-5 lg:items-start">
-      <div class="relative w-[220px] h-[220px] mx-auto lg:mx-0 flex-shrink-0">
+      <div class="relative w-[220px] h-[220px] mx-auto lg:mx-0 flex-shrink-0 {{ 'mb-8' if pending_expense_total else '' }}">
         <canvas id="report-expense-donut" role="img" aria-label="{{ _("Répartition des dépenses par catégorie") }}"></canvas>
         <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-8">
           <span class="text-xs text-secondary">{{ _("Total dépenses") }}</span>
           <span class="amount-blur text-lg font-bold tabular-nums text-primary">{{ signed(-expense_total) }}</span>
         </div>
+        {% if pending_expense_total %}
+        <p class="absolute -bottom-7 inset-x-0 text-center text-xs text-secondary">{% trans amount=pending_expense_total | eur %}dont <span class="amount-blur">{{ amount }}</span> encore à trier{% endtrans %}</p>
+        {% endif %}
       </div>
       <div class="flex-1 min-w-0 flex flex-col">
         <div x-show="!expenseCategory">
@@ -646,14 +659,20 @@
       var colorIncomeSeries = palette[1];
       var colorExpenseSeries = palette[0];
       var colorCumulative = palette[2];
-      // Le mois en cours en couleur pleine, les autres à 60 % : c'est lui
-      // qu'on regarde, les précédents donnent le contexte.
-      var incomeColors = cashflowStarts.map(function (s) {
-        return s === currentMonthStart ? colorIncomeSeries : colorIncomeSeries + "99";
-      });
-      var expenseColors = cashflowStarts.map(function (s) {
-        return s === currentMonthStart ? colorExpenseSeries : colorExpenseSeries + "99";
-      });
+      // Le mois lu en couleur pleine, les autres à 60 % : c'est lui qu'on
+      // regarde, les précédents donnent le contexte. Au départ : le mois en
+      // cours (le dernier).
+      var selectedMonth = cashflowStarts.indexOf(currentMonthStart);
+      if (selectedMonth < 0) selectedMonth = cashflowStarts.length - 1;
+      var incomeColors = [];
+      var expenseColors = [];
+      var paintBars = function () {
+        cashflowStarts.forEach(function (s, i) {
+          incomeColors[i] = i === selectedMonth ? colorIncomeSeries : colorIncomeSeries + "99";
+          expenseColors[i] = i === selectedMonth ? colorExpenseSeries : colorExpenseSeries + "99";
+        });
+      };
+      paintBars();
 
       var cumulative = 0;
       var netCumulative = cashflowNet.map(function (v) {
@@ -661,7 +680,80 @@
         return cumulative;
       });
 
-      new Chart(cashflowCanvas, {
+      var signedMoney = function (value, plus) {
+        var text = currencyFormatter.format(Math.abs(value));
+        if (value < 0) return "−" + text;
+        return (plus ? "+" : "") + text;
+      };
+      var readout = document.getElementById("cashflow-readout");
+      var renderReadout = function () {
+        if (!readout) return;
+        readout.textContent = "";
+        var i = selectedMonth;
+        var head = document.createElement("p");
+        head.className = "flex flex-wrap items-baseline gap-x-6 gap-y-1";
+        var title = document.createElement("strong");
+        title.textContent = cashflowLabels[i];
+        head.appendChild(title);
+        [[labelIncome, Number(cashflowIncome[i]), true], [labelExpense, -Number(cashflowExpense[i]), false], [{{ _("Résultat") | tojson | safe }}, Number(cashflowNet[i]), true], [{{ _("Résultat cumulé") | tojson | safe }}, netCumulative[i], true]].forEach(function (pair) {
+          var item = document.createElement("span");
+          item.appendChild(document.createTextNode(pair[0] + " "));
+          var amount = document.createElement("span");
+          amount.className = "amount-blur tabular-nums";
+          amount.textContent = signedMoney(pair[1], pair[2]);
+          item.appendChild(amount);
+          head.appendChild(item);
+        });
+        readout.appendChild(head);
+        var tops = cashflowTopCategories[i] || [];
+        if (tops.length) {
+          var label = document.createElement("p");
+          label.className = "font-semibold";
+          label.textContent = {{ _("Top dépenses :") | tojson | safe }};
+          readout.appendChild(label);
+          tops.forEach(function (c, index) {
+            var row = document.createElement("p");
+            row.className = "flex items-center gap-2";
+            var dot = document.createElement("span");
+            dot.className = "w-2.5 h-2.5 rounded-full flex-shrink-0";
+            dot.style.backgroundColor = palette[index % palette.length];
+            var name = document.createElement("span");
+            name.className = "flex-1 min-w-0 truncate";
+            name.textContent = c.name;
+            var value = document.createElement("span");
+            value.className = "amount-blur tabular-nums";
+            value.textContent = signedMoney(-Number(c.amount), false);
+            row.appendChild(dot);
+            row.appendChild(name);
+            row.appendChild(value);
+            readout.appendChild(row);
+          });
+        }
+        var parts = cashflowStarts[i].split("-");
+        var open = document.createElement("a");
+        open.href = "/reports?period_type=mois&year=" + parts[0] + "&month=" + parseInt(parts[1], 10);
+        open.className = "min-h-[50px] inline-flex items-center gap-1 font-medium text-primary self-start";
+        open.textContent = {{ _("Ouvrir ce mois") | tojson | safe }} + " →";
+        readout.appendChild(open);
+      };
+
+      // Un voile sur le mois choisi, derrière les barres.
+      var selectedBandPlugin = {
+        id: "selectedBand",
+        beforeDatasetsDraw: function (chart) {
+          var meta = chart.getDatasetMeta(0);
+          if (!meta.data[selectedMonth]) return;
+          var step = chart.chartArea.width / cashflowLabels.length;
+          var center = chart.scales.x.getPixelForValue(selectedMonth);
+          chart.ctx.save();
+          chart.ctx.fillStyle = cssColor("--color-sunken", "#f2efe9");
+          chart.ctx.fillRect(center - step / 2, chart.chartArea.top, step, chart.chartArea.height);
+          chart.ctx.restore();
+        },
+      };
+
+      var cashflowChart = new Chart(cashflowCanvas, {
+        plugins: [selectedBandPlugin],
         data: {
           labels: cashflowLabels,
           datasets: [
@@ -682,29 +774,7 @@
             y1: { position: "right", grid: { drawOnChartArea: false }, ticks: { callback: compactTick } },
           },
           plugins: {
-            legend: {
-              position: "top",
-              align: "end",
-              labels: {
-                usePointStyle: true,
-                pointStyle: "rectRounded",
-                boxWidth: 10,
-                boxHeight: 10,
-                padding: 16,
-                // Pastille pleine de la couleur de la série (par défaut : la
-                // couleur du premier élément, ici pâle pour les mois passés).
-                generateLabels: function (chart) {
-                  var solid = [colorIncomeSeries, colorExpenseSeries, colorCumulative];
-                  var items = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                  items.forEach(function (item) {
-                    item.fillStyle = solid[item.datasetIndex];
-                    item.strokeStyle = solid[item.datasetIndex];
-                    item.lineWidth = 0;
-                  });
-                  return items;
-                },
-              },
-            },
+            legend: { display: false },
             tooltip: {
               callbacks: {
                 label: function (ctx) {
@@ -739,13 +809,14 @@
           },
           onClick: function (event, elements) {
             if (!elements.length) return;
-            var index = elements[0].index;
-            var start = cashflowStarts[index];
-            var parts = start.split("-");
-            window.location.href = "/reports?period_type=mois&year=" + parts[0] + "&month=" + parseInt(parts[1], 10);
+            selectedMonth = elements[0].index;
+            paintBars();
+            renderReadout();
+            cashflowChart.update("none");
           },
         },
       });
+      renderReadout();
     }
 
     // --- Donuts Dépenses / Recettes (onglets) ---

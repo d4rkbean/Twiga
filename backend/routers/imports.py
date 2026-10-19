@@ -3,11 +3,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend import crud, import_storage
 from backend.database import get_db
-from backend.models import Account
+from backend.models import Account, Rule
 from backend.templating import templates
 from imports import csv_parser, ofx_parser, qif_parser
 from imports.common import ImportParseError, ParsedTransaction, split_duplicates
@@ -15,6 +16,8 @@ from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
+# Same limit as announced on the drop zone ("5 Mo maximum").
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 _SUPPORTED_FORMATS = {".csv": "csv", ".ofx": "ofx", ".qfx": "ofx", ".qif": "qif"}
 _ALLOWED_FORMAT_VALUES = set(_SUPPORTED_FORMATS.values())
 # import_id est toujours généré côté serveur par uuid.uuid4().hex
@@ -57,6 +60,71 @@ def _get_account(db: Session, account_id: int) -> Account:
 
 def _error(request: Request, message: str) -> HTMLResponse:
     return templates.TemplateResponse("imports/_error.html", {"request": request, "error": message})
+
+
+def _history_context(db: Session) -> dict:
+    logs = crud.list_import_logs(db)
+    return {"import_logs": logs, "import_logs_total": sum(log.imported for log in logs)}
+
+
+def _classify(unique: list, rules: list) -> dict[int, tuple[str, str | None]]:
+    """What the "État" column says about each new row: a rule that will file
+    it ("rule"), a detected transfer ("transfer", with the other account) or
+    nothing yet ("sort")."""
+    states: dict[int, tuple[str, str | None]] = {}
+    for tx in unique:
+        if tx.transfer_account:
+            states[id(tx)] = ("transfer", tx.transfer_account)
+            continue
+        lowered = tx.label.lower()
+        matched = any(rule.keyword.lower() in lowered for rule in rules)
+        states[id(tx)] = ("rule", None) if matched else ("sort", None)
+    return states
+
+
+def _step2_response(
+    request: Request, db: Session, import_id: str, fmt: str, account_id: int | None
+) -> HTMLResponse:
+    """The "second step" screen of a stored upload (columns, preview, QIF
+    summary). Shared by the first pass and by the "Précédent" button."""
+    content = import_storage.read_upload(import_id, f".{fmt}")
+    if fmt == "qif":
+        result = qif_parser.parse_qif(content)
+        existing_names = crud.get_existing_account_names(db)
+        context = {
+            "request": request,
+            "import_id": import_id,
+            "accounts": [(a, a.name in existing_names) for a in result.accounts],
+            "category_count": len(result.categories),
+            "transaction_count": len(result.transactions),
+            "payee_count": len(result.payees),
+        }
+        return templates.TemplateResponse("imports/_step2_qif.html", context)
+
+    account = _get_account(db, account_id) if account_id is not None else None
+    if account is None:
+        return _error(request, _t("Compte manquant pour cet import."))
+
+    if fmt == "csv":
+        csv_preview = csv_parser.preview_csv(content)
+        context = {
+            "request": request,
+            "import_id": import_id,
+            "account": account,
+            "preview": csv_preview,
+            "date_format_choices": csv_parser.DATE_FORMAT_CHOICES,
+        }
+        return templates.TemplateResponse("imports/_step2_csv.html", context)
+
+    transactions = ofx_parser.parse_ofx_transactions(content, account.name)
+    context = {
+        "request": request,
+        "import_id": import_id,
+        "account": account,
+        "transactions": transactions[:8],
+        "total_count": len(transactions),
+    }
+    return templates.TemplateResponse("imports/_step2_ofx.html", context)
 
 
 def _index_split(
@@ -107,7 +175,33 @@ def _parse_transactions(
 @router.get("/new", response_class=HTMLResponse)
 def new_import(request: Request, db: Session = Depends(get_db)):
     accounts = crud.list_accounts(db)
-    return templates.TemplateResponse("imports/new.html", {"request": request, "accounts": accounts})
+    context = {"request": request, "accounts": accounts, **_history_context(db)}
+    return templates.TemplateResponse("imports/new.html", context)
+
+
+@router.get("/step1", response_class=HTMLResponse)
+def step1(request: Request, db: Session = Depends(get_db)):
+    """First step on its own: the target of "Précédent" on the second step."""
+    context = {"request": request, "accounts": crud.list_accounts(db)}
+    return templates.TemplateResponse("imports/_step1_file.html", context)
+
+
+@router.get("/back", response_class=HTMLResponse)
+def back_to_step2(
+    request: Request,
+    import_id: str,
+    format: str,
+    account_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    """"Précédent" on the third step: the stored file is read again. When the
+    upload is gone (temporary file cleaned up), the wizard starts over."""
+    if format not in _ALLOWED_FORMAT_VALUES or not _IMPORT_ID_PATTERN.fullmatch(import_id):
+        return step1(request, db)
+    try:
+        return _step2_response(request, db, import_id, format, account_id)
+    except (FileNotFoundError, ImportParseError):
+        return step1(request, db)
 
 
 @router.post("/preview", response_class=HTMLResponse)
@@ -119,51 +213,18 @@ async def preview(
 ):
     fmt = _detect_format(file.filename or "")
     raw_bytes = await file.read()
+    if len(raw_bytes) > MAX_UPLOAD_BYTES:
+        return _error(request, _t("Fichier trop volumineux (5 Mo maximum)."))
+    if fmt != "qif" and account_id is None:
+        return _error(
+            request,
+            _t("Choisis un compte existant, ou importe d'abord un fichier QIF pour en créer un."),
+        )
+
     import_id = import_storage.save_upload(raw_bytes, f".{fmt}")
-    content = import_storage.read_upload(import_id, f".{fmt}")
-
+    import_storage.save_name(import_id, f".{fmt}", Path(file.filename or "").name)
     try:
-        if fmt == "qif":
-            result = qif_parser.parse_qif(content)
-            context = {
-                "request": request,
-                "import_id": import_id,
-                "accounts": result.accounts,
-                "category_count": len(result.categories),
-                "transaction_count": len(result.transactions),
-                "payee_count": len(result.payees),
-            }
-            return templates.TemplateResponse("imports/_step2_qif.html", context)
-
-        if account_id is None:
-            import_storage.delete_upload(import_id, f".{fmt}")
-            return _error(
-                request,
-                _t("Choisis un compte existant, ou importe d'abord un fichier QIF pour en créer un."),
-            )
-
-        account = _get_account(db, account_id)
-
-        if fmt == "csv":
-            csv_preview = csv_parser.preview_csv(content)
-            context = {
-                "request": request,
-                "import_id": import_id,
-                "account": account,
-                "preview": csv_preview,
-                "date_format_choices": csv_parser.DATE_FORMAT_CHOICES,
-            }
-            return templates.TemplateResponse("imports/_step2_csv.html", context)
-
-        transactions = ofx_parser.parse_ofx_transactions(content, account.name)
-        context = {
-            "request": request,
-            "import_id": import_id,
-            "account": account,
-            "transactions": transactions[:20],
-            "total_count": len(transactions),
-        }
-        return templates.TemplateResponse("imports/_step2_ofx.html", context)
+        return _step2_response(request, db, import_id, fmt, account_id)
     except ImportParseError as exc:
         import_storage.delete_upload(import_id, f".{fmt}")
         return _error(request, str(exc))
@@ -220,11 +281,14 @@ def confirm(
 
     existing_keys = crud.get_existing_transaction_keys(db)
     unique, duplicates, index_of = _index_split(transactions, existing_keys)
+    states = _classify(unique, db.execute(select(Rule)).scalars().all())
 
     context = {
         "request": request,
         "import_id": import_id,
         "format": format,
+        "states": {index_of[id(tx)]: states[id(tx)] for tx in unique},
+        "transfer_count": sum(1 for state in states.values() if state[0] == "transfer"),
         "account": account,
         "date_column": date_column,
         "label_column": label_column,
@@ -261,9 +325,17 @@ async def execute(
             return _error(request, str(exc))
 
         result_summary = crud.import_qif_result(db, result)
+        crud.record_import_log(
+            db,
+            import_storage.read_name(import_id, f".{format}"),
+            _t("Tous les comptes"),
+            len(result.transactions),
+            result_summary["duplicate_count"],
+            result_summary["imported_count"],
+        )
         import_storage.delete_upload(import_id, f".{format}")
 
-        context = {"request": request, **result_summary}
+        context = {"request": request, **_history_context(db), **result_summary}
         return templates.TemplateResponse("imports/_result.html", context)
 
     account = _get_account(db, account_id) if account_id is not None else None
@@ -295,11 +367,20 @@ async def execute(
     selected.extend(forced_txs)
 
     result_summary = crud.bulk_insert_transactions(db, account, selected)
+    crud.record_import_log(
+        db,
+        import_storage.read_name(import_id, f".{format}"),
+        account.name,
+        len(transactions),
+        len(duplicates) - len(forced_txs),
+        result_summary["imported_count"],
+    )
 
     import_storage.delete_upload(import_id, f".{format}")
 
     context = {
         "request": request,
+        **_history_context(db),
         "duplicate_count": len(duplicates) - len(forced_txs),
         "excluded_count": len(unique) - len(selected) + len(forced_txs),
         **result_summary,

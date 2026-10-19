@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from backend import auth, crud
+from backend import auth, budget_month, crud
 from backend.auth_middleware import AuthMiddleware
 from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
@@ -34,8 +34,8 @@ from backend.routers import (
     transactions,
     users as users_router,
 )
-from backend.templating import flash_html, templates
-from backend.i18n import gettext as _t, ngettext
+from backend.templating import flash_html, templates, user_display_name
+from backend.i18n import current_language, gettext as _t, ngettext
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -126,9 +126,26 @@ def design_system(request: Request):
     return templates.TemplateResponse("design_system.html", {"request": request})
 
 
+def _household_label(users: list) -> str:
+    """"Foyer d'Alex et Sam": the first names of the household, with the
+    French elision ("d'Alex" but "de Sam")."""
+    names = [user_display_name(user) for user in users if user.is_active]
+    if not names:
+        return ""
+    joined = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " " + _t("et") + " " + names[-1]
+    if current_language() == "fr":
+        return (_t("Foyer d'%(names)s") if joined[:1].lower() in "aeiouyhàâéèêîô" else _t("Foyer de %(names)s")) % {
+            "names": joined
+        }
+    return _t("Foyer de %(names)s") % {"names": joined}
+
+
 @app.get("/settings", response_class=HTMLResponse)
 def settings(request: Request, db: Session = Depends(get_db)):
     cap_settings = crud.get_cap_settings(db)
+    users = crud.list_users(db)
+    rules = crud.get_rules_with_usage(db)
+    balances = crud.get_account_balances(db)
     return templates.TemplateResponse(
         "settings.html",
         {
@@ -138,8 +155,44 @@ def settings(request: Request, db: Session = Depends(get_db)):
             "income_sources": crud.INCOME_SOURCES,
             "accounts": crud.list_accounts(db),
             "last_backup_at": crud.get_or_create_app_state(db).last_backup_at,
+            "household_label": _household_label(users),
+            "users": users,
+            "account_balances": balances,
+            "accounts_total": sum((balance for _account, balance in balances), Decimal("0")),
+            "categories": crud.get_categories_tree(db),
+            "rules": rules[:6],
+            "recurring_count": crud.get_recurring_patterns_overview(db)["recurring_active_count"],
+            "pending_checks_count": len(crud.get_outstanding_pending_checks(db)),
         },
     )
+
+
+@app.post("/settings/budget-start-day", response_class=HTMLResponse)
+def save_budget_start_day(budget_start_day: int = Form(...), db: Session = Depends(get_db)):
+    """"Début du mois budgétaire" (Préférences): the day the budget month
+    starts on. Saved as soon as it is picked."""
+    if budget_start_day not in budget_month.BUDGET_START_DAYS:
+        raise HTTPException(status_code=400, detail=_t("Jour de début invalide."))
+    crud.get_cap_settings(db).budget_start_day = budget_start_day
+    db.commit()
+    return HTMLResponse(content=flash_html("success", _t("Réglage enregistré")))
+
+
+@app.post("/settings/delete-all-transactions", response_class=HTMLResponse)
+def delete_all_transactions(
+    request: Request, confirm: str = Form(""), db: Session = Depends(get_db)
+):
+    """"Zone sensible": deletes every transaction. Administrator only, and
+    only after the second confirmation of the screen (the `confirm` field is
+    sent by its "Oui, tout supprimer" button alone)."""
+    current_user = auth.get_current_user(request)
+    if auth.AUTH_ENABLED and (current_user is None or current_user.role != "admin"):
+        raise HTTPException(status_code=403, detail=_t("Réservé à l'administrateur."))
+    if confirm != "yes":
+        raise HTTPException(status_code=400, detail=_t("Confirmation manquante."))
+    count = crud.delete_all_transactions(db)
+    message = ngettext("%(n)s opération supprimée", "%(n)s opérations supprimées", count) % {"n": count}
+    return HTMLResponse(content=flash_html("success", message))
 
 
 @app.post("/settings/cap-income-source", response_class=HTMLResponse)

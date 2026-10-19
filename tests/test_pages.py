@@ -42,12 +42,11 @@ PAGES = [
     Page("/transactions/list/content", htmx=True),
     Page("/transactions/new", htmx=True),
     Page("/transactions/{transaction_id}/detail", htmx=True),
+    Page("/transactions/{transaction_id}/edit", htmx=True),
     Page("/transactions/receipts/{transaction_id}/section", htmx=True),
     # Backlog
     Page("/backlog"),
     Page("/backlog/content", htmx=True),
-    Page("/backlog/{transaction_id}/category-select", htmx=True),
-    Page("/backlog/{transaction_id}/category-confirm", {"category_id": "{category_id}"}, htmx=True),
     # Dashboard
     Page("/dashboard"),
     Page("/dashboard/content", htmx=True),
@@ -59,6 +58,7 @@ PAGES = [
     ),
     Page("/dashboard/sidebar-balance", htmx=True),
     Page("/dashboard/shell-balance", htmx=True),
+    Page("/dashboard/sidebar-pending", htmx=True),
     # Accounts
     Page("/accounts"),
     Page("/accounts/content", htmx=True),
@@ -82,6 +82,7 @@ PAGES = [
     # Le Cap
     Page("/cap"),
     Page("/cap/mid"),
+    Page("/cap/reopen", htmx=True),
     # Projects, recurring, checks, rules
     Page("/projects"),
     Page("/recurring"),
@@ -106,6 +107,8 @@ PAGES = [
     Page("/export/restore/progress", htmx=True),
     Page("/export/backup/status", htmx=True),
     Page("/imports/new"),
+    Page("/imports/step1", htmx=True),
+    Page("/imports/back", {"import_id": "0" * 32, "format": "csv"}, htmx=True),
     Page("/users"),
     Page("/users/list", htmx=True),
 ]

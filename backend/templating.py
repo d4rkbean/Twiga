@@ -13,9 +13,18 @@ from backend.account_types import ACCOUNT_TYPES, get_account_type_icon, get_acco
 from backend.auth import get_current_user
 from backend.category_icons import get_category_icon, get_category_icon_name
 from backend.crud import resolve_category_pillar, resolve_transaction_pillar
+from backend.dates import month_label
 from backend.icons import available as icon_names, icon
-from backend.formatting import format_amount, format_amount_as, format_date, format_date_as
+from backend.formatting import (
+    format_amount,
+    format_amount_as,
+    format_date,
+    format_date_as,
+    format_plain_amount,
+    format_short_date,
+)
 from backend import i18n, preferences
+from backend.dates import format_date_long
 from backend.models import Account
 from backend.payment_methods import get_payment_method_icon_name, get_payment_method_label
 from backend.pillars import PILLAR_ORDER, PILLARS, get_pillar_label
@@ -237,6 +246,10 @@ def configure_environment(env: Environment) -> Environment:
     """
     env.filters["eur"] = format_amount
     env.filters["fr_date"] = format_date
+    env.filters["short_date"] = format_short_date
+    env.filters["plain_amount"] = format_plain_amount
+    env.filters["long_date"] = format_date_long
+    env.filters["month_year"] = lambda value: month_label(value.year, value.month)
     env.filters["tojson"] = tojson_filter
     env.filters["category_color"] = category_color_filter
     env.filters["category_display"] = category_display_filter

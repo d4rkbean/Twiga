@@ -1,0 +1,29 @@
+{#
+  Montant réglable : [−] valeur € [+], le tout à 50 px.
+
+    {% from "_macros/stepper_field.html" import stepper_field %}
+    {{ stepper_field("income", 100, name="planned_income", minus=_("Baisser les ressources de 100 €"), plus=_("Augmenter les ressources de 100 €")) }}
+
+  `model` est une expression Alpine (un nombre), `step` le pas des boutons.
+  La valeur se tape au clavier : le champ montre « 1 855,19 » mais ne poste que
+  le nombre brut, dans un champ caché (`name`), pour que le serveur n'ait pas à
+  lire un séparateur de milliers. Demande `window.twigaCap` (cap/index.html).
+#}
+{% macro stepper_field(model, step, name=None, minus="", plus="", label="") -%}
+<span class="inline-flex items-center gap-2 flex-shrink-0">
+  <button type="button" @click="{{ model }} = Math.max(0, Math.round(((Number({{ model }}) || 0) - {{ step }}) * 100) / 100)" aria-label="{{ minus }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('minus') }}</button>
+  <span class="amount-blur inline-flex items-center gap-1 font-semibold tabular-nums text-primary">
+    {% if name %}<input type="hidden" name="{{ name }}" :value="Number({{ model }}) || 0" />{% endif %}
+    <input
+      type="text"
+      inputmode="decimal"
+      {% if label %}aria-label="{{ label }}"{% endif %}
+      x-effect="document.activeElement === $el || ($el.value = twigaCap.fmt2({{ model }}))"
+      @input="{{ model }} = twigaCap.num($event.target.value)"
+      @blur="$el.value = twigaCap.fmt2({{ model }})"
+      class="h-[50px] w-[104px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums font-semibold hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+    />&euro;
+  </span>
+  <button type="button" @click="{{ model }} = Math.round(((Number({{ model }}) || 0) + {{ step }}) * 100) / 100" aria-label="{{ plus }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('plus') }}</button>
+</span>
+{%- endmacro %}

@@ -32,7 +32,7 @@ class PaymentMethod(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
-    icon: Mapped[str] = mapped_column(String(10))
+    icon: Mapped[str] = mapped_column(String(30))
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     display_order: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -212,8 +212,14 @@ class ProjectMovement(Base):
     # Signé, comme Transaction.amount : positif = ajout, négatif = dépense.
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Compte d'où vient l'argent ajouté (facultatif : une dépense, ou un
+    # mouvement ancien, n'en a pas).
+    account_id: Mapped[int | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )
 
     project: Mapped["Project"] = relationship(back_populates="movements")
+    account: Mapped["Account | None"] = relationship()
 
 
 class CapSettings(Base):
@@ -249,6 +255,9 @@ class CapSettings(Base):
     )
     # Enveloppe fixe, quand income_source vaut "fixe".
     income_fixed_amount: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    # Jour du mois où le mois budgétaire commence (1, 5, 10 ou 15 : "Début du
+    # mois budgétaire" dans Paramètres > Préférences). Réglage du foyer.
+    budget_start_day: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
     income_account: Mapped["Account | None"] = relationship()
 
@@ -270,6 +279,9 @@ class CapEntry(Base):
     planned_choix: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     planned_imprevu: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     intention: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Monthly savings goal set in the ritual (optional): the live panel says whether
+    # the planned savings reach it.
+    savings_goal: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     reflection_unexpected: Mapped[str | None] = mapped_column(Text, nullable=True)
     reflection_regret: Mapped[str | None] = mapped_column(Text, nullable=True)
     reflection_proud: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -456,3 +468,19 @@ class PendingCheck(Base):
     category: Mapped["Category"] = relationship()
     account: Mapped["Account"] = relationship()
     matched_transaction: Mapped["Transaction | None"] = relationship()
+
+
+class ImportLog(Base):
+    """One line of the "Derniers imports" table: what a finished import
+    brought in (file name, account, lines read, duplicates, rows imported)."""
+
+    __tablename__ = "import_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    imported_on: Mapped[date] = mapped_column(Date, default=date.today)
+    filename: Mapped[str] = mapped_column(String(255))
+    # "Tous les comptes" for a QIF file, which creates its own accounts.
+    account_name: Mapped[str] = mapped_column(String(255))
+    lines: Mapped[int] = mapped_column(Integer, default=0)
+    duplicates: Mapped[int] = mapped_column(Integer, default=0)
+    imported: Mapped[int] = mapped_column(Integer, default=0)

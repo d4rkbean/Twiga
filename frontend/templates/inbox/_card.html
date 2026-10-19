@@ -1,30 +1,56 @@
 {% from "_macros/brand.html" import mascot, mascot_line %}
 {% if transaction is none %}
-{# Savane vide : la girafe rassasiée et trois suites possibles. « Voir Mon
-   mois » est l'action principale de l'écran ; les deux autres sont des gestes
-   de plus tard. #}
-<div id="transaction-card" class="w-full flex flex-col gap-[var(--space-list)]">
-  <input type="hidden" id="nav-history" value="{{ history }}" />
-  <div class="bg-container rounded-xl shadow-sm overflow-hidden flex flex-col sm:flex-row">
-    <div class="bg-accent-soft flex items-end justify-center pt-6 sm:w-[200px] sm:flex-shrink-0">
+{# End of the visit: the fed giraffe, the dots of what was filed and three ways
+   on. « Voir Mon mois » is the main action of the screen; the two others are
+   gestures for later. Below: what was filed, category by category. #}
+<div id="transaction-card" class="flex w-full flex-col gap-5">
+  <input type="hidden" id="nav-history" name="history" value="{{ history }}" />
+  <div class="flex flex-col overflow-hidden rounded-xl border border-border bg-container shadow-sm sm:flex-row">
+    <div class="flex items-end justify-center bg-accent-soft pt-6 sm:w-[200px] sm:flex-shrink-0">
       {{ mascot('done', 150) }}
     </div>
-    <div class="flex flex-col gap-2 p-5 md:p-6 sm:flex-1 sm:justify-center">
+    <div class="flex flex-col gap-2 p-5 sm:flex-1 sm:justify-center md:p-6">
       <h2 class="text-replique">{{ mascot_line('done') }}</h2>
-      <p class="text-sm text-secondary">{{ _("La savane est propre.") }}</p>
-      <div class="flex flex-col gap-2 pt-3">
+      <p class="text-sm text-secondary">
+        {{ _("La savane est propre.") }}
+        {% if session_filed %}
+        {% trans count=session_filed %}{{ count }} opération rangée{% pluralize %}{{ count }} opérations rangées{% endtrans %}{% if session_unexpected %}, {% trans count=session_unexpected %}dont {{ count }} imprévu noté au passage{% pluralize %}dont {{ count }} imprévus notés au passage{% endtrans %}{% endif %}.
+        {% endif %}
+      </p>
+      {% if session_filed %}
+      <div class="my-1 flex h-[18px] max-w-[420px] items-center justify-between rounded-full bg-secondary px-3.5" aria-hidden="true">
+        {% for n in range([session_filed, 14] | min) %}<span class="h-2.5 w-2.5 rounded-full bg-page"></span>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="flex flex-col gap-2 pt-3 sm:flex-row sm:flex-wrap">
         <a href="/cap/mid" class="btn btn-primary">{{ _("Voir Mon mois") }}</a>
-        <a href="/cap" class="btn btn-secondary">{{ _("Fixer Le Cap") }}</a>
-        <a href="/imports" class="btn btn-secondary">{{ _("Importer un relevé") }}</a>
+        <a href="/cap" class="btn btn-secondary border-border-strong">{{ _("Fixer Le Cap") }}</a>
+        <a href="/imports" class="btn btn-secondary border-border-strong">{{ _("Importer un relevé") }}</a>
       </div>
     </div>
   </div>
+  {% if session_breakdown %}
+  <section class="flex flex-col gap-2" aria-labelledby="inbox-breakdown-title">
+    <h2 id="inbox-breakdown-title" class="text-base font-semibold text-primary">{{ _("Rangé pendant cette séance") }}</h2>
+    <ul class="grid gap-x-6 sm:grid-cols-2">
+      {% for entry in session_breakdown %}
+      <li class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border">
+        <span class="flex items-center gap-2.5 text-sm font-medium text-primary">
+          <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ entry.id | category_color }}" aria-hidden="true"></span>
+          {{ entry.name }}
+        </span>
+        <span class="text-sm tabular-nums text-secondary">{% trans count=entry.count %}{{ count }} opération{% pluralize %}{{ count }} opérations{% endtrans %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
   {% if history %}
   <div class="flex">
     <button
       type="button"
       id="inbox-previous-btn"
-      class="btn btn-secondary w-full sm:w-auto"
+      class="btn btn-secondary w-full border-border-strong sm:w-auto"
       hx-post="/transactions/undo"
       hx-vals='{"history": "{{ history }}"}'
       hx-target="#transaction-card"
@@ -36,37 +62,16 @@
   {% endif %}
 </div>
 {% else %}
-{% set confidence = suggestion_confidence | default(none) %}
-{# Verdict de la suggestion : toujours un mot avec le pourcentage (feu
-   tricolore). La bordure de la carte, elle, ne porte plus ce verdict : elle
-   ne dit que le compte (seule bordure épaisse qui porte une information,
-   voir DESIGN.md). #}
-{% set confidence_badge = 'badge-neutral' %}
-{% set confidence_word = '' %}
-{% if confidence is not none %}
-  {% if confidence >= 85 %}
-    {% set confidence_badge = 'badge-positive' %}
-    {% set confidence_word = _("sûre") %}
-  {% elif confidence >= 70 %}
-    {% set confidence_badge = 'badge-warning' %}
-    {% set confidence_word = _("probable") %}
-  {% else %}
-    {% set confidence_badge = 'badge-negative' %}
-    {% set confidence_word = _("incertaine") %}
-  {% endif %}
-{% endif %}
-<!-- #transaction-card est le conteneur EXTÉRIEUR (carte visuelle + rangée de
-     boutons en dessous), pas la carte elle-même : ça permet aux boutons
-     Précédente/Passer de vivre hors de la carte sans rien changer aux
-     hx-target="#transaction-card" existants ailleurs dans ce fichier
-     (mark-transfer, undo, finalize du mode de paiement...) — un swap
-     outerHTML sur cet id remplace tout le bloc, boutons compris. Le geste de
-     swipe (x-data, touch handlers) reste sur la carte visuelle UNIQUEMENT :
-     les boutons en dessous ne doivent pas s'envoler avec elle. -->
-<div id="transaction-card" class="w-full flex flex-col gap-[var(--space-list)]">
-  {# Deux niveaux : l'enveloppe porte le geste (x-data, :style de
-     translation, qui réécrit tout l'attribut style) et la carte porte la
-     couleur du compte dans son propre style statique. #}
+{% set pay_label = (suggested_payment_method | pm_label) if suggested_payment_method else "" %}
+{# #transaction-card is the OUTER container (the card, the grid of other
+   categories and the shortcut legend): an outerHTML swap on this id replaces
+   the whole block, which keeps every hx-target="#transaction-card" elsewhere
+   (mark-transfer, undo, finalize...) as it was. The swipe gesture (x-data,
+   touch handlers) stays on the card itself. #}
+<div id="transaction-card" class="flex w-full flex-col gap-4">
+  {# Two levels: the wrapper carries the gesture (x-data, translation :style,
+     which rewrites the whole style attribute) and the card carries the account
+     colour in its own static style. #}
   <div
     x-data="{
       dragX: 0,
@@ -81,7 +86,7 @@
         this.dragging = false;
         var THRESHOLD = 100;
         if (this.dragX > THRESHOLD) {
-          var validateBtn = document.getElementById('inbox-swipe-validate-btn');
+          var validateBtn = document.getElementById('inbox-validate-btn');
           if (validateBtn) { this.flyAway(1); validateBtn.click(); return; }
         } else if (this.dragX < -THRESHOLD) {
           this.flyAway(-1);
@@ -98,21 +103,19 @@
     :style="'transform: translateX(' + dragX + 'px) rotate(' + (dragX / 20) + 'deg); transition: ' + (dragging ? 'none' : 'transform 0.3s ease') + ';'"
   >
   <div
-    class="bg-container rounded-xl shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-block)] border-2"
+    class="flex flex-col gap-4 rounded-xl border-2 bg-container p-5 shadow-sm lg:p-6"
     style="border-color: {{ transaction.account | account_color }};"
   >
-    <input type="hidden" id="nav-history" value="{{ history }}" />
-    <div class="flex flex-col gap-1">
-      <p class="flex items-center gap-2 text-xs text-secondary">
-        <span class="inline-block w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ transaction.account | account_color }};"></span>
-        <span class="truncate">{{ transaction.account.name }}</span>
-        <span aria-hidden="true">·</span>
-        <span class="whitespace-nowrap">{{ transaction.date | fr_date }}</span>
-      </p>
-      {# Le libellé se lit comme un titre mais reste un champ : le crayon dit
-         qu'on peut le renommer. Corps réduit en mobile pour qu'un libellé de
-         vingt-cinq caractères tienne sur une ligne ; pr-8 réserve la place
-         du crayon. #}
+    <input type="hidden" id="nav-history" name="history" value="{{ history }}" />
+    <p class="flex items-center gap-2.5 text-xs font-medium text-secondary">
+      <span class="inline-block h-2 w-2 flex-shrink-0 rounded-full" style="background-color: {{ transaction.account | account_color }};"></span>
+      <span class="truncate">{{ transaction.account.name }}</span>
+      <span class="whitespace-nowrap">{{ transaction.date | fr_date }}</span>
+      <span class="ml-auto whitespace-nowrap tabular-nums">{{ session_position }} / {{ session_total }}</span>
+    </p>
+    <div>
+      {# The label reads as a title but stays a field: the pencil says it can be
+         renamed. #}
       <div class="relative">
         <input
           type="text"
@@ -121,25 +124,25 @@
           value="{{ transaction.label or transaction.raw_label }}"
           required
           aria-label="{{ _("Libellé simplifié") }}"
-          class="w-full min-h-[46px] bg-transparent border-0 border-b border-field text-xl lg:text-2xl font-bold text-primary pl-0 pr-8 py-1.5 focus:border-accent-ink focus-visible:outline-none"
+          class="block min-h-[46px] w-full border-0 border-b border-field bg-transparent py-1 pl-0 pr-8 font-display text-2xl font-bold leading-tight tracking-tight text-primary focus:border-accent-ink focus-visible:outline-none lg:text-[26px]"
         />
-        <span class="absolute right-1 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">{{ icon('pencil', size=18) }}</span>
+        <span class="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-secondary">{{ icon('pencil', size=18) }}</span>
       </div>
       {% if transaction.label and transaction.raw_label and transaction.label != transaction.raw_label %}
-      <p class="text-xs text-secondary break-words font-mono">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>
+      <p class="mt-1.5 break-words text-xs text-secondary">{{ _("Libellé brut :") }} <span class="font-mono">{{ transaction.raw_label }}</span></p>
       {% endif %}
-      <p class="amount-blur text-3xl font-extrabold tabular-nums text-primary pt-2">
-        {{ "+" if transaction.amount > 0 else "" }}{{ transaction.amount | eur }}
-      </p>
     </div>
+    <p class="amount-blur text-[40px] font-extrabold leading-none tabular-nums {{ 'text-danger' if transaction.amount < 0 else 'text-success' }}">
+      {{ "+" if transaction.amount > 0 else "" }}{{ transaction.amount | eur }}
+    </p>
 
-    <div x-data="{ transferDismissed: {{ 'false' if possible_transfer else 'true' }} }">
+    <div x-data="{ transferDismissed: {{ 'false' if possible_transfer else 'true' }} }" class="flex flex-col gap-4">
       {% if possible_transfer %}
-      <div x-show="!transferDismissed" class="alert alert-warning flex-col gap-3">
+      <div x-show="!transferDismissed" role="alert" class="alert alert-warning flex-col gap-3">
         <p class="font-medium">
           {{ icon('alert-triangle') }} {{ _("Possible virement interne — compte destinataire pas encore importé ?") }}
         </p>
-        <div class="flex flex-col gap-2 w-full">
+        <div class="flex w-full flex-col gap-2">
           <button
             type="button"
             class="btn btn-primary"
@@ -153,7 +156,7 @@
           <button
             type="button"
             @click="transferDismissed = true"
-            class="btn btn-secondary"
+            class="btn btn-secondary border-border-strong"
           >
             {{ icon('inbox') }} {{ _("Traiter normalement") }}
           </button>
@@ -161,127 +164,114 @@
       </div>
       {% endif %}
 
-      <div x-show="transferDismissed">
-        {% if suggested_category %}
-        {% set top_level = suggested_category.parent if suggested_category.parent else suggested_category %}
-        {% set subcategory_name = suggested_category.name if suggested_category.parent else none %}
-        <div class="category-suggestion flex flex-col gap-[var(--space-list)]">
-          <div class="flex flex-col gap-1.5">
-            <p class="form-label">{{ _("Catégorie proposée :") }}</p>
-            <div class="flex items-center justify-between gap-2">
-              <p class="flex items-center gap-2 text-base font-medium text-primary min-w-0">
-                <span
-                  class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style="background-color: {{ suggested_category.id | category_color }}"
-                ></span>
-                <span class="truncate">{{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}</span>
-              </p>
-              {% if confidence is not none %}
-              <span class="badge {{ confidence_badge }} flex-shrink-0">{{ confidence }} % · {{ confidence_word }}</span>
-              {% endif %}
-            </div>
-            {% if suggestion_based_on %}
-            <p class="text-xs text-secondary break-words">{% trans suggestion_based_on=suggestion_based_on %}Basé sur : "{{ suggestion_based_on }}"{% endtrans %}</p>
-            {% endif %}
-          </div>
-          <button
-            type="button"
-            id="inbox-validate-btn"
-            class="btn btn-primary w-full"
-            hx-post="/transactions/{{ transaction.id }}/select-category/{{ suggested_category.id }}"
-            hx-include="#simplified-label, #nav-history"
-            hx-target=".category-suggestion"
-            hx-swap="outerHTML"
-          >
-            {{ icon('circle-check') }} {{ _("Valider") }}
-            <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Entrée") }}</kbd>
-          </button>
-          <!-- Bouton dédié au swipe droite, cible directement /finalize plutôt
-               que /select-category : ce dernier n'avance jamais la carte lui-
-               même (il ouvre l'étape mode de paiement ou sous-catégorie À
-               L'INTÉRIEUR de la carte), donc cliquer dessus au swipe laissait
-               la carte "envolée" visuellement sans jamais être remplacée tant
-               qu'un second geste ne finalisait pas la catégorisation.
-               /finalize accepte n'importe quelle catégorie (parente ou non,
-               c'est déjà ce que fait le choix "(général)" de la grille de
-               sous-catégories) et remplace #transaction-card directement :
-               swipe = validation immédiate avec la suggestion, sans mode de
-               paiement ni sous-catégorie — le tap sur « Valider » garde lui
-               le parcours détaillé complet. -->
-          <button
-            type="button"
-            id="inbox-swipe-validate-btn"
-            class="hidden"
-            hx-post="/transactions/{{ transaction.id }}/finalize/{{ suggested_category.id }}"
-            hx-include="#simplified-label, #nav-history, #inbox-unexpected"
-            hx-target="#transaction-card"
-            hx-swap="outerHTML"
-          >
-            {{ _("Valider (swipe)") }}
-          </button>
-          <button
-            type="button"
-            id="inbox-back-to-categories-btn"
-            class="btn btn-secondary w-full"
-            hx-get="/transactions/{{ transaction.id }}/categories"
-            hx-target=".category-suggestion"
-            hx-swap="outerHTML"
-          >
-            {{ icon('edit') }} {{ _("Changer") }}
-            <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Échap") }}</kbd>
-          </button>
-        </div>
-        {% else %}
-          {% include "inbox/_categories_grid.html" %}
-        {% endif %}
+      {% if suggested_category %}
+      {% set confidence = suggestion_confidence | default(none) %}
+      {% set top_level = suggested_category.parent if suggested_category.parent else suggested_category %}
+      {% set subcategory_name = suggested_category.name if suggested_category.parent else none %}
+      <div x-show="transferDismissed" class="flex flex-col gap-3">
+        {# « Valider » files the proposed category (and the payment method a rule
+           proposes for it) at once; « Mode de paiement · Changer » and the
+           grid below are the ways to decide otherwise. #}
+        <button
+          type="button"
+          id="inbox-validate-btn"
+          class="btn btn-primary min-h-[58px] w-full justify-start gap-3 px-4 text-left"
+          hx-post="/transactions/{{ transaction.id }}/finalize/{{ suggested_category.id }}"
+          {% if suggested_payment_method %}hx-vals='{"payment_method": "{{ suggested_payment_method }}"}'{% endif %}
+          hx-include="#simplified-label, #nav-history, #inbox-unexpected"
+          hx-target="#transaction-card"
+          hx-swap="outerHTML"
+        >
+          {{ icon('check') }}
+          <span class="min-w-0 flex-1">
+            <span class="block lg:inline">{{ _("Valider") }}</span><span class="hidden lg:inline"> · </span>
+            <span class="block truncate text-xs font-normal lg:inline lg:text-base lg:font-semibold">{{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}{% if pay_label %} · {{ pay_label }}{% endif %}</span>
+          </span>
+          {% if confidence is not none %}
+          <span class="flex-none text-xs tabular-nums" title="{% trans based_on=suggestion_based_on or '' %}Basé sur : « {{ based_on }} »{% endtrans %}">{{ confidence }} %</span>
+          {% endif %}
+          <span class="flex-none lg:hidden" aria-hidden="true">{{ icon('arrow-narrow-right', size=18) }}</span>
+          <kbd class="kbd-hint hidden border-on-accent text-on-accent lg:inline-flex" aria-hidden="true">{{ _("Entrée") }}</kbd>
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary w-full justify-start gap-2.5 border-border-strong px-3.5 font-normal"
+          hx-post="/transactions/{{ transaction.id }}/categorize/{{ suggested_category.id }}"
+          hx-include="#simplified-label, #nav-history"
+          hx-target=".category-suggestion"
+          hx-swap="outerHTML"
+          aria-label="{{ _("Changer le mode de paiement") }}"
+        >
+          {{ icon('credit-card') }}
+          <span class="min-w-0 flex-1 text-left text-secondary">{{ _("Mode de paiement") }}</span>
+          <span class="font-semibold">{{ pay_label or "—" }}</span>
+          <span class="font-semibold text-accent-ink">{{ _("Changer") }}</span>
+        </button>
       </div>
+      {% endif %}
+    </div>
+
+    {# The buttons that move through the queue: they sit in the card, as in the
+       mock-up. « Imprévu » is a switch added to the decision (the category
+       stays the one chosen); its state travels in the hidden field, taken up by
+       the buttons that save (/finalize), at any step. #}
+    <div class="flex flex-wrap gap-2" x-data="{ unexpected: {{ 'true' if transaction.is_unexpected else 'false' }} }">
+      <input type="hidden" id="inbox-unexpected" name="unexpected" :value="unexpected ? '1' : ''" />
+      <button
+        type="button"
+        id="inbox-previous-btn"
+        class="btn btn-secondary flex-1 basis-[92px] px-2 border-border-strong"
+        {% if history %}
+        hx-post="/transactions/undo"
+        hx-vals='{"history": "{{ history }}"}'
+        hx-target="#transaction-card"
+        hx-swap="outerHTML"
+        {% else %}disabled{% endif %}
+      >
+        {{ icon('arrow-narrow-left') }} {{ _("Précédente") }}
+        <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">←</kbd>
+      </button>
+      <button
+        type="button"
+        id="inbox-skip-btn"
+        class="btn btn-secondary flex-1 basis-[92px] px-2 border-border-strong"
+        hx-post="/transactions/{{ transaction.id }}/skip"
+        hx-include="#simplified-label, #nav-history"
+        hx-target="#transaction-card"
+        hx-swap="outerHTML"
+      >
+        {{ _("Passer") }} {{ icon('arrow-narrow-right') }}
+        <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">→</kbd>
+      </button>
+      <button
+        type="button"
+        id="inbox-unexpected-btn"
+        @click="unexpected = !unexpected"
+        :aria-pressed="unexpected"
+        class="btn btn-secondary flex-1 basis-[92px] px-2 border-border-strong aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink"
+      >
+        {{ icon('urgent') }} {{ _("Imprévu") }}
+        <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">I</kbd>
+      </button>
+    </div>
+    {# Phones: the gestures. #}
+    <div class="flex items-center justify-between gap-2 text-xs font-medium text-secondary lg:hidden" aria-hidden="true">
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-sunken px-3 py-1.5">{{ icon('arrow-narrow-left', size=14) }} {{ _("À gauche : passer") }}</span>
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-sunken px-3 py-1.5">{{ _("À droite : valider") }} {{ icon('arrow-narrow-right', size=14) }}</span>
     </div>
   </div>
   </div>
 
-  <!-- Boutons hors de la carte : Précédente et Passer, deux secondaires côte
-       à côte (« Valider » est l'unique action principale de l'écran).
-       « Passer » reste ciblé par le swipe gauche (onEnd() ci-dessus clique
-       sur ce même id) et par la touche → du clavier. -->
-  <div class="flex gap-2" x-data="{ unexpected: {{ 'true' if transaction.is_unexpected else 'false' }} }">
-    {# « Imprévu » : bascule qui s'ajoute à la décision (la catégorie reste
-       celle qu'on choisit). Son état voyage dans ce champ caché, repris par
-       les boutons qui enregistrent (/finalize), quelle que soit l'étape. #}
-    <input type="hidden" id="inbox-unexpected" name="unexpected" :value="unexpected ? '1' : ''" />
-    {% if history %}
-    <button
-      type="button"
-      id="inbox-previous-btn"
-      class="btn btn-secondary flex-1"
-      hx-post="/transactions/undo"
-      hx-vals='{"history": "{{ history }}"}'
-      hx-target="#transaction-card"
-      hx-swap="outerHTML"
-    >
-      {{ icon('arrow-narrow-left') }} {{ _("Précédente") }}
-    </button>
-    {% endif %}
-    <button
-      type="button"
-      id="inbox-skip-btn"
-      class="btn btn-secondary flex-1"
-      hx-post="/transactions/{{ transaction.id }}/skip"
-      hx-include="#simplified-label, #nav-history"
-      hx-target="#transaction-card"
-      hx-swap="outerHTML"
-    >
-      {{ _("Passer") }} {{ icon('arrow-narrow-right') }}
-    </button>
-    <button
-      type="button"
-      id="inbox-unexpected-btn"
-      @click="unexpected = !unexpected"
-      :aria-pressed="unexpected"
-      class="btn btn-secondary flex-1 aria-pressed:bg-accent-soft aria-pressed:border-accent-ink aria-pressed:text-accent-ink aria-pressed:font-semibold"
-    >
-      {{ icon('urgent') }} {{ _("Imprévu") }}
-      <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">I</kbd>
-    </button>
+  {% include "inbox/_categories_grid.html" %}
+
+  <div role="note" aria-label="{{ _("Raccourcis clavier") }}" class="hidden flex-wrap items-center gap-x-3.5 gap-y-2 text-xs font-medium text-secondary lg:flex">
+    <span class="font-semibold text-primary">{{ _("Raccourcis clavier") }}</span>
+    <span><kbd class="kbd-hint">→</kbd> <kbd class="kbd-hint">{{ _("Espace") }}</kbd> {{ _("Passer") }}</span>
+    <span><kbd class="kbd-hint">←</kbd> {{ _("Précédente") }}</span>
+    <span><kbd class="kbd-hint">1</kbd> {{ _("à") }} <kbd class="kbd-hint">9</kbd> {{ _("Choisir par position") }}</span>
+    <span><kbd class="kbd-hint">{{ _("Entrée") }}</kbd> {{ _("Valider") }}</span>
+    <span><kbd class="kbd-hint">{{ _("Échap") }}</kbd> {{ _("Retour aux catégories") }}</span>
+    <span>{{ _("Actifs après un clic sur la planche, hors champ de saisie.") }}</span>
   </div>
 </div>
 {% endif %}

@@ -1,0 +1,171 @@
+{#
+  The drawn replacement of a native <select>: a 50 px field with a chevron, and
+  the list of options under it (the mock-ups never show a native control).
+
+    {% from "_macros/menu.html" import dropdown %}
+
+    {{ dropdown("f_account", [("", _("Tous les comptes")), ("3", "Compte courant")], selected="3") }}
+
+  Alone, it keeps its value and writes it in a hidden <input name="…">, and
+  tells the form with a bubbling `menu-change` event.
+
+  Bound to a parent Alpine component (`model="acc"`), it reads and writes that
+  variable and runs `change` (an Alpine expression) after each pick; `name` is
+  then optional (the parent has its own hidden fields).
+
+    popover=true   the list floats over the page (filter bars) instead of
+                   pushing what follows (side panels, forms).
+    compact=true   no field chrome: a plain 50 px button (used inside bars).
+
+  Options are (value, label) pairs; values are strings. The first one is
+  normally the "all / none" choice, with the value "".
+#}
+{% macro dropdown(name, options, selected="", model=None, change="", popover=false, aria=None, cls="", input_id=None) -%}
+{%- set var = model or "value" -%}
+{%- set labels = {} -%}
+{%- for value, label in options %}{% if labels.update({value | string: label}) %}{% endif %}{% endfor -%}
+<div
+  class="relative {{ cls }}"
+  x-data="{ open: false{% if not model %}, value: {{ (selected | string) | tojson | forceescape }}{% endif %}, labels: {{ labels | tojson | forceescape }} }"
+  @click.outside="open = false"
+  @keydown.escape.stop="open = false"
+>
+  {% if name %}<input type="hidden" name="{{ name }}" {% if input_id %}id="{{ input_id }}"{% endif %} :value="{{ var }}" />{% endif %}
+  <button
+    type="button"
+    @click="open = !open"
+    :aria-expanded="open"
+    aria-haspopup="listbox"
+    {% if aria %}aria-label="{{ aria }}"{% endif %}
+    class="input-base flex items-center justify-between gap-2 text-left"
+  >
+    <span class="truncate" x-text="labels[{{ var }}] ?? ''">{{ labels.get(selected | string, "") }}</span>
+    {{ icon('chevron-down', size=18) }}
+  </button>
+  <div
+    x-show="open"
+    style="display: none;"
+    role="listbox"
+    class="{% if popover %}absolute inset-x-0 top-full z-30 mt-1 max-h-[320px] overflow-y-auto shadow-lg{% else %}mt-1{% endif %} overflow-hidden rounded-xl border border-border bg-container"
+  >
+    {% for value, label in options %}
+    <button
+      type="button"
+      role="option"
+      data-value="{{ value }}"
+      :aria-selected="{{ var }} === $el.dataset.value"
+      @click="{{ var }} = $el.dataset.value; open = false;{% if not model %} $nextTick(() => $dispatch('menu-change', { value: {{ var }} }));{% endif %} {{ change }}"
+      :class="{{ var }} === $el.dataset.value ? 'bg-accent-soft font-semibold text-accent-ink' : ''"
+      class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0"
+    >{{ label }}</button>
+    {% endfor %}
+  </div>
+</div>
+{%- endmacro %}
+
+
+{#
+  A date field drawn like a dropdown: a 50 px button that shows the date (or
+  `empty` when there is none) and opens the browser's calendar. The real value
+  lives in a transparent <input type="date" name="…">, so forms and filters
+  read it as before.
+
+    {{ date_field("f_date_from", date_from, prefix=_("Du :"), empty=_("toutes")) }}
+#}
+{% macro date_field(name, value="", prefix="", empty="", aria=None, id=None) -%}
+<div
+  class="relative"
+  x-data="{
+    value: {{ (value or '') | tojson | forceescape }},
+    get text() {
+      if (!this.value) return {{ empty | tojson | forceescape }};
+      var locale = document.documentElement.dataset.numberLocale || 'fr-FR';
+      return new Date(this.value + 'T00:00:00').toLocaleDateString(locale);
+    },
+    open() { var el = this.$refs.input; if (el.showPicker) { el.showPicker(); } else { el.focus(); el.click(); } },
+  }"
+>
+  <button
+    type="button"
+    @click="open()"
+    {% if aria %}aria-label="{{ aria }}"{% endif %}
+    class="input-base flex items-center justify-between gap-2 text-left"
+  >
+    <span class="truncate">{% if prefix %}{{ prefix }} {% endif %}<span x-text="text">{{ empty }}</span></span>
+    {{ icon('calendar', size=18) }}
+  </button>
+  <input
+    type="date"
+    x-ref="input"
+    x-model="value"
+    {% if id %}id="{{ id }}"{% endif %}
+    name="{{ name }}"
+    tabindex="-1"
+    aria-hidden="true"
+    @change="$dispatch('menu-change', { value: value })"
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-px w-full opacity-0"
+  />
+</div>
+{%- endmacro %}
+
+{#
+  Category then sub-category, as two dropdowns that write ONE field
+  (`name`, default category_id): the sub-category when there is one, else the
+  category. The whole tree travels in the page, so picking a category shows
+  its sub-categories at once, without a request.
+#}
+{% macro category_fields(parent_categories, category=None, name="category_id", none_label="", self_label="") -%}
+{%- set tree = {} -%}
+{%- set options = [("", none_label)] -%}
+{%- for parent in parent_categories -%}
+  {%- set kids = [] -%}
+  {%- for child in parent.children %}{% if kids.append({"id": child.id | string, "name": child.name}) %}{% endif %}{% endfor -%}
+  {%- if tree.update({parent.id | string: {"name": parent.name, "children": kids}}) %}{% endif -%}
+  {%- if options.append((parent.id | string, parent.name)) %}{% endif -%}
+{%- endfor -%}
+{%- set top = ((category.parent_id or category.id) | string) if category else "" -%}
+{%- set sub = (category.id | string) if category and category.parent_id else "" -%}
+<div
+  class="flex flex-col gap-3.5"
+  x-data="{
+    tree: {{ tree | tojson | forceescape }},
+    top: {{ top | tojson | forceescape }},
+    sub: {{ sub | tojson | forceescape }},
+    topOpen: false,
+    subOpen: false,
+    get subs() { var t = this.tree[this.top]; return t ? t.children : []; },
+    get topLabel() { var t = this.tree[this.top]; return t ? t.name : {{ none_label | tojson | forceescape }}; },
+    get subLabel() { var found = this.subs.find((c) => c.id === this.sub); return found ? found.name : {{ self_label | tojson | forceescape }}; },
+  }"
+  @click.outside="topOpen = false; subOpen = false"
+>
+  <input type="hidden" name="{{ name }}" :value="sub || top" />
+  <div class="form-group">
+    <span class="form-label text-primary">{{ _("Catégorie") }}</span>
+    <div>
+      <button type="button" @click="topOpen = !topOpen; subOpen = false" :aria-expanded="topOpen" aria-haspopup="listbox" class="input-base flex items-center justify-between gap-2 text-left">
+        <span class="truncate" x-text="topLabel"></span>{{ icon('chevron-down', size=18) }}
+      </button>
+      <div x-show="topOpen" style="display: none;" role="listbox" class="mt-1 max-h-[320px] overflow-y-auto rounded-xl border border-border bg-container">
+        {% for value, label in options %}
+        <button type="button" role="option" data-value="{{ value }}" @click="top = $el.dataset.value; sub = ''; topOpen = false" :class="top === $el.dataset.value ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="form-group" x-show="subs.length > 0" style="display: none;">
+    <span class="form-label text-primary">{{ _("Sous-catégorie") }}</span>
+    <div>
+      <button type="button" @click="subOpen = !subOpen; topOpen = false" :aria-expanded="subOpen" aria-haspopup="listbox" class="input-base flex items-center justify-between gap-2 text-left">
+        <span class="truncate" x-text="subLabel"></span>{{ icon('chevron-down', size=18) }}
+      </button>
+      <div x-show="subOpen" style="display: none;" role="listbox" class="mt-1 max-h-[320px] overflow-y-auto rounded-xl border border-border bg-container">
+        <button type="button" role="option" @click="sub = ''; subOpen = false" :class="sub === '' ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm"><span x-text="{{ self_label | tojson | forceescape }}"></span></button>
+        <template x-for="child in subs" :key="child.id">
+          <button type="button" role="option" @click="sub = child.id; subOpen = false" :class="sub === child.id ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0"><span x-text="child.name"></span></button>
+        </template>
+      </div>
+    </div>
+  </div>
+</div>
+{%- endmacro %}

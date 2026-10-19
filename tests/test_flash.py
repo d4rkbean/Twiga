@@ -69,8 +69,9 @@ def test_the_settings_page_lists_its_sections_and_places(clients):
 
     for place in ("/accounts", "/categories", "/payment-methods", "/rules", "/recurring", "/checks", "/users"):
         assert f'href="{place}"' in html
-    for section in ("manage", "cap", "preferences", "security", "data"):
-        assert f"open('{section}')" in html
+    for section in ("gerer", "comptes", "categories", "regles", "cap", "preferences", "utilisateurs", "donnees"):
+        assert f'id="s-{section}"' in html
+        assert f'href="#s-{section}"' in html
 
 
 def test_the_import_wizard_shows_its_stepper(clients, demo):

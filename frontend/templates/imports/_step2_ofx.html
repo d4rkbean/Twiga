@@ -1,37 +1,24 @@
-{% from "imports/_stepper.html" import stepper %}
+{% from "imports/_stepper.html" import stepper, step_nav %}
 {{ stepper(2, _("Aperçu")) }}
-<div class="card flex flex-col gap-4">
-  <div class="flex flex-col gap-1">
-    <h2 class="text-section-title">{{ _("Aperçu des opérations") }}</h2>
-    <p class="text-sm text-secondary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s) dans le fichier OFX.{% endtrans %}</p>
-  </div>
+<div class="card flex flex-col gap-3">
+  <h2 class="text-section-title">{{ _("Aperçu des opérations") }}</h2>
 
-  <div class="overflow-x-auto overflow-y-auto max-h-64 rounded-xl border border-border">
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="bg-sunken">
-          <th scope="col" class="hidden sm:table-cell text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Date") }}</th>
-          <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Libellé") }}</th>
-          <th scope="col" class="text-right text-secondary text-xs font-medium px-3 py-2">{{ _("Montant") }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for tx in transactions %}
-        <tr class="border-t border-border">
-          <td class="hidden sm:table-cell text-primary px-3 py-2 whitespace-nowrap tabular-nums">{{ tx.date | fr_date }}</td>
-          <td class="text-primary px-3 py-2">{{ tx.label }}<span class="block sm:hidden text-xs text-secondary tabular-nums">{{ tx.date | fr_date }}</span></td>
-          <td class="amount-blur text-primary font-semibold tabular-nums px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="rounded-xl border border-border overflow-hidden">
+    <div class="flex justify-between gap-3 bg-sunken px-3 py-2 text-xs font-medium text-secondary">
+      <span>{{ _("Libellé") }}</span><span>{{ _("Montant") }}</span>
+    </div>
+    {% for tx in transactions %}
+    <div class="flex justify-between gap-3 px-3 py-3 text-sm border-t border-border first:border-t-0">
+      <span class="min-w-0 break-words">{{ tx.label }}</span>
+      <span class="amount-blur tabular-nums font-semibold whitespace-nowrap">{{ tx.amount | eur }}</span>
+    </div>
+    {% endfor %}
   </div>
+  <p class="text-xs text-secondary">{% trans shown=transactions | length, total=total_count %}{{ shown }} lignes sur {{ total }} affichées.{% endtrans %}</p>
 
-  <form hx-post="/imports/{{ import_id }}/confirm" hx-target="#import-wizard" hx-swap="innerHTML">
+  <form id="import-step2-form" hx-post="/imports/{{ import_id }}/confirm" hx-target="#import-wizard" hx-swap="innerHTML">
     <input type="hidden" name="format" value="ofx" />
     <input type="hidden" name="account_id" value="{{ account.id }}" />
-    <button type="submit" class="btn btn-primary w-full lg:w-auto lg:ml-auto lg:px-8">
-      {{ _("Continuer") }} {{ icon('arrow-narrow-right', size=18) }}
-    </button>
   </form>
 </div>
+{{ step_nav("/imports/step1", "import-step2-form") }}

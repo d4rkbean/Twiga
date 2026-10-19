@@ -3,6 +3,7 @@
    pilier sur toute la largeur, puis la case Budgets. Remplacée en bloc par
    HTMX (#category-row-N). #}
 {% set pillar_icons = {"essentiel": "home", "choix": "star", "imprevu": "urgent"} %}
+{% set pillar_tones = {"essentiel": "text-info", "choix": "text-chart-3", "imprevu": "text-warning"} %}
 {% set is_child_param = 'true' if is_child else 'false' %}
 {% set inherited_pillar = resolve_category_pillar(category.parent) if is_child else none %}
 <div
@@ -82,7 +83,7 @@
           hx-target="#category-row-{{ category.id }}"
           hx-swap="outerHTML"
         />
-        <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center gap-1 text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-accent-soft peer-checked:text-accent-ink peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">
+        <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center gap-1 text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-container peer-checked:text-primary peer-checked:font-semibold peer-checked:shadow-sm peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">
           {{ icon('corner-down-right', size=14) }} {{ _("Hérite") }}
         </span>
       </label>
@@ -98,8 +99,8 @@
           hx-target="#category-row-{{ category.id }}"
           hx-swap="outerHTML"
         />
-        <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center gap-1 text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-accent-soft peer-checked:text-accent-ink peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">
-          {{ icon(pillar_icons[code], size=14) }} {{ PILLARS[code].label }}
+        <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center gap-1 text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-container peer-checked:text-primary peer-checked:font-semibold peer-checked:shadow-sm peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">
+          <span class="{{ pillar_tones[code] }}">{{ icon(pillar_icons[code], size=14) }}</span> {{ PILLARS[code].label }}
         </span>
       </label>
       {% endfor %}

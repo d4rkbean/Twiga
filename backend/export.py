@@ -14,6 +14,7 @@ from backend.models import (
     CapSettings,
     Category,
     PaymentMethod,
+    ImportLog,
     PendingCheck,
     Project,
     ProjectMovement,
@@ -127,6 +128,7 @@ def _serialize_cap_settings(row: CapSettings) -> dict:
         "income_fixed_amount": (
             str(row.income_fixed_amount) if row.income_fixed_amount is not None else None
         ),
+        "budget_start_day": row.budget_start_day,
     }
 
 
@@ -147,6 +149,7 @@ def _serialize_project_movement(movement: ProjectMovement) -> dict:
         "date": movement.date.isoformat(),
         "amount": str(movement.amount),
         "note": movement.note,
+        "account_id": movement.account_id,
     }
 
 
@@ -184,6 +187,18 @@ def _serialize_recurring_pattern(pattern: RecurringPattern) -> dict:
         "frequency_days": pattern.frequency_days,
         "status": pattern.status,
         "category_id": pattern.category_id,
+    }
+
+
+def _serialize_import_log(log: ImportLog) -> dict:
+    return {
+        "id": log.id,
+        "imported_on": log.imported_on.isoformat(),
+        "filename": log.filename,
+        "account_name": log.account_name,
+        "lines": log.lines,
+        "duplicates": log.duplicates,
+        "imported": log.imported,
     }
 
 
@@ -265,6 +280,10 @@ def build_full_export(db: Session) -> dict:
         "pending_checks": [
             _serialize_pending_check(c)
             for c in db.execute(select(PendingCheck).order_by(PendingCheck.id)).scalars().all()
+        ],
+        "import_logs": [
+            _serialize_import_log(log)
+            for log in db.execute(select(ImportLog).order_by(ImportLog.id)).scalars().all()
         ],
     }
 

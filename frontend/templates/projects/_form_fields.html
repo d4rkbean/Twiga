@@ -1,87 +1,133 @@
-{% macro fields(project=None) %}
+{% macro fields(project=None, deadline_options=[]) %}
 <label class="form-group">
   <span class="form-label">{{ _("Nom du projet") }}</span>
   <input
     type="text"
     name="name"
     required
+    autocomplete="off"
+    placeholder="{{ _("Fonds d'urgence, travaux, cadeau...") }}"
     value="{{ project.name if project else '' }}"
     class="input-base"
   />
 </label>
 <label class="form-group">
   <span class="form-label">{{ _("Montant cible") }}</span>
-  <input
-    type="text"
-    inputmode="decimal"
-    name="target_amount"
-    required
-    value="{{ '%.2f' % project.target_amount if project else '' }}"
-    class="input-base"
-  />
+  <span class="flex items-center gap-2">
+    <input
+      type="text"
+      inputmode="decimal"
+      name="target_amount"
+      required
+      autocomplete="off"
+      placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+      value="{{ '%.2f' % project.target_amount if project else '' }}"
+      class="input-base flex-1 tabular-nums"
+    />
+    <span class="text-secondary font-semibold" aria-hidden="true">€</span>
+  </span>
 </label>
 <label class="form-group">
   <span class="form-label">{{ _("Date cible") }}</span>
-  <input
-    type="date"
-    name="target_date"
-    required
-    value="{{ project.target_date.isoformat() if project else '' }}"
-    class="input-base"
-  />
+  {% set current = project.target_date.isoformat() if project else none %}
+  <span class="select-field">
+    <select name="target_date" required class="input-base">
+      {# La date déjà enregistrée reste choisissable même si elle n'est plus dans les 48 mois à venir. #}
+      {% if current and current not in (deadline_options | map(attribute="value") | list) %}
+      <option value="{{ current }}" selected>{{ project.target_date | month_year }}</option>
+      {% endif %}
+      {% for option in deadline_options %}
+      <option value="{{ option.value }}" {% if (current and option.value == current) or (not current and loop.index == 12) %}selected{% endif %}>{{ option.label }}</option>
+      {% endfor %}
+    </select>
+  </span>
 </label>
 <label class="form-group">
   <span class="form-label">{{ _("Montant déjà épargné") }}</span>
-  <input
-    type="text"
-    inputmode="decimal"
-    name="current_amount"
-    value="{{ '%.2f' % project.current_amount if project else '0' }}"
-    class="input-base"
-  />
+  <span class="flex items-center gap-2">
+    <input
+      type="text"
+      inputmode="decimal"
+      name="current_amount"
+      autocomplete="off"
+      placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+      value="{{ '%.2f' % project.current_amount if project else '0' }}"
+      class="input-base flex-1 tabular-nums"
+    />
+    <span class="text-secondary font-semibold" aria-hidden="true">€</span>
+  </span>
 </label>
 {% endmacro %}
 
-{# Boutons d'une boîte de dialogue : l'action en ambre plein, Annuler en
-   secondaire. Ces dialogues sont ouverts un à la fois, l'ambre reste rare. #}
+{# Boutons d'une boîte de dialogue : Annuler en secondaire, l'action en ambre
+   plein (un peu plus large). Ces dialogues sont ouverts un à la fois, l'ambre
+   reste rare. #}
 {% macro dialog_actions(label) %}
-<div class="flex flex-col gap-2">
-  <button type="submit" class="btn btn-primary">{{ label }}</button>
-  <button type="button" onclick="this.closest('dialog').close()" class="btn btn-secondary border-border-strong">
+<div class="flex gap-2 mt-1">
+  <button type="button" onclick="this.closest('dialog').close()" class="btn btn-secondary border-border-strong flex-1">
     {{ _("Annuler") }}
   </button>
+  <button type="submit" class="btn btn-primary flex-[1.4]">{{ label }}</button>
 </div>
 {% endmacro %}
 
-{% macro movement_dialog(project, action, title, button_label) %}
-<dialog id="{{ action }}-funds-{{ project.id }}" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm">
+{% macro movement_dialog(project, action, title, button_label, accounts=none) %}
+<dialog id="{{ action }}-funds-{{ project.id }}" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-md">
   <form
     hx-post="/projects/{{ project.id }}/{{ action }}"
     hx-target="#projects-list"
     hx-swap="innerHTML"
+    x-data="movementForm('{{ action }}', {{ project.current_amount }}, '{{ project.current_amount | eur | jsq }}')"
+    @submit.capture="check($event)"
     class="flex flex-col gap-4 p-6"
   >
-    <h2 class="text-section-title">{{ title }} — {{ project.name }}</h2>
+    <div class="flex flex-col gap-0.5">
+      <h2 class="text-section-title">{{ title }}</h2>
+      <p class="text-secondary">{{ project.name }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      {% for quick in [20, 50, 100, 200] %}
+      <button type="button" @click="amount = '{{ quick }}'; err = ''" class="chip flex-[1_1_70px] tabular-nums">{{ quick | eur }}</button>
+      {% endfor %}
+    </div>
     <label class="form-group">
       <span class="form-label">{{ _("Montant") }}</span>
-      <input
-        type="text"
-        inputmode="decimal"
-        name="amount"
-        required
-        placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-        class="input-base"
-      />
+      <span class="flex items-center gap-2">
+        <input
+          type="text"
+          inputmode="decimal"
+          name="amount"
+          required
+          autocomplete="off"
+          x-model="amount"
+          placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+          class="input-base flex-1 tabular-nums"
+        />
+        <span class="text-secondary font-semibold" aria-hidden="true">€</span>
+      </span>
     </label>
     <label class="form-group">
       <span class="form-label">{{ _("Note (optionnel)") }}</span>
       <input
         type="text"
         name="note"
+        autocomplete="off"
         placeholder="{{ _("Ex : Billets avion") }}"
         class="input-base"
       />
     </label>
+    {% if accounts %}
+    <div class="form-group" x-data="{ account: '{{ accounts[0].id }}' }">
+      <span class="form-label" id="from-{{ project.id }}">{{ _("Depuis") }}</span>
+      <input type="hidden" name="account_id" :value="account" />
+      <div class="flex gap-2" role="radiogroup" aria-labelledby="from-{{ project.id }}">
+        {% for account in accounts %}
+        <button type="button" role="radio" @click="account = '{{ account.id }}'" :aria-checked="account === '{{ account.id }}'" class="chip flex-1 min-w-0 truncate">{{ account.name }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <p x-show="err" x-text="err" role="alert" class="input-message font-semibold" style="display: none"></p>
     {{ dialog_actions(button_label) }}
   </form>
 </dialog>
