@@ -20,7 +20,7 @@
         <p id="answer-sub" class="max-w-[70ch] text-sm text-secondary lg:text-base">{{ _("%(month)s est cadré. Tu peux suivre l'avancement dans Mon mois.", month=current_month_name) }}</p>
       </div>
 
-      <dl class="flex flex-col rounded-xl border border-border bg-container px-[var(--space-card)] py-2 shadow-sm">
+      <dl data-tour="cap-recap" class="flex flex-col rounded-xl border border-border bg-container px-[var(--space-card)] py-2 shadow-sm">
         <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Ressources du mois") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_income | eur }}</dd></div>
         <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Essentiel") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_essentiel | eur }}</dd></div>
         <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Choix") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_choix | eur }}</dd></div>
@@ -34,7 +34,7 @@
         {% endif %}
       </dl>
 
-      <div class="flex flex-wrap items-center gap-3">
+      <div data-tour="cap-after" class="flex flex-wrap items-center gap-3">
         <a href="/dashboard" class="btn btn-primary">{{ _("Aller au Panorama") }} {{ icon('arrow-right', size=18) }}</a>
         <a href="/cap/mid" class="btn btn-secondary">{{ _("Voir Mon mois") }}</a>
         <button type="button" hx-get="/cap/reopen" hx-target="#cap-wizard" hx-swap="innerHTML" class="btn btn-secondary">{{ _("Reprendre le cap") }}</button>

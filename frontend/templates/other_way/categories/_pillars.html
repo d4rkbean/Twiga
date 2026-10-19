@@ -16,7 +16,7 @@
     {% endfor %}
   </ul>
   {% if write %}
-  <button type="button" hx-post="/categories/reset-pillar-overrides" hx-target="#categories-content" hx-swap="outerHTML"
+  <button type="button" data-tour="categories-reset" hx-post="/categories/reset-pillar-overrides" hx-target="#categories-content" hx-swap="outerHTML"
           hx-confirm="{{ _("Réinitialiser tous les piliers des sous-catégories vers « hérite du parent » ?") }}"
           class="min-h-[50px] self-start inline-flex items-center gap-2 text-sm font-medium text-accent-ink">{{ icon('refresh', size=18) }} {{ _("Réinitialiser les piliers") }}</button>
   {% endif %}

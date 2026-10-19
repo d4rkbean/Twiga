@@ -2,7 +2,7 @@
     another file. The details (transfers, matched checks...) are one tap away. -#}
 {% from "_macros/brand.html" import mascot %}
 <div x-data="{ more: false }" class="flex flex-col gap-5">
-  <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center">
+  <section data-tour="import-result" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center">
     <div class="rounded-xl bg-accent-soft grid place-items-center py-8 lg:py-10">{{ mascot("swallowed", 150, label=true) }}</div>
     <div class="flex flex-col gap-4 min-w-0">
       <h1 id="answer" class="text-page-title">{{ _("Twiga a tout avalé !") }}</h1>

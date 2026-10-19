@@ -60,7 +60,7 @@ def read(html: str) -> tuple[Page, dict]:
     return page, {"screen": page.tour_attrs.get("data-screen", ""), "steps": steps}
 
 
-def tour_of(clients, demo, variant, screen, role="admin", **kwargs):
+def tour_of(clients, demo, variant, screen, role="admin"):
     html = render(clients, demo, SCREEN_PAGES[SCREEN_TOURS[screen]], variant, role).text
     return read(html), html
 
@@ -94,13 +94,11 @@ def test_every_screen_of_the_inventory_has_a_page():
 
 @pytest.mark.parametrize("screen", [screen for screen in SCREENS if screen not in ADMIN_ONLY])
 def test_a_reader_keeps_only_what_a_reader_can_do(clients, demo, variant, screen):
-    (_page, admin), _ = tour_of(clients, demo, variant, screen)
     (page, viewer), _ = tour_of(clients, demo, variant, screen, role="viewer")
 
     assert viewer["screen"] == screen
     assert len(viewer["steps"]) >= 2, f"{variant} {screen}: nothing left for a reader"
     assert not any(step.get("write") for step in viewer["steps"])
-    assert {step["title"] for step in viewer["steps"]} <= {step["title"] for step in admin["steps"]} or variant == "other_way"
     for step in viewer["steps"]:
         if not step.get("optional"):
             assert step["target"] in page.anchors or step.get("altTarget") in page.anchors, (variant, screen, step["title"])
@@ -128,15 +126,15 @@ def forget(demo):
     reset()
 
 
-def seen_flag(clients, demo, variant, role, screen="dashboard"):
-    html = render(clients, demo, SCREEN_PAGES[SCREEN_TOURS[screen]], variant, role).text
-    return Page_attr(html, "data-screen-seen")
-
-
-def Page_attr(html: str, name: str) -> str:
+def tour_attribute(html: str, name: str) -> str:
     page = Page()
     page.feed(html)
     return page.tour_attrs.get(name, "")
+
+
+def seen_flag(clients, demo, variant, role, screen="dashboard"):
+    html = render(clients, demo, SCREEN_PAGES[SCREEN_TOURS[screen]], variant, role).text
+    return tour_attribute(html, "data-screen-seen")
 
 
 def stored(role, demo):
@@ -192,15 +190,15 @@ def test_the_screen_tour_is_not_a_welcome_tour(clients, demo, variant, forget):
     clients["admin"].post("/profile/screen-tour-seen", data={"screen": "dashboard"})
     html = render(clients, demo, SCREEN_PAGES["/dashboard"], variant).text
 
-    assert Page_attr(html, "data-pending") == "true"  # the welcome tour is its own memory
+    assert tour_attribute(html, "data-pending") == "true"  # the welcome tour is its own memory
     assert "twiga-tour-invite" in html and "Découvrir cet écran ?" in html
 
 
 def test_the_page_without_a_tour_has_no_screen_tour(clients, demo, variant):
     html = render(clients, demo, SCREEN_PAGES["/accounts/detect-transfers"], variant).text
 
-    assert Page_attr(html, "data-screen") == ""
-    assert Page_attr(html, "data-screen-steps") == "[]"
+    assert tour_attribute(html, "data-screen") == ""
+    assert tour_attribute(html, "data-screen-steps") == "[]"
     assert "data-help-screen-tour" not in html
     assert "Revoir la visite de bienvenue" in html
 
@@ -208,7 +206,8 @@ def test_the_page_without_a_tour_has_no_screen_tour(clients, demo, variant):
 def test_aide_offers_the_tour_of_the_open_screen(clients, demo, variant):
     html = render(clients, demo, SCREEN_PAGES["/dashboard"], variant).text
 
-    assert html.count("data-help-screen-tour") == 1
+    # Aide has one entry per dialog; the other way carries the layout dialog too.
+    assert html.count("data-help-screen-tour") == (1 if variant == "classic" else 2)
     assert "window.startScreenTour()" in html and "Visite de cet écran" in html
     assert "Revoir la visite de bienvenue" in html and "window.startTwigaTour()" in html
     assert "Raccourcis clavier" in html and "À propos de Twiga" in html

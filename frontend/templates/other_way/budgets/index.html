@@ -9,6 +9,14 @@
 {% set shell_subtitle = period_label %}
 {% set shell_back = "/cap/mid" %}
 {% block title %}{{ _("Budgets — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("budgets", [
+  tour_step("#budgets-filters", _("Choisir le mois"), _("Les flèches changent d'année, les pastilles de mois. Le plan affiché est celui du mois choisi."), "calendar", position="bottom"),
+  tour_step('[data-tour="budgets-copy"]', _("Repartir du mois dernier"), _("Reprend le plan du mois précédent : tu n'ajustes que ce qui change."), "clipboard-copy", position="left", optional=True, write=True),
+  tour_step('[data-tour="budgets-step"]', _("Le pas de réglage"), _("Choisis 10, 50 ou 100 euros : les boutons plus et moins avancent de ce pas."), "adjustments", position="bottom", optional=True),
+  tour_step('[data-tour="budgets-groups"]', _("Un montant par catégorie"), _("Tape un montant ou avance avec plus et moins. Chaque pilier affiche son total et sa part des ressources."), "coins", position="top", optional=True),
+  tour_step('[data-tour="budgets-total"]', _("Le total budgété"), _("Compare le total aux ressources du mois : le reste à répartir te dit ce qu'il te reste à poser."), "scale", position="left", optional=True),
+  tour_step('[data-tour="budgets-save"]', _("Enregistrer le plan"), _("Rien n'est gardé tant que tu n'as pas enregistré. Le message sous le bouton te dit s'il reste quelque chose à garder."), "device-floppy", position="left", optional=True, write=True),
+]) }}{% endblock %}
 {% block shell_head %}{{ super() }}
   <script src="{{ static_url('/static/js/budgets-plan.js') }}" defer></script>
 {% endblock %}

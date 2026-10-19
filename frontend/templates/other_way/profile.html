@@ -3,6 +3,14 @@
 
 {% block title %}{{ _("Mon profil — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("profile", [
+  tour_step('[data-tour="profile-display"]', _("Ton affichage"), _("Choisis l'interface, le thème clair ou sombre, la densité et le masquage des montants à l'ouverture. Ces choix valent pour cet appareil."), "adjustments", position="right", alt_position="bottom"),
+  tour_step('[data-tour="profile-preview"]', _("L'aperçu en direct"), _("Une miniature d'un vrai écran suit chacun de tes choix. Tu vois le résultat avant de rien garder."), "eye", position="left", alt_position="top"),
+  tour_step('[data-tour="profile-save"]', _("Enregistrer l'affichage"), _("Rien n'est gardé avant ce bouton. Une fois enregistré, la page prend ton choix tout de suite."), "device-floppy", position="bottom"),
+  tour_step('[data-tour="profile-info"]', _("Ton nom et ton identifiant"), _("Le nom affiché apparaît dans Twiga, l'identifiant sert à te connecter."), "user", position="top"),
+  tour_step('[data-tour="profile-password"]', _("Changer de mot de passe"), _("Saisis l'ancien, puis le nouveau deux fois. Huit caractères au minimum."), "key", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 {#- Mon profil, the other way: the sentence says what the display will be (theme, density,
     amounts), and follows each choice on a miniature of the real screen. Nothing is kept
@@ -27,12 +35,12 @@
         @htmx:after-request="if ($event.detail.successful) { window.twigaRevealTheme(theme); document.documentElement.setAttribute('data-density', density); localStorage.setItem('privacyOnOpen', hidden); }"
         class="flex flex-col gap-5">
     {% call answer_head(answer.title, _("Voici ce que tu verras, %(name)s. L'aperçu suit chaque choix, rien n'est gardé avant l'enregistrement.", name=first_name), title_x="sentence") %}
-      <button type="submit" class="btn btn-primary">{{ _("Enregistrer mon affichage") }}</button>
+      <button type="submit" data-tour="profile-save" class="btn btn-primary">{{ _("Enregistrer mon affichage") }}</button>
     {% endcall %}
     <div id="display-prefs-result" aria-live="polite"></div>
 
     <div class="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-start">
-      <section class="card flex flex-col gap-4" aria-labelledby="h-disp">
+      <section data-tour="profile-display" class="card flex flex-col gap-4" aria-labelledby="h-disp">
         <div class="flex flex-col gap-1">
           <h2 id="h-disp" class="text-section-title">{{ _("Ton affichage") }}</h2>
           <p class="text-sm text-secondary">{% trans name=first_name, role=user_role_label(current.role), since=(since | lower if current_language() == "fr" else since) %}{{ name }} · {{ role }}, membre depuis {{ since }}. Ces choix valent pour cet appareil.{% endtrans %}</p>
@@ -91,7 +99,7 @@
       </section>
 
       {#- The preview: the real balance and latest operations, in the theme and density chosen. -#}
-      <section class="rounded-xl bg-sunken p-4 lg:p-6 min-w-0" aria-label="{{ _("Aperçu") }}">
+      <section data-tour="profile-preview" class="rounded-xl bg-sunken p-4 lg:p-6 min-w-0" aria-label="{{ _("Aperçu") }}">
         <div class="pref-preview !p-0 overflow-hidden" :class="dark ? 'dark' : 'pref-light'" :data-density="density" aria-hidden="true">
           <div class="flex items-center gap-3 px-4 py-3 bg-container border-b border-border">
             <span class="font-display font-extrabold tracking-tight text-sm">{{ _("Twiga") }}</span>
@@ -126,7 +134,7 @@
       <p class="text-sm text-secondary">{{ _("Nom, mot de passe et sortie.") }}</p>
     </div>
     <div class="grid gap-[var(--space-block)] lg:grid-cols-3 items-start">
-      <section aria-labelledby="h-id" class="card flex flex-col gap-4">
+      <section data-tour="profile-info" aria-labelledby="h-id" class="card flex flex-col gap-4">
         <h3 id="h-id" class="text-section-title">{{ _("Informations") }}</h3>
         <form hx-post="/profile/update" hx-target="#profile-update-result" hx-swap="innerHTML" class="flex flex-col gap-4">
           <label class="form-group">
@@ -144,7 +152,7 @@
         </form>
       </section>
 
-      <section aria-labelledby="h-pw" class="card flex flex-col gap-4">
+      <section data-tour="profile-password" aria-labelledby="h-pw" class="card flex flex-col gap-4">
         <h3 id="h-pw" class="text-section-title">{{ _("Mot de passe") }}</h3>
         <form hx-post="/settings/change-password" hx-target="#profile-password-result" hx-swap="innerHTML"
               hx-on:htmx:after-request="if(event.detail.successful) { this.reset(); this.dispatchEvent(new Event('reset')); }"

@@ -46,7 +46,7 @@
     {# Un seul bouton, deux places : en tête sur ordinateur, en barre fixe au-dessus de
        la navigation sur mobile. #}
     <div class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[59px] max-lg:z-20 max-lg:border-t max-lg:border-border max-lg:bg-container max-lg:px-4 max-lg:pb-1.5 max-lg:pt-2 flex flex-col items-stretch gap-1 lg:flex-none lg:items-end">
-      <button type="submit" form="budgets-form" class="btn btn-primary w-full lg:min-w-44">{{ _("Enregistrer") }}</button>
+      <button type="submit" form="budgets-form" data-tour="budgets-save" class="btn btn-primary w-full lg:min-w-44">{{ _("Enregistrer") }}</button>
       <p class="text-center text-xs text-secondary lg:text-right" x-text="dirty ? t.dirty : t.clean" aria-live="polite">{{ _("Rien à enregistrer pour l'instant") }}</p>
     </div>
     {% endif %}
@@ -134,7 +134,7 @@
       </section>
 
       {% if categories %}
-      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="{{ _("Pas de réglage") }}">
+      <div data-tour="budgets-step" class="flex flex-wrap items-center gap-2" role="group" aria-label="{{ _("Pas de réglage") }}">
         <span class="mr-1 text-sm text-secondary">{{ _("Pas de réglage") }}</span>
         {% for value in (10, 50, 100) %}
         <button
@@ -147,7 +147,7 @@
       </div>
 
       {% for group in groups %}
-      <section aria-labelledby="group-{{ group.code }}" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col">
+      <section aria-labelledby="group-{{ group.code }}" {% if loop.first %}data-tour="budgets-groups" {% endif %}class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col">
         <div class="flex items-center justify-between gap-3 pb-2">
           <h2 id="group-{{ group.code }}" class="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight text-primary">
             <span aria-hidden="true" class="w-3 h-3 rounded-full" style="background: {{ pillar_colors[group.code] }}"></span>{{ group.label }}
@@ -195,7 +195,7 @@
 
     {% if categories %}
     <aside class="flex flex-col gap-4 lg:sticky lg:top-20">
-      <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3" aria-labelledby="total-title">
+      <section data-tour="budgets-total" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3" aria-labelledby="total-title">
         <h2 id="total-title" class="text-xs font-medium text-secondary">{{ _("Total budgété") }}</h2>
         <p class="amount-blur font-display text-[2rem] font-extrabold leading-tight tabular-nums" :class="verdict.tone" x-text="fmt(total)">{{ total_budgeted | eur }}</p>
         <p class="text-xs text-secondary" x-show="available" style="display: none;">
@@ -216,6 +216,7 @@
       <button
         type="button"
         hx-post="/budgets/copy-previous?month={{ month }}&year={{ year }}"
+        data-tour="budgets-copy"
         hx-target="#budgets-content"
         hx-swap="innerHTML"
         class="btn btn-secondary w-full"

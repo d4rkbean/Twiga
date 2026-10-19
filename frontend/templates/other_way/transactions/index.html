@@ -9,6 +9,14 @@
     sélection. Les routes et les ids sont ceux de la Classique
     (#transactions-filters, #transactions-content). -#}
 {% block title %}{{ _("Opérations — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("operations", [
+  tour_step("#transactions-filters", _("Chercher d'abord"), _("Tape un commerce ou un libellé bancaire : la liste se met à jour pendant que tu écris. Les menus affinent ensuite."), "search", position="bottom"),
+  tour_step("#ops-pills", _("Les vues"), _("Toutes, Dépenses, Recettes, À trier ou Virements : un geste pour changer de vue. Les chiffres comptent les lignes de chacune."), "filter", position="bottom"),
+  tour_step('[data-tour="operations-new"]', _("Ajouter une opération"), _("Pour une dépense en espèces ou un oubli : saisis-la à la main, elle rejoint la liste."), "plus", position="bottom", write=True),
+  tour_step("#transactions-content", _("La liste, jour par jour"), _("Touche une ligne pour l'ouvrir sur place et la corriger. Coche-en plusieurs pour les ranger ensemble."), "list-details", position="top"),
+  tour_step("#ops-side", _("Ce que montre la recherche"), _("Le total, les dépenses et les recettes de ce que tu as filtré, avec la répartition par catégorie."), "chart-bar", position="left", optional=True),
+  tour_step("#transactions-export", _("Exporter"), _("Télécharge dans un fichier les opérations affichées, avec tes filtres actuels."), "download", position="bottom"),
+]) }}{% endblock %}
 
 {% block extra_scripts %}
 <script src="{{ static_url('/static/js/operations-b.js') }}"></script>

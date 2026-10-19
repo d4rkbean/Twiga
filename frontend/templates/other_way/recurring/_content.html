@@ -16,7 +16,7 @@
     {{ answer_head(answer.title, answer.detail, blur_phrase=false, blur_detail=true) }}
 
     {% for group in recurring_duplicate_groups %}
-    <section class="card flex flex-col gap-3 min-w-0">
+    <section {% if loop.first %}data-tour="recurring-duplicates" {% endif %}class="card flex flex-col gap-3 min-w-0">
       <p class="font-semibold">{% trans n=group | length, names=group | map(attribute="label_pattern") | map("replace", "|", " / ") | join(", ") %}Ces {{ n }} entrées semblent être le même abonnement : {{ names }}{% endtrans %}</p>
       <p class="text-sm text-secondary amount-blur">
         {% if group | map(attribute="amount") | unique | list | length == 1 %}{% trans amount=group[0].amount | eur %}Même montant ({{ amount }}) et même rythme chaque mois.{% endtrans %}{% else %}{{ _("Montants et rythmes proches.") }}{% endif %}
@@ -37,14 +37,14 @@
   {% if recurring_patterns %}
   <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
     <div class="flex flex-col gap-4 min-w-0">
-      <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="{{ _("Filtrer les abonnements") }}">
+      <div data-tour="recurring-filters" class="flex flex-wrap gap-2" role="radiogroup" aria-label="{{ _("Filtrer les abonnements") }}">
         <button type="button" role="radio" @click="filter = 'all'" :aria-checked="filter === 'all'" class="chip">{{ _("Tous") }} <span class="text-secondary tabular-nums">{{ recurring_patterns | length }}</span></button>
         {% for key, label in [("pending", _("Attendus")), ("inactive", _("Inactifs")), ("ignored", _("Ignorés"))] %}
         <button type="button" role="radio" @click="filter = '{{ key }}'" :aria-checked="filter === '{{ key }}'" class="chip">{{ label }} <span class="text-secondary tabular-nums">{{ sections[key] | length }}</span></button>
         {% endfor %}
       </div>
 
-      <div class="card !p-0 overflow-hidden">
+      <div data-tour="recurring-list" class="card !p-0 overflow-hidden">
         {% for key in ["pending", "inactive", "seen", "ignored"] if sections[key] %}
         <section x-show="filter === 'all' || filter === '{{ key }}'" aria-label="{{ section_meta[key][0] }}">
           <div class="flex flex-wrap items-baseline gap-x-3 bg-sunken px-[var(--space-card)] py-2 border-t border-border first:border-t-0">
@@ -105,12 +105,12 @@
     </div>
 
     <aside class="flex flex-col gap-3 min-w-0">
-      <section class="card flex flex-col gap-1" aria-labelledby="total-title">
+      <section data-tour="recurring-total" class="card flex flex-col gap-1" aria-labelledby="total-title">
         <h2 id="total-title" class="text-sm font-semibold">{{ _("Total mensuel estimé") }}</h2>
         <p class="amount-blur font-display font-extrabold text-[32px] leading-tight tabular-nums">{{ recurring_monthly_total | eur }}</p>
         <p class="text-sm text-secondary">{% trans n=recurring_active_count %}Sur {{ n }} abonnement non ignoré. Un abonnement hebdomadaire compte 30 / 7 fois, un trimestriel un tiers, un annuel un douzième.{% pluralize %}Sur {{ n }} abonnements non ignorés. Un abonnement hebdomadaire compte 30 / 7 fois, un trimestriel un tiers, un annuel un douzième.{% endtrans %}</p>
       </section>
-      <p class="text-sm text-secondary px-1">{{ _("Confirmer dit à Twiga que c'est bien un abonnement. Ignorer le sort du total, sans le supprimer.") }}</p>
+      <p data-tour="recurring-help" class="text-sm text-secondary px-1">{{ _("Confirmer dit à Twiga que c'est bien un abonnement. Ignorer le sort du total, sans le supprimer.") }}</p>
     </aside>
   </div>
   {% else %}

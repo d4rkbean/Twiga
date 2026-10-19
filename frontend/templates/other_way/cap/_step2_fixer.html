@@ -88,7 +88,7 @@
       </section>
 
       {# --- Ressources --- #}
-      <section x-show="visible(5)" aria-label="{{ _("Ressources de %(month)s", month=current_month_label) }}" class="flex flex-col gap-4">
+      <section x-show="visible(5)" data-tour="cap-income" aria-label="{{ _("Ressources de %(month)s", month=current_month_label) }}" class="flex flex-col gap-4">
         <div class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
           <p class="text-sm font-semibold text-primary">{{ _("Ressources du mois") }}</p>
           {{ stepper("income", "income = __v__", "income = Math.max(0, round(income - 50))", "income = round(income + 50)", _("Moins 50 euros de ressources"), _("Plus 50 euros de ressources"), _("Ressources du mois")) }}
@@ -152,7 +152,7 @@
 
       {% for g in groupes %}
       {% set code = g.code %}
-      <section x-show="visible({{ steps_of[code] }})" style="display: none;" aria-label="{{ _("Le pilier %(name)s", name=g.label) }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" x-data="{ detail: false }">
+      <section x-show="visible({{ steps_of[code] }})" data-tour="cap-pillar-{{ code }}" style="display: none;" aria-label="{{ _("Le pilier %(name)s", name=g.label) }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" x-data="{ detail: false }">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
           <div class="flex min-w-0 flex-col gap-1">
             <h2 class="flex items-center gap-2 font-display text-lg font-extrabold tracking-tight text-primary"><span aria-hidden="true" class="h-3 w-3 rounded-full" style="background: {{ pillar_dot[code] }}"></span>{{ g.label }}</h2>
@@ -209,7 +209,7 @@
       </section>
 
       {# --- Épargne --- #}
-      <section x-show="visible(9)" style="display: none;" aria-label="{{ _("Épargne de %(month)s", month=current_month_label) }}" class="flex flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+      <section x-show="visible(9)" data-tour="cap-savings" style="display: none;" aria-label="{{ _("Épargne de %(month)s", month=current_month_label) }}" class="flex flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           <div class="flex flex-col gap-0.5">
             <p class="text-sm font-semibold text-primary">{{ _("Et si je pioche dans l'épargne ?") }}</p>
@@ -234,7 +234,7 @@
       </section>
 
       {# --- Intention --- #}
-      <section x-show="visible(10)" style="display: none;" aria-label="{{ _("Intention de %(month)s", month=month_current_lower) }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+      <section x-show="visible(10)" data-tour="cap-intent" style="display: none;" aria-label="{{ _("Intention de %(month)s", month=month_current_lower) }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
         <label for="cap-intent" class="text-section-title">{{ _("Notre intention pour %(month)s :", month=current_month_label_lower) }}</label>
         <p class="text-sm text-secondary">{{ _("Une ou deux phrases, que tu retrouveras en ouvrant Mon mois.") }}</p>
         <textarea id="cap-intent" name="intention" x-model="intent" rows="3" maxlength="500" placeholder="{{ _("Ce mois-ci, nous voulons...") }}" class="rounded-xl border border-field bg-container px-3 py-2 text-base text-primary focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"></textarea>

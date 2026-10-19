@@ -10,6 +10,14 @@
     principale) : voir _card_with_counter.html. Les bandeaux du mois ne bougent
     pas pendant la séance. -#}
 {% block title %}{{ _("La Savane — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("savane", [
+  tour_step("#inbox-head", _("La réponse de Twiga"), _("En une phrase, Twiga te dit où tu en es : ce qui se range d'un geste et ce qui attend ta décision."), "bulb", position="bottom"),
+  tour_step("#inbox-lot", _("Le lot qui se range seul"), _("Ce que Twiga reconnaît à coup sûr. Touche une ligne pour la sortir du lot : elle reviendra en question."), "inbox", position="bottom", optional=True),
+  tour_step("#inbox-lot-btn", _("Ranger le lot d'un geste"), _("Un seul bouton range toutes les lignes du lot dans leur catégorie. Tu peux les revoir par catégorie avant."), "check", position="bottom", optional=True, write=True),
+  tour_step("#inbox-questions", _("Une question à la fois"), _("Pour chaque opération, Twiga propose une catégorie et dit pourquoi. Tu décides, puis la suivante arrive."), "help-circle", position="bottom", optional=True),
+  tour_step("#inbox-validate-btn", _("Oui, Autre ou Passer"), _("Oui range l'opération dans la catégorie proposée, Autre ouvre les catégories, Passer la remet à plus tard."), "circle-check", position="top", optional=True, write=True),
+  tour_step("#inbox-session", _("Ta séance en cours"), _("Ce que tu as rangé pendant cette visite, ce qui reste, et le journal des derniers gestes pour revenir en arrière."), "list-details", position="top", optional=True),
+]) }}{% endblock %}
 
 {% block content %}
 <main class="group/main flex flex-col gap-[var(--space-block)] px-4 pb-6 pt-4 max-lg:has-[#inbox-board[data-stage=lot]]:pb-28 lg:px-8 lg:pt-6">

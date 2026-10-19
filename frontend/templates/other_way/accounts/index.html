@@ -3,6 +3,13 @@
 
 {% block title %}{{ _("Comptes — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("accounts", [
+  tour_step("#accounts-content", _("Tes comptes et leur solde"), _("Chaque ligne donne le type, le nombre d'opérations et le solde. La loupe détaille le calcul du solde, le crayon modifie le compte."), "wallet", position="bottom"),
+  tour_step("#accounts-head", _("Ajouter un compte"), _("Le bouton ouvre un formulaire : nom, type et solde de départ. Le compte apparaît aussitôt dans la liste."), "plus", position="bottom", write=True),
+  tour_step("#detect-transfers-content", _("Repérer les virements internes"), _("Twiga cherche les paires d'opérations qui ressemblent à un virement entre deux de tes comptes. Tu confirmes ou tu ignores chaque paire."), "arrows-left-right", position="left", alt_position="top"),
+  tour_step("#suspicious-content", _("Les opérations suspectes"), _("Doublons possibles et montants inhabituels, repérés dans tout l'historique. Rafraîchis la liste pour relancer la recherche."), "search", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 {% set write = can_edit("/accounts/create") %}
 <main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">

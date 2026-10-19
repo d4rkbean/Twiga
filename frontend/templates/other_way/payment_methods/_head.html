@@ -9,10 +9,10 @@
     <button type="button" hx-post="/settings/detect-payment-methods" hx-target="#detect-payment-result" hx-swap="innerHTML"
             hx-confirm="{{ _("Détecter automatiquement le mode de paiement des opérations qui n'en ont pas encore, à partir de leur libellé ?") }}"
             @htmx:after-request="if ($event.detail.successful) { window.dispatchEvent(new CustomEvent('payments-changed')); }"
-            x-show="!adding" class="btn btn-primary">
+            x-show="!adding" data-tour="payment-methods-detect" class="btn btn-primary">
       {{ icon('search', size=18) }} {{ _("Détecter les modes de paiement manquants") }}
     </button>
-    <button type="button" @click="adding = true; $nextTick(() => document.getElementById('new-method-name').focus())" class="btn btn-secondary border-border-strong">
+    <button type="button" @click="adding = true; $nextTick(() => document.getElementById('new-method-name').focus())" data-tour="payment-methods-add" class="btn btn-secondary border-border-strong">
       {{ icon('plus', size=18) }} {{ _("Ajouter un mode") }}
     </button>
     {% endif %}
