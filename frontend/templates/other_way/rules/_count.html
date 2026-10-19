@@ -1,0 +1,6 @@
+{#- "Cette règle touche N opérations": what a keyword catches in the history, live. -#}
+<p class="text-sm {{ 'text-secondary' if not keyword else ('text-warning font-medium' if matches == 0 else 'text-success font-medium') }}" aria-live="polite">
+  {% if not keyword %}{{ _("Saisis un mot-clé pour voir ce qu'il attrape.") }}
+  {% elif matches == 0 %}{{ _("Aucune opération de ton historique ne contient ce mot-clé.") }}
+  {% else %}{% trans n=matches, shown=matches | integer %}Cette règle touche {{ shown }} opération de ton historique.{% pluralize %}Cette règle touche {{ shown }} opérations de ton historique.{% endtrans %}{% endif %}
+</p>

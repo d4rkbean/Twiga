@@ -249,6 +249,26 @@ def categories_answer(total: int, unset: int, overrides: int, excluded: int) -> 
     return {"phrase": phrase, "detail": " ".join(parts)}
 
 
+def rules_answer(suggestions: int, rules: int) -> dict:
+    """The sentence of the Règles screen: the proposals that wait for an opinion come first."""
+    if suggestions:
+        phrase = ngettext(
+            "%(n)s règle attend ton avis.", "%(n)s règles attendent ton avis.", suggestions
+        ) % {"n": suggestions}
+        detail = _t(
+            "Je les ai notées en te voyant ranger tes opérations dans La Savane. Une proposition ignorée ne revient plus."
+        )
+    elif rules:
+        phrase = ngettext("%(n)s règle range tes opérations.", "%(n)s règles rangent tes opérations.", rules) % {"n": rules}
+        detail = _t("Les plus utilisées viennent en premier. Teste un libellé pour voir quelle règle s'appliquerait.")
+    else:
+        phrase = _t("Aucune règle pour l'instant.")
+        detail = _t(
+            "Ajoutes-en une, ou valide des opérations dans La Savane : une règle te sera proposée automatiquement."
+        )
+    return {"phrase": phrase, "detail": detail}
+
+
 # --- Import -----------------------------------------------------------------
 
 
