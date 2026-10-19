@@ -118,6 +118,7 @@ tools/css.sh watch   # same, on every change to a template or design-system.css
 tools/test.sh        # run the test suite (pytest)
 tools/i18n.sh all    # extract the texts, update the English catalog, compile it
 tools/i18n.sh check  # list the texts without a translation
+DEMO_PASSWORD=... tools/demo-data.sh  # fill a blank database with a demo household
 ```
 
 The page only serves the compiled `tailwind.min.css`, which is versioned:
@@ -126,6 +127,26 @@ class to a template. `tools/test.sh` starts a throwaway PostgreSQL database
 (the `db-test` service, `test` profile of `docker-compose.yml`), builds its
 schema with the Alembic migrations, and checks that every page answers for
 each role. It never touches your data or the running application.
+
+**Demo data.** To review the screens or test a pull request on realistic
+figures, start the application on a blank database (`docker compose up -d`, or
+a Compose project of your own with `COMPOSE_PROJECT_NAME`) and run
+`DEMO_PASSWORD=... tools/demo-data.sh`. It creates the household of the
+mockups: three accounts (`alex`, administrator; `sam`, editor; `lea`, read-only,
+never signed in) sharing the password you give in `DEMO_PASSWORD`, which is
+required and never written anywhere. Three bank accounts, a two-level category
+tree, six months of operations up to today, a La Savane with a lot and
+questions, rules and rule suggestions, budgets, a fixed Cap for last month,
+three projects, pending cheques, a detailed receipt and a list of imports. The
+data goes through the application's own functions and is deterministic: the
+same day gives the same household. It is a development tool, so it is
+guarded: it **refuses to run on a database that already holds operations**, so
+it can never touch a real one. `tools/demo-data.sh --reset-demo` empties the
+database and fills it again, and is accepted only when the database holds
+nothing but the demo data the tool created (it leaves a marker in the note of
+the account "Compte courant"; a new user or account, or a change in the number
+of operations, makes it refuse: remove the Compose volume instead). The script
+runs in a throwaway container of the application, with `tools/` mounted.
 
 Twiga has two interfaces on the same data: **Classic** and **The other way**
 (*L'autre voie*). A user picks one in *Mon profil → Affichage → Interface*; the
