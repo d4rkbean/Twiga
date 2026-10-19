@@ -1,0 +1,17 @@
+{#- The sentence of Catégories and its action. It refreshes itself when a pillar or
+    a name changes (the row fragments announce `categories-changed`). -#}
+{% from "other_way/_ui.html" import answer_head %}
+{% set write = can_edit("/categories/create") %}
+<div id="categories-head" hx-get="/categories/head" hx-trigger="categories-changed from:window" hx-swap="outerHTML">
+  {% call answer_head(answer.phrase, answer.detail) %}
+    {% if write and categories %}
+    <button type="button" x-show="!adding" @click="adding = true; $nextTick(() => document.getElementById('new-category-name').focus())" class="btn btn-primary">
+      {{ icon('plus', size=18) }} {{ _("Nouvelle catégorie") }}
+    </button>
+    {% elif write %}
+    <button type="button" hx-post="/categories/starter" hx-target="#categories-content" hx-swap="outerHTML" class="btn btn-primary">
+      {{ icon('plus', size=18) }} {{ _("Ajouter des catégories de base") }}
+    </button>
+    {% endif %}
+  {% endcall %}
+</div>

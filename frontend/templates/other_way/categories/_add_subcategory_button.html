@@ -1,0 +1,4 @@
+<div id="add-subcategory-{{ parent.id }}" class="py-2">
+  <button type="button" hx-get="/categories/{{ parent.id }}/add-subcategory-form" hx-target="#add-subcategory-{{ parent.id }}" hx-swap="outerHTML"
+          class="btn rounded-xl border border-dashed border-border-strong text-secondary w-full sm:w-auto sm:px-6">{{ icon('plus', size=16) }} {{ _("Ajouter une sous-catégorie") }}</button>
+</div>

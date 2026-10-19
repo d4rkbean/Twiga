@@ -1,0 +1,38 @@
+{#- Delete a category. With sub-categories it explains; with operations, budgets, rules
+    or subscriptions it asks where to put them first; otherwise it just confirms. -#}
+{% from "_macros/menu.html" import dropdown %}
+{% set is_child_param = 'true' if is_child else 'false' %}
+<div id="category-row-{{ category.id }}" class="rounded-xl bg-danger-soft p-4 lg:p-6 my-2 flex flex-col gap-3" role="alertdialog">
+  {% if usage.children %}
+  <p class="text-sm">{% trans name=category.name, n=usage.children %}« {{ name }} » a {{ n }} sous-catégorie. Supprime-la ou déplace-la d'abord.{% pluralize %}« {{ name }} » a {{ n }} sous-catégories. Supprime-les ou déplace-les d'abord.{% endtrans %}</p>
+  <button type="button" hx-get="/categories/{{ category.id }}/row?is_child={{ is_child_param }}" hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML" class="btn btn-secondary border-border-strong sm:self-start sm:px-8">{{ _("OK") }}</button>
+  {% elif usage.transactions or usage.budgets or usage.rules or usage.recurring_patterns %}
+  <p class="text-sm">
+    {% trans name=category.name %}« {{ name }} » est utilisée par{% endtrans %}
+    {%- if usage.transactions %} {% trans n=usage.transactions %}{{ n }} opération{% pluralize %}{{ n }} opérations{% endtrans %}{% endif -%}
+    {%- if usage.budgets %}{{ "," if usage.transactions }} {% trans n=usage.budgets %}{{ n }} budget{% pluralize %}{{ n }} budgets{% endtrans %}{% endif -%}
+    {%- if usage.rules %}{{ "," if usage.transactions or usage.budgets }} {% trans n=usage.rules %}{{ n }} règle{% pluralize %}{{ n }} règles{% endtrans %}{% endif -%}
+    {%- if usage.recurring_patterns %}{{ "," if usage.transactions or usage.budgets or usage.rules }} {% trans n=usage.recurring_patterns %}{{ n }} abonnement récurrent{% pluralize %}{{ n }} abonnements récurrents{% endtrans %}{% endif -%}
+    {{ _(". Où ranger ces éléments avant de supprimer ?") }}
+  </p>
+  {% set targets = namespace(items=[("", _("Choisir une catégorie..."))]) %}
+  {% for other in all_categories %}
+    {% if other.id != category.id %}{% set targets.items = targets.items + [(other.id | string, other.name)] %}{% endif %}
+    {% for child in other.children %}{% if child.id != category.id %}{% set targets.items = targets.items + [(child.id | string, other.name ~ " › " ~ child.name)] %}{% endif %}{% endfor %}
+  {% endfor %}
+  <form hx-post="/categories/{{ category.id }}/delete" hx-target="#categories-content" hx-swap="outerHTML"
+        hx-confirm="{{ _("Réaffecter et supprimer « %(name)s » ?", name=category.name) }}" class="flex flex-col gap-3" x-data="{ chosen: '' }" @menu-change="chosen = $event.detail.value">
+    {{ dropdown("reassign_to", targets.items, selected="", aria=_("Choisir une catégorie...")) }}
+    <div class="flex flex-col-reverse gap-2 sm:flex-row">
+      <button type="button" hx-get="/categories/{{ category.id }}/row?is_child={{ is_child_param }}" hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML" class="btn btn-secondary border-border-strong sm:px-8">{{ _("Annuler") }}</button>
+      <button type="submit" :disabled="!chosen" class="btn btn-danger sm:px-6">{{ icon('trash', size=18) }} {{ _("Réaffecter et supprimer") }}</button>
+    </div>
+  </form>
+  {% else %}
+  <p class="text-sm">{% trans name=category.name %}Supprimer « {{ name }} » ? Aucune opération, budget, règle ou abonnement récurrent ne l'utilise.{% endtrans %}</p>
+  <form hx-post="/categories/{{ category.id }}/delete" hx-target="#categories-content" hx-swap="outerHTML" class="flex flex-col-reverse gap-2 sm:flex-row">
+    <button type="button" hx-get="/categories/{{ category.id }}/row?is_child={{ is_child_param }}" hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML" class="btn btn-secondary border-border-strong sm:px-8">{{ _("Annuler") }}</button>
+    <button type="submit" class="btn btn-danger sm:px-8">{{ icon('trash', size=18) }} {{ _("Supprimer") }}</button>
+  </form>
+  {% endif %}
+</div>

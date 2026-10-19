@@ -1,0 +1,27 @@
+{#- The tree of categories. Each root unfolds on its sub-categories; the pencil
+    opens a panel in the row (name, pillar, budgets). Replaced as a whole by the
+    actions that change the tree (#categories-content). -#}
+{% set write = can_edit("/categories/create") %}
+<section id="categories-content" class="card flex flex-col gap-1 min-w-0" aria-labelledby="categories-title">
+  <h2 id="categories-title" class="text-section-title mb-2">{{ _("Catégories") }} <span class="font-normal text-secondary">· {{ categories | length }}</span></h2>
+  {% for parent in categories %}
+  <div x-data="{ expanded: false }" class="border-t border-border first:border-t-0">
+    {% with category = parent, is_child = false %}{% include "categories/_row.html" %}{% endwith %}
+    <div x-show="expanded" style="display: none" class="pl-6 lg:pl-10 border-l-2 border-border ml-5 mb-2">
+      {% for child in parent.children %}
+      {% with category = child, is_child = true %}{% include "categories/_row.html" %}{% endwith %}
+      {% endfor %}
+      {% if write %}{% include "categories/_add_subcategory_button.html" %}{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="flex flex-col items-center gap-3 py-6 text-center">
+    <p class="text-sm text-secondary">{{ _("Aucune catégorie pour l'instant.") }}</p>
+    <p class="text-sm text-secondary max-w-prose">{{ _("Pars d'un jeu courant (logement, alimentation, transport, santé...) avec ses sous-catégories et leurs piliers du Cap, puis renomme ou supprime ce qui ne te sert pas.") }}</p>
+    {% if write %}
+    <button type="button" hx-post="/categories/starter" hx-target="#categories-content" hx-swap="outerHTML" class="btn btn-secondary border-border-strong px-6">{{ icon('plus', size=18) }} {{ _("Ajouter des catégories de base") }}</button>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% if request.headers.get("HX-Request") %}<span hidden x-init="window.dispatchEvent(new CustomEvent('categories-changed'))"></span>{% endif %}
+</section>

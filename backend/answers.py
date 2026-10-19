@@ -214,6 +214,41 @@ def accounts_answer(accounts: int, pairs: int) -> dict:
     return {"phrase": phrase, "detail": detail}
 
 
+def categories_answer(total: int, unset: int, overrides: int, excluded: int) -> dict:
+    """The sentence of the Catégories screen: every category counts in a pillar of Le Cap."""
+    count = ngettext("%(n)s catégorie", "%(n)s catégories", total) % {"n": total}
+    if unset:
+        phrase = count + ", " + ngettext(
+            "%(n)s sans pilier choisi : elle compte dans Choix.",
+            "%(n)s sans pilier choisi : elles comptent dans Choix.",
+            unset,
+        ) % {"n": unset}
+    else:
+        phrase = count + ", " + _t("toutes rangées dans un pilier du Cap.")
+    parts = []
+    if overrides:
+        parts.append(
+            ngettext(
+                "%(n)s sous-catégorie a son propre pilier (« override »).",
+                "%(n)s sous-catégories ont leur propre pilier (« override »).",
+                overrides,
+            )
+            % {"n": overrides}
+        )
+    if excluded:
+        parts.append(
+            ngettext(
+                "%(n)s catégorie de revenu ne compte pas dans les Budgets.",
+                "%(n)s catégories de revenu ne comptent pas dans les Budgets.",
+                excluded,
+            )
+            % {"n": excluded}
+        )
+    if not parts:
+        parts.append(_t("Une sous-catégorie suit le pilier de sa catégorie, sauf si tu lui en donnes un autre."))
+    return {"phrase": phrase, "detail": " ".join(parts)}
+
+
 # --- Import -----------------------------------------------------------------
 
 
