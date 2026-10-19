@@ -3009,12 +3009,18 @@ def set_user_role(db: Session, user_id: int, role: str) -> None:
     db.commit()
 
 
-def set_user_password(db: Session, user_id: int, password: str) -> None:
+def set_user_password(db: Session, user_id: int, password: str, keep_session_id: int | None = None) -> None:
+    # A new password signs the account out everywhere (the fingerprint inside every
+    # token changes) and closes its sessions with it, except `keep_session_id`: the
+    # device where the user is changing it.
+    from backend.sessions import close_other_sessions
+
     user = get_user(db, user_id)
     if user is None:
         return
     user.hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     db.commit()
+    close_other_sessions(db, user_id, keep_session_id)
 
 
 def set_user_active(db: Session, user_id: int, is_active: bool) -> None:

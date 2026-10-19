@@ -427,6 +427,30 @@ class User(Base):
     density: Mapped[str] = mapped_column(String(12), default="normal", server_default="normal")
 
 
+class UserSession(Base):
+    # One row per signed-in device (see backend/auth.py and backend/sessions.py).
+    # The session cookie carries a random session id; only its SHA-256 is kept
+    # here, so a copy of the table cannot be replayed as a cookie. A session
+    # closed from "Mon profil", by logging out or by a password change is
+    # deleted: the next request carrying its cookie is signed out.
+    #
+    # legacy_hash is set only on a session converted from a token issued before
+    # this table existed (no session id inside): it is the SHA-256 of that old
+    # token, so concurrent requests carrying it join the same row instead of
+    # creating one each. Closing such a session keeps the row as a tombstone
+    # (token_hash cleared, revoked_at set) so the old token cannot be converted
+    # again; purge_expired_sessions() removes it with the other expired ones.
+    __tablename__ = "user_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    legacy_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    user_agent: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
 class RecurringPattern(Base):
     # Décision de l'utilisateur (confirmé/ignoré) sur un abonnement récurrent
     # détecté par crud.detect_recurring_patterns. La détection elle-même est

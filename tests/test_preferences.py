@@ -33,7 +33,7 @@ def make_client(app, demo):
 
     def build(role: str) -> TestClient:
         with SessionLocal() as db:
-            token = auth.create_session_token(crud.get_user(db, demo[f"user_{role}"]))
+            token = auth.open_session(db, crud.get_user(db, demo[f"user_{role}"]), "pytest")
         client = TestClient(app, follow_redirects=False)
         client.cookies.set(auth.SESSION_COOKIE_NAME, token)
         created.append(role)
@@ -79,11 +79,12 @@ def test_migration_adds_the_columns_with_their_defaults(demo):
     assert all(nullable == "NO" for _, nullable in columns.values())
 
 
-def test_migration_goes_down_and_up_again(demo):
+def test_migration_goes_down_and_up_again(demo, clients):
     from alembic import command
     from alembic.config import Config
 
-    from backend.database import engine
+    from backend.database import SessionLocal, engine
+    from backend.models import UserSession
     from tests.conftest import ROOT
 
     config = Config(str(ROOT / "alembic.ini"))
@@ -98,6 +99,13 @@ def test_migration_goes_down_and_up_again(demo):
                 )
             }
 
+    # Going down drops the table of sessions: the rows of the shared clients are put
+    # back afterwards, or every later test would find its client signed out.
+    with SessionLocal() as db:
+        kept = [
+            {column.name: getattr(row, column.name) for column in UserSession.__table__.columns}
+            for row in db.query(UserSession).all()
+        ]
     engine.dispose()
     try:
         command.downgrade(config, "c4e8a2b9f173")
@@ -106,6 +114,11 @@ def test_migration_goes_down_and_up_again(demo):
     finally:
         engine.dispose()
         command.upgrade(config, "head")
+        with SessionLocal() as db:
+            db.add_all(UserSession(**values) for values in kept)
+            db.commit()
+            db.execute(text("SELECT setval(pg_get_serial_sequence('user_sessions', 'id'), (SELECT COALESCE(MAX(id), 1) FROM user_sessions))"))
+            db.commit()
     assert set(PREFERENCE_COLUMNS) <= user_columns()
 
 

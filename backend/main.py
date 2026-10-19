@@ -66,6 +66,11 @@ def load_session_secret() -> None:
     db = SessionLocal()
     try:
         auth.load_session_secret(db)
+        if auth.AUTH_ENABLED:
+            # Sessions older than their cookie (30 days) are of no use any more.
+            from backend.sessions import purge_expired_sessions
+
+            purge_expired_sessions(db)
     finally:
         db.close()
 
@@ -271,8 +276,11 @@ def change_password(
     if len(new_password) < 8:
         return HTMLResponse(error(_t("Le nouveau mot de passe doit faire au moins 8 caractères.")), status_code=400)
 
-    crud.set_user_password(db, current_user.id, new_password)
-    db.refresh(current_user)
+    # Every other session of the account is closed; this one stays open.
+    crud.set_user_password(db, current_user.id, new_password, keep_session_id=getattr(request.state, "session_id", None))
+    # current_user comes from the middleware's closed database session: read the account
+    # again (with the new password fingerprint) instead of refreshing a detached object.
+    current_user = crud.get_user(db, current_user.id)
 
     # Le jeton de session embarque une empreinte du mot de passe (voir
     # backend/auth.py, authenticate_request) : changer le mot de passe
@@ -281,7 +289,7 @@ def change_password(
     response = HTMLResponse(flash_html("success", _t("Mot de passe modifié.")))
     response.set_cookie(
         auth.SESSION_COOKIE_NAME,
-        auth.create_session_token(current_user),
+        auth.create_session_token(current_user, auth.session_id_of_token(getattr(request.state, "session_token", None))),
         max_age=auth.SESSION_MAX_AGE,
         httponly=True,
         samesite="lax",
