@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend import crud
 from backend.database import get_db
-from backend.dates import month_label, month_range
+from backend.budget_month import period_containing
 from backend.models import Account, Category, Transaction
 from backend.receipt_families import RECEIPT_FAMILIES, group_items_by_family
 from backend.templating import templates
@@ -170,23 +170,22 @@ def _render_next_card(
 
 def _build_routine_banner_context(db: Session) -> dict:
     today = date.today()
-    current_month_start = date(today.year, today.month, 1)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
 
     state = crud.get_or_create_app_state(db)
     show_routine_banner = (
-        state.last_routine_month is None or state.last_routine_month < current_month_start
+        state.last_routine_month is None or state.last_routine_month < current_period.month
     )
     if not show_routine_banner:
         return {"show_routine_banner": False}
 
-    month_end = month_range(today.year, today.month)[1]
-    budget_percent = crud.get_overall_budget_consumption(db, current_month_start, month_end)
+    budget_percent = crud.get_overall_budget_consumption(db, current_period.start, current_period.last_day)
     subscription_count = len(crud.detect_subscriptions(db, today))
-    project_savings = crud.get_monthly_project_savings(db, current_month_start, month_end)
+    project_savings = crud.get_monthly_project_savings(db, current_period.start, current_period.last_day)
 
     return {
         "show_routine_banner": True,
-        "routine_month_label": month_label(today.year, today.month),
+        "routine_month_label": current_period.label,
         "routine_budget_percent": round(budget_percent),
         "routine_subscription_count": subscription_count,
         "routine_project_savings": project_savings,
@@ -195,8 +194,8 @@ def _build_routine_banner_context(db: Session) -> dict:
 
 def _build_budget_alerts_context(db: Session) -> dict:
     today = date.today()
-    month_start, month_end = month_range(today.year, today.month)
-    progress = crud.get_budget_progress(db, month_start, month_end)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
+    progress = crud.get_budget_progress(db, current_period.start, current_period.last_day)
     # Triés du pire au meilleur par get_budget_progress lui-même : on n'a
     # besoin que de filtrer les budgets réellement sous surveillance
     # (>= 80 % consommé), le reste (nombre max affiché, dismiss...) est géré
@@ -214,7 +213,7 @@ def _build_budget_alerts_context(db: Session) -> dict:
             }
             for item in alerts
         ],
-        "current_month_key": today.strftime("%Y-%m"),
+        "current_month_key": current_period.month.strftime("%Y-%m"),
     }
 
 
@@ -233,7 +232,9 @@ def inbox(request: Request, db: Session = Depends(get_db)):
         # _budget_alerts.html, qui fournit déjà current_month_key ci-dessous),
         # jamais l'AppState de _build_routine_banner_context — voir
         # inbox/_le_cap_midmonth_banner.html.
-        "show_le_cap_midmonth_banner": today.day == 15,
+        "show_le_cap_midmonth_banner": (
+            today - period_containing(today, crud.get_budget_start_day(db)).start
+        ).days == 14,
         **_build_upcoming_context(db, transaction),
         **_build_card_context(db, transaction),
         **_build_routine_banner_context(db),
@@ -244,8 +245,8 @@ def inbox(request: Request, db: Session = Depends(get_db)):
 
 @router.post("/routine/dismiss", response_class=HTMLResponse)
 def dismiss_routine_banner(db: Session = Depends(get_db)):
-    today = date.today()
-    crud.mark_routine_seen(db, date(today.year, today.month, 1))
+    current_period = period_containing(date.today(), crud.get_budget_start_day(db))
+    crud.mark_routine_seen(db, current_period.month)
     return HTMLResponse(content="", status_code=200)
 
 
