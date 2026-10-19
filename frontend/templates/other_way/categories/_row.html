@@ -1,0 +1,39 @@
+{#- One category (root or sub-category): colour dot, name, its pillar in words, the
+    "Hors Budgets" mark for an income category, the pencil, and (for a root) the
+    chevron that unfolds its sub-categories. Replaced by HTMX (#category-row-N). -#}
+{% set pillar_icons = {"essentiel": "home", "choix": "star", "imprevu": "urgent"} %}
+{% set write = can_edit("/categories/create") %}
+{% set is_child_param = 'true' if is_child else 'false' %}
+{% set inherited_pillar = resolve_category_pillar(category.parent) if is_child else none %}
+{% set own_pillar = resolve_category_pillar(category) %}
+<div id="category-row-{{ category.id }}" class="flex items-center gap-2 min-h-[50px] py-[var(--row-pad)]">
+  {% if not is_child %}
+  <span class="shrink-0 w-3 h-3 rounded-full" style="background-color: {{ category.id | category_color }}"></span>
+  {% else %}
+  <span class="shrink-0 text-secondary">{{ icon('corner-down-right', size=16) }}</span>
+  {% endif %}
+  <div class="flex-1 min-w-0 flex flex-col">
+    <span class="{{ 'font-semibold' if not is_child else 'text-sm font-medium' }} truncate">{{ category.name }}</span>
+    <span class="text-xs text-secondary flex flex-wrap items-center gap-x-1.5">
+      <span class="inline-flex items-center gap-1">{{ icon(pillar_icons[own_pillar], size=12) }} {{ PILLARS[own_pillar].label }}</span>
+      {% if not is_child %}
+      <span>· {% set child_count = category.children | length %}{% if child_count %}{% trans n=child_count %}{{ n }} sous-catégorie{% pluralize %}{{ n }} sous-catégories{% endtrans %}{% else %}{{ _("aucune sous-catégorie") }}{% endif %}</span>
+      {% elif category.pillar and category.pillar != inherited_pillar %}
+      <span title="{{ _("Diffère du pilier hérité du parent") }}">· {{ _("override") }}</span>
+      {% endif %}
+    </span>
+  </div>
+  {% if category.excluded_from_budget %}<span class="badge badge-neutral shrink-0">{{ _("Hors Budgets") }}</span>{% endif %}
+  {% if write %}
+  <button type="button" hx-get="/categories/{{ category.id }}/edit?is_child={{ is_child_param }}" hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML"
+          aria-label="{{ _("Modifier") }} {{ category.name }}" class="shrink-0 inline-flex w-[50px] h-[50px] items-center justify-center rounded-xl text-secondary hover:bg-sunken">{{ icon('pencil', size=18) }}</button>
+  {% endif %}
+  {% if not is_child %}
+  <button type="button" @click="expanded = !expanded" :aria-expanded="expanded"
+          :aria-label="expanded ? '{{ _("Masquer les sous-catégories") | jsq }}' : '{{ _("Afficher les sous-catégories") | jsq }}'"
+          class="shrink-0 inline-flex w-[50px] h-[50px] items-center justify-center rounded-xl text-secondary hover:bg-sunken">
+    <span class="transition-transform" :class="expanded ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+  </button>
+  {% endif %}
+  {% if request.headers.get("HX-Request") %}<span hidden x-init="window.dispatchEvent(new CustomEvent('categories-changed'))"></span>{% endif %}
+</div>

@@ -72,6 +72,8 @@ PAGES = [
     # Categories
     Page("/categories"),
     Page("/categories/content", htmx=True),
+    Page("/categories/head", htmx=True),
+    Page("/categories/pillars", htmx=True),
     Page("/categories/{category_id}/row", htmx=True),
     Page("/categories/{category_id}/edit", htmx=True),
     Page("/categories/{category_id}/delete-confirm", htmx=True),

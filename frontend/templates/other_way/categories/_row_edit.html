@@ -1,0 +1,54 @@
+{#- The panel of a category, opened in its row: the name, the pillar in pills (saved
+    as soon as one is picked), for a root the "income, not an expense" switch, and
+    the way to delete. A sub-category may inherit its parent's pillar. -#}
+{% set pillar_icons = {"essentiel": "home", "choix": "star", "imprevu": "urgent"} %}
+{% set is_child_param = 'true' if is_child else 'false' %}
+{% set inherited = resolve_category_pillar(category.parent) if is_child else none %}
+<div id="category-row-{{ category.id }}" class="rounded-xl border border-border bg-page p-4 lg:p-6 my-2 flex flex-col gap-4">
+  <form hx-post="/categories/{{ category.id }}/update" hx-target="#categories-content" hx-swap="outerHTML" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <label class="form-group sm:flex-1">
+      <span class="form-label">{{ _("Nom de la catégorie") }}</span>
+      <input type="text" name="name" value="{{ category.name }}" required autocomplete="off" class="input-base" />
+    </label>
+    <button type="submit" class="btn btn-secondary border-accent-ink text-accent-ink font-semibold sm:px-8">{{ _("Enregistrer") }}</button>
+  </form>
+
+  <fieldset class="flex flex-col gap-2">
+    <legend class="form-label mb-1">{{ _("Pilier du Cap") }}</legend>
+    <div role="radiogroup" class="flex flex-wrap gap-2">
+      {% if is_child %}
+      <label class="choice-card !min-h-[50px] px-4 justify-center">
+        <input type="radio" name="pillar-{{ category.id }}" value="" class="sr-only" {{ 'checked' if not category.pillar else '' }}
+               hx-post="/categories/{{ category.id }}/update-pillar?is_child={{ is_child_param }}&panel=true" hx-vals='{"pillar": ""}' hx-trigger="change"
+               hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML" />
+        <span class="text-sm font-medium inline-flex items-center gap-1.5">{{ icon('corner-down-right', size=14) }} {{ _("Hérite") }}</span>
+      </label>
+      {% endif %}
+      {% for code in PILLAR_ORDER %}
+      <label class="choice-card !min-h-[50px] px-4 justify-center">
+        <input type="radio" name="pillar-{{ category.id }}" value="{{ code }}" class="sr-only" {{ 'checked' if category.pillar == code else '' }}
+               hx-post="/categories/{{ category.id }}/update-pillar?is_child={{ is_child_param }}&panel=true" hx-vals='{"pillar": "{{ code }}"}' hx-trigger="change"
+               hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML" />
+        <span class="text-sm font-medium inline-flex items-center gap-1.5">{{ icon(pillar_icons[code], size=14) }} {{ PILLARS[code].label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% if is_child %}<p class="text-xs text-secondary">{% trans pillar=PILLARS[inherited].label %}Sans pilier propre, cette sous-catégorie compte dans {{ pillar }}, comme sa catégorie.{% endtrans %}</p>{% endif %}
+  </fieldset>
+
+  {% if not is_child %}
+  <label class="flex items-center gap-3 min-h-[50px] cursor-pointer">
+    <input type="checkbox" name="excluded" value="true" {{ 'checked' if category.excluded_from_budget else '' }} class="check-box"
+           hx-post="/categories/{{ category.id }}/update-budget-exclusion?is_child=false&panel=true" hx-trigger="change"
+           hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML" />
+    <span class="text-sm">{{ _("Revenu, pas une dépense — exclure de l'écran Budgets") }}</span>
+  </label>
+  {% endif %}
+
+  <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+    <button type="button" hx-get="/categories/{{ category.id }}/delete-confirm?is_child={{ is_child_param }}" hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML"
+            class="btn btn-ghost text-danger sm:mr-auto">{{ icon('trash', size=18) }} {{ _("Supprimer") }}</button>
+    <button type="button" hx-get="/categories/{{ category.id }}/row?is_child={{ is_child_param }}" hx-target="#category-row-{{ category.id }}" hx-swap="outerHTML"
+            class="btn btn-secondary border-border-strong sm:px-8">{{ _("Fermer") }}</button>
+  </div>
+</div>

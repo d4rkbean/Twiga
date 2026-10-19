@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs, back_link %}
+{% from "_macros/menu.html" import dropdown %}
+
+{% block title %}{{ _("Catégories — Twiga") }}{% endblock %}
+
+{% block content %}
+{% set write = can_edit("/categories/create") %}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": false},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": true},
+  ]) }}
+  {{ back_link("/settings", _("Paramètres")) }}
+  {% include "other_way/categories/_head.html" %}
+
+  {% if write %}
+  {% set parent_options = namespace(items=[("", _("Catégorie de premier niveau"))]) %}
+  {% for parent in categories %}{% set parent_options.items = parent_options.items + [(parent.id | string, _("Sous-catégorie de %(name)s", name=parent.name))] %}{% endfor %}
+  <form x-show="adding" style="display: none" hx-post="/categories/create" hx-target="#categories-content" hx-swap="outerHTML"
+        @htmx:after-request="if ($event.detail.successful) { adding = false; $el.reset(); }" class="card flex flex-col gap-4">
+    <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
+    <div class="grid gap-4 lg:grid-cols-2">
+      <label class="form-group">
+        <span class="form-label">{{ _("Nom de la catégorie") }}</span>
+        <input id="new-category-name" type="text" name="name" required autocomplete="off" class="input-base" />
+      </label>
+      <div class="form-group">
+        <span class="form-label">{{ _("Emplacement") }}</span>
+        {{ dropdown("parent_id", parent_options.items, selected="", aria=_("Emplacement")) }}
+      </div>
+    </div>
+    <div class="flex flex-col-reverse gap-2 sm:flex-row">
+      <button type="button" @click="adding = false" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+      <button type="submit" class="btn btn-primary sm:flex-[2]">{{ _("Ajouter") }}</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+    {% include "categories/_content.html" %}
+    {% include "other_way/categories/_pillars.html" %}
+  </div>
+</main>
+{% endblock %}

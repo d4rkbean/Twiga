@@ -1,0 +1,24 @@
+{#- "Les piliers du Cap": which categories count in each pillar. -#}
+{% set pillar_icons = {"essentiel": "home", "choix": "star", "imprevu": "urgent"} %}
+{% set write = can_edit("/categories/create") %}
+<aside id="categories-pillars" hx-get="/categories/pillars" hx-trigger="categories-changed from:window" hx-swap="outerHTML" class="card flex flex-col gap-3 min-w-0" aria-labelledby="pillars-title">
+  <h2 id="pillars-title" class="text-section-title">{{ _("Les piliers du Cap") }}</h2>
+  <p class="text-sm text-secondary">{{ _("Chaque catégorie compte dans un pilier ; une sous-catégorie suit sa catégorie, sauf si elle a le sien. L'Épargne est ce qui reste : on n'y range rien.") }}</p>
+  <ul class="border-t border-border">
+    {% for pillar in pillars %}
+    <li class="flex items-start gap-3 py-3 border-b border-border last:border-0">
+      <span class="mt-0.5 text-secondary">{{ icon(pillar_icons[pillar.code], size=20) }}</span>
+      <div class="flex flex-col min-w-0">
+        <span class="font-semibold">{{ PILLARS[pillar.code].label }} <span class="font-normal text-secondary">· {{ pillar.roots | length }}</span></span>
+        <span class="text-sm text-secondary">{% set names = pillar.roots + pillar.moved %}{% if names %}{{ names | join(", ") }}{% else %}{{ _("Rien pour l'instant") }}{% endif %}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if write %}
+  <button type="button" hx-post="/categories/reset-pillar-overrides" hx-target="#categories-content" hx-swap="outerHTML"
+          hx-confirm="{{ _("Réinitialiser tous les piliers des sous-catégories vers « hérite du parent » ?") }}"
+          class="min-h-[50px] self-start inline-flex items-center gap-2 text-sm font-medium text-accent-ink">{{ icon('refresh', size=18) }} {{ _("Réinitialiser les piliers") }}</button>
+  {% endif %}
+  <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink">{{ _("Ouvrir Le Cap") }} {{ icon('arrow-narrow-right', size=16) }}</a>
+</aside>
