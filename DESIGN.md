@@ -310,6 +310,16 @@ The choice is a per-account preference (Mon profil > Affichage, `User.ui_variant
 
 `static/js/tour.js` has no step of its own. Each interface's `_tour.html` provides the steps (target, fallback target for the other breakpoint, icon, title, text) as JSON in `data-steps` on the root of `_tour_ui.html`. Classic keeps its five steps; the other way tells five too: welcome, the four destinations, "Le reste se cache sous Plus", search, help. Same mechanics in both (Suivant, Précédent, Passer, remembered on the account).
 
+### Settings, import, profile and sign-in in the other way
+
+Every screen of this group opens on the **sentence of Twiga** (`backend/answers.py`, pure functions returning an `Answer`: a title, a detail, optionally an `action` and a `focus`) and keeps the gestures of its Classic twin, behind a gesture of its own: a panel that opens in the row (accounts, categories, rules, payment modes, projects), an "Ajuster" or "Voir les lignes" drawer (import), a card per person (users).
+
+- **The sentence follows the gesture.** When a fragment changes what the sentence says, either the sentence lives in the fragment that every action replaces (Projets, Abonnements, Chèques, Utilisateurs), or the fragment announces a window event (`accounts-changed`, `categories-changed`, `rules-changed`, `payments-changed`) that a `hx-trigger="... from:window"` on the head listens to. The head routes (`/accounts/head`, `/categories/head`, `/categories/pillars`, `/rules/head`, `/payment-methods/head`) name their template with its folder (`other_way/...`) so both interfaces find them.
+- **A role sees only what it can do.** `can_edit("/path")` (a template global) asks the same rule as the middleware (`auth.check_role_access`); the other way hides the gestures a role cannot use instead of answering "forbidden" after the tap. A reader's La Savane is its own screen (`other_way/inbox/reader.html`): "Tu peux consulter, pas modifier.", the lot as a list, and what the role allows, read from `backend/role_rights.py`.
+- **One amber fill per screen** holds when a panel opens: the sentence's action carries `x-show="!adding"` and the panel's submit takes the amber.
+- **Import is one file and one confirmation** (`POST /imports/recap`): the format comes from the extension, the account from the file name or the latest import, the columns and the date format from the file; "Ajuster" posts the same fields again to `/imports/{id}/confirm`.
+- **The login shows the household only when the administrator asks** ("Afficher les comptes sur la page de connexion", Paramètres, `app_state.show_login_accounts`, off by default); otherwise it is the classic form.
+
 ## Elevation & Depth
 
 The system is **almost flat**. Depth comes first from the contrast between the page background and the container surface, reinforced by a 1px border; the shadow is only a whisper on top. There are only two levels, and nothing in between.

@@ -7,8 +7,8 @@
     <span class="shrink-0 w-3 h-3 rounded-full" style="background-color: {{ item.account | account_color }}"></span>
     <span class="shrink-0 text-secondary hidden sm:inline">{{ icon(type_icons.get(item.account.type, "wallet"), size=18) }}</span>
     <div class="flex-1 min-w-0 flex flex-col">
-      <span class="font-semibold truncate">{{ item.account.name }}</span>
-      <span class="text-xs text-secondary truncate">{{ get_account_type_label(item.account.type) }} · {% trans n=item.transaction_count %}{{ n }} opération{% pluralize %}{{ n }} opérations{% endtrans %}</span>
+      <span class="font-semibold sm:truncate break-words">{{ item.account.name }}</span>
+      <span class="text-xs text-secondary sm:truncate">{{ get_account_type_label(item.account.type) }} · {% trans n=item.transaction_count %}{{ n }} opération{% pluralize %}{{ n }} opérations{% endtrans %}</span>
     </div>
     <span class="amount-blur tabular-nums font-semibold whitespace-nowrap">{{ item.balance | eur }}</span>
     {% if write %}

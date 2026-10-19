@@ -29,7 +29,7 @@
     </div>
     <fieldset class="form-group">
       <legend class="form-label mb-1">{{ _("Rôle") }}</legend>
-      <div class="flex gap-1 rounded-xl bg-sunken p-1 lg:max-w-xl">
+      <div class="flex gap-1 rounded-xl bg-sunken p-1">
         {% for role in roles %}
         <label class="flex-1 min-w-0">
           <input type="radio" name="role" value="{{ role }}" class="peer sr-only" {% if role == "viewer" %}checked{% endif %} />

@@ -67,7 +67,7 @@
 
   <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
     {% include "rules/_content.html" %}
-    <aside class="card flex flex-col gap-3 lg:order-last order-first min-w-0" aria-labelledby="test-title">
+    <aside class="card flex flex-col gap-3 min-w-0" aria-labelledby="test-title">
       <h2 id="test-title" class="text-section-title">{{ _("Tester une règle") }}</h2>
       <p class="text-sm text-secondary">{{ _("Colle un libellé : je dis quelle règle s'appliquerait.") }}</p>
       <form hx-post="/rules/test" hx-target="#rule-test-result" hx-swap="innerHTML" class="flex flex-col gap-2 sm:flex-row">

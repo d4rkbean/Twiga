@@ -10,14 +10,14 @@
   {% if import_logs %}
   <ul class="-mx-[var(--space-card)] border-t border-border">
     {% for log in import_logs %}
-    <li class="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[6.5rem_minmax(0,1.6fr)_minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-0.5 px-[var(--space-card)] py-[var(--row-pad)] min-h-[var(--row-static)] border-b border-border last:border-0 text-sm">
+    <li class="grid grid-cols-1 sm:grid-cols-[6.5rem_minmax(0,1.6fr)_minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-0.5 px-[var(--space-card)] py-[var(--row-pad)] min-h-[var(--row-static)] border-b border-border last:border-0 text-sm">
       <span class="hidden sm:block tabular-nums text-secondary">{{ log.imported_on | fr_date }}</span>
       <span class="min-w-0">
         <span class="block font-mono text-xs break-all">{{ log.filename }}</span>
         <span class="block sm:hidden text-xs text-secondary">{{ log.imported_on | fr_date }} · {{ log.account_name }}</span>
       </span>
       <span class="hidden sm:block text-secondary truncate">{{ log.account_name }}</span>
-      <span class="text-right tabular-nums whitespace-nowrap">
+      <span class="sm:text-right tabular-nums sm:whitespace-nowrap">
         <strong>{% trans n=log.imported, shown=log.imported | integer %}{{ shown }} importée{% pluralize %}{{ shown }} importées{% endtrans %}</strong>
         <span class="text-secondary">· {% trans n=log.duplicates %}{{ n }} doublon{% pluralize %}{{ n }} doublons{% endtrans %}</span>
       </span>

@@ -53,7 +53,7 @@
           <h2 class="text-section-title">{{ _("Ce que Twiga vérifie à chaque import") }}</h2>
           <ul class="flex flex-col gap-2 text-sm">
             <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{{ _("Doublons repérés : même date, même montant, même libellé") }}</span></li>
-            <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{% if rules_count %}{% trans n=rules_count %}Ta règle de rangement appliquée d'office{% pluralize %}Tes {{ n }} règles de rangement appliquées d'office{% endtrans %}{% else %}{{ _("Tes règles de rangement, appliquées d'office") }}{% endif %}</span></li>
+            <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{% if rules_count %}{% trans n=rules_count %}{{ n }} règle de rangement appliquée d'office{% pluralize %}Tes {{ n }} règles de rangement appliquées d'office{% endtrans %}{% else %}{{ _("Tes règles de rangement, appliquées d'office") }}{% endif %}</span></li>
             <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{{ _("Virements internes et chèques, rapprochés tout seuls") }}</span></li>
           </ul>
         </section>

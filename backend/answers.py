@@ -382,7 +382,7 @@ def settings_answer(
         return Answer(_t("Tout est en place.") + " " + waiting, detail, action=("/checks", _t("Voir les paiements en attente")))
     if suggestions:
         waiting = ngettext(
-            "Une règle proposée attend ton avis.", "%(n)s règles proposées attendent ton avis.", suggestions
+            "%(n)s règle proposée attend ton avis.", "%(n)s règles proposées attendent ton avis.", suggestions
         ) % {"n": suggestions}
         return Answer(_t("Tout est en place.") + " " + waiting, detail, action=("/rules", _t("Voir les règles proposées")))
     return Answer(_t("Tout est en place."), detail)
@@ -496,7 +496,7 @@ def payments_answer(modes: int, missing: int) -> Answer:
     count = ngettext("%(n)s mode de paiement.", "%(n)s modes de paiement.", modes) % {"n": modes}
     if missing:
         phrase = count + " " + ngettext(
-            "Une opération n'a pas encore le sien.", "%(n)s opérations n'ont pas encore le leur.", missing
+            "%(n)s opération n'a pas encore le sien.", "%(n)s opérations n'ont pas encore le leur.", missing
         ) % {"n": format_integer(missing)}
     else:
         phrase = count + " " + _t("Toutes les opérations ont le leur.")
@@ -672,7 +672,7 @@ def import_recap_answer(
         kind = _t("Format reconnu : OFX.")
     if duplicates:
         tail = ngettext(
-            "Le doublon est déjà écarté, il ne reste qu'à confirmer.",
+            "%(n)s doublon est déjà écarté, il ne reste qu'à confirmer.",
             "Les %(n)s doublons sont déjà écartés, il ne reste qu'à confirmer.",
             duplicates,
         ) % {"n": duplicates}
@@ -732,7 +732,7 @@ def import_result_detail(imported: int, duplicates: int, with_rule: int, to_sort
                 )
                 % {"n": format_integer(with_rule)},
                 ngettext(
-                    "l'autre t'attend dans La Savane : environ %(m)s minute.",
+                    "%(n)s autre t'attend dans La Savane : environ %(m)s minute.",
                     "les %(n)s autres t'attendent dans La Savane : environ %(m)s minutes.",
                     remaining,
                 )
