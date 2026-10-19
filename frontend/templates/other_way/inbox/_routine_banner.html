@@ -1,0 +1,33 @@
+{% if show_routine_banner %}
+{#- « Bonjour — mois » : the month's check-up, once a month. A chip that opens on
+    its figures; the cross closes it for the month (and « Aller à La Savane » does
+    the same). Same route as Classic, same id to delete. -#}
+<div id="routine-banner" x-data="{ open: false }" class="min-w-0 max-lg:w-[85%] max-lg:flex-none lg:min-w-[320px]">
+  <div class="flex items-center rounded-xl border border-border bg-container shadow-sm">
+    <button type="button" @click="open = !open" :aria-expanded="open" class="flex min-h-[50px] min-w-0 flex-1 items-center gap-3 px-4 text-left">
+      {{ icon('sun', size=18) }}
+      <span class="min-w-0 flex-1 truncate font-medium">{% trans month=routine_month_label %}Bonjour — {{ month }}{% endtrans %}</span>
+      <span :class="open ? 'rotate-180' : ''" class="text-secondary transition-transform">{{ icon('chevron-down', size=18) }}</span>
+    </button>
+    <button
+      type="button"
+      hx-post="/transactions/routine/dismiss"
+      hx-target="#routine-banner"
+      hx-swap="delete"
+      aria-label="{{ _("Fermer le bandeau Bonjour") }}"
+      class="flex h-[50px] w-[50px] flex-none items-center justify-center text-secondary"
+    >{{ icon('x', size=18) }}</button>
+  </div>
+  <div x-show="open" style="display: none;" class="mt-2 flex flex-col gap-3 rounded-xl border border-border bg-container p-4 shadow-sm">
+    <ul class="flex flex-col gap-2.5 text-sm text-primary">
+      <li class="flex items-center gap-2">{{ icon('inbox', size=18) }} {% trans count=pending_count %}{{ count }} opération à vérifier{% pluralize %}{{ count }} opérations à vérifier{% endtrans %}</li>
+      <li class="flex items-center gap-2">{{ icon('currency-euro', size=18) }} {% trans percent=routine_budget_percent %}Budget consommé à {{ percent }} %{% endtrans %}</li>
+      <li class="flex items-center gap-2">{{ icon('repeat', size=18) }} {% trans count=routine_subscription_count %}{{ count }} abonnement détecté{% pluralize %}{{ count }} abonnements détectés{% endtrans %}</li>
+      <li class="flex items-center gap-2">{{ icon('target', size=18) }} <span class="amount-blur">{% trans v="+" if routine_project_savings > 0 else "", amount=routine_project_savings | eur %}Projets : {{ v }}{{ amount }} ce mois{% endtrans %}</span></li>
+    </ul>
+    <button type="button" hx-post="/transactions/routine/dismiss" hx-target="#routine-banner" hx-swap="delete" class="btn btn-secondary border-border-strong">
+      {{ _("Aller à La Savane") }} {{ icon('arrow-narrow-right') }}
+    </button>
+  </div>
+</div>
+{% endif %}
