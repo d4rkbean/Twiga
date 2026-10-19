@@ -27,7 +27,8 @@ def test_the_profile_previews_the_display_and_keeps_the_account_gestures(clients
         assert text in body, text
     for hook in ("/profile/preferences", "/profile/update", "/settings/change-password", "/logout", "pref-preview", 'aria-label="Aperçu"'):
         assert hook in html, hook
-    assert "Sessions ouvertes" not in body  # that block comes later
+    assert "Sessions ouvertes" in body and "Cet appareil" in body  # the block of open sessions (tests/test_sessions.py)
+    assert "/profile/sessions/close" not in html or "Fermer les autres sessions" in body
 
 
 def test_every_password_field_of_the_profile_has_its_eye(clients, other_way):
