@@ -88,7 +88,7 @@ def test_panorama_keeps_the_four_functions_of_the_old_header_tiles(clients):
     assert 'href="/cap/mid"' in html
     # 4. The alerts: operations waiting in La Savane, and the way to treat them.
     assert "en attente" in html
-    assert "Traiter →" in html
+    assert "Ranger maintenant →" in html
     assert 'href="/transactions/inbox"' in html
 
 

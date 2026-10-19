@@ -65,7 +65,7 @@
         <h2 class="text-section-title text-xl truncate">{{ item.project.name }}</h2>
         <p class="amount-blur tabular-nums text-primary mt-1">
           <span class="text-[28px] leading-none font-semibold">{{ item.project.current_amount | eur }}</span>
-          <span class="text-sm text-secondary">{% trans target=item.project.target_amount | eur %}sur {{ target }}{% endtrans %}</span>
+          <span class="whitespace-nowrap text-sm text-secondary">{% trans target=item.project.target_amount | eur %}sur {{ target }}{% endtrans %}</span>
         </p>
       </div>
     </div>

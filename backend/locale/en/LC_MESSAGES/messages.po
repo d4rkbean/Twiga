@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 06:08+0000\n"
+"POT-Creation-Date: 2026-10-19 06:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -2793,6 +2793,9 @@ msgstr "File in La Savane"
 msgid "Ranger la sélection dans…"
 msgstr "File the selection in…"
 
+msgid "Ranger maintenant →"
+msgstr "Sort now →"
+
 #, python-format
 msgid "Ranger toutes les suggestions à 90 %% de confiance ou plus ?"
 msgstr "File every suggestion with 90 %% confidence or more?"
@@ -3458,9 +3461,6 @@ msgstr "Handle similar transactions in one go"
 
 msgid "Traiter normalement"
 msgstr "Process normally"
-
-msgid "Traiter →"
-msgstr "Process →"
 
 #, python-format
 msgid "Transaction %(index)s : %(error)s"

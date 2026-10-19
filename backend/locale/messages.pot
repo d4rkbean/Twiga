@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 06:08+0000\n"
+"POT-Creation-Date: 2026-10-19 06:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2886,6 +2886,9 @@ msgstr ""
 msgid "Ranger la sélection dans…"
 msgstr ""
 
+msgid "Ranger maintenant →"
+msgstr ""
+
 #, python-format
 msgid "Ranger toutes les suggestions à 90 %% de confiance ou plus ?"
 msgstr ""
@@ -3572,9 +3575,6 @@ msgid "Traiter d'un coup les opérations qui se ressemblent"
 msgstr ""
 
 msgid "Traiter normalement"
-msgstr ""
-
-msgid "Traiter →"
 msgstr ""
 
 #, python-format
