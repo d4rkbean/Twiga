@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros/page.html" import page_header %}
+{% from "_macros/dropdown_field.html" import dropdown_field %}
 
 {# Cet écran a sa propre action principale en ambre plein : « Importer », dans
    l'en-tête de la coque, passe en secondaire (un seul ambre plein par écran). #}
@@ -13,45 +14,67 @@
   {% set categories_subtitle %}{% trans count=categories | length %}{{ count }} catégorie{% pluralize %}{{ count }} catégories{% endtrans %} · {% trans count=child_total %}{{ count }} sous-catégorie{% pluralize %}{{ count }} sous-catégories{% endtrans %}{% endset %}
   {{ page_header(_("Catégories"), subtitle=categories_subtitle, back_href="/settings", back_label=_("Paramètres")) }}
 
-  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 lg:gap-6 items-start">
-    <section class="card flex flex-col gap-3">
-      <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
+  {% set parent_options = namespace(items=[("", _("Catégorie de premier niveau"))]) %}
+  {% for parent in categories %}
+  {% set option_label %}{% trans v=parent.icon or "", name=parent.name %}Sous-catégorie de {{ v }} {{ name }}{% endtrans %}{% endset %}
+  {% set parent_options.items = parent_options.items + [(parent.id, option_label)] %}
+  {% endfor %}
+  {# Le même formulaire sert au bureau (carte) et au mobile (feuille) : il n'est écrit qu'une fois. #}
+  {% set add_form %}
       <form
         hx-post="/categories/create"
         hx-target="#categories-content"
         hx-swap="outerHTML"
+        hx-on::after-request="this.closest('dialog')?.close()"
         class="flex flex-col gap-3 lg:flex-row lg:items-end"
       >
         <label class="form-group lg:flex-1">
           <span class="form-label">{{ _("Nom de la catégorie") }}</span>
           <input type="text" name="name" placeholder="{{ _("Nom de la catégorie") }}" required class="input-base" />
         </label>
-        <label class="form-group lg:flex-1">
+        <div class="form-group lg:flex-1">
           <span class="form-label">{{ _("Emplacement") }}</span>
-          <span class="select-field"><select name="parent_id" class="input-base">
-            <option value="">{{ _("Catégorie de premier niveau") }}</option>
-            {% for parent in categories %}
-            <option value="{{ parent.id }}">{% trans v=parent.icon or "", name=parent.name %}Sous-catégorie de {{ v }} {{ name }}{% endtrans %}</option>
-            {% endfor %}
-          </select></span>
-        </label>
+          {{ dropdown_field("parent_id", parent_options.items, "", aria_label=_("Emplacement")) }}
+        </div>
         {# L'ambre va à l'action de départ quand il n'y a encore rien (le jeu de base). #}
         <button type="submit" class="btn {{ 'btn-primary' if categories else 'btn-secondary border-border-strong' }} lg:px-8">
           {{ _("Ajouter") }}
         </button>
       </form>
+  {% endset %}
+
+  <button
+    type="button"
+    onclick="document.getElementById('new-category-dialog').showModal()"
+    class="btn {{ 'btn-primary' if categories else 'btn-secondary border-border-strong' }} lg:hidden"
+  >
+    {{ icon('plus', size=18) }} {{ _("Ajouter une catégorie") }}
+  </button>
+
+  <dialog id="new-category-dialog" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm">
+    <div class="p-4 flex flex-col gap-3">
+      <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
+      {{ add_form }}
+      <button type="button" onclick="this.closest('dialog').close()" class="btn btn-secondary border-border-strong">{{ _("Annuler") }}</button>
+    </div>
+  </dialog>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 lg:gap-6 items-start">
+    <section class="card hidden lg:flex flex-col gap-3">
+      <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
+      {{ add_form }}
     </section>
 
     <aside class="card flex flex-col gap-3">
       <h2 class="text-section-title">{{ _("Pilier du Cap") }}</h2>
       <p class="text-sm text-secondary">{{ _("Chaque catégorie compte dans un pilier du Cap. Une sous-catégorie hérite de sa catégorie, sauf si tu lui en donnes un autre.") }}</p>
-      <ul class="flex flex-col gap-2 text-sm">
+      <ul class="hidden lg:flex flex-col gap-2 text-sm">
         <li class="flex items-center gap-2"><span class="text-info">{{ icon('home', size=16) }}</span><span><strong class="font-semibold">{{ _("Essentiel") }}</strong> · {{ _("logement, courses, santé") }}</span></li>
         <li class="flex items-center gap-2"><span class="text-chart-3">{{ icon('star', size=16) }}</span><span><strong class="font-semibold">{{ _("Choix") }}</strong> · {{ _("sorties, loisirs, plaisirs") }}</span></li>
         <li class="flex items-center gap-2"><span class="text-warning">{{ icon('urgent', size=16) }}</span><span><strong class="font-semibold">{{ _("Imprévus") }}</strong> · {{ _("une réserve, sans détail") }}</span></li>
       </ul>
       <p class="text-sm text-secondary">{{ _("L'Épargne ne se choisit pas ici : elle se fixe dans Le Cap.") }}</p>
-      <div class="flex flex-col gap-1 items-start">
+      <div class="flex flex-col gap-1 items-start max-lg:items-stretch">
         <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink whitespace-nowrap">{{ _("Ouvrir Le Cap") }} {{ icon('arrow-narrow-right', size=16) }}</a>
         <button
           type="button"
@@ -59,7 +82,7 @@
           hx-target="#categories-content"
           hx-swap="outerHTML"
           hx-confirm="{{ _("Réinitialiser tous les piliers des sous-catégories vers « hérite du parent » ?") }}"
-          class="btn btn-secondary border-border-strong"
+          class="btn btn-secondary border-border-strong w-full lg:w-auto"
         >
           {{ icon('refresh', size=18) }} {{ _("Réinitialiser les piliers") }}
         </button>
