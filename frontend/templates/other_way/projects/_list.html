@@ -11,7 +11,7 @@
 
 <div x-data="{ panel: null }" class="flex flex-col gap-5">
 
-  {% call answer_head(answer.phrase, answer.detail, blur_phrase=true, blur_detail=true) %}
+  {% call answer_head(answer.title, answer.detail, blur_phrase=true, blur_detail=true) %}
     {% if late %}
     <a href="/cap" x-show="panel === null" class="btn btn-primary">{{ _("Ajuster %(cap)s", cap=cap_label) }}</a>
     {% else %}

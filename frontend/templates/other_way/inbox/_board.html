@@ -1,0 +1,59 @@
+{#- The body of La Savane (the other way): the lot, the question and the visit, or the
+    review when nothing waits. It is the swap target of every action: the history
+    and the number of questions answered travel in the two hidden fields, so the
+    server keeps no state. `stage` picks what a phone shows (lot, decision,
+    bilan); a computer shows the columns together. -#}
+<div id="inbox-board" class="flex flex-col gap-[var(--space-block)]" data-stage="{{ stage }}">
+  <input type="hidden" id="nav-history" name="history" value="{{ history }}" />
+  <input type="hidden" id="nav-qdone" name="qdone" value="{{ q_done }}" />
+
+  {% if board_note and board_note.kind == "lot" %}
+  <p role="status" class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink">
+    {{ icon('circle-check', size=18) }}
+    {% trans count=board_note.count %}{{ count }} opération rangée d'un geste.{% pluralize %}{{ count }} opérations rangées d'un geste.{% endtrans %}
+    {% if board_note.rules %}
+    <a href="/rules" class="underline">{% trans count=board_note.rules %}{{ count }} règle proposée : la valider dans Règles{% pluralize %}{{ count }} règles proposées : les valider dans Règles{% endtrans %}</a>
+    {% endif %}
+  </p>
+  {% endif %}
+
+  {% if stage == "bilan" %}
+  {% include "inbox/_bilan.html" %}
+  {% else %}
+  <div class="grid gap-[var(--space-block)] lg:items-start {{ 'lg:grid-cols-[1fr_1.15fr_0.8fr]' if lot_count else 'lg:grid-cols-[1.3fr_0.8fr]' }}">
+    {% if lot_count %}
+    <section id="inbox-lot" aria-label="{{ _("Le lot") }}" class="{{ '' if stage == 'lot' else 'max-lg:hidden' }}">
+      {% include "inbox/_lot.html" %}
+    </section>
+    {% endif %}
+
+    <section id="inbox-questions" aria-label="{{ _("Une question à la fois") }}" class="min-w-0 {{ '' if stage == 'decision' else 'max-lg:hidden' }}">
+      {% if rule_suggestion %}
+      <div id="rule-suggestion-{{ rule_suggestion.transaction_id }}" x-data="{ visible: true }" x-show="visible" class="mb-3 flex flex-col gap-3 rounded-xl border border-border bg-container p-4 shadow-sm">
+        <p class="flex items-start gap-2 text-sm font-medium text-primary">
+          {{ icon('bulb', size=18) }}
+          <span>{% trans keyword=rule_suggestion.keyword, category=rule_suggestion.category_name %}Créer une règle automatique : si le libellé contient « {{ keyword }} », range-le dans {{ category }} ?{% endtrans %}</span>
+        </p>
+        <form
+          hx-post="/backlog/create-rule"
+          hx-target="#rule-suggestion-{{ rule_suggestion.transaction_id }}"
+          hx-swap="innerHTML"
+          class="flex flex-col gap-2"
+        >
+          <input type="hidden" name="category_id" value="{{ rule_suggestion.category_id }}" />
+          <label for="rule-keyword" class="form-label">{{ _("Mot-clé de la règle") }}</label>
+          <input id="rule-keyword" type="text" name="keyword" value="{{ rule_suggestion.keyword }}" class="input-base" />
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-secondary flex-1 border-border-strong font-semibold">{{ icon('check', size=18) }} {{ _("Créer la règle") }}</button>
+            <button type="button" @click="visible = false" class="btn btn-ghost flex-1">{{ _("Non merci") }}</button>
+          </div>
+        </form>
+      </div>
+      {% endif %}
+      {% include "inbox/_card.html" %}
+    </section>
+
+    {% include "inbox/_session.html" %}
+  </div>
+  {% endif %}
+</div>

@@ -4,7 +4,7 @@
 {% from "other_way/_ui.html" import answer_head %}
 {% set write = can_edit("/payment-methods/create") %}
 <div id="payments-head" hx-get="/payment-methods/head" hx-trigger="payments-changed from:window" hx-swap="outerHTML">
-  {% call answer_head(answer.phrase, answer.detail) %}
+  {% call answer_head(answer.title, answer.detail) %}
     {% if write %}
     <button type="button" hx-post="/settings/detect-payment-methods" hx-target="#detect-payment-result" hx-swap="innerHTML"
             hx-confirm="{{ _("Détecter automatiquement le mode de paiement des opérations qui n'en ont pas encore, à partir de leur libellé ?") }}"

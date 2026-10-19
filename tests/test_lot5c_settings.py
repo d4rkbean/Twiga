@@ -45,8 +45,8 @@ def project(name, state, gap, need="93.33", now="60.00"):
 def test_no_project_invites_to_create_one():
     result = answers.projects_answer([], TODAY)
 
-    assert result["phrase"] == "Pas encore de projet."
-    assert result["late"] is None
+    assert result.title == "Pas encore de projet."
+    assert result.focus is None
 
 
 def test_each_project_is_named_with_its_verdict_and_the_latest_one_is_adjusted():
@@ -54,23 +54,23 @@ def test_each_project_is_named_with_its_verdict_and_the_latest_one_is_adjusted()
         [project("Vacances", "early", -3, "88.89", "150.00"), project("Vélo", "late", 4)], TODAY
     )
 
-    assert result["phrase"] == "Vacances arrive en avance, Vélo a 4 mois de retard."
-    assert result["late"] == "Vélo"
-    assert "93,33 €" in result["detail"] and "60,00 €" in result["detail"]
-    assert "Le Cap d'octobre" in result["detail"]
+    assert result.title == "Vacances arrive en avance, Vélo a 4 mois de retard."
+    assert result.focus == "Vélo"
+    assert "93,33 €" in result.detail and "60,00 €" in result.detail
+    assert "Le Cap d'octobre" in result.detail
 
 
 def test_a_single_project_on_time_has_a_calm_sentence():
     result = answers.projects_answer([project("Vacances", "on_time", 0)], TODAY)
 
-    assert result["phrase"] == "Vacances arrive à l'heure."
-    assert result["late"] is None
+    assert result.title == "Vacances arrive à l'heure."
+    assert result.focus is None
 
 
 def test_many_projects_are_counted_instead_of_listed():
     projects = [project(f"P{n}", "late" if n < 2 else "early", 2 if n < 2 else -1) for n in range(5)]
 
-    assert answers.projects_answer(projects, TODAY)["phrase"] == "2 projets sur 5 ont du retard."
+    assert answers.projects_answer(projects, TODAY).title == "2 projets sur 5 ont du retard."
 
 
 def test_the_cap_of_a_month_elides_before_a_vowel():

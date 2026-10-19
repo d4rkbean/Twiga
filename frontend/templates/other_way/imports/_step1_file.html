@@ -7,7 +7,7 @@
   {% include "imports/_waiting.html" %}
 
   <div x-show="!busy" class="flex flex-col gap-5">
-    {% call answer_head(answer.phrase, answer.detail) %}
+    {% call answer_head(answer.title, answer.detail) %}
       <label for="import-file-input" class="btn btn-primary cursor-pointer">
         {{ icon('upload', size=18) }} {{ _("Choisir un fichier") }}
       </label>

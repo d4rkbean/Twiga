@@ -16,9 +16,9 @@ HX = {"HX-Request": "true"}
 
 
 def test_the_accounts_sentence_counts_accounts_and_pairs_to_confirm():
-    assert answers.accounts_answer(3, 2)["phrase"] == "3 comptes, 2 virements internes à confirmer."
-    assert answers.accounts_answer(1, 1)["phrase"] == "1 compte, 1 virement interne à confirmer."
-    assert answers.accounts_answer(3, 0)["phrase"] == "3 comptes, aucun virement interne à confirmer."
+    assert answers.accounts_answer(3, 2).title == "3 comptes, 2 virements internes à confirmer."
+    assert answers.accounts_answer(1, 1).title == "1 compte, 1 virement interne à confirmer."
+    assert answers.accounts_answer(3, 0).title == "3 comptes, aucun virement interne à confirmer."
 
 
 def test_the_accounts_screen_keeps_create_edit_delete_diagnostic_and_transfers(clients, other_way):

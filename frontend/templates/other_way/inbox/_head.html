@@ -1,0 +1,32 @@
+{% from "_macros/brand.html" import mascot %}
+{#- Twiga's sentence and the one amber action of the screen while a lot waits.
+    Hidden on a phone once the questions start (the question has its own top)
+    and for the review (it has its own title). The lot's action sits in the
+    flow on a computer and in a bar above the navigation on a phone. -#}
+<header
+  id="inbox-head"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+  aria-label="{{ _("La réponse de Twiga") }}"
+  class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8 {{ 'hidden' if stage == 'bilan' else ('max-lg:hidden' if stage == 'decision' else '') }}"
+>
+  <div class="flex min-w-0 items-start gap-4">
+    <span class="flex-none pt-1">{{ mascot(size=52) }}</span>
+    <div class="min-w-0">
+      <h1 class="font-display text-[28px] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[34px]">{{ answer.title }}</h1>
+      <p class="mt-1.5 text-secondary lg:max-w-[70ch]">{{ answer.detail }}</p>
+    </div>
+  </div>
+  {% if lot_count %}
+  <div class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[59px] max-lg:z-20 max-lg:border-t max-lg:border-border max-lg:bg-container max-lg:p-3 lg:flex-none">
+    <button
+      type="button"
+      id="inbox-lot-btn"
+      hx-post="/transactions/lot/file"
+      hx-include="#inbox-lot-ids, #nav-history, #nav-qdone"
+      hx-target="#inbox-board"
+      hx-swap="outerHTML"
+      class="btn btn-primary w-full text-base lg:min-h-[62px] lg:w-auto lg:px-10"
+    >{% trans count=lot_count %}Ranger les {{ count }}{% endtrans %}</button>
+  </div>
+  {% endif %}
+</header>

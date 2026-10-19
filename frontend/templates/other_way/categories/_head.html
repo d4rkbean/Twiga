@@ -3,7 +3,7 @@
 {% from "other_way/_ui.html" import answer_head %}
 {% set write = can_edit("/categories/create") %}
 <div id="categories-head" hx-get="/categories/head" hx-trigger="categories-changed from:window" hx-swap="outerHTML">
-  {% call answer_head(answer.phrase, answer.detail) %}
+  {% call answer_head(answer.title, answer.detail) %}
     {% if write and categories %}
     <button type="button" x-show="!adding" @click="adding = true; $nextTick(() => document.getElementById('new-category-name').focus())" class="btn btn-primary">
       {{ icon('plus', size=18) }} {{ _("Nouvelle catégorie") }}

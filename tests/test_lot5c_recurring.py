@@ -35,11 +35,11 @@ def test_a_subscription_is_ignored_inactive_seen_or_still_expected():
 
 
 def test_the_sentence_counts_the_subscriptions_and_the_ones_still_expected():
-    assert answers.recurring_answer(12, 3, "1 300,68 €")["phrase"] == "12 abonnements, 3 attendus ce mois ne sont pas encore passés."
-    assert answers.recurring_answer(12, 1, "1 300,68 €")["phrase"].endswith("1 attendu ce mois n'est pas encore passé.")
-    assert answers.recurring_answer(2, 0, "20,00 €")["phrase"] == "2 abonnements, tous sont passés ce mois-ci."
-    assert "Total mensuel estimé : 1 300,68 €" in answers.recurring_answer(12, 3, "1 300,68 €")["detail"]
-    assert answers.recurring_answer(0, 0, "0,00 €")["phrase"] == "Aucun abonnement détecté pour l'instant."
+    assert answers.recurring_answer(12, 3, "1 300,68 €").title == "12 abonnements, 3 attendus ce mois ne sont pas encore passés."
+    assert answers.recurring_answer(12, 1, "1 300,68 €").title.endswith("1 attendu ce mois n'est pas encore passé.")
+    assert answers.recurring_answer(2, 0, "20,00 €").title == "2 abonnements, tous sont passés ce mois-ci."
+    assert "Total mensuel estimé : 1 300,68 €" in answers.recurring_answer(12, 3, "1 300,68 €").detail
+    assert answers.recurring_answer(0, 0, "0,00 €").title == "Aucun abonnement détecté pour l'instant."
 
 
 def test_subscriptions_are_grouped_by_state_with_filters_and_gestures(clients, other_way, monkeypatch):

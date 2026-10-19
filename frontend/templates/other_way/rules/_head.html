@@ -3,7 +3,7 @@
 {% from "other_way/_ui.html" import answer_head %}
 {% set write = can_edit("/rules/create") %}
 <div id="rules-head" hx-get="/rules/head" hx-trigger="rules-changed from:window" hx-swap="outerHTML">
-  {% call answer_head(answer.phrase, answer.detail) %}
+  {% call answer_head(answer.title, answer.detail) %}
     {% if write and pending_suggestions %}
     <form hx-post="/rules/create-all" hx-target="#rules-content" hx-swap="outerHTML" x-show="!adding" class="contents"
           hx-confirm="{{ _("Créer les %(n)s règles proposées ?", n=pending_suggestions | length) }}">
