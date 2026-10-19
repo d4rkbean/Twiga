@@ -1,10 +1,10 @@
 {% set type_icons = {"courant": "building-bank", "epargne": "pig-money", "livret": "note", "cash": "cash"} %}
 <div
   id="account-row-{{ item.account.id }}"
-  class="border-t border-border px-4 lg:px-6 py-3"
+  class="border-t border-border px-4 lg:px-6 py-3 max-lg:border-t-0 max-lg:bg-container max-lg:rounded-xl max-lg:shadow-sm"
   x-data="{ expanded: false }"
 >
-  <div class="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_180px_130px_170px] items-center gap-x-3 gap-y-2">
+  <div class="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,3fr)_minmax(0,1.5fr)_minmax(0,1.5fr)_170px] items-center gap-x-3 gap-y-2">
     <div class="flex items-center gap-3 min-w-0">
       <span
         class="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -12,7 +12,7 @@
       ></span>
       <div class="flex flex-col min-w-0">
         <span class="text-primary font-semibold truncate">{{ item.account.name }}</span>
-        {% if item.account.notes %}<span class="text-xs text-secondary truncate">{{ item.account.notes }}</span>{% endif %}
+        {% if item.account.notes %}<span class="hidden lg:block text-xs text-secondary truncate">{{ item.account.notes }}</span>{% endif %}
       </div>
     </div>
 
@@ -22,7 +22,7 @@
         @click="expanded = !expanded"
         :aria-expanded="expanded"
         :aria-label="expanded ? '{{ _("Masquer le diagnostic") | jsq }}' : '{{ _("Voir le diagnostic de solde") | jsq }}'"
-        class="btn btn-secondary border-border-strong w-[50px] px-0"
+        class="btn btn-secondary border-border-strong w-[50px] px-0 max-lg:border-transparent max-lg:bg-transparent max-lg:shadow-none"
       >
         {{ icon('zoom-in', size=18) }}
       </button>
@@ -32,7 +32,7 @@
         hx-target="#account-row-{{ item.account.id }}"
         hx-swap="outerHTML"
         aria-label="{{ _("Modifier") }}"
-        class="btn btn-secondary border-border-strong w-[50px] px-0"
+        class="btn btn-secondary border-border-strong w-[50px] px-0 max-lg:border-transparent max-lg:bg-transparent max-lg:shadow-none"
       >
         {{ icon('pencil', size=18) }}
       </button>
@@ -42,7 +42,7 @@
         hx-target="#account-row-{{ item.account.id }}"
         hx-swap="outerHTML"
         aria-label="{{ _("Supprimer") }}"
-        class="btn btn-secondary border-border-strong w-[50px] px-0 text-danger"
+        class="btn btn-secondary border-border-strong w-[50px] px-0 text-danger max-lg:border-transparent max-lg:bg-transparent max-lg:shadow-none"
       >
         {{ icon('trash', size=18) }}
       </button>
@@ -50,14 +50,15 @@
 
     <span class="flex items-center gap-2 min-w-0 text-sm text-secondary lg:col-start-2 lg:row-start-1">
       <span class="hidden lg:inline text-secondary shrink-0">{{ icon(type_icons.get(item.account.type, "wallet"), size=18) }}</span>
-      <span class="flex flex-col min-w-0">
-        <span class="lg:text-primary truncate">{{ get_account_type_label(item.account.type) }}</span>
-        <span class="text-xs">{% trans transaction_count=item.transaction_count, v="s" if item.transaction_count != 1 else "" %}{{ transaction_count }} opération{{ v }}{% endtrans %}</span>
+      <span class="flex flex-wrap items-baseline gap-x-1 min-w-0 lg:flex-col lg:items-start lg:gap-x-0">
+        <span class="lg:text-primary truncate">{{ get_account_type_label(item.account.type) }}<span class="lg:hidden" aria-hidden="true"> ·</span></span>
+        <span class="text-xs max-lg:text-sm">{% trans transaction_count=item.transaction_count, v="s" if item.transaction_count != 1 else "" %}{{ transaction_count }} opération{{ v }}{% endtrans %}</span>
       </span>
     </span>
     <span class="amount-blur font-bold tabular-nums whitespace-nowrap text-right text-primary lg:col-start-3 lg:row-start-1">
       {{ item.balance | eur }}
     </span>
+    {% if item.account.notes %}<span class="lg:hidden col-span-2 text-sm text-secondary">{{ item.account.notes }}</span>{% endif %}
   </div>
 
   <div x-show="expanded" style="display: none;" class="flex flex-col gap-1.5 border-t border-border pt-3 mt-3 text-sm">
