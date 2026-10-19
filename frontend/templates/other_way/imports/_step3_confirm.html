@@ -47,7 +47,7 @@
 
           {% if unique %}
           {% set lines_hint %}<span class="tabular-nums"><span x-text="count">{{ unique_count }}</span> {{ _("sélectionnées sur") }} {{ unique_count }}</span>{% endset %}
-          {% set lines_title %}{% trans n=unique_count, shown=unique_count | integer %}Voir la ligne{% pluralize %}Voir les {{ shown }} lignes{% endtrans %}{% endset %}
+          {% set lines_title %}{% trans n=unique_count, shown=unique_count | integer %}Voir {{ shown }} ligne{% pluralize %}Voir les {{ shown }} lignes{% endtrans %}{% endset %}
           {% call fold("lines", lines_title, lines_hint) %}
             <ul class="max-h-[32rem] overflow-y-auto">
               {% for idx, tx in unique %}
@@ -76,7 +76,7 @@
           {% endif %}
 
           {% if duplicates %}
-          {% set dups_title %}{% trans n=duplicate_count, shown=duplicate_count | integer %}Voir le doublon{% pluralize %}Voir les {{ shown }} doublons{% endtrans %}{% endset %}
+          {% set dups_title %}{% trans n=duplicate_count, shown=duplicate_count | integer %}Voir {{ shown }} doublon{% pluralize %}Voir les {{ shown }} doublons{% endtrans %}{% endset %}
           {% call fold("dups", dups_title, _("déjà en base")) %}
             <div class="px-[var(--space-card)] pt-4 pb-1">
               <h3 class="font-semibold">{% trans n=duplicate_count %}Doublon ignoré ({{ n }}){% pluralize %}Doublons ignorés ({{ n }}){% endtrans %}</h3>

@@ -21,8 +21,8 @@
         {%- set gap = (pair.positive.date - pair.negative.date).days | abs -%}
         {%- if pair.positive.amount == pair.negative.amount | abs -%}
           {%- if gap == 0 -%}{{ _("Même montant, le même jour.") }}
-          {%- else -%}{% trans n=gap %}Même montant, un jour d'écart.{% pluralize %}Même montant, {{ n }} jours d'écart.{% endtrans %}{%- endif -%}
-        {%- else -%}{% trans n=gap %}Montants proches, un jour d'écart.{% pluralize %}Montants proches, {{ n }} jours d'écart.{% endtrans %}{%- endif -%}
+          {%- else -%}{% trans n=gap %}Même montant, {{ n }} jour d'écart.{% pluralize %}Même montant, {{ n }} jours d'écart.{% endtrans %}{%- endif -%}
+        {%- else -%}{% trans n=gap %}Montants proches, {{ n }} jour d'écart.{% pluralize %}Montants proches, {{ n }} jours d'écart.{% endtrans %}{%- endif -%}
       </p>
       {% if write %}
       <div class="grid grid-cols-2 gap-2">

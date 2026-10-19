@@ -91,7 +91,7 @@
 
     <div class="grid gap-[var(--space-block)] lg:grid-cols-3 items-start">
       {#- Catégories -#}
-      <section id="s-categories" data-card x-show="has($el.textContent)" aria-labelledby="h-categories" class="card flex flex-col gap-3">
+      <section id="s-categories" data-card x-show="has($el.textContent)" aria-labelledby="h-categories" class="card flex flex-col gap-3 min-w-0">
         <div class="flex items-center justify-between gap-3">
           <h3 id="h-categories" class="text-section-title">{{ _("Catégories") }} <span class="font-normal text-secondary">· {{ categories | length }}</span></h3>
           {% if write %}<a href="/categories" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Nouvelle catégorie") }}</a>{% endif %}
@@ -113,7 +113,7 @@
       </section>
 
       {#- Règles de rangement -#}
-      <section id="s-regles" data-card x-show="has($el.textContent)" aria-labelledby="h-regles" class="card flex flex-col gap-3">
+      <section id="s-regles" data-card x-show="has($el.textContent)" aria-labelledby="h-regles" class="card flex flex-col gap-3 min-w-0">
         <div class="flex items-center justify-between gap-3">
           <h3 id="h-regles" class="text-section-title">{{ _("Règles de rangement") }}</h3>
           {% if write %}<a href="/rules" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</a>{% endif %}
@@ -139,7 +139,7 @@
       </section>
 
       {#- Comptes -#}
-      <section id="s-comptes" data-card x-show="has($el.textContent)" aria-labelledby="h-comptes" class="card flex flex-col gap-3">
+      <section id="s-comptes" data-card x-show="has($el.textContent)" aria-labelledby="h-comptes" class="card flex flex-col gap-3 min-w-0">
         <div class="flex items-center justify-between gap-3">
           <h3 id="h-comptes" class="text-section-title">{{ _("Comptes") }}</h3>
           {% if write %}<a href="/accounts" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</a>{% endif %}
@@ -177,7 +177,7 @@
 
     <div class="grid gap-[var(--space-block)] lg:grid-cols-3 items-start">
       {#- Langue et formats: each choice applies on its own and reloads the page. -#}
-      <section id="s-preferences" data-card x-show="has($el.textContent)" aria-labelledby="h-lang" class="card flex flex-col gap-4">
+      <section id="s-preferences" data-card x-show="has($el.textContent)" aria-labelledby="h-lang" class="card flex flex-col gap-4 min-w-0">
         <h3 id="h-lang" class="text-section-title">{{ _("Langue et formats") }}</h3>
         <form hx-post="/profile/preferences" hx-trigger="twiga-prefs" hx-swap="none"
               x-data="{ lang: '{{ current_language() }}', fmt: '{{ current_format() }}' }" class="flex flex-col gap-4">
@@ -220,7 +220,7 @@
       </section>
 
       {#- D'où viennent les ressources du mois ? (and the day the budget month starts) -#}
-      <section id="s-cap" data-card x-show="has($el.textContent)" aria-labelledby="h-cap" class="card flex flex-col gap-4">
+      <section id="s-cap" data-card x-show="has($el.textContent)" aria-labelledby="h-cap" class="card flex flex-col gap-4 min-w-0">
         <div class="flex flex-col gap-1">
           <h3 id="h-cap" class="text-section-title">{{ _("D'où viennent les ressources du mois ?") }}</h3>
           <p class="text-sm text-secondary">{{ _("Le Cap te propose ce montant au départ. Le suivi se réfère toujours à celui que tu saisis.") }}</p>
@@ -277,7 +277,7 @@
       </section>
 
       {#- Sauvegarde et export -#}
-      <section id="s-donnees" data-card x-show="has($el.textContent)" aria-labelledby="h-data" class="card flex flex-col gap-4">
+      <section id="s-donnees" data-card x-show="has($el.textContent)" aria-labelledby="h-data" class="card flex flex-col gap-4 min-w-0">
         <div class="flex flex-col gap-1">
           <h3 id="h-data" class="text-section-title">{{ _("Sauvegarde et export") }}</h3>
           <p class="text-sm text-secondary">{{ _("Tout reste sur ton réseau. Twiga ne sauvegarde pas tout seul : exporte quand tu veux une copie.") }}</p>
@@ -323,7 +323,7 @@
 
     <div class="grid gap-[var(--space-block)] lg:grid-cols-2 items-start">
       {% if auth_enabled %}
-      <section id="s-utilisateurs" data-card x-show="has($el.textContent)" aria-labelledby="h-users" class="card flex flex-col gap-3">
+      <section id="s-utilisateurs" data-card x-show="has($el.textContent)" aria-labelledby="h-users" class="card flex flex-col gap-3 min-w-0">
         <div class="flex items-center justify-between gap-3">
           <h3 id="h-users" class="text-section-title">{{ _("Utilisateurs") }}</h3>
           {% if is_admin %}<a href="/users" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Ajouter un utilisateur") }}</a>{% endif %}
@@ -342,7 +342,7 @@
         </ul>
       </section>
 
-      <section id="s-securite" data-card x-show="has($el.textContent)" aria-labelledby="h-security" class="card flex flex-col gap-3">
+      <section id="s-securite" data-card x-show="has($el.textContent)" aria-labelledby="h-security" class="card flex flex-col gap-3 min-w-0">
         <h3 id="h-security" class="text-section-title">{{ _("Sécurité") }}</h3>
         <p class="text-sm text-secondary">{{ _("Changer ton mot de passe et te déconnecter se font depuis ton profil.") }}</p>
         <a href="/profile" class="min-h-[50px] flex items-center justify-between gap-3 text-sm font-medium text-accent-ink border-t border-border">
@@ -365,7 +365,7 @@
       {% endif %}
 
       {% if is_admin %}
-      <section id="s-supprimer" data-card x-show="has($el.textContent)" class="card flex flex-col gap-3" x-data="{ asking: false }">
+      <section id="s-supprimer" data-card x-show="has($el.textContent)" class="card flex flex-col gap-3 min-w-0" x-data="{ asking: false }">
         <div class="flex flex-col gap-1">
           <h3 class="text-section-title">{{ _("Supprimer toutes les opérations") }}</h3>
           <p class="text-sm text-secondary">{{ _("Supprime toutes les opérations du foyer. Irréversible.") }}</p>

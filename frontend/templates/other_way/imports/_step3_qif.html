@@ -56,7 +56,7 @@
         <p class="card text-sm font-semibold">{% trans n=transfer_count, shown=transfer_count | integer %}{{ shown }} virement entre tes comptes, écarté des dépenses{% pluralize %}{{ shown }} virements entre tes comptes, écartés des dépenses{% endtrans %}</p>
         {% endif %}
 
-        {% set cats_title %}{% trans n=category_count, shown=category_count | integer %}Voir la catégorie{% pluralize %}Voir les {{ shown }} catégories{% endtrans %}{% endset %}
+        {% set cats_title %}{% trans n=category_count, shown=category_count | integer %}Voir {{ shown }} catégorie{% pluralize %}Voir les {{ shown }} catégories{% endtrans %}{% endset %}
         {% call fold("cats", cats_title, _("hiérarchie conservée")) %}
           <ul class="max-h-[24rem] overflow-y-auto">
             {% for path in qif_categories %}

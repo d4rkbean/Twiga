@@ -26,7 +26,7 @@
       <h1 class="font-display text-4xl lg:text-6xl font-extrabold tracking-tight text-primary leading-none text-center lg:text-left">{{ login_title }}</h1>
       <p class="text-lg text-secondary">{{ _("Voir loin. Voir juste.") }}</p>
     </div>
-    <ul class="hidden lg:flex flex-col gap-5 mt-12 max-w-md border-t border-border pt-8">
+    <ul class="hidden lg:flex flex-col gap-5 mt-12 border-t border-border pt-8">
       <li class="flex items-start gap-3"><span class="mt-0.5 text-accent-ink">{{ icon('home', size=20) }}</span><span class="flex flex-col"><strong class="text-sm font-semibold">{{ _("100 %% local") }}</strong><span class="text-sm text-secondary">{{ _("Twiga tourne sur ton serveur, chez toi. Aucun service tiers, aucune télémétrie.") }}</span></span></li>
       <li class="flex items-start gap-3"><span class="mt-0.5 text-accent-ink">{{ icon('lock', size=20) }}</span><span class="flex flex-col"><strong class="text-sm font-semibold">{{ _("Pas de connexion bancaire") }}</strong><span class="text-sm text-secondary">{{ _("Tu importes tes relevés toi-même : personne d'autre n'a accès à tes comptes.") }}</span></span></li>
       <li class="flex items-start gap-3"><span class="mt-0.5 text-accent-ink">{{ icon('users', size=20) }}</span><span class="flex flex-col"><strong class="text-sm font-semibold">{{ _("Pour le foyer") }}</strong><span class="text-sm text-secondary">{{ _("Un compte par personne, avec ses droits : administrateur, éditeur ou lecteur.") }}</span></span></li>
@@ -34,7 +34,7 @@
   </section>
 
   <section class="flex flex-col items-center justify-start lg:justify-center gap-4 px-4 pb-10 lg:p-16">
-    <div class="w-full flex flex-col gap-4 {{ 'lg:max-w-2xl' if tiles else 'max-w-sm card border border-border p-6 lg:p-8' }}">
+    <div class="w-full flex flex-col gap-4 {{ '' if tiles else 'max-w-sm card border border-border p-6 lg:p-8' }}">
       {% if tiles %}
       <h2 class="text-section-title" x-show="!picked && !other">{{ _("Choisir son compte") }}</h2>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" x-show="!picked && !other">
