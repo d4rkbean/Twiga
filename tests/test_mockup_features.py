@@ -271,13 +271,13 @@ def test_cap_fixer_step_has_a_live_panel_computed_in_the_browser(clients):
     html = _fixer_html(clients)
     assert "en direct" in html
     assert 'aria-label="Le plan en direct"' in html
-    for text in ("Ressources du mois", "Total réparti", "Épargne qui reste", "Tu répartis plus que tes ressources."):
+    for text in ("Ressources prévues", "Catégories", "Épargne prévue", "Tu répartis plus que tes ressources."):
         assert text in html
     # The panel reads the form's own Alpine state: no new request behind it.
     panel = html.split('aria-label="Le plan en direct"')[1]
     assert "hx-get" not in panel and "hx-post" not in panel
-    assert "x-text=\"fmt(totalDepenses)\"" in panel
-    assert "x-text=\"fmt(savings)\"" in panel
+    assert "x-text=\"twigaCap.fmt(-catsTotal)\"" in panel
+    assert "twigaCap.fmt(savings)" in panel
     assert 'x-show="couvert < 0"' in panel
 
 
@@ -287,8 +287,8 @@ def test_cap_fixer_panel_compares_with_the_month_before_per_pillar(clients):
     # The three pillars, and last month's real figures embedded for the page script.
     for code in ("essentiel", "choix", "imprevu"):
         assert f"code: '{code}'" in html
-    assert "precedent:" in html
-    assert "du plan" in html and "dans la cible" in html
+    assert "precedent:" in html and "attente:" in html
+    assert "avec le tri" in html
 
 
 def test_cap_fixer_form_fields_are_unchanged(clients):
