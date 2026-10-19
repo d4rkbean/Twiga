@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs, back_link %}
+
+{% block title %}{{ _("Abonnements récurrents — Twiga") }}{% endblock %}
+
+{% block content %}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": false},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": true},
+  ]) }}
+  {{ back_link("/settings", _("Paramètres")) }}
+  {#- The sentence lives in the fragment: confirming, ignoring or merging changes it. -#}
+  {% include "recurring/_content.html" %}
+</main>
+{% endblock %}

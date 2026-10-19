@@ -1,0 +1,21 @@
+{#- One rule: the keyword, where it files, how often it applied, and the pencil that
+    opens its panel. /rules/{id}/row returns it alone (after "Annuler"). -#}
+{% set write = can_edit("/rules/create") %}
+{% set category = rule.category %}
+{% set top_level = category.parent if category.parent else category %}
+<div id="rule-row-{{ rule.id }}" class="flex items-center gap-3 min-h-[50px] py-[var(--row-pad)]">
+  <div class="flex-1 min-w-0 flex flex-col">
+    <span class="font-mono text-sm font-semibold truncate">{{ rule.keyword }}</span>
+    <span class="text-xs text-secondary block min-w-0">
+      <span class="inline-block align-middle mr-1.5 w-2 h-2 rounded-full" style="background-color: {{ category.id | category_color }}"></span>
+      <span>{{ top_level.name | category_display }}{% if category.parent %} › {{ category.name | category_display }}{% endif %}</span>
+      {% if rule.payment_method and rule.payment_method in payment_methods %}<span>· {{ payment_methods[rule.payment_method].label }}</span>{% endif %}
+      {% if rule.receipt_family %}<span>· {{ rule.receipt_family | receipt_family_display }}</span>{% endif %}
+    </span>
+  </div>
+  <span class="text-sm text-secondary tabular-nums whitespace-nowrap">{% trans n=usage_count %}{{ n }} transaction{% pluralize %}{{ n }} transactions{% endtrans %}</span>
+  {% if write %}
+  <button type="button" hx-get="/rules/{{ rule.id }}/edit" hx-target="#rule-row-{{ rule.id }}" hx-swap="outerHTML" aria-label="{{ _("Modifier") }} {{ rule.keyword }}"
+          class="shrink-0 inline-flex w-[50px] h-[50px] items-center justify-center rounded-xl text-secondary hover:bg-sunken">{{ icon('pencil', size=18) }}</button>
+  {% endif %}
+</div>

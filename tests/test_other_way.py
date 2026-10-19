@@ -54,8 +54,8 @@ def test_each_interface_looks_templates_up_in_its_own_folders():
     assert classic.filename.endswith("frontend/templates/base.html")
     assert other_way.filename.endswith("frontend/templates/other_way/base.html")
     # A template the other way does not override is the Classic one.
-    fallback = templates.for_variant("other_way").env.get_template("accounts/index.html")
-    assert fallback.filename == templates.for_variant("classic").env.get_template("accounts/index.html").filename
+    fallback = templates.for_variant("other_way").env.get_template("design_system.html")
+    assert fallback.filename == templates.for_variant("classic").env.get_template("design_system.html").filename
 
 
 def test_both_environments_share_the_same_filters_and_globals():
@@ -94,13 +94,28 @@ def test_the_other_way_stays_classic_until_it_is_enabled(clients, demo, monkeypa
     assert 'data-ui="classic"' in html and "tour-b-" not in html
 
 
+# Screens are overridden one at a time (lot 5): the check looks for one that still is not.
+CLASSIC_ONLY_CANDIDATES = [
+    ("/accounts", "accounts/index.html"),
+    ("/budgets", "budgets/index.html"),
+    ("/backlog", "backlog/index.html"),
+    ("/reports", "reports/index.html"),
+    ("/transactions/list", "transactions/index.html"),
+]
+
+
 def test_a_screen_without_an_override_is_the_classic_screen(clients, demo, monkeypatch):
+    remaining = [path for path, template in CLASSIC_ONLY_CANDIDATES
+                 if not (ROOT / "frontend" / "templates" / "other_way" / template).exists()]
+    if not remaining:
+        pytest.skip("every candidate screen has an other-way version")
+    path = remaining[0]
     switch_variant("classic")
-    classic = page_of(clients, "admin", "/accounts")
+    classic = page_of(clients, "admin", path)
     monkeypatch.setenv("ENABLE_OTHER_WAY", "true")
     switch_variant("other_way")
     try:
-        other = page_of(clients, "admin", "/accounts")
+        other = page_of(clients, "admin", path)
     finally:
         switch_variant("classic")
 

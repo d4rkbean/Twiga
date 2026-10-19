@@ -1,0 +1,34 @@
+{#- "Twiga tend le cou…": what the screen shows while a file is read or imported.
+    Include it inside an element that declares `busy` (Alpine); `cancel` is the
+    JavaScript that stops the request, left empty when stopping it would be a
+    lie (an import that is already writing cannot be taken back). -#}
+{% from "_macros/brand.html" import mascot %}
+<section x-show="busy" style="display: none" aria-live="polite" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center">
+  <div class="rounded-xl bg-accent-soft grid place-items-center py-8 lg:py-10">
+    <span class="import-sway">{{ mascot("waiting", 120) }}</span>
+  </div>
+  <div class="flex flex-col gap-4 min-w-0">
+    <h1 class="text-page-title">{{ _("Twiga tend le cou…") }}</h1>
+    <p class="text-secondary">{{ _("Elle lit le fichier, écarte les doublons, applique tes règles et vérifie le solde du compte.") }}</p>
+    <div class="h-2 rounded-full bg-sunken overflow-hidden" role="progressbar" aria-label="{{ _("Twiga tend le cou…") }}">
+      <div class="import-wait h-full w-1/3 rounded-full bg-secondary"></div>
+    </div>
+    <ul class="flex flex-col gap-2 text-sm text-secondary">
+      <li class="flex items-center gap-2">{{ icon('file-text', size=16) }} {{ _("Lecture du fichier") }}</li>
+      <li class="flex items-center gap-2">{{ icon('clipboard-copy', size=16) }} {{ _("Doublons écartés") }}</li>
+      <li class="flex items-center gap-2">{{ icon('tool', size=16) }} {{ _("Règles de rangement appliquées") }}</li>
+      <li class="flex items-center gap-2">{{ icon('scale', size=16) }} {{ _("Solde du compte vérifié") }}</li>
+    </ul>
+    {% if cancel %}
+    <button type="button" @click="{{ cancel }}" class="btn btn-secondary border-border-strong self-start">{{ _("Annuler l'import") }}</button>
+    {% endif %}
+  </div>
+</section>
+<style>
+  @keyframes import-sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2.5deg); } }
+  @keyframes import-wait { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+  @media (prefers-reduced-motion: no-preference) {
+    .import-sway { display: inline-block; animation: import-sway 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+    .import-wait { animation: import-wait 1.6s ease-in-out infinite; }
+  }
+</style>

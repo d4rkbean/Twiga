@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs, back_link %}
+
+{% block title %}{{ _("Comptes — Twiga") }}{% endblock %}
+
+{% block content %}
+{% set write = can_edit("/accounts/create") %}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": false},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": true},
+  ]) }}
+  {{ back_link("/settings", _("Paramètres")) }}
+  {% include "other_way/accounts/_head.html" %}
+
+  {#- Create: one panel, opened by "Ajouter un compte"; the same fields edit an account in its row. -#}
+  {% if write %}
+  <form x-show="adding" style="display: none" hx-post="/accounts/create" hx-target="#accounts-content" hx-swap="outerHTML"
+        @htmx:after-request="if ($event.detail.successful) { adding = false; $el.reset(); }"
+        class="card flex flex-col gap-4">
+    <h2 class="text-section-title">{{ _("Ajouter un compte") }}</h2>
+    {% set account = none %}
+    {% include "accounts/_fields.html" %}
+    <div class="flex flex-col-reverse gap-2 sm:flex-row">
+      <button type="button" @click="adding = false" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+      <button type="submit" class="btn btn-primary sm:flex-[2]">{{ _("Ajouter") }}</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+    <div class="flex flex-col gap-5 min-w-0">
+      {% include "accounts/_content.html" %}
+      {% include "accounts/_suspicious.html" %}
+    </div>
+    <aside class="min-w-0">
+      {% include "accounts/_detect_transfers_content.html" %}
+    </aside>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,252 @@
+{#- Projets, the other way: a path to the date. One card per project (what is
+    set aside, where the current rhythm lands, what holds the deadline, then a
+    track from today to that date) and, in the card, every gesture: add, spend,
+    edit, delete. The panels open inside the card; one at a time (`panel`). -#}
+{% from "projects/_form_fields.html" import fields %}
+{% from "other_way/_ui.html" import answer_head, tone_text %}
+
+{% set project_icons = ["plane", "car", "coins", "home", "gift", "pig-money", "star", "tool"] %}
+{% set fill_tone = {"success": "bg-success", "warning": "bg-warning-gauge", "neutral": "bg-border-strong"} %}
+{% set marker_tone = fill_tone %}
+{% set write = can_edit("/projects/create") %}
+
+<div x-data="{ panel: null }" class="flex flex-col gap-5">
+
+  {% call answer_head(answer.title, answer.detail, blur_phrase=true, blur_detail=true) %}
+    {% if late %}
+    <a href="/cap" x-show="panel === null" class="btn btn-primary">{{ _("Ajuster %(cap)s", cap=cap_label) }}</a>
+    {% elif write %}
+    <button type="button" x-show="panel === null" @click="panel = 'new'" class="btn btn-primary">
+      {{ icon('plus', size=18) }} {{ _("Nouveau projet") }}
+    </button>
+    {% endif %}
+  {% endcall %}
+
+  {% for item in items %}
+  {% set project = item.project %}
+  {% set shortfall = [project.target_amount - project.current_amount, 0] | max %}
+  {% set path = item.path %}
+  {% set tone = item.verdict_tone %}
+  <section id="project-card-{{ project.id }}" aria-labelledby="project-name-{{ project.id }}" class="card flex flex-col gap-5 transition-shadow">
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+      <div class="flex items-start gap-3 min-w-0">
+        <span class="shrink-0 grid place-items-center w-[50px] h-[50px] rounded-full bg-sunken text-secondary">{{ icon(project_icons[loop.index0 % 8], size=22) }}</span>
+        <div class="flex flex-col min-w-0">
+          <h2 id="project-name-{{ project.id }}" class="text-section-title text-xl">{{ project.name }}</h2>
+          <p class="amount-blur text-sm text-secondary tabular-nums">
+            <strong class="text-primary">{{ project.current_amount | eur }}</strong>
+            {% trans target=project.target_amount | eur, pct=item.percentage_display %}de côté sur {{ target }}, soit {{ pct }} %{% endtrans %}
+          </p>
+          {% if item.source %}<p class="text-sm text-secondary">{% trans source=item.source %}Versé depuis {{ source }}{% endtrans %}</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-0.5">
+        <p class="text-sm text-secondary">{{ _("À ce rythme :") }}</p>
+        {% if item.rhythm.reach %}
+        <p class="font-display font-extrabold text-[28px] leading-tight">{{ item.rhythm.reach_label }}</p>
+        {% else %}
+        <p class="font-display font-extrabold text-[28px] leading-tight text-secondary">{{ "—" if item.rhythm.state == "none" else _("Atteint") }}</p>
+        {% endif %}
+        <p class="text-sm font-semibold {{ tone_text(tone) }}">{{ item.verdict_word }}</p>
+      </div>
+
+      <div class="amount-blur flex flex-col gap-0.5 tabular-nums">
+        <p class="text-sm text-secondary">{{ _("Il manque") }}</p>
+        <p class="text-[22px] leading-tight font-bold">{{ shortfall | eur }}</p>
+        <p class="text-sm text-secondary">{% trans effort=item.effort | eur %}à {{ effort }} par mois{% endtrans %}</p>
+      </div>
+
+      <div class="amount-blur flex flex-col gap-0.5 tabular-nums">
+        <p class="text-sm text-secondary">{% trans date=item.deadline_label %}Pour tenir {{ date }}{% endtrans %}</p>
+        {% if item.rhythm.state == "done" %}
+        <p class="text-[22px] leading-tight font-bold">{{ _("Objectif atteint") }}</p>
+        {% else %}
+        <p class="leading-tight"><span class="text-[22px] font-bold">{{ item.monthly_effort | eur }}</span> <span class="text-sm text-secondary">{{ _("par mois") }}</span></p>
+        {% endif %}
+        <p class="text-sm font-semibold {{ tone_text(item.need_tone) }}">{{ item.need_sentence }}</p>
+      </div>
+    </div>
+
+    {#- The track: today on the left, the month the rhythm reaches the target (a
+        dot), the deadline (a bar). Positions are percentages computed in Python. -#}
+    <div role="img" aria-label="{% trans reach=(item.rhythm.reach_label if item.rhythm.reach else _('—')), deadline=item.deadline_label %}Au rythme actuel : {{ reach }}. Échéance : {{ deadline }}.{% endtrans %}">
+      <div class="relative h-[84px]">
+        {% if item.rhythm.reach %}
+        <p class="absolute top-0 -translate-x-1/2 text-sm font-semibold whitespace-nowrap {{ tone_text(tone) }}" style="left: {{ path.reach }}%">{{ item.rhythm.reach_label }}</p>
+        {% endif %}
+        <div class="absolute inset-x-0 top-[34px] h-3 rounded-full bg-sunken"></div>
+        {% if path.solid and path.solid.width > 0 %}
+        <div class="absolute top-[34px] h-3 {{ fill_tone[tone] }}" style="left: {{ path.solid.left }}%; width: {{ path.solid.width }}%"></div>
+        {% endif %}
+        {% if path.extra %}
+        <div class="absolute top-[34px] h-3 {{ fill_tone[tone] }} opacity-40" style="left: {{ path.extra.left }}%; width: {{ path.extra.width }}%"></div>
+        {% endif %}
+        <span class="absolute top-[31px] w-[18px] h-[18px] -translate-x-1/2 rounded-full border-[3px] border-secondary bg-container" style="left: {{ path.today }}%"></span>
+        {% if item.rhythm.reach %}
+        <span class="absolute top-[30px] w-5 h-5 -translate-x-1/2 rounded-full {{ marker_tone[tone] }} border-2 border-container" style="left: {{ path.reach }}%"></span>
+        {% endif %}
+        <span class="absolute top-[28px] w-0.5 h-6 -translate-x-1/2 bg-primary" style="left: {{ path.deadline }}%"></span>
+        <p class="absolute top-[56px] left-0 text-xs text-secondary whitespace-nowrap">{{ _("Aujourd'hui") }}</p>
+        <p class="absolute top-[56px] -translate-x-1/2 text-xs font-semibold whitespace-nowrap" style="left: {{ path.deadline }}%">{% trans date=item.deadline_label %}Échéance · {{ date }}{% endtrans %}</p>
+      </div>
+      <ol class="grid border-t border-border pt-1 text-xs text-secondary text-center" style="grid-template-columns: repeat({{ path.months | length }}, minmax(0, 1fr))" aria-hidden="true">
+        {% for month in path.months %}
+        <li class="flex flex-col"><span class="hidden lg:inline">{{ month.label }}</span><span class="lg:hidden">{{ month.initial }}</span>{% if month.year %}<span class="text-secondary/80 mt-1">{{ month.year }}</span>{% endif %}</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    {% if write %}
+    <div x-show="panel !== 'add-{{ project.id }}' && panel !== 'spend-{{ project.id }}' && panel !== 'edit-{{ project.id }}'" class="flex flex-wrap justify-end gap-2">
+      <button type="button" @click="panel = 'add-{{ project.id }}'" aria-label="{% trans name=project.name %}Ajouter de l'argent à {{ name }}{% endtrans %}" class="btn btn-secondary border-border-strong flex-[1_1_110px] sm:flex-none">
+        {{ icon('plus', size=18) }} {{ _("Ajouter") }}
+      </button>
+      <button type="button" @click="panel = 'spend-{{ project.id }}'" aria-label="{% trans name=project.name %}Dépenser depuis {{ name }}{% endtrans %}" class="btn btn-secondary border-border-strong flex-[1_1_110px] sm:flex-none">
+        {{ icon('minus', size=18) }} {{ _("Dépenser") }}
+      </button>
+      <button type="button" @click="panel = 'edit-{{ project.id }}'" aria-label="{% trans name=project.name %}Modifier {{ name }}{% endtrans %}" class="btn btn-ghost flex-[1_1_110px] sm:flex-none text-secondary">
+        {{ icon('pencil', size=18) }} {{ _("Modifier") }}
+      </button>
+    </div>
+
+    {% for action, title, submit in [("add", _("Ajouter — %(name)s", name=project.name), _("Ajouter")), ("spend", _("Dépenser — %(name)s", name=project.name), _("Dépenser"))] %}
+    <form x-show="panel === '{{ action }}-{{ project.id }}'" style="display: none"
+          hx-post="/projects/{{ project.id }}/{{ action }}" hx-target="#projects-list" hx-swap="innerHTML"
+          x-data="movementForm('{{ action }}', {{ project.current_amount }}, '{{ project.current_amount | eur | jsq }}')"
+          @submit.capture="check($event)"
+          class="rounded-xl border border-border bg-page p-4 lg:p-6 flex flex-col gap-4">
+      <h3 class="text-section-title text-lg">{{ title }}</h3>
+      <div class="flex flex-wrap gap-2">
+        {% for quick in [20, 50, 100, 200] %}
+        <button type="button" @click="amount = '{{ quick }}'; err = ''" class="chip flex-[1_1_70px] sm:flex-none tabular-nums">{{ quick | eur }}</button>
+        {% endfor %}
+      </div>
+      <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <label class="form-group">
+          <span class="form-label">{{ _("Montant") }}</span>
+          <span class="flex items-center gap-2">
+            <input type="text" inputmode="decimal" name="amount" required autocomplete="off" x-model="amount"
+                   placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}" class="input-base flex-1 tabular-nums" />
+            <span class="text-secondary font-semibold" aria-hidden="true">€</span>
+          </span>
+        </label>
+        <label class="form-group">
+          <span class="form-label">{{ _("Note (optionnel)") }}</span>
+          <input type="text" name="note" autocomplete="off" placeholder="{{ _("Ex : Billets avion") }}" class="input-base" />
+        </label>
+      </div>
+      {% if action == "add" and accounts %}
+      <div class="form-group" x-data="{ account: '{{ accounts[0].id }}' }">
+        <span class="form-label" id="from-{{ project.id }}">{{ _("Depuis") }}</span>
+        <input type="hidden" name="account_id" :value="account" />
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="from-{{ project.id }}">
+          {% for account in accounts %}
+          <button type="button" role="radio" @click="account = '{{ account.id }}'" :aria-checked="account === '{{ account.id }}'" class="chip">{{ account.name }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <p x-show="err" x-text="err" role="alert" class="input-message font-semibold" style="display: none"></p>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row">
+        <button type="button" @click="panel = null" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+        <button type="submit" class="btn btn-primary sm:flex-[2]">{{ submit }}</button>
+      </div>
+    </form>
+    {% endfor %}
+
+    <div x-show="panel === 'edit-{{ project.id }}'" style="display: none" class="rounded-xl border border-border bg-page p-4 lg:p-6 flex flex-col gap-4">
+      <form hx-post="/projects/{{ project.id }}/update" hx-target="#projects-list" hx-swap="innerHTML"
+            x-data="projectForm()" @submit.capture="check($event)" class="flex flex-col gap-4">
+        <h3 class="text-section-title text-lg">{{ _("Modifier le projet") }}</h3>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{{ fields(project, deadline_options=deadline_options) }}</div>
+        <p x-show="err" x-text="err" role="alert" class="input-message font-semibold" style="display: none"></p>
+        <div class="flex flex-col-reverse gap-2 sm:flex-row">
+          <button type="button" @click="panel = null" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+          <button type="submit" class="btn btn-primary sm:flex-[2]">{{ _("Enregistrer") }}</button>
+        </div>
+      </form>
+      <div x-data="{ asking: false }" class="border-t border-border pt-4">
+        <button type="button" x-show="!asking" @click="asking = true" class="btn btn-ghost text-danger w-full sm:w-auto">
+          {{ icon('trash', size=18) }} {{ _("Supprimer ce projet") }}
+        </button>
+        <form x-show="asking" style="display: none" role="alertdialog"
+              hx-post="/projects/{{ project.id }}/delete" hx-target="#projects-list" hx-swap="innerHTML" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <p class="font-semibold text-primary">{{ _("Supprimer ce projet ?") }}</p>
+            <p class="text-sm text-secondary">{% trans name=project.name %}{{ name }} et son historique de mouvements seront retirés. Cette action est définitive.{% endtrans %}</p>
+          </div>
+          <div class="flex flex-col-reverse gap-2 sm:flex-row">
+            <button type="button" @click="asking = false" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+            <button type="submit" class="btn btn-danger sm:flex-1">{{ icon('trash', size=18) }} {{ _("Supprimer") }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  {% if write %}
+  {#- New project: a dashed tile that opens its form in place. -#}
+  <div class="rounded-xl border border-dashed border-border-strong">
+    <button type="button" x-show="panel !== 'new'" @click="panel = 'new'" class="w-full min-h-[80px] text-accent-ink flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-4 text-center">
+      <span class="inline-flex items-center gap-2 font-semibold">{{ icon('plus', size=20) }} {{ _("Nouveau projet") }}</span>
+      <span class="text-sm text-secondary">{{ _("Fonds d'urgence, travaux, cadeau...") }}</span>
+    </button>
+    <form x-show="panel === 'new'" style="display: none" hx-post="/projects/create" hx-target="#projects-list" hx-swap="innerHTML"
+          x-data="projectForm()" @submit.capture="check($event)" class="p-4 lg:p-6 flex flex-col gap-4">
+      <h3 class="text-section-title text-lg">{{ _("Nouveau projet") }}</h3>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{{ fields(deadline_options=deadline_options) }}</div>
+      <p x-show="err" x-text="err" role="alert" class="input-message font-semibold" style="display: none"></p>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row">
+        <button type="button" @click="panel = null" class="btn btn-secondary border-border-strong sm:flex-1">{{ _("Annuler") }}</button>
+        <button type="submit" class="btn btn-primary sm:flex-[2]">{{ _("Créer") }}</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  {#- History: every deposit and withdrawal, newest first, filtered by project. -#}
+  {% set ns = namespace(all=[]) %}
+  {% for item in items %}
+    {% for movement in item.movements %}
+      {% set _unused = ns.all.append({"m": movement, "name": item.project.name, "pid": item.project.id}) %}
+    {% endfor %}
+  {% endfor %}
+  {% if ns.all %}
+  <section class="card flex flex-col gap-3" x-data="{ only: null }" aria-labelledby="project-history">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-wrap items-baseline gap-x-3">
+        <h2 id="project-history" class="text-section-title">{{ _("Historique") }}</h2>
+        <p class="text-sm text-secondary">{{ _("entrées et sorties") }}</p>
+      </div>
+      {% if items | length > 1 %}
+      <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="{{ _("Projet") }}">
+        <button type="button" role="radio" @click="only = null" :aria-checked="only === null" class="chip">{{ _("Tous") }}</button>
+        {% for item in items %}
+        <button type="button" role="radio" @click="only = {{ item.project.id }}" :aria-checked="only === {{ item.project.id }}" class="chip">{{ item.project.name }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <ul class="-mx-[var(--space-card)] border-t border-border">
+      {% for row in (ns.all | sort(attribute="m.date", reverse=true))[:10] %}
+      {% set detail = row.m.note or (row.m.account.name if row.m.account else (_("Dépense") if row.m.amount < 0 else "")) %}
+      <li x-show="only === null || only === {{ row.pid }}" class="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[7rem_minmax(0,1fr)_minmax(0,2fr)_6rem_9rem] items-center gap-x-4 min-h-[var(--row-static)] px-[var(--space-card)] py-[var(--row-pad)] border-b border-border last:border-0">
+        <span class="hidden lg:block tabular-nums text-secondary">{{ row.m.date | fr_date }}</span>
+        <span class="min-w-0">
+          <span class="font-semibold">{{ row.name }}</span>
+          <span class="block lg:hidden text-xs text-secondary">{{ row.m.date | fr_date }}{% if detail %} · {{ detail }}{% endif %}</span>
+        </span>
+        <span class="hidden lg:block text-secondary truncate">{{ detail }}</span>
+        <span class="hidden lg:block text-sm font-semibold {{ 'text-success' if row.m.amount > 0 else 'text-danger' }}">{{ _("Entrée") if row.m.amount > 0 else _("Sortie") }}</span>
+        <span class="amount-blur text-right font-bold tabular-nums whitespace-nowrap {{ 'text-success' if row.m.amount > 0 else 'text-danger' }}">
+          <span class="lg:hidden sr-only">{{ _("Entrée") if row.m.amount > 0 else _("Sortie") }}</span>{{ "+" if row.m.amount > 0 else "" }}{{ row.m.amount | eur }}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>

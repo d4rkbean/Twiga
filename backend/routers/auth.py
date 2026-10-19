@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from backend import auth, crud
+from backend import answers, auth, crud
+from backend.templating import user_display_name, user_initials, user_role_label
 from backend.database import get_db
 from backend.templating import flash_html, templates
 from backend.i18n import gettext as _t
@@ -49,7 +50,29 @@ def login_page(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url="/")
     if auth.authenticate_request(db, request.cookies.get(auth.SESSION_COOKIE_NAME)):
         return RedirectResponse(url="/dashboard")
-    return templates.TemplateResponse("login.html", {"request": request})
+    # "Afficher les comptes sur la page de connexion" (Paramètres, off by default): only
+    # when the administrator turned it on does this public page name the household.
+    show_accounts = crud.get_or_create_app_state(db).show_login_accounts
+    accounts = (
+        [
+            {
+                "username": user.username,
+                "name": user_display_name(user),
+                "initials": user_initials(user),
+                "role": user_role_label(user.role),
+            }
+            for user in crud.list_users(db)
+            if user.is_active
+        ]
+        if show_accounts
+        else []
+    )
+    context = {
+        "request": request,
+        "login_accounts": accounts,
+        "login_title": answers.login_title(bool(accounts)),
+    }
+    return templates.TemplateResponse("login.html", context)
 
 
 @router.post("/login", response_class=HTMLResponse)

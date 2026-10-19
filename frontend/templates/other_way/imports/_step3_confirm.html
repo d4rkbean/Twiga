@@ -1,0 +1,182 @@
+{#- The recap of a CSV or OFX statement: what was read, what is new, one button to
+    confirm. The settings (account, columns, date format) hide behind
+    « Ajuster », the lines and the duplicates behind « Voir les lignes ». The
+    ids the Classic wizard targets (#import-wizard) are kept. -#}
+{% from "other_way/_ui.html" import answer_head, fold %}
+<div x-data="{ count: {{ unique_count }}, total: {{ unique_count }}, busy: false, adjust: {{ 'true' if adjust else 'false' }}, lines: false, dups: false, moves: false }" class="flex flex-col gap-5">
+  {% set cancel = "" %}
+  {% include "imports/_waiting.html" %}
+
+  <div x-show="!busy" class="flex flex-col gap-5">
+    {% call answer_head(answer.title, answer.detail) %}
+      <button type="submit" form="import-confirm-form" class="btn btn-primary" :disabled="count === 0 || busy">
+        <span>{% trans n=unique_count %}Importer <span x-text="count">{{ n }}</span> opération{% pluralize %}Importer <span x-text="count">{{ n }}</span> opérations{% endtrans %}</span>
+      </button>
+      <button type="button" @click="adjust = !adjust" :aria-expanded="adjust" class="btn btn-secondary border-border-strong">
+        <span x-text="adjust ? {{ _("Masquer les réglages") | tojson }} : {{ _("Ajuster") | tojson }}">{{ _("Ajuster") }}</span>
+        <span class="transition-transform" :class="adjust ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+      </button>
+    {% endcall %}
+
+    <div class="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] items-start">
+      {% set account_label = account.name %}
+      {% include "imports/_file_card.html" %}
+
+      <div class="flex flex-col gap-3 min-w-0">
+        <section class="card flex flex-col gap-4">
+          <h2 class="text-section-title">{{ _("Ce que Twiga a lu dans le fichier") }}</h2>
+          <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ total_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Lignes lues") }}</dt></div>
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ duplicate_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Doublons écartés") }}</dt></div>
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ rule_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Avec une règle") }}</dt></div>
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ sort_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("À trier ensuite") }}</dt></div>
+          </dl>
+        </section>
+
+        {#- The lines, the duplicates and the transfers are in the form that confirms the import. -#}
+        <form id="import-confirm-form" hx-post="/imports/{{ import_id }}/execute" hx-target="#import-wizard" hx-swap="innerHTML"
+              @htmx:before-request="busy = true" @htmx:after-request="busy = false" class="flex flex-col gap-3">
+          <input type="hidden" name="format" value="{{ format }}" />
+          <input type="hidden" name="account_id" value="{{ account.id }}" />
+          {% if format == "csv" %}
+          <input type="hidden" name="date_column" value="{{ date_column }}" />
+          <input type="hidden" name="label_column" value="{{ label_column }}" />
+          <input type="hidden" name="amount_column" value="{{ amount_column }}" />
+          <input type="hidden" name="date_format" value="{{ date_format }}" />
+          {% endif %}
+
+          {% if unique %}
+          {% set lines_hint %}<span class="tabular-nums"><span x-text="count">{{ unique_count }}</span> {{ _("sélectionnées sur") }} {{ unique_count }}</span>{% endset %}
+          {% set lines_title %}{% trans n=unique_count, shown=unique_count | integer %}Voir {{ shown }} ligne{% pluralize %}Voir les {{ shown }} lignes{% endtrans %}{% endset %}
+          {% call fold("lines", lines_title, lines_hint) %}
+            <ul class="max-h-[32rem] overflow-y-auto">
+              {% for idx, tx in unique %}
+              {% set state = states[idx] %}
+              <li>
+                <label class="grid grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[auto_6.5rem_minmax(0,1fr)_auto_7rem] items-center gap-x-4 gap-y-0.5 min-h-[50px] px-[var(--space-card)] py-[var(--row-pad)] border-b border-border last:border-0 cursor-pointer">
+                  <input type="checkbox" name="include" value="{{ idx }}" checked class="check-box"
+                         @change="count += $event.target.checked ? 1 : -1" aria-label="{{ tx.label }}" />
+                  <span class="hidden sm:block tabular-nums text-secondary text-sm">{{ tx.date | fr_date }}</span>
+                  <span class="min-w-0">
+                    <span class="block font-mono text-xs break-words">{{ tx.label }}</span>
+                    <span class="block sm:hidden text-xs text-secondary tabular-nums">{{ tx.date | fr_date }}</span>
+                    {% if tx.transfer_account %}<span class="block text-xs text-info">{% trans other=tx.transfer_account %}Virement détecté ↔ {{ other }}{% endtrans %}</span>{% endif %}
+                  </span>
+                  <span class="amount-blur tabular-nums font-semibold whitespace-nowrap text-right {{ 'text-success' if tx.amount > 0 else '' }}">{{ "+" if tx.amount > 0 else "" }}{{ tx.amount | eur }}</span>
+                  <span class="hidden sm:block justify-self-end">
+                    {% if state[0] == "rule" %}<span class="badge badge-positive">{{ _("Règle") }}</span>
+                    {% elif state[0] == "transfer" %}<span class="badge badge-info">{{ _("Virement") }}</span>
+                    {% else %}<span class="badge badge-neutral">{{ _("À trier") }}</span>{% endif %}
+                  </span>
+                </label>
+              </li>
+              {% endfor %}
+            </ul>
+          {% endcall %}
+          {% endif %}
+
+          {% if duplicates %}
+          {% set dups_title %}{% trans n=duplicate_count, shown=duplicate_count | integer %}Voir {{ shown }} doublon{% pluralize %}Voir les {{ shown }} doublons{% endtrans %}{% endset %}
+          {% call fold("dups", dups_title, _("déjà en base")) %}
+            <div class="px-[var(--space-card)] pt-4 pb-1">
+              <h3 class="font-semibold">{% trans n=duplicate_count %}Doublon ignoré ({{ n }}){% pluralize %}Doublons ignorés ({{ n }}){% endtrans %}</h3>
+              <p class="text-sm text-secondary">{{ _("Coche une ligne pour l'ajouter quand même à l'import.") }}</p>
+            </div>
+            <ul class="max-h-[24rem] overflow-y-auto">
+              {% for idx, tx in duplicates %}
+              <li>
+                <label class="grid grid-cols-[auto_minmax(0,1fr)_auto] sm:grid-cols-[auto_6.5rem_minmax(0,1fr)_auto_9rem] items-center gap-x-4 gap-y-0.5 min-h-[50px] px-[var(--space-card)] py-[var(--row-pad)] border-b border-border last:border-0 cursor-pointer">
+                  <input type="checkbox" name="force_include" value="{{ idx }}" class="check-box"
+                         @change="count += $event.target.checked ? 1 : -1" aria-label="{{ tx.label }}" />
+                  <span class="hidden sm:block tabular-nums text-secondary text-sm">{{ tx.date | fr_date }}</span>
+                  <span class="min-w-0">
+                    <span class="block font-mono text-xs break-words">{{ tx.label }}</span>
+                    <span class="block text-xs text-secondary"><span class="sm:hidden tabular-nums">{{ tx.date | fr_date }} · </span>{{ _("Déjà présente en base") }}</span>
+                  </span>
+                  <span class="amount-blur tabular-nums text-right text-secondary whitespace-nowrap">{{ tx.amount | eur }}</span>
+                  <span class="hidden sm:block text-xs text-secondary justify-self-end">{{ _("Importer quand même") }}</span>
+                </label>
+              </li>
+              {% endfor %}
+            </ul>
+          {% endcall %}
+          {% endif %}
+        </form>
+
+        {% if transfer_groups %}
+        {% set moves_title %}{% trans n=transfer_count %}{{ n }} virement entre tes comptes, écarté des dépenses{% pluralize %}{{ n }} virements entre tes comptes, écartés des dépenses{% endtrans %}{% endset %}
+        {% call fold("moves", moves_title) %}
+          <div class="px-[var(--space-card)] py-4 flex flex-col gap-2">
+            <h3 class="font-semibold">{% trans n=transfer_count %}{{ n }} virement interne détecté et exclu automatiquement{% pluralize %}{{ n }} virements internes détectés et exclus automatiquement{% endtrans %}</h3>
+            <ul class="flex flex-col text-sm">
+              {% for group in transfer_groups %}
+              <li class="py-2 border-t border-border first:border-t-0">
+                {% trans n=group["count"], source=group["from"], target=group["to"], dates=group["dates"] | map("short_date") | join(", ") %}{{ source }} → {{ target }} : {{ n }} virement ({{ dates }}){% pluralize %}{{ source }} → {{ target }} : {{ n }} virements ({{ dates }}){% endtrans %}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endcall %}
+        {% endif %}
+
+        {#- « Ajuster »: another account, other columns, another date format. Each
+            change sends the form again and the recap is recomputed. -#}
+        <form x-show="adjust" style="display: none" hx-post="/imports/{{ import_id }}/confirm" hx-target="#import-wizard" hx-swap="innerHTML"
+              hx-trigger="change" class="card flex flex-col gap-5">
+          <input type="hidden" name="format" value="{{ format }}" />
+          <input type="hidden" name="adjust" value="1" />
+          <h2 class="text-section-title">{{ _("Ajuster") }}</h2>
+          <fieldset class="flex flex-col gap-2">
+            <legend class="form-label mb-1">{{ _("Compte concerné") }}</legend>
+            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {% for choice in accounts %}
+              <label class="choice-card">
+                <input type="radio" name="account_id" value="{{ choice.id }}" class="sr-only" {% if choice.id == account.id %}checked{% endif %} />
+                <span class="text-sm font-semibold text-primary">{{ choice.name }}</span>
+                <span class="text-xs text-secondary">{{ get_account_type_label(choice.type) }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+
+          {% if format == "csv" %}
+          <div class="flex flex-col gap-3">
+            <p class="form-label">{{ _("Colonnes") }}</p>
+            <p class="text-sm text-secondary">{{ _("Twiga a deviné les colonnes, corrige-les si besoin.") }}</p>
+            {% for field, label, current in [("date_column", _("Colonne Date"), date_column), ("label_column", _("Colonne Libellé"), label_column), ("amount_column", _("Colonne Montant"), amount_column)] %}
+            <fieldset class="grid gap-2 lg:grid-cols-[10rem_minmax(0,1fr)] lg:items-center">
+              <legend class="sr-only">{{ label }}</legend>
+              <p class="font-medium text-sm" aria-hidden="true">{{ label }}</p>
+              <div class="flex flex-wrap gap-2">
+                {% for name in header %}
+                <label class="choice-card !flex-row !items-center gap-2 !min-h-[50px] px-3">
+                  <input type="radio" name="{{ field }}" value="{{ loop.index0 }}" class="sr-only" {% if loop.index0 == current %}checked{% endif %} />
+                  <span class="text-xs text-secondary">{{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[loop.index0] if loop.index0 < 26 else loop.index }}</span>
+                  <span class="text-sm font-medium">{{ name | truncate(22, True) }}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </fieldset>
+            {% endfor %}
+          </div>
+
+          <fieldset class="flex flex-col gap-2">
+            <legend class="form-label mb-1">{{ _("Format de date") }}</legend>
+            {% if date_sample %}<p class="text-sm text-secondary">{% trans sample=date_sample %}Lu dans ton fichier : {{ sample }}{% endtrans %}</p>{% endif %}
+            <div class="flex flex-wrap gap-2">
+              {% for fmt in date_formats %}
+              <label class="choice-card !min-h-[50px] px-4 justify-center">
+                <input type="radio" name="date_format" value="{{ fmt }}" class="sr-only" {% if fmt == date_format %}checked{% endif %} />
+                <span class="text-sm font-medium">{{ fmt | replace("%d", _("JJ")) | replace("%m", _("MM")) | replace("%Y", _("AAAA")) | replace("%y", _("AA")) }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% else %}
+          <p class="text-sm text-secondary">{{ _("Un fichier OFX n'a pas de colonnes à régler : Twiga lit les dates et les montants tels quels.") }}</p>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

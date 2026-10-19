@@ -1,0 +1,63 @@
+{#- The drop screen. A file dropped (or chosen) is sent at once to /imports/recap;
+    nothing else is asked: the format, the account, the columns come from the
+    file and from the latest import, and the recap lets the user adjust them. -#}
+{% from "other_way/_ui.html" import answer_head %}
+<div x-data="{ busy: false }" class="flex flex-col gap-5">
+  {% set cancel = "$refs.drop.reset(); htmx.trigger($refs.drop, 'htmx:abort'); busy = false" %}
+  {% include "imports/_waiting.html" %}
+
+  <div x-show="!busy" class="flex flex-col gap-5">
+    {% call answer_head(answer.title, answer.detail) %}
+      <label for="import-file-input" class="btn btn-primary cursor-pointer">
+        {{ icon('upload', size=18) }} {{ _("Choisir un fichier") }}
+      </label>
+    {% endcall %}
+
+    <div class="grid gap-5 lg:grid-cols-2 items-start">
+      <form id="import-drop-form" x-ref="drop"
+            hx-post="/imports/recap" hx-target="#import-wizard" hx-swap="innerHTML" hx-encoding="multipart/form-data"
+            hx-trigger="change from:#import-file-input"
+            @htmx:before-request="busy = true" @htmx:after-request="busy = false"
+            x-data="{ over: false }"
+            class="min-w-0">
+        {#- The input covers the whole zone (invisible): a drop and a click land on it. -#}
+        <label class="relative min-h-[300px] rounded-xl border-2 border-dashed bg-container flex flex-col items-center justify-center gap-3 px-6 py-10 text-center focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-ink"
+               :class="over ? 'border-accent-ink bg-accent-soft' : 'border-border-strong'"
+               @dragenter="over = true" @dragleave="over = false" @drop="over = false">
+          <span class="grid place-items-center w-14 h-14 rounded-full bg-sunken text-secondary">{{ icon('upload', size=24) }}</span>
+          <span class="text-section-title text-xl" id="import-drop-title">{{ _("Dépose un relevé ici") }}</span>
+          <span class="text-sm text-secondary">{{ _("ou choisis-le sur cet ordinateur") }}</span>
+          <span class="btn btn-secondary border-border-strong pointer-events-none">{{ _("Parcourir…") }}</span>
+          <span class="text-xs text-secondary">{{ _("Fichier QIF, CSV ou OFX · 5 Mo maximum") }}</span>
+          <input id="import-file-input" type="file" name="file" accept=".qif,.csv,.ofx,.qfx" required
+                 aria-labelledby="import-drop-title" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+        </label>
+      </form>
+
+      <div class="flex flex-col gap-5 min-w-0">
+        {% if accounts %}
+          {% include "imports/_history.html" %}
+        {% else %}
+        <section class="card flex flex-col gap-3">
+          <h2 class="text-section-title">{{ _("Le premier import crée tout seul") }}</h2>
+          <p class="text-sm text-secondary">{{ _("Aucun compte pour l'instant : importe d'abord un fichier QIF, il en créera automatiquement.") }}</p>
+          <ol class="flex flex-col gap-2 text-sm list-decimal pl-5">
+            <li>{{ _("Le QIF (HomeBank) crée les comptes et les catégories, hiérarchie conservée.") }}</li>
+            <li>{{ _("Les imports CSV ou OFX suivants alimentent un compte existant.") }}</li>
+            <li>{{ _("Twiga écarte les doublons et range ce que tes règles connaissent.") }}</li>
+          </ol>
+        </section>
+        {% endif %}
+
+        <section class="card flex flex-col gap-2">
+          <h2 class="text-section-title">{{ _("Ce que Twiga vérifie à chaque import") }}</h2>
+          <ul class="flex flex-col gap-2 text-sm">
+            <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{{ _("Doublons repérés : même date, même montant, même libellé") }}</span></li>
+            <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{% if rules_count %}{% trans n=rules_count %}{{ n }} règle de rangement appliquée d'office{% pluralize %}Tes {{ n }} règles de rangement appliquées d'office{% endtrans %}{% else %}{{ _("Tes règles de rangement, appliquées d'office") }}{% endif %}</span></li>
+            <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{{ _("Virements internes et chèques, rapprochés tout seuls") }}</span></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>

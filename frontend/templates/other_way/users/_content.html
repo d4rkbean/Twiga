@@ -1,0 +1,108 @@
+{#- Utilisateurs, the other way: the sentence (how many people have access, who never
+    opened their account), the people on the left and the card of the one that is
+    picked on the right (role, active, new password, delete), then what each role
+    allows. The whole block is replaced by every action (#users-content); the
+    person picked is remembered across the swap. -#}
+{% from "other_way/_ui.html" import answer_head %}
+{% set role_labels = {"admin": _("Administrateur"), "editor": _("Éditeur"), "viewer": _("Lecture seule")} %}
+{% set role_help = {
+  "admin": _("Accès complet : opérations, réglages, utilisateurs, import et restauration."),
+  "editor": _("Lit tout, catégorise et modifie les opérations, range en masse, gère budgets, projets et Le Cap. Ne supprime rien et ne touche pas aux réglages."),
+  "viewer": _("Lit tout, ne modifie rien."),
+} %}
+{% set current = get_current_user(request) %}
+<div id="users-content" class="flex flex-col gap-5"
+     x-data="{ sel: (window.twigaUserSel && [{% for u in users %}{{ u.id }},{% endfor %}].includes(window.twigaUserSel)) ? window.twigaUserSel : {{ (current.id if current else users[0].id) if users else 0 }} }"
+     x-init="$watch('sel', value => { window.twigaUserSel = value; })">
+  {% call answer_head(answer.title, answer.detail) %}
+    <button type="button" x-show="!adding" @click="adding = true; $nextTick(() => document.getElementById('new-user-username').focus())" class="btn btn-primary">
+      {{ icon('plus', size=18) }} {{ _("Ajouter un utilisateur") }}
+    </button>
+  {% endcall %}
+
+  {% if error %}{% with kind = "error", message = error %}{% include "_flash.html" %}{% endwith %}{% endif %}
+  {% if success %}{% with kind = "success", message = success %}{% include "_flash.html" %}{% endwith %}{% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+    <div class="flex flex-col gap-5 min-w-0">
+      <section class="flex flex-col gap-3" aria-labelledby="people-title">
+        <h2 id="people-title" class="text-section-title">{{ _("Utilisateurs existants") }} <span class="font-normal text-secondary">· {{ users | length }}</span></h2>
+        <ul class="card !p-0 overflow-hidden">
+          {% for user in users %}
+          <li class="border-t border-border first:border-t-0">
+            <button type="button" @click="sel = {{ user.id }}" :aria-current="sel === {{ user.id }}" :class="sel === {{ user.id }} ? 'bg-accent-soft' : ''"
+                    class="w-full min-h-[50px] px-[var(--space-card)] py-[var(--row-pad)] flex items-center gap-3 text-left {{ 'opacity-60' if not user.is_active else '' }}">
+              <span class="shrink-0 grid place-items-center w-10 h-10 rounded-full bg-accent-soft text-accent-ink text-xs font-semibold">{{ user_initials(user) }}</span>
+              <span class="flex-1 min-w-0 flex flex-col">
+                <span class="font-semibold truncate">{{ user.display_name or user.username }}{% if current and current.id == user.id %} <span class="text-xs font-normal text-secondary">{{ _("(toi)") }}</span>{% endif %}{% if not user.is_active %} <span class="text-xs font-normal text-secondary">· {{ _("désactivé") }}</span>{% endif %}</span>
+                <span class="text-xs text-secondary tabular-nums">{% if user.last_login %}{% trans M=user.last_login.strftime("%d/%m/%Y %H:%M") %}Connecté {{ M }}{% endtrans %}{% else %}{{ _("Jamais connecté") }}{% endif %}</span>
+              </span>
+              <span class="badge badge-neutral shrink-0">{{ role_labels[user.role] }}</span>
+              <span class="shrink-0 text-secondary">{{ icon('chevron-right', size=18) }}</span>
+            </button>
+          </li>
+          {% else %}
+          <li class="p-4 text-sm text-secondary text-center">{{ _("Aucun utilisateur.") }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="card flex flex-col gap-3" aria-labelledby="roles-title">
+        <h2 id="roles-title" class="text-section-title">{{ _("Ce que chaque rôle peut faire") }}</h2>
+        <dl class="flex flex-col text-sm">
+          {% for role in ["admin", "editor", "viewer"] %}
+          <div class="py-3 border-t border-border first:border-t-0"><dt class="font-semibold">{{ role_labels[role] }}</dt><dd class="text-secondary">{{ role_help[role] }}</dd></div>
+          {% endfor %}
+        </dl>
+        <p class="text-sm text-secondary">{{ _("Seul un administrateur voit cette page.") }}</p>
+      </section>
+    </div>
+
+    {#- The card of the person picked: its own forms, so each gesture is one request. -#}
+    <div class="min-w-0">
+      {% for user in users %}
+      <section x-show="sel === {{ user.id }}" {% if not loop.first %}style="display: none"{% endif %} class="card flex flex-col gap-4" aria-label="{{ user.display_name or user.username }}">
+        <div class="flex items-center gap-3">
+          <span class="shrink-0 grid place-items-center w-10 h-10 rounded-full bg-accent-soft text-accent-ink text-xs font-semibold">{{ user_initials(user) }}</span>
+          <div class="flex flex-col min-w-0 flex-1">
+            <h3 class="font-semibold text-lg truncate">{{ user.display_name or user.username }}</h3>
+            <span class="text-xs text-secondary tabular-nums">{% if user.last_login %}{% trans M=user.last_login.strftime("%d/%m/%Y %H:%M") %}Connecté {{ M }}{% endtrans %}{% else %}{{ _("Jamais connecté") }}{% endif %}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <span class="form-label" id="role-label-{{ user.id }}">{{ _("Rôle") }}</span>
+          <div role="radiogroup" aria-labelledby="role-label-{{ user.id }}" class="flex gap-1 rounded-xl bg-sunken p-1">
+            {% for role in ["admin", "editor", "viewer"] %}
+            <label class="flex-1 min-w-0">
+              <input type="radio" name="role-{{ user.id }}" value="{{ role }}" class="peer sr-only" {% if role == user.role %}checked{% endif %}
+                     hx-post="/users/{{ user.id }}/role" hx-vals='{"role": "{{ role }}"}' hx-target="#users-content" hx-swap="outerHTML" hx-trigger="change" />
+              <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center text-center text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-container peer-checked:text-primary peer-checked:shadow-sm peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">{{ role_labels[role] }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <p class="text-sm text-secondary">{{ role_help[user.role] }}</p>
+        </div>
+
+        <label class="flex items-center justify-between gap-3 min-h-[50px] cursor-pointer border-t border-border">
+          <span class="text-sm font-medium">{{ _("Actif") }}</span>
+          <input type="checkbox" role="switch" name="is_active" {% if user.is_active %}checked{% endif %} hx-post="/users/{{ user.id }}/active" hx-target="#users-content" hx-swap="outerHTML" hx-trigger="change" class="peer sr-only" />
+          <span aria-hidden="true" class="relative shrink-0 w-11 h-6 rounded-full bg-field transition-colors peer-checked:bg-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-container after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"></span>
+        </label>
+
+        <form hx-post="/users/{{ user.id }}/password" hx-target="#users-content" hx-swap="outerHTML" class="flex flex-col gap-2 border-t border-border pt-3">
+          {% with field_name = "new_password", field_id = "new_password-" ~ user.id, field_label = _("Nouveau mot de passe pour %(username)s", username=user.username), field_placeholder = _("Nouveau mot de passe"), field_autocomplete = "new-password", field_minlength = 8 %}{% include "_password_field.html" %}{% endwith %}
+          <button type="submit" class="btn btn-secondary border-border-strong">{{ icon('key', size=16) }} {{ _("Réinitialiser") }}</button>
+          <p class="text-xs text-secondary">{{ _("8 caractères minimum. Il faudra lui donner le nouveau mot de passe.") }}</p>
+        </form>
+
+        {% if not current or current.id != user.id %}
+        <button type="button" hx-post="/users/{{ user.id }}/delete" hx-target="#users-content" hx-swap="outerHTML"
+                hx-confirm="{{ _("Supprimer l'utilisateur %(username)s ? Cette action est irréversible.", username=user.username) }}"
+                class="btn btn-danger border-t border-border">{{ icon('trash', size=16) }} {{ _("Supprimer") }}</button>
+        {% endif %}
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+</div>

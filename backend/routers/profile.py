@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from backend import auth, crud, i18n, preferences
+from backend import answers, auth, crud, i18n, preferences
 from backend.database import get_db
 from backend.templating import flash_html, templates
 from backend.i18n import gettext as _t
@@ -20,8 +20,20 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
         # désactivée) : l'ancien menu ⚙️ Paramètres reste le seul point
         # d'entrée dans ce cas, voir _sidebar.html/_header.html.
         return RedirectResponse(url="/settings")
+    # The other way previews the display on a miniature of the real screen: the total
+    # balance and the latest operations. Classic ignores these keys.
+    recent, _total = crud.list_transactions(db, page_size=5)
     return templates.TemplateResponse(
-        "profile.html", {"request": request, "current": current_user, "auth_enabled": auth.AUTH_ENABLED}
+        "profile.html",
+        {
+            "request": request,
+            "current": current_user,
+            "auth_enabled": auth.AUTH_ENABLED,
+            "preview_balance": crud.get_total_balance(db),
+            "preview_recent": recent,
+            "words": answers.profile_words(),
+            "answer": answers.profile_answer(preferences.current_theme(), preferences.current_density(), False),
+        },
     )
 
 

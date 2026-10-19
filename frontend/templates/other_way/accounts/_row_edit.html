@@ -1,0 +1,15 @@
+{#- The edit panel of an account, in its row: the same fields as the creation panel,
+    then save, cancel, and delete (which asks, or explains why it cannot). -#}
+<form id="account-row-{{ account.id }}" hx-post="/accounts/{{ account.id }}/update" hx-target="#accounts-content" hx-swap="outerHTML"
+      class="rounded-xl border border-border bg-page p-4 lg:p-6 my-2 flex flex-col gap-4">
+  <h3 class="text-section-title text-lg">{% trans name=account.name %}Modifier {{ name }}{% endtrans %}</h3>
+  {% set id_prefix = "edit-" ~ account.id %}
+  {% include "accounts/_fields.html" %}
+  <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+    <button type="button" hx-get="/accounts/{{ account.id }}/delete-confirm" hx-target="#account-row-{{ account.id }}" hx-swap="outerHTML"
+            class="btn btn-ghost text-danger sm:mr-auto">{{ icon('trash', size=18) }} {{ _("Supprimer ce compte") }}</button>
+    <button type="button" hx-get="/accounts/{{ account.id }}/row" hx-target="#account-row-{{ account.id }}" hx-swap="outerHTML"
+            class="btn btn-secondary border-border-strong sm:px-8">{{ _("Annuler") }}</button>
+    <button type="submit" class="btn btn-secondary border-accent-ink text-accent-ink font-semibold sm:px-8">{{ _("Enregistrer") }}</button>
+  </div>
+</form>
