@@ -8,7 +8,7 @@
   {% include "imports/_waiting.html" %}
 
   <div x-show="!busy" class="flex flex-col gap-5">
-    {% call answer_head(answer.phrase, answer.detail) %}
+    {% call answer_head(answer.title, answer.detail) %}
       <button type="submit" form="import-confirm-form" class="btn btn-primary" :disabled="count === 0 || busy">
         <span>{% trans n=unique_count %}Importer <span x-text="count">{{ n }}</span> opération{% pluralize %}Importer <span x-text="count">{{ n }}</span> opérations{% endtrans %}</span>
       </button>

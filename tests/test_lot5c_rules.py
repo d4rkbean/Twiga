@@ -11,11 +11,11 @@ HX = {"HX-Request": "true"}
 
 
 def test_the_sentence_puts_the_proposals_first():
-    assert answers.rules_answer(4, 8)["phrase"] == "4 règles attendent ton avis."
-    assert answers.rules_answer(1, 8)["phrase"] == "1 règle attend ton avis."
-    assert "Une proposition ignorée ne revient plus" in answers.rules_answer(4, 8)["detail"]
-    assert answers.rules_answer(0, 8)["phrase"] == "8 règles rangent tes opérations."
-    assert answers.rules_answer(0, 0)["phrase"] == "Aucune règle pour l'instant."
+    assert answers.rules_answer(4, 8).title == "4 règles attendent ton avis."
+    assert answers.rules_answer(1, 8).title == "1 règle attend ton avis."
+    assert "Une proposition ignorée ne revient plus" in answers.rules_answer(4, 8).detail
+    assert answers.rules_answer(0, 8).title == "8 règles rangent tes opérations."
+    assert answers.rules_answer(0, 0).title == "Aucune règle pour l'instant."
 
 
 def test_a_keyword_counts_the_operations_it_catches(demo):

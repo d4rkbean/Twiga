@@ -1,0 +1,171 @@
+{% from "_macros/brand.html" import mascot %}
+{#
+  Fragments of the bulk processing screen (the other way) that live OUTSIDE the
+  swapped list but depend on the filtered data: the sentence and its main action,
+  the three chips and their counters, the summary of the lot, the last-action
+  message, and the note that tells the page component what is drawn.
+
+  Each macro takes `oob`: on the first page load it is false (the fragment sits
+  in its place in index.html); in an htmx response it is true, and htmx swaps
+  the element with the same id wherever it stands on the page.
+#}
+
+{# The sentence of Twiga and « Tout ranger (N) »: N follows the lines left aside. #}
+{% macro head(answer, lot_count, oob=false) -%}
+<header
+  id="backlog-head"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+  aria-label="{{ _("La réponse de Twiga") }}"
+  class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8"
+>
+  <div class="flex min-w-0 items-start gap-4">
+    <span class="flex-none pt-1">{{ mascot(size=52) }}</span>
+    <div class="min-w-0">
+      <h1 class="font-display text-[28px] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[34px]">{{ answer.title }}</h1>
+      <p class="mt-1.5 text-secondary lg:max-w-[70ch]">{{ answer.detail }}</p>
+    </div>
+  </div>
+  {% if lot_count %}
+  <div class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[59px] max-lg:z-20 max-lg:border-t max-lg:border-border max-lg:bg-container max-lg:p-3 lg:flex-none">
+    <button
+      type="button"
+      id="backlog-file-all"
+      @click="fileAll()"
+      :disabled="lotCount === 0"
+      class="btn btn-primary w-full text-base lg:min-h-[62px] lg:w-auto lg:px-10"
+    ><span>{{ _("Tout ranger") }} (<span x-text="lotCount">{{ lot_count }}</span>)</span></button>
+  </div>
+  {% endif %}
+</header>
+{%- endmacro %}
+
+{# The three views of the queue: all of it, what has no suggestion, what is sure (the lot). #}
+{% macro chips(counts, oob=false) -%}
+<div id="backlog-chips" class="flex flex-wrap gap-2" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% for key, label in [("all", _("Tout")), ("none", _("Sans suggestion")), ("sure", _("Sûrs"))] %}
+  <button
+    type="button"
+    @click="setConf('{{ key }}')"
+    :aria-pressed="conf === '{{ key }}'"
+    :class="conf === '{{ key }}' ? 'border-accent bg-accent-soft text-accent-ink font-semibold' : 'border-border-strong bg-container text-primary font-medium'"
+    class="flex min-h-[50px] items-center gap-2 rounded-full border px-4 text-sm"
+  >
+    <span>{{ label }}</span>
+    <span class="font-normal tabular-nums text-secondary">{{ counts[key] }}</span>
+  </button>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# How many operations wait, under the search. #}
+{% macro pending_line(total, oob=false) -%}
+<p id="backlog-pending" class="text-sm text-secondary" {% if oob %}hx-swap-oob="true"{% endif %}>{% trans n=total %}{{ n }} transaction à catégoriser{% pluralize %}{{ n }} transactions à catégoriser{% endtrans %}</p>
+{%- endmacro %}
+
+{# The five confidence classes of « Ajuster le lot », with their counters. #}
+{% macro confidence_chips(counts, oob=false) -%}
+<div id="backlog-confidence" class="flex flex-wrap gap-2" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% for key, label in [("all", _("Toutes")), ("high", _("≥ 90 %%")), ("mid", _("70–90 %%")), ("low", _("< 70 %%")), ("none", _("Sans suggestion"))] %}
+  <button
+    type="button"
+    @click="setConf('{{ key }}')"
+    :aria-pressed="conf === '{{ key }}'"
+    :class="conf === '{{ key }}' ? 'border-accent bg-accent-soft text-accent-ink font-semibold' : 'border-border-strong bg-container text-primary font-medium'"
+    class="flex min-h-[50px] items-center gap-2 rounded-full border px-4 text-sm"
+  >
+    <span>{{ label }}</span>
+    <span class="font-normal tabular-nums text-secondary">{{ counts[key] }}</span>
+  </button>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# « Le lot en un coup d'œil »: the totals, the categories, the payment methods, what comes next. #}
+{% macro summary(lot_count, lot_total, lot_categories, lot_category_max, lot_payments, doubt_count, oob=false) -%}
+<aside
+  id="backlog-summary"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+  aria-label="{{ _("Résumé du lot") }}"
+  class="flex flex-col gap-4 rounded-xl border border-border bg-container p-5 shadow-sm"
+>
+  <h2 class="font-display text-lg font-extrabold tracking-tight text-primary">{{ _("Le lot en un coup d'œil") }}</h2>
+  <div>
+    <p class="amount-blur font-display text-[30px] font-extrabold leading-none tabular-nums text-primary">{{ lot_total | abs | eur }}</p>
+    <p class="mt-1 text-sm text-secondary">{{ _("encore à ranger") }}</p>
+  </div>
+  {% if lot_categories %}
+  <ul class="flex flex-col gap-2.5">
+    {% for entry in lot_categories %}
+    <li class="flex flex-col gap-1">
+      <div class="flex items-center justify-between gap-3 text-sm">
+        <span class="flex min-w-0 items-center gap-2 text-primary"><span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ entry.top_id | category_color }}" aria-hidden="true"></span><span class="truncate">{{ entry.name }}</span></span>
+        <span class="amount-blur flex-none tabular-nums text-primary">{{ entry.total | eur }}</span>
+      </div>
+      <div class="progress-base"><div class="progress-fill" style="width: {{ ((entry.total | abs) * 100 / lot_category_max) | round | int }}%; background-color: {{ entry.top_id | category_color }};"></div></div>
+    </li>
+    {% endfor %}
+  </ul>
+  <div class="flex flex-col gap-2.5 border-t border-border pt-4">
+    <h3 class="text-base font-semibold text-primary">{{ _("Modes de paiement") }}</h3>
+    <p class="text-sm text-secondary">{{ _("Repris de tes règles. Change-les ligne par ligne avec la flèche.") }}</p>
+    <ul class="flex flex-col gap-2">
+      {% for code, count in lot_payments %}
+      <li class="flex items-center justify-between gap-3 text-sm"><span class="text-primary">{{ (code | pm_label) if code else _("Sans mode") }}</span><span class="tabular-nums text-secondary">{% trans n=count %}{{ n }} ligne{% pluralize %}{{ n }} lignes{% endtrans %}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  <div class="flex flex-col gap-1.5 border-t border-border pt-4">
+    <h3 class="text-base font-semibold text-primary">{{ _("Ensuite") }}</h3>
+    {% if doubt_count %}
+    <p class="text-sm text-secondary">{% trans n=doubt_count %}{{ n }} opération reste à décider, une question à la fois.{% pluralize %}{{ n }} opérations restent à décider, une question à la fois.{% endtrans %}</p>
+    <a href="/transactions/inbox" class="inline-flex min-h-[50px] items-center font-medium text-primary underline underline-offset-4">{{ _("Voir les questions") }}</a>
+    {% else %}
+    <p class="text-sm text-secondary">{{ _("Rien d'autre à décider.") }}</p>
+    {% endif %}
+  </div>
+</aside>
+{%- endmacro %}
+
+{# What the last action did, in a sentence. #}
+{% macro last_text(last) -%}
+{%- if last -%}
+  {%- set done -%}
+    {%- if last.kind == "rejected" -%}
+      {%- trans n=last.count -%}{{ n }} opération renvoyée dans La Savane{%- pluralize -%}{{ n }} opérations renvoyées dans La Savane{%- endtrans -%}
+    {%- elif last.kind == "filed_sure" -%}
+      {%- trans n=last.count, threshold=last.threshold -%}{{ n }} opération rangée (confiance ≥ {{ threshold }} %){%- pluralize -%}{{ n }} opérations rangées (confiance ≥ {{ threshold }} %){%- endtrans -%}
+    {%- elif last.count == 1 and last.path -%}
+      {%- trans label=last.label, path=last.path -%}Opération « {{ label }} » rangée dans {{ path }}{%- endtrans -%}
+    {%- elif last.count and last.path -%}
+      {%- trans n=last.count, path=last.path -%}{{ n }} opération rangée dans {{ path }}{%- pluralize -%}{{ n }} opérations rangées dans {{ path }}{%- endtrans -%}
+    {%- elif last.count -%}
+      {%- trans n=last.count -%}{{ n }} opération rangée{%- pluralize -%}{{ n }} opérations rangées{%- endtrans -%}
+    {%- endif -%}
+  {%- endset -%}
+  {{- done -}}
+  {%- if last.kept %} · {% trans n=last.kept %}{{ n }} sans suggestion gardée{% pluralize %}{{ n }} sans suggestion gardées{% endtrans %}{% endif -%}
+  {%- if last.payment %} · {% trans payment=last.payment %}paiement {{ payment }}{% endtrans %}{% endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro last_message(last, oob=false) -%}
+<p
+  id="backlog-last-d"
+  role="status"
+  aria-live="polite"
+  class="flex items-center gap-2 rounded-xl border border-border bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink"
+  {% if not last %}style="display: none;"{% endif %}
+  {% if oob %}hx-swap-oob="true"{% endif %}
+>{{ icon('circle-check', size=18) }} <span>{{ last_text(last) }}</span></p>
+{%- endmacro %}
+
+{# Told to the Alpine component after each swap (see masse-b.js, sync). #}
+{% macro sync(shown_ids, visible_ids, lot_ids, oob=false) -%}
+<span
+  id="backlog-sync"
+  hidden
+  x-init="sync({{ shown_ids | tojson }}, {{ visible_ids | tojson }}, {{ lot_ids | tojson }})"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+></span>
+{%- endmacro %}

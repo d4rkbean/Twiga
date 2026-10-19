@@ -37,7 +37,7 @@
     {% if accounts %}
     <fieldset id="import-account-field" class="flex flex-col gap-2">
       <legend class="form-label mb-1">{{ _("Compte concerné (CSV / OFX uniquement)") }}</legend>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {% for account in accounts %}
         <label class="choice-card">
           <input type="radio" name="account_id" value="{{ account.id }}" data-name="{{ account.name }}" class="sr-only" required {% if loop.first %}checked{% endif %} />

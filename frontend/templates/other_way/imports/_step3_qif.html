@@ -6,7 +6,7 @@
   {% include "imports/_waiting.html" %}
 
   <div x-show="!busy" class="flex flex-col gap-5">
-    {% call answer_head(answer.phrase, answer.detail) %}
+    {% call answer_head(answer.title, answer.detail) %}
       <form hx-post="/imports/{{ import_id }}/execute" hx-target="#import-wizard" hx-swap="innerHTML" id="import-confirm-form"
             @htmx:before-request="busy = true" @htmx:after-request="busy = false" class="contents">
         <input type="hidden" name="format" value="qif" />

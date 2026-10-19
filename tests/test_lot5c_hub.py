@@ -10,16 +10,16 @@ from tests.test_lot5c_settings import other_way, page_of, text_of  # noqa: F401 
 def test_all_is_in_place_then_the_one_thing_that_waits():
     waiting = answers.settings_answer({"number": "0004816", "days": 12}, 0, 3, 8, 6)
 
-    assert waiting["phrase"] == "Tout est en place. Le chèque n° 0004816 attend son débit depuis 12 jours."
-    assert waiting["detail"].startswith("3 comptes, 8 catégories, 6 règles de rangement.")
-    assert waiting["action"][0] == "/checks"
-    assert answers.settings_answer({"number": None, "days": 1}, 0, 1, 1, 1)["phrase"].endswith(
+    assert waiting.title == "Tout est en place. Le chèque n° 0004816 attend son débit depuis 12 jours."
+    assert waiting.detail.startswith("3 comptes, 8 catégories, 6 règles de rangement.")
+    assert waiting.action[0] == "/checks"
+    assert answers.settings_answer({"number": None, "days": 1}, 0, 1, 1, 1).title.endswith(
         "Un paiement attend son débit depuis 1 jour."
     )
     suggested = answers.settings_answer(None, 2, 3, 8, 6)
-    assert "2 règles proposées attendent ton avis." in suggested["phrase"] and suggested["action"][0] == "/rules"
+    assert "2 règles proposées attendent ton avis." in suggested.title and suggested.action[0] == "/rules"
     quiet = answers.settings_answer(None, 0, 3, 8, 6)
-    assert quiet["phrase"] == "Tout est en place." and quiet["action"] is None
+    assert quiet.title == "Tout est en place." and quiet.action is None
 
 
 def test_the_oldest_waiting_payment_is_the_one_that_is_named():

@@ -13,7 +13,7 @@
 } %}
 <div id="recurring-content" class="flex flex-col gap-5" x-data="{ filter: 'all', open: null }">
   <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
-    {{ answer_head(answer.phrase, answer.detail, blur_phrase=false, blur_detail=true) }}
+    {{ answer_head(answer.title, answer.detail, blur_phrase=false, blur_detail=true) }}
 
     {% for group in recurring_duplicate_groups %}
     <section class="card flex flex-col gap-3 min-w-0">

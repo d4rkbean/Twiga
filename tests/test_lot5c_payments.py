@@ -9,10 +9,10 @@ HX = {"HX-Request": "true"}
 
 
 def test_the_sentence_counts_the_modes_and_the_operations_without_one():
-    assert answers.payments_answer(8, 12)["phrase"] == "8 modes de paiement. 12 opérations n'ont pas encore le leur."
-    assert answers.payments_answer(8, 1)["phrase"] == "8 modes de paiement. Une opération n'a pas encore le sien."
-    assert answers.payments_answer(1, 0)["phrase"] == "1 mode de paiement. Toutes les opérations ont le leur."
-    assert "« CARTE SUPERMARCHE » devient CB" in answers.payments_answer(8, 0)["detail"]
+    assert answers.payments_answer(8, 12).title == "8 modes de paiement. 12 opérations n'ont pas encore le leur."
+    assert answers.payments_answer(8, 1).title == "8 modes de paiement. Une opération n'a pas encore le sien."
+    assert answers.payments_answer(1, 0).title == "1 mode de paiement. Toutes les opérations ont le leur."
+    assert "« CARTE SUPERMARCHE » devient CB" in answers.payments_answer(8, 0).detail
 
 
 def test_the_detection_examples_group_the_words_by_mode_in_priority_order():

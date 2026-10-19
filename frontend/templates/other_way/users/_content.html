@@ -14,7 +14,7 @@
 <div id="users-content" class="flex flex-col gap-5"
      x-data="{ sel: (window.twigaUserSel && [{% for u in users %}{{ u.id }},{% endfor %}].includes(window.twigaUserSel)) ? window.twigaUserSel : {{ (current.id if current else users[0].id) if users else 0 }} }"
      x-init="$watch('sel', value => { window.twigaUserSel = value; })">
-  {% call answer_head(answer.phrase, answer.detail) %}
+  {% call answer_head(answer.title, answer.detail) %}
     <button type="button" x-show="!adding" @click="adding = true; $nextTick(() => document.getElementById('new-user-username').focus())" class="btn btn-primary">
       {{ icon('plus', size=18) }} {{ _("Ajouter un utilisateur") }}
     </button>

@@ -8,7 +8,7 @@
 {% block title %}{{ _("Règles — Twiga") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {% set rules_subtitle %}{% trans count=rules_with_usage | length %}{{ count }} règle{% pluralize %}{{ count }} règles{% endtrans %} · {% if pending_suggestions %}{% trans count=pending_suggestions | length %}{{ count }} suggestion en attente{% pluralize %}{{ count }} suggestions en attente{% endtrans %}{% else %}{{ _("aucune suggestion en attente") }}{% endif %}{% endset %}
   {% call page_header(_("Règles de catégorisation"), subtitle=rules_subtitle, back_href="/settings", back_label=_("Paramètres")) %}
   <button

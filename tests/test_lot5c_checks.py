@@ -9,12 +9,12 @@ HX = {"HX-Request": "true"}
 def test_the_sentence_gives_the_count_the_total_and_the_oldest_payment():
     result = answers.checks_answer(3, "245,00 €", {"number": "0004816", "days": 12})
 
-    assert result["phrase"] == "3 paiements attendent leur débit, 245,00 €."
-    assert result["detail"].startswith("Le chèque n° 0004816 attend depuis 12 jours.")
-    assert "je le range tout seul" in result["detail"]
-    assert answers.checks_answer(1, "10,00 €", {"number": None, "days": 1})["detail"].startswith("Le plus ancien attend depuis 1 jour.")
-    assert answers.checks_answer(1, "10,00 €", None)["phrase"] == "1 paiement attend son débit, 10,00 €."
-    assert answers.checks_answer(0, None, None)["phrase"] == "Aucun paiement n'attend son débit."
+    assert result.title == "3 paiements attendent leur débit, 245,00 €."
+    assert result.detail.startswith("Le chèque n° 0004816 attend depuis 12 jours.")
+    assert "je le range tout seul" in result.detail
+    assert answers.checks_answer(1, "10,00 €", {"number": None, "days": 1}).detail.startswith("Le plus ancien attend depuis 1 jour.")
+    assert answers.checks_answer(1, "10,00 €", None).title == "1 paiement attend son débit, 10,00 €."
+    assert answers.checks_answer(0, None, None).title == "Aucun paiement n'attend son débit."
 
 
 def test_the_screen_keeps_the_form_the_list_cancel_and_the_explanation(clients, other_way):

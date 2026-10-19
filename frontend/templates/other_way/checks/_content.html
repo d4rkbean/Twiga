@@ -10,7 +10,7 @@
 </span>
 {% endmacro %}
 <div id="checks-content" class="flex flex-col gap-5">
-  {% call answer_head(answer.phrase, answer.detail, blur_phrase=true) %}
+  {% call answer_head(answer.title, answer.detail, blur_phrase=true) %}
     {% if write %}
     <button type="button" x-show="!adding" @click="adding = true; $nextTick(() => document.getElementById('check-number').focus())" class="btn btn-primary">
       {{ icon('plus', size=18) }} {{ _("Enregistrer un paiement émis") }}

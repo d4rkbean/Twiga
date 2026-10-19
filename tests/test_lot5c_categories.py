@@ -18,10 +18,10 @@ def category(name, pillar=None, children=(), parent=None, excluded=False):
 def test_the_sentence_says_every_category_counts_in_a_pillar():
     full = answers.categories_answer(9, 0, 1, 1)
 
-    assert full["phrase"] == "9 catégories, toutes rangées dans un pilier du Cap."
-    assert "1 sous-catégorie a son propre pilier" in full["detail"] and "1 catégorie de revenu ne compte pas" in full["detail"]
-    assert "2 sans pilier choisi : elles comptent dans Choix." in answers.categories_answer(9, 2, 0, 0)["phrase"]
-    assert answers.categories_answer(1, 0, 0, 0)["phrase"].startswith("1 catégorie,")
+    assert full.title == "9 catégories, toutes rangées dans un pilier du Cap."
+    assert "1 sous-catégorie a son propre pilier" in full.detail and "1 catégorie de revenu ne compte pas" in full.detail
+    assert "2 sans pilier choisi : elles comptent dans Choix." in answers.categories_answer(9, 2, 0, 0).title
+    assert answers.categories_answer(1, 0, 0, 0).title.startswith("1 catégorie,")
 
 
 def test_the_pillars_summary_lists_roots_and_the_sub_categories_that_moved():

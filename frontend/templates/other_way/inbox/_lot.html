@@ -1,0 +1,48 @@
+{#- Le lot : the operations Twiga recognizes for sure. « Ranger les N » (in the head)
+    files them all; touching a line (or swiping it on a phone) takes it out of
+    the lot, and it comes back as a question. The ids that « Ranger » sends are
+    the hidden fields of #inbox-lot-ids. -#}
+<div class="overflow-hidden rounded-xl border border-border bg-container shadow-sm">
+  <div class="flex items-baseline justify-between gap-3 px-4 py-3.5 lg:px-5">
+    <h2 class="font-display text-lg font-extrabold tracking-tight text-primary">{{ _("Le lot") }}</h2>
+    <p class="text-xs tabular-nums text-secondary">
+      {% trans count=lot_count %}{{ count }} sur {{ count }}{% endtrans %} ·
+      <span class="amount-blur">{{ lot_total | eur }}</span>
+    </p>
+  </div>
+  <div id="inbox-lot-ids" hidden>
+    {% for item in lot %}<input type="hidden" name="ids" value="{{ item.transaction.id }}" />{% endfor %}
+  </div>
+  <ul class="flex flex-col">
+    {% for item in lot %}
+    {% set row = item.transaction %}
+    <li class="border-t border-border">
+      <button
+        type="button"
+        data-lot-row
+        hx-post="/transactions/{{ row.id }}/leave-lot"
+        hx-include="#nav-history, #nav-qdone"
+        hx-target="#inbox-board"
+        hx-swap="outerHTML"
+        aria-label="{% trans label=row.label or row.raw_label %}Laisser « {{ label }} » de côté, à décider toi-même{% endtrans %}"
+        class="flex min-h-[var(--row-touch)] w-full items-center gap-3 px-4 py-2 text-left lg:px-5 lg:hover:bg-sunken"
+      >
+        <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full border border-accent bg-accent-soft text-accent-ink" aria-hidden="true">{{ icon('check', size=15) }}</span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate font-medium text-primary">{{ row.label or row.raw_label }}</span>
+          <span class="block truncate text-xs text-secondary">{{ item.path | category_display }} · {{ item.confidence }} %</span>
+        </span>
+        <span class="flex-none text-right">
+          <span class="amount-blur block whitespace-nowrap font-semibold tabular-nums text-primary">{{ "+" if row.amount > 0 else "" }}{{ row.amount | eur }}</span>
+          {% if item.payment_method %}<span class="block text-xs text-secondary">{{ item.payment_method | pm_label }}</span>{% endif %}
+        </span>
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  <div class="flex flex-col items-start gap-3 border-t border-border px-4 py-4 text-sm text-secondary lg:px-5">
+    <a href="/backlog" class="inline-flex min-h-[50px] items-center font-medium text-primary underline underline-offset-4">{{ _("Revoir par catégorie") }}</a>
+    <p class="lg:hidden">{{ _("Touche ou glisse une ligne pour la décider toi-même.") }}</p>
+    <p class="max-lg:hidden">{{ _("Touche une ligne pour la décider toi-même. Sous-catégorie et mode de paiement viennent des règles.") }}</p>
+  </div>
+</div>

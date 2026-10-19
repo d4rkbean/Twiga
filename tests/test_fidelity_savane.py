@@ -361,7 +361,8 @@ def test_operations_screen_draws_every_control(clients):
 def test_operations_filter_bar_is_one_line_of_drawn_menus_with_reset_on_the_right(clients):
     html = _operation(clients)
     form = html.split('id="transactions-filters"')[1]
-    line = form.split("lg:flex-nowrap")[1].split('x-show="adv"')[0]
+    # The line wraps (flex-wrap) instead of squeezing its fields when « Autre montant… » opens.
+    line = form.split("lg:flex-wrap lg:items-start")[1].split('x-show="adv"')[0]
     names = ('name="f_date_from"', 'name="f_date_to"', 'name="f_amount_min"', 'name="f_amount_max"', 'aria-label="Catégorie"')
     positions = [line.index(name) for name in names]
     assert positions == sorted(positions)

@@ -9,13 +9,13 @@ HX = {"HX-Request": "true"}
 def test_the_sentence_counts_people_and_names_who_never_opened_their_account():
     result = answers.users_answer({"admin": 1, "editor": 1, "viewer": 1}, ["Léa"], ["Alex"])
 
-    assert result["phrase"] == "3 personnes ont accès. Léa n'a jamais ouvert son compte."
-    assert result["detail"] == (
+    assert result.title == "3 personnes ont accès. Léa n'a jamais ouvert son compte."
+    assert result.detail == (
         "1 administrateur, 1 éditeur, 1 en lecture seule. "
         "Il doit toujours rester au moins un administrateur actif : pour l'instant, c'est Alex."
     )
-    assert answers.users_answer({"admin": 2, "editor": 0, "viewer": 0}, [], ["Alex", "Sam"])["phrase"] == "2 personnes ont accès."
-    assert "n'ont jamais ouvert leur compte" in answers.users_answer({"admin": 1, "editor": 1, "viewer": 1}, ["A", "B"], ["X"])["phrase"]
+    assert answers.users_answer({"admin": 2, "editor": 0, "viewer": 0}, [], ["Alex", "Sam"]).title == "2 personnes ont accès."
+    assert "n'ont jamais ouvert leur compte" in answers.users_answer({"admin": 1, "editor": 1, "viewer": 1}, ["A", "B"], ["X"]).title
 
 
 def test_the_screen_keeps_add_role_active_password_and_delete(clients, other_way):

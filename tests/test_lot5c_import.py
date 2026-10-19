@@ -14,24 +14,24 @@ from tests.test_lot5c_settings import other_way, page_of, text_of  # noqa: F401 
 
 
 def test_the_drop_screen_says_one_file_is_enough_or_asks_for_a_homebank_history_first():
-    assert answers.import_idle_answer(True)["phrase"] == "Un fichier suffit, Twiga reconnaît le reste."
-    assert "HomeBank" in answers.import_idle_answer(False)["phrase"]
+    assert answers.import_idle_answer(True).title == "Un fichier suffit, Twiga reconnaît le reste."
+    assert "HomeBank" in answers.import_idle_answer(False).title
 
 
 def test_the_recap_names_the_account_the_count_and_the_duplicates():
     result = answers.import_recap_answer("csv", "Compte courant", 23, 3, ";")
 
-    assert result["phrase"] == "Compte courant : 23 opérations à importer."
-    assert "points-virgules" in result["detail"] and "3 doublons" in result["detail"]
-    assert answers.import_recap_answer("ofx", "Livret", 1, 0)["phrase"] == "Livret : 1 opération à importer."
-    assert "déjà en base" in answers.import_recap_answer("csv", "Livret", 0, 4)["phrase"]
+    assert result.title == "Compte courant : 23 opérations à importer."
+    assert "points-virgules" in result.detail and "3 doublons" in result.detail
+    assert answers.import_recap_answer("ofx", "Livret", 1, 0).title == "Livret : 1 opération à importer."
+    assert "déjà en base" in answers.import_recap_answer("csv", "Livret", 0, 4).title
 
 
 def test_a_homebank_history_is_told_with_its_accounts_categories_and_operations():
     result = answers.import_qif_answer(3, 24, 1482, 72, 1)
 
-    assert result["phrase"] == f"Un historique HomeBank : 3 comptes, 24 catégories, {format_integer(1482)} opérations."
-    assert "72 doublons" in result["detail"] and "crée les comptes" in result["detail"]
+    assert result.title == f"Un historique HomeBank : 3 comptes, 24 catégories, {format_integer(1482)} opérations."
+    assert "72 doublons" in result.detail and "crée les comptes" in result.detail
 
 
 @pytest.mark.parametrize("count, minutes", [(1, 1), (14, 2), (30, 3), (95, 10)])
