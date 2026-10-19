@@ -29,6 +29,7 @@ from backend.models import (
     CapSettings,
     Category,
     PaymentMethod,
+    ImportLog,
     PendingCheck,
     Project,
     ProjectMovement,
@@ -144,6 +145,7 @@ def _cap_settings_fields(row: dict) -> dict:
         "income_fixed_amount": _parse_decimal(row.get("income_fixed_amount"))
         if row.get("income_fixed_amount") is not None
         else None,
+        "budget_start_day": row.get("budget_start_day") or 1,
     }
 
 
@@ -169,6 +171,7 @@ def _project_movement_fields(row: dict) -> dict:
         "date": _parse_date(row["date"]),
         "amount": _parse_decimal(row.get("amount")),
         "note": row.get("note"),
+        "account_id": row.get("account_id"),
     }
 
 
@@ -203,6 +206,17 @@ def _recurring_pattern_fields(row: dict) -> dict:
         "frequency_days": row["frequency_days"],
         "status": row["status"],
         "category_id": row.get("category_id"),
+    }
+
+
+def _import_log_fields(row: dict) -> dict:
+    return {
+        "imported_on": _parse_date(row["imported_on"]),
+        "filename": row["filename"],
+        "account_name": row["account_name"],
+        "lines": row.get("lines", 0),
+        "duplicates": row.get("duplicates", 0),
+        "imported": row.get("imported", 0),
     }
 
 
@@ -244,6 +258,7 @@ _SECTIONS: list[tuple[str, type, callable]] = [
     ("rule_suggestions", RuleSuggestion, _rule_suggestion_fields),
     ("recurring_patterns", RecurringPattern, _recurring_pattern_fields),
     ("pending_checks", PendingCheck, _pending_check_fields),
+    ("import_logs", ImportLog, _import_log_fields),
 ]
 
 

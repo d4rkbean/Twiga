@@ -31,7 +31,7 @@
     hx-confirm="{{ confirm_message }}"
     class="flex flex-col gap-2 lg:flex-row"
   >
-    <select name="reassign_to" required aria-label="{{ _("Choisir une catégorie...") }}" class="input-base lg:max-w-sm">
+    <span class="select-field lg:max-w-sm"><select name="reassign_to" required aria-label="{{ _("Choisir une catégorie...") }}" class="input-base lg:max-w-sm">
       <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
       {% for other in all_categories %}
       {% if other.id != category.id %}
@@ -43,7 +43,7 @@
       {% endif %}
       {% endfor %}
       {% endfor %}
-    </select>
+    </select></span>
     <div class="flex gap-2">
       <button type="submit" class="btn btn-danger flex-1 lg:flex-none lg:px-6">
         {{ _("Réaffecter et supprimer") }}

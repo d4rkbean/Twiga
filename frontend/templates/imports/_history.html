@@ -1,0 +1,43 @@
+{# Tableau « Derniers imports ». `oob` le fait remplacer, depuis la réponse de
+   l'étape « Terminé », celui qui est déjà sur la page. #}
+<section id="import-history" class="card flex flex-col gap-3" {% if oob %}hx-swap-oob="true"{% endif %}>
+  <div class="flex items-baseline justify-between gap-2">
+    <h2 class="text-section-title">{{ _("Derniers imports") }}</h2>
+    {% if import_logs %}
+    <span class="text-xs text-secondary">{% trans files=import_logs | length, rows=import_logs_total %}{{ files }} fichier · {{ rows }} opérations{% pluralize %}{{ files }} fichiers · {{ rows }} opérations{% endtrans %}</span>
+    {% endif %}
+  </div>
+  {% if import_logs %}
+  <div class="-mx-4 lg:-mx-6 overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-sunken text-xs text-secondary font-medium">
+        <tr>
+          <th scope="col" class="text-left font-medium px-4 lg:px-6 py-2">{{ _("Date") }}</th>
+          <th scope="col" class="text-left font-medium px-2 py-2">{{ _("Fichier") }}</th>
+          <th scope="col" class="text-left font-medium px-2 py-2 hidden sm:table-cell">{{ _("Compte") }}</th>
+          <th scope="col" class="text-right font-medium px-2 py-2 hidden sm:table-cell">{{ _("Lignes") }}</th>
+          <th scope="col" class="text-right font-medium px-2 py-2 hidden sm:table-cell">{{ _("Doublons") }}</th>
+          <th scope="col" class="text-right font-medium px-4 lg:px-6 py-2">{{ _("Importées") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in import_logs %}
+        <tr class="border-b border-border last:border-0">
+          <td class="px-4 lg:px-6 py-3 tabular-nums whitespace-nowrap align-top">{{ log.imported_on | fr_date }}</td>
+          <td class="px-2 py-3 align-top break-all font-mono text-xs">
+            {{ log.filename }}
+            <span class="block sm:hidden font-sans text-secondary">{{ log.account_name }}</span>
+          </td>
+          <td class="px-2 py-3 hidden sm:table-cell align-top">{{ log.account_name }}</td>
+          <td class="px-2 py-3 hidden sm:table-cell text-right tabular-nums align-top">{{ log.lines }}</td>
+          <td class="px-2 py-3 hidden sm:table-cell text-right tabular-nums align-top">{{ log.duplicates }}</td>
+          <td class="px-4 lg:px-6 py-3 text-right tabular-nums font-bold align-top">{{ log.imported }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-sm text-secondary">{{ _("Aucun import pour l'instant.") }}</p>
+  {% endif %}
+</section>

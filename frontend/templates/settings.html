@@ -7,115 +7,120 @@
 {% block title %}{{ _("Paramètres — Twiga") }}{% endblock %}
 
 {% block content %}
-{# ORGANISATION — « Gérer » d'abord, les réglages ensuite.
-   Cette page était devenue un second menu déguisé : sur douze destinations,
-   trois seulement étaient de vrais réglages, les autres étant des lieux de
-   travail (comptes, catégories, règles, abonnements, chèques...). Mélanger
-   « où je travaille » et « comment l'app est configurée » oblige à fouiller.
-   Les deux familles restent séparées, et l'ordre suit la fréquence d'usage :
-   on vient bien plus souvent régler une règle que changer son mot de passe.
-
-   Une rubrique à la fois : une liste de rubriques à gauche au bureau, des
-   pastilles défilantes sur mobile. Une adresse en #cap, #preferences,
-   #security ou #data ouvre directement la rubrique. Un réglage choisi (langue,
-   format) s'applique seul, les autres ont leur bouton Enregistrer.
+{# UNE PAGE, HUIT RUBRIQUES — comme la maquette : toutes les rubriques sont sur
+   la page, la liste de gauche (pastilles défilantes sur mobile) y saute et
+   surligne celle qu'on lit. « Gérer » d'abord (les lieux de travail), les
+   réglages ensuite, les données à la fin. Comptes, catégories, règles et
+   utilisateurs y sont résumés, avec le lien vers leur écran complet.
+   Un réglage choisi (langue, format, début du mois) s'applique seul ; les
+   autres ont leur bouton Enregistrer. Le changement de mot de passe et la
+   déconnexion vivent dans Mon profil.
 
    Deux entrées ont quitté cette page :
    - « Importer des données » est passé dans l'en-tête — c'est une action,
      et le début de chaque cycle mensuel (voir _header.html) ;
    - « Gérer les budgets » est devenu « Mon mois » dans la navigation. #}
 {% set current = get_current_user(request) %}
-{% set is_admin = current and current.role == "admin" %}
+{% set is_admin = (not auth_enabled) or (current and current.role == "admin") %}
+{% set sections = [
+  ("gerer", _("Gérer"), "tool"),
+  ("comptes", _("Comptes"), "building-bank"),
+  ("categories", _("Catégories"), "tag"),
+  ("regles", _("Règles"), "bulb"),
+  ("cap", _("Le Cap"), "compass"),
+  ("preferences", _("Préférences"), "adjustments"),
+] %}
 <main
   class="flex flex-col gap-[var(--space-block)] px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6"
   x-data="{
-    tab: 'manage',
-    sections: ['cap', 'preferences', 'security', 'data'],
+    current: 'gerer',
     init() {
-      var wanted = location.hash.slice(1);
-      if (this.sections.indexOf(wanted) !== -1) this.tab = wanted;
-    },
-    open(name) {
-      this.tab = name;
-      history.replaceState(null, '', name === 'manage' ? location.pathname : '#' + name);
+      var wanted = location.hash.slice(1).replace(/^s-/, '');
+      if (wanted) this.current = wanted;
+      var ids = [{% for key, label, icon_name in sections %}'{{ key }}',{% endfor %}{% if auth_enabled %}'utilisateurs',{% endif %}'donnees'];
+      var self = this;
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) self.current = entry.target.id.replace(/^s-/, '');
+          });
+        }, { rootMargin: '-15% 0px -70% 0px' });
+        ids.forEach(function (id) {
+          var el = document.getElementById('s-' + id);
+          if (el) observer.observe(el);
+        });
+      }
     },
   }"
 >
   <div class="flex flex-col gap-1">
     <h1 class="text-page-title">{{ _("Paramètres") }}</h1>
-    <p class="text-sm text-secondary">{{ _("Ce que tu gères, et comment ton instance Twiga est réglée.") }}</p>
+    <p class="text-sm text-secondary">{% if household_label %}{{ household_label }} · {% endif %}{{ _("instance locale") }}</p>
   </div>
 
   <div class="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start">
     {# Rubriques : pastilles défilantes sur mobile, liste verticale au bureau. #}
     <nav
-      aria-label="{{ _("Rubriques des paramètres") }}"
-      class="flex lg:flex-col gap-2 lg:gap-1 overflow-x-auto lg:overflow-visible -mx-4 px-4 lg:mx-0 lg:px-0 lg:w-[220px] lg:shrink-0 lg:sticky lg:top-20"
+      aria-label="{{ _("Sections des paramètres") }}"
+      class="flex lg:flex-col gap-2 lg:gap-1 overflow-x-auto lg:overflow-visible -mx-4 px-4 lg:mx-0 lg:px-0 lg:w-[220px] lg:shrink-0 lg:sticky lg:top-20 sticky top-0 z-10 bg-page py-2 lg:py-0"
     >
-      {% set tabs = [
-        ("manage", _("Gérer"), "tool"),
-        ("cap", _("Le Cap"), "compass"),
-        ("preferences", _("Préférences"), "adjustments"),
-      ] %}
-      {% for key, label, icon_name in tabs %}
-      <button
-        type="button"
-        @click="open('{{ key }}')"
-        :aria-current="tab === '{{ key }}' ? 'true' : null"
-        :class="tab === '{{ key }}' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
+      {% for key, label, icon_name in sections %}
+      <a
+        href="#s-{{ key }}"
+        @click="current = '{{ key }}'"
+        :aria-current="current === '{{ key }}' ? 'true' : null"
+        :class="current === '{{ key }}' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
         class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
       >
         {{ icon(icon_name, size=18) }} {{ label }}
-      </button>
+      </a>
       {% endfor %}
       {% if auth_enabled %}
-      <button
-        type="button"
-        @click="open('security')"
-        :aria-current="tab === 'security' ? 'true' : null"
-        :class="tab === 'security' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
-        class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
-      >
-        {{ icon('shield-lock', size=18) }} {{ _("Sécurité") }}
-      </button>
-      {% endif %}
-      {% if auth_enabled and is_admin %}
       <a
-        href="/users"
-        class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap text-primary hover:bg-sunken"
+        href="#s-utilisateurs"
+        @click="current = 'utilisateurs'"
+        :aria-current="current === 'utilisateurs' ? 'true' : null"
+        :class="current === 'utilisateurs' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
+        class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
       >
         {{ icon('users', size=18) }} {{ _("Utilisateurs") }}
       </a>
       {% endif %}
-      <button
-        type="button"
-        @click="open('data')"
-        :aria-current="tab === 'data' ? 'true' : null"
-        :class="tab === 'data' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
+      <a
+        href="#s-donnees"
+        @click="current = 'donnees'"
+        :aria-current="current === 'donnees' ? 'true' : null"
+        :class="current === 'donnees' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
         class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
       >
         {{ icon('folder', size=18) }} {{ _("Données") }}
-      </button>
+      </a>
     </nav>
 
     <div class="flex-1 min-w-0 flex flex-col gap-[var(--space-block)]">
 
       <!-- Gérer — les lieux de travail, pas des réglages -->
-      <section x-show="tab === 'manage'" class="flex flex-col gap-4">
+      <section id="s-gerer" aria-labelledby="h-gerer" class="flex flex-col gap-4 scroll-mt-24">
         <div class="flex flex-col gap-1">
-          <h2 class="text-section-title">{{ _("Gérer") }}</h2>
+          <h2 id="h-gerer" class="text-section-title">{{ _("Gérer") }}</h2>
           <p class="text-sm text-secondary">{{ _("Tous les endroits où Twiga se règle et se travaille.") }}</p>
         </div>
 
+        {% set recurring_hint %}{% trans count=recurring_count %}{{ count }} abonnement détecté{% pluralize %}{{ count }} abonnements détectés{% endtrans %}{% endset %}
+        {% set checks_hint %}{% trans count=pending_checks_count %}{{ count }} paiement en attente de débit{% pluralize %}{{ count }} paiements en attente de débit{% endtrans %}{% endset %}
         {% set places = [
           ("/accounts", "building-bank", _("Comptes"), _("Soldes, types et réglages de chaque compte")),
           ("/categories", "tag", _("Catégories"), _("Catégories, sous-catégories et couleurs")),
           ("/payment-methods", "credit-card", _("Modes de paiement"), _("Ajouter, renommer ou supprimer un mode")),
-          ("/rules", "tool", _("Règles de catégorisation"), _("Ranger automatiquement les libellés connus")),
-          ("/backlog", "folders", _("Catégorisation en masse"), _("Traiter d'un coup les opérations qui se ressemblent")),
-          ("/recurring", "repeat", _("Abonnements récurrents"), _("Les prélèvements réguliers repérés dans tes opérations")),
-          ("/checks", "receipt", _("Chèques & paiements en attente"), _("Paiements émis, rapprochés tout seuls à l'import")),
+          ("/rules", "bulb", _("Règles de catégorisation"), _("Ranger automatiquement les libellés connus")),
+          ("/backlog", "list-details", _("Catégorisation en masse"), _("Traiter d'un coup les opérations qui se ressemblent")),
+          ("/budgets", "chart-line", _("Budgets"), _("Fixer l'enveloppe de chaque catégorie")),
+          ("/recurring", "repeat", _("Abonnements récurrents"), recurring_hint),
+          ("/checks", "receipt", _("Chèques & paiements en attente"), checks_hint),
         ] %}
+        {% if auth_enabled and is_admin %}
+        {% set places = places + [("/users", "users", _("Utilisateurs"), _("Les comptes du foyer et le rôle de chacun"))] %}
+        {% endif %}
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[var(--space-list)]">
           {% for href, icon_name, title, hint in places %}
           <a href="{{ href }}" class="card flex items-center gap-3 min-h-[50px] hover:shadow-lg transition-shadow">
@@ -148,15 +153,130 @@
         </div>
       </section>
 
+      <!-- Comptes — résumé : le détail et les réglages sont dans l'écran Comptes -->
+      <section id="s-comptes" aria-labelledby="h-comptes" class="card flex flex-col gap-3 scroll-mt-24">
+        <div class="flex items-center justify-between gap-3">
+          <h2 id="h-comptes" class="text-section-title">{{ _("Comptes") }}</h2>
+          <a href="/accounts" class="btn btn-secondary border-border-strong">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</a>
+        </div>
+        {% if account_balances %}
+        <div class="-mx-4 lg:-mx-6 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-sunken text-xs text-secondary font-medium">
+              <tr>
+                <th scope="col" class="text-left font-medium px-4 lg:px-6 py-2">{{ _("Compte") }}</th>
+                <th scope="col" class="text-left font-medium px-2 py-2 hidden sm:table-cell">{{ _("Type") }}</th>
+                <th scope="col" class="text-right font-medium px-2 py-2">{{ _("Solde") }}</th>
+                <th scope="col" class="w-[66px] px-4 lg:px-6 py-2"><span class="sr-only">{{ _("Modifier") }}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for account, balance in account_balances %}
+              <tr class="border-b border-border">
+                <td class="px-4 lg:px-6 py-3 font-medium text-primary">
+                  <span class="inline-flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ account | account_color }}"></span>{{ account.name }}</span>
+                  <span class="block sm:hidden text-xs font-normal text-secondary">{{ get_account_type_label(account.type) }}</span>
+                </td>
+                <td class="px-2 py-3 text-secondary hidden sm:table-cell">{{ get_account_type_label(account.type) }}</td>
+                <td class="amount-blur px-2 py-3 text-right font-bold tabular-nums whitespace-nowrap">{{ balance | eur }}</td>
+                <td class="px-2 py-1 text-right">
+                  <a href="/accounts" aria-label="{{ _("Modifier") }} {{ account.name }}" class="inline-flex w-[50px] h-[50px] items-center justify-center rounded-xl text-secondary hover:bg-sunken">{{ icon('pencil', size=18) }}</a>
+                </td>
+              </tr>
+              {% endfor %}
+              <tr class="bg-sunken">
+                <td class="px-4 lg:px-6 py-3 font-semibold">{{ _("Total") }}</td>
+                <td class="hidden sm:table-cell"></td>
+                <td class="amount-blur px-2 py-3 text-right font-bold tabular-nums whitespace-nowrap">{{ accounts_total | eur }}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-sm text-secondary">{{ _("Aucun compte pour l'instant : importe d'abord un fichier QIF, il en créera automatiquement.") }}</p>
+        {% endif %}
+      </section>
+
+      <!-- Catégories — résumé -->
+      <section id="s-categories" aria-labelledby="h-categories" class="card flex flex-col gap-3 scroll-mt-24">
+        <div class="flex items-center justify-between gap-3">
+          <h2 id="h-categories" class="text-section-title">{{ _("Catégories") }}</h2>
+          <a href="/categories" class="btn btn-secondary border-border-strong">{{ icon('plus', size=18) }} {{ _("Nouvelle catégorie") }}</a>
+        </div>
+        <div class="flex flex-col">
+          {% for category in categories %}
+          <div class="flex items-start gap-3 py-3 {{ 'border-t border-border' if not loop.first else '' }}">
+            <span
+              class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg"
+              style="background-color: color-mix(in srgb, {{ category.id | category_color }} 18%, transparent)"
+            >{% if category.icon %}{{ category.icon }}{% else %}<span style="color: {{ category.id | category_color }}">{{ icon('tag', size=18) }}</span>{% endif %}</span>
+            <div class="flex-1 min-w-0 flex flex-col gap-1">
+              <span class="font-semibold text-primary truncate">{{ category.name }}</span>
+              <span class="text-xs text-secondary">
+                {{ _("Recette") if category.excluded_from_budget else _("Dépense") }} ·
+                {% set child_count = category.children | length %}
+                {% if child_count %}{% trans count=child_count %}{{ count }} sous-catégorie{% pluralize %}{{ count }} sous-catégories{% endtrans %}{% else %}{{ _("aucune sous-catégorie") }}{% endif %}
+              </span>
+              {% if category.children %}
+              <span class="flex flex-wrap gap-1.5 mt-1">
+                {% for child in category.children %}<span class="badge badge-neutral">{{ child.name }}</span>{% endfor %}
+              </span>
+              {% endif %}
+            </div>
+            <a href="/categories" aria-label="{{ _("Modifier") }} {{ category.name }}" class="shrink-0 inline-flex w-[50px] h-[50px] -my-1 items-center justify-center rounded-xl text-secondary hover:bg-sunken">{{ icon('pencil', size=18) }}</a>
+          </div>
+          {% else %}
+          <p class="text-sm text-secondary">{{ _("Aucune catégorie pour l'instant.") }}</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Règles — les plus utilisées -->
+      <section id="s-regles" aria-labelledby="h-regles" class="card flex flex-col gap-3 scroll-mt-24">
+        <div class="flex items-center justify-between gap-3">
+          <h2 id="h-regles" class="text-section-title">{{ _("Règles de rangement") }}</h2>
+          <a href="/rules" class="btn btn-secondary border-border-strong">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</a>
+        </div>
+        {% if rules %}
+        <div class="-mx-4 lg:-mx-6 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-sunken text-xs text-secondary font-medium">
+              <tr>
+                <th scope="col" class="text-left font-medium px-4 lg:px-6 py-2">{{ _("Si le libellé contient") }}</th>
+                <th scope="col" class="text-left font-medium px-2 py-2">{{ _("Ranger dans") }}</th>
+                <th scope="col" class="text-right font-medium px-2 py-2 hidden sm:table-cell">{{ _("Appliquée") }}</th>
+                <th scope="col" class="w-[66px] px-4 lg:px-6 py-2"><span class="sr-only">{{ _("Modifier") }}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in rules %}
+              <tr class="border-b border-border last:border-0">
+                <td class="px-4 lg:px-6 py-3 font-medium text-primary break-words">{{ item.rule.keyword }}</td>
+                <td class="px-2 py-3">{{ item.rule.category.name }}</td>
+                <td class="px-2 py-3 text-right tabular-nums text-secondary hidden sm:table-cell">{% trans count=item.usage_count %}{{ count }} fois{% endtrans %}</td>
+                <td class="px-2 py-1 text-right">
+                  <a href="/rules" aria-label="{{ _("Modifier") }} {{ item.rule.keyword }}" class="inline-flex w-[50px] h-[50px] items-center justify-center rounded-xl text-secondary hover:bg-sunken">{{ icon('pencil', size=18) }}</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-sm text-secondary">{{ _("Aucune règle pour l'instant.") }}</p>
+        {% endif %}
+      </section>
+
       {# Le Cap — d'où viennent les ressources du mois.
          Réglage et non règle codée en dur : les foyers financent leur mois de
          façons très différentes (salaire du mois, salaire du mois précédent,
          virements vers un pot commun, enveloppe fixe). Le moteur, lui, ne
          connaît que le montant saisi dans le rituel — ce choix ne pilote que
          ce qui est PROPOSÉ. #}
-      <section x-show="tab === 'cap'" style="display: none;" class="card flex flex-col gap-4">
+      <section id="s-cap" aria-labelledby="h-cap" class="card flex flex-col gap-4 scroll-mt-24">
         <div class="flex flex-col gap-1">
-          <h2 class="text-section-title">{{ _("Le Cap") }}</h2>
+          <h2 id="h-cap" class="text-section-title">{{ _("Le Cap") }}</h2>
           <p class="text-sm text-secondary">{{ _("Ce choix décide de ce que Twiga propose à l'étape des ressources du Cap. Le montant saisi dans le Cap reste la référence.") }}</p>
         </div>
         <form
@@ -179,21 +299,27 @@
 
           <label class="form-group" x-show="source === 'virements'" style="display: none;">
             <span class="form-label">{{ _("Compte qui reçoit les virements") }}</span>
-            <select name="income_account_id" class="input-base">
-              <option value="">{{ _("— choisir —") }}</option>
-              {% for account in accounts %}
-              <option value="{{ account.id }}" {% if cap_settings.income_account_id == account.id %}selected{% endif %}>{{ account.name }}</option>
-              {% endfor %}
-            </select>
+            <span class="select-field">
+              <select name="income_account_id" class="input-base">
+                <option value="">{{ _("— choisir —") }}</option>
+                {% for account in accounts %}
+                <option value="{{ account.id }}" {% if cap_settings.income_account_id == account.id %}selected{% endif %}>{{ account.name }}</option>
+                {% endfor %}
+              </select>
+            </span>
           </label>
 
           <label class="form-group" x-show="source === 'fixe'" style="display: none;">
             <span class="form-label">{{ _("Montant fixe") }}</span>
-            <input
-              type="number" step="0.01" name="income_fixed_amount"
-              value="{% if cap_settings.income_fixed_amount is not none %}{{ '%.2f' % cap_settings.income_fixed_amount }}{% endif %}"
-              class="input-base"
-            />
+            <span class="flex items-center gap-2">
+              <input
+                type="text" inputmode="decimal" name="income_fixed_amount" autocomplete="off"
+                placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+                value="{% if cap_settings.income_fixed_amount is not none %}{{ '%.2f' % cap_settings.income_fixed_amount }}{% endif %}"
+                class="input-base flex-1 tabular-nums"
+              />
+              <span class="text-secondary font-semibold" aria-hidden="true">€</span>
+            </span>
           </label>
 
           <button type="submit" class="btn btn-primary self-start">
@@ -204,8 +330,50 @@
       </section>
 
       <!-- Préférences d'affichage -->
-      <section x-show="tab === 'preferences'" style="display: none;" class="card flex flex-col gap-5">
-        <h2 class="text-section-title">{{ _("Préférences") }}</h2>
+      <section id="s-preferences" aria-labelledby="h-preferences" class="card flex flex-col gap-5 scroll-mt-24">
+        <h2 id="h-preferences" class="text-section-title">{{ _("Préférences") }}</h2>
+
+        <div class="flex flex-col gap-4">
+          <h3 class="text-card-title font-semibold">{{ _("Affichage") }}</h3>
+          {% include "_display_preferences.html" %}
+        </div>
+
+        <label class="flex items-center justify-between gap-4 min-h-[50px] cursor-pointer border-t border-border pt-3">
+          <span class="text-sm font-medium text-primary">{{ _("Masquer les montants sensibles") }}</span>
+          <input
+            type="checkbox"
+            role="switch"
+            x-model="privacy"
+            @change="localStorage.setItem('privacy', privacy)"
+            class="peer sr-only"
+          />
+          <span
+            aria-hidden="true"
+            class="relative shrink-0 w-11 h-6 rounded-full bg-field transition-colors peer-checked:bg-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-container after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"
+          ></span>
+        </label>
+
+        {# Début du mois budgétaire : s'enregistre au choix, comme la langue. #}
+        <form
+          hx-post="/settings/budget-start-day"
+          hx-trigger="change"
+          hx-target="#budget-start-result"
+          hx-swap="innerHTML"
+          class="flex flex-col gap-2 border-t border-border pt-4"
+        >
+          <label class="form-group">
+            <span class="form-label">{{ _("Début du mois budgétaire") }}</span>
+            <span class="select-field">
+              <select name="budget_start_day" class="input-base">
+                {% for day in [1, 5, 10, 15] %}
+                <option value="{{ day }}" {% if cap_settings.budget_start_day == day %}selected{% endif %}>{{ _("Le 1er") if day == 1 else _("Le %(day)s", day=day) }}</option>
+                {% endfor %}
+              </select>
+            </span>
+          </label>
+          <div id="budget-start-result" aria-live="polite"></div>
+        </form>
+
         {# Langue et format : deux choix distincts (on peut lire l'interface en
            anglais avec des dates à la française). Chaque carte montre le
            rendu réel. Le changement s'enregistre seul et recharge la page :
@@ -216,7 +384,7 @@
           hx-trigger="twiga-prefs"
           hx-swap="none"
           x-data="{ lang: '{{ current_language() }}', fmt: '{{ current_format() }}' }"
-          class="flex flex-col gap-5"
+          class="flex flex-col gap-5 border-t border-border pt-4"
         >
           <fieldset class="flex flex-col gap-2">
             <legend class="form-label mb-1">{{ _("Langue") }}</legend>
@@ -258,87 +426,55 @@
           <p class="text-xs text-secondary">{{ _("Le changement s'applique immédiatement.") }}</p>
         </form>
 
-        <div class="flex flex-col gap-4 border-t border-border pt-4">
-          <h3 class="text-card-title font-semibold">{{ _("Affichage") }}</h3>
-          {% include "_display_preferences.html" %}
-        </div>
-
-        <label class="flex items-center justify-between gap-4 min-h-[50px] cursor-pointer border-t border-border pt-3">
-          <span class="text-sm font-medium text-primary">{{ _("Masquer les montants sensibles") }}</span>
-          <input
-            type="checkbox"
-            role="switch"
-            x-model="privacy"
-            @change="localStorage.setItem('privacy', privacy)"
-            class="peer sr-only"
-          />
-          <span
-            aria-hidden="true"
-            class="relative shrink-0 w-11 h-6 rounded-full bg-field transition-colors peer-checked:bg-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-container after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"
-          ></span>
-        </label>
-
         <button type="button" onclick="window.startTwigaTour()" class="btn btn-secondary border-border-strong self-start">
           {{ icon('map', size=18) }} {{ _("Revoir la visite guidée") }}
         </button>
       </section>
 
       {% if auth_enabled %}
-      <!-- Sécurité — n'a de sens que si l'authentification est activée
-           (sinon rien à protéger, pas de mot de passe à changer). -->
-      <section x-show="tab === 'security'" style="display: none;" class="flex flex-col gap-4">
-        <div class="card flex flex-col gap-4">
-          <h2 class="text-section-title">{{ _("Changer le mot de passe") }}</h2>
-          <form
-            hx-post="/settings/change-password"
-            hx-target="#change-password-result"
-            hx-swap="innerHTML"
-            hx-on:htmx:after-request="if(event.detail.successful) this.reset()"
-            class="flex flex-col gap-3 lg:max-w-md"
-          >
-            <label class="form-group">
-              <span class="form-label">{{ _("Mot de passe actuel") }}</span>
-              {% with field_name = "current_password", field_autocomplete = "current-password" %}
-              {% include "_password_field.html" %}
-              {% endwith %}
-            </label>
-            <label class="form-group">
-              <span class="form-label">{{ _("Nouveau mot de passe") }}</span>
-              {% with field_name = "new_password", field_autocomplete = "new-password", field_minlength = 8 %}
-              {% include "_password_field.html" %}
-              {% endwith %}
-            </label>
-            <label class="form-group">
-              <span class="form-label">{{ _("Confirmer le nouveau mot de passe") }}</span>
-              {% with field_name = "confirm_password", field_autocomplete = "new-password", field_minlength = 8 %}
-              {% include "_password_field.html" %}
-              {% endwith %}
-            </label>
-            <button type="submit" class="btn btn-primary self-start">
-              {{ icon('device-floppy', size=18) }} {{ _("Enregistrer") }}
-            </button>
-            <div id="change-password-result"></div>
-          </form>
+      <!-- Utilisateurs — résumé -->
+      <section id="s-utilisateurs" aria-labelledby="h-utilisateurs" class="card flex flex-col gap-3 scroll-mt-24">
+        <div class="flex items-center justify-between gap-3">
+          <h2 id="h-utilisateurs" class="text-section-title">{{ _("Utilisateurs") }}</h2>
+          {% if is_admin %}<a href="/users" class="btn btn-secondary border-border-strong">{{ icon('plus', size=18) }} {{ _("Ajouter un utilisateur") }}</a>{% endif %}
         </div>
-
-        <!-- Une action de sortie vit avec Sécurité. -->
-        <form hx-post="/logout">
-          <button type="submit" class="btn btn-danger">
-            {{ icon('logout', size=18) }} {{ _("Se déconnecter") }}
-          </button>
-        </form>
+        <div class="flex flex-col">
+          {% for user in users if user.is_active %}
+          <div class="flex items-center gap-3 py-3 {{ 'border-t border-border' if not loop.first else '' }}">
+            <span class="shrink-0 w-10 h-10 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-sm font-bold">{{ user_initials(user) }}</span>
+            <span class="flex-1 min-w-0 truncate font-medium text-primary">{{ user_display_name(user) }}{% if current and current.id == user.id %} <span class="font-normal text-secondary">· {{ _("vous") }}</span>{% endif %}</span>
+            <span class="text-sm text-secondary">{{ user_role_label(user.role) }}</span>
+          </div>
+          {% endfor %}
+        </div>
       </section>
       {% endif %}
 
-      <!-- Données — sauvegarde et restauration. L'import est dans l'en-tête. -->
-      <section x-show="tab === 'data'" style="display: none;" class="flex flex-col gap-4">
+      <!-- Données — sauvegarde, export, restauration. L'import est dans l'en-tête. -->
+      <section id="s-donnees" aria-labelledby="h-donnees" class="flex flex-col gap-4 scroll-mt-24">
+        <h2 id="h-donnees" class="sr-only">{{ _("Données") }}</h2>
+        <div class="card flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <h3 class="text-section-title">{{ _("Exporter") }}</h3>
+            <p class="text-sm text-secondary">{{ _("Toutes les opérations, catégories et règles, sans quitter ton réseau.") }}</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <a href="/export/transactions.csv" class="btn btn-secondary border-border-strong">
+              {{ icon('file-download', size=18) }} {{ _("Export CSV des opérations") }}
+            </a>
+            <a href="/export/json" class="btn btn-secondary border-border-strong">
+              {{ icon('file-download', size=18) }} {{ _("Export JSON complet") }}
+            </a>
+          </div>
+        </div>
+
         {# Sauvegarde : la même que l'export JSON complet (c'est elle que la
            restauration relit), téléchargée tout de suite ; l'appli ne retient que
            la date. Réservée à l'admin, comme l'écriture en général. #}
-        {% if not auth_enabled or is_admin %}
+        {% if is_admin %}
         <div class="card flex flex-col gap-3">
           <div class="flex flex-col gap-1">
-            <h2 class="text-section-title">{{ _("Sauvegarde") }}</h2>
+            <h3 class="text-section-title">{{ _("Sauvegarde") }}</h3>
             <p class="text-sm text-secondary">{{ _("Une sauvegarde complète, au même format que l'export JSON : c'est celle que la restauration relit. Le fichier est téléchargé, rien n'est gardé sur le serveur.") }}</p>
           </div>
           <div
@@ -364,22 +500,7 @@
 
         <div class="card flex flex-col gap-3">
           <div class="flex flex-col gap-1">
-            <h2 class="text-section-title">{{ _("Exporter") }}</h2>
-            <p class="text-sm text-secondary">{{ _("Toutes les opérations, catégories et règles, sans quitter ton réseau.") }}</p>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <a href="/export/transactions.csv" class="btn btn-secondary border-border-strong">
-              {{ icon('file-download', size=18) }} {{ _("Export CSV des opérations") }}
-            </a>
-            <a href="/export/json" class="btn btn-secondary border-border-strong">
-              {{ icon('file-download', size=18) }} {{ _("Export JSON complet") }}
-            </a>
-          </div>
-        </div>
-
-        <div class="card flex flex-col gap-3">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-section-title">{{ _("Restaurer") }}</h2>
+            <h3 class="text-section-title">{{ _("Restaurer") }}</h3>
             <p class="text-sm text-secondary">{{ _("Les données déjà présentes (même id) sont mises à jour, pas dupliquées.") }}</p>
           </div>
           <form
@@ -406,6 +527,36 @@
           </form>
           <div id="restore-progress"></div>
         </div>
+
+        {# Zone sensible : supprimer toutes les opérations. Réservée à
+           l'administrateur, en deux temps (le bouton, puis « Oui, tout
+           supprimer »), et le serveur refuse sans la confirmation. #}
+        {% if is_admin %}
+        <div class="card flex flex-col gap-3" x-data="{ asking: false }">
+          <div class="flex flex-col gap-1">
+            <h3 class="text-section-title">{{ _("Zone sensible") }}</h3>
+            <p class="text-sm text-secondary">{{ _("Supprime toutes les opérations du foyer. Irréversible.") }}</p>
+          </div>
+          <button type="button" x-show="!asking" @click="asking = true" class="btn btn-danger self-start">
+            {{ icon('trash', size=18) }} {{ _("Tout supprimer…") }}
+          </button>
+          <div x-show="asking" style="display: none;" role="alert" class="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              hx-post="/settings/delete-all-transactions"
+              hx-vals='{"confirm": "yes"}'
+              hx-target="#delete-all-result"
+              hx-swap="innerHTML"
+              @click="asking = false"
+              class="btn btn-danger"
+            >
+              {{ icon('trash', size=18) }} {{ _("Oui, tout supprimer") }}
+            </button>
+            <button type="button" @click="asking = false" class="btn btn-secondary border-border-strong">{{ _("Annuler") }}</button>
+          </div>
+          <div id="delete-all-result" aria-live="polite"></div>
+        </div>
+        {% endif %}
       </section>
     </div>
   </div>

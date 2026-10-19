@@ -1,10 +1,16 @@
-{% from "imports/_stepper.html" import stepper, scene %}
+{% from "imports/_stepper.html" import stepper, scene, step_nav %}
 {{ stepper(3, _("Colonnes") if format == "csv" else _("Aperçu")) }}
 <div class="card flex flex-col gap-4" x-data="{ count: {{ unique_count }}, busy: false }">
-  {% set summary %}{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s){% endtrans %}{% endset %}
+  {% set summary %}{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} opérations à importer, {{ duplicate_count }} doublons écartés.{% endtrans %}{% endset %}
   {{ scene(_("Tout est prêt."), summary) }}
 
-  <p class="text-sm text-secondary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s){% endtrans %}</p>
+  <h3 class="sr-only">{{ _("Aperçu avant import") }}</h3>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("Lignes lues") }}</p><p class="text-xl font-semibold tabular-nums">{{ total_count }}</p></div>
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("Doublons ignorés") }}</p><p class="text-xl font-semibold tabular-nums">{{ duplicate_count }}</p></div>
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("Virements exclus") }}</p><p class="text-xl font-semibold tabular-nums">{{ transfer_count }}</p></div>
+    <div class="rounded-xl bg-sunken p-3"><p class="text-xs text-secondary">{{ _("À importer") }}</p><p class="text-xl font-semibold tabular-nums" x-text="count">{{ unique_count }}</p></div>
+  </div>
 
   <form
     hx-post="/imports/{{ import_id }}/execute"
@@ -27,6 +33,7 @@
          d'usage principal. Décocher reste possible ligne par ligne pour
          exclure une opération précise avant l'import, sans devoir la
          supprimer après coup depuis Opérations. -->
+    <h3 class="text-sm font-semibold text-primary">{{ _("Vérifier ligne par ligne") }}</h3>
     <div class="overflow-y-auto max-h-80 rounded-xl border border-border">
       <table class="w-full text-sm">
         <thead>
@@ -35,6 +42,7 @@
             <th scope="col" class="hidden sm:table-cell text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Date") }}</th>
             <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2">{{ _("Libellé") }}</th>
             <th scope="col" class="text-right text-secondary text-xs font-medium px-3 py-2">{{ _("Montant") }}</th>
+            <th scope="col" class="hidden md:table-cell text-left text-secondary text-xs font-medium px-3 py-2">{{ _("État") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -60,6 +68,12 @@
               {% endif %}
             </td>
             <td class="amount-blur text-primary font-semibold tabular-nums px-3 py-2 text-right whitespace-nowrap">{{ tx.amount | eur }}</td>
+            {% set state = states[idx] %}
+            <td class="hidden md:table-cell px-3 py-2 whitespace-nowrap">
+              {% if state[0] == "rule" %}<span class="badge badge-info">{{ _("Règle") }}</span>
+              {% elif state[0] == "transfer" %}<span class="badge badge-neutral">{% trans account=state[1] %}Virement détecté ↔ {{ account }}{% endtrans %}</span>
+              {% else %}<span class="badge badge-warning">{{ _("À trier") }}</span>{% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -75,7 +89,7 @@
          silencieusement. -->
     <details class="rounded-xl border border-border">
       <summary class="cursor-pointer select-none px-3 min-h-[50px] flex items-center text-sm text-secondary font-medium">
-        {% trans duplicate_count=duplicate_count %}Doublons ignorés ({{ duplicate_count }}){% endtrans %}
+        {% trans duplicate_count=duplicate_count %}{{ duplicate_count }} doublons écartés{% endtrans %}
       </summary>
       <div class="overflow-y-auto max-h-64 border-t border-border">
         <table class="w-full text-sm">
@@ -116,10 +130,6 @@
     </button>
   </form>
 
-  <!-- Filet de sécurité, surtout quand unique_count == 0 (le bouton
-       ci-dessus est alors désactivé, sans autre issue) : repartir sur un
-       autre fichier sans devoir retourner par Paramètres. -->
-  <a href="/imports/new" class="btn btn-secondary border-border-strong">
-    {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
-  </a>
+  <p class="text-xs text-secondary">{{ _("Coche une ligne pour l'ajouter quand même à l'import.") }}</p>
 </div>
+{{ step_nav("/imports/back?import_id=" ~ import_id ~ "&format=" ~ format ~ "&account_id=" ~ account.id) }}

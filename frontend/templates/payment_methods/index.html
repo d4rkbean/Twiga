@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% from "_macros/page.html" import page_header %}
 
+{# Choix de l'icône : douze pastilles de 50 px, une seule cochée. Les radios
+   restent au clavier (sr-only), la pastille cochée prend le liseré ambre. #}
+{% macro icon_picker(selected, label_id) %}
+<div role="radiogroup" aria-labelledby="{{ label_id }}" class="flex flex-wrap gap-2">
+  {% for icon_name in picker_icons %}
+  <label class="cursor-pointer">
+    <input type="radio" name="icon" value="{{ icon_name }}" class="sr-only peer" {% if selected == icon_name %}checked{% endif %} aria-label="{{ icon_name }}" />
+    <span class="w-[50px] h-[50px] rounded-xl border border-field bg-container text-primary flex items-center justify-center peer-checked:border-2 peer-checked:border-accent peer-checked:bg-accent-soft peer-checked:text-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink">{{ icon(icon_name, size=20) }}</span>
+  </label>
+  {% endfor %}
+</div>
+{% endmacro %}
+
 {# Cet écran a sa propre action principale en ambre plein : « Importer », dans
    l'en-tête de la coque, passe en secondaire (un seul ambre plein par écran). #}
 {% set demote_import = true %}
@@ -47,39 +60,31 @@
           </button>
         </div>
 
-        <!-- Édition inline -->
+        <!-- Édition inline : nom et icône -->
         <form
           method="post"
           action="/payment-methods/{{ pm.id }}/update"
           x-show="mode === 'edit'"
           style="display: none;"
-          class="flex items-center gap-2"
+          class="flex flex-col gap-3 py-2"
         >
-          <input
-            name="icon"
-            value="{{ pm.icon }}"
-            maxlength="10"
-            aria-label="{{ _("Icône") }}"
-            class="input-base w-14 shrink-0 px-1 text-center"
-          />
-          <input
-            name="name"
-            value="{{ pm.name }}"
-            required
-            aria-label="{{ _("Nom") }}"
-            class="input-base flex-1 min-w-0"
-          />
-          <button type="submit" aria-label="{{ _("Enregistrer") }}" class="btn btn-primary w-[50px] px-0 shrink-0">
-            {{ icon('check', size=18) }}
-          </button>
-          <button
-            type="button"
-            @click="mode = 'view'"
-            aria-label="{{ _("Annuler") }}"
-            class="btn btn-secondary border-border-strong w-[50px] px-0 shrink-0"
-          >
-            {{ icon('x', size=18) }}
-          </button>
+          <p class="text-sm font-semibold text-primary">{{ _("Modifier le mode de paiement") }}</p>
+          <label class="form-group">
+            <span class="form-label">{{ _("Nom") }}</span>
+            <input name="name" value="{{ pm.name }}" required autocomplete="off" class="input-base" />
+          </label>
+          <div class="form-group">
+            <span class="form-label" id="edit-icon-{{ pm.id }}">{{ _("Icône") }}</span>
+            {{ icon_picker(get_payment_method_icon_name(pm.name), "edit-icon-" ~ pm.id) }}
+          </div>
+          <div class="flex gap-2">
+            <button type="button" @click="mode = 'view'" class="btn btn-secondary border-border-strong flex-1">
+              {{ icon('x', size=18) }} {{ _("Annuler") }}
+            </button>
+            <button type="submit" class="btn btn-secondary border-border-strong flex-1">
+              {{ icon('check', size=18) }} {{ _("Enregistrer") }}
+            </button>
+          </div>
         </form>
 
         <!-- Confirmation de suppression inline -->
@@ -88,23 +93,25 @@
           action="/payment-methods/{{ pm.id }}/delete"
           x-show="mode === 'confirm'"
           style="display: none;"
-          class="flex items-center gap-2"
+          class="flex flex-col gap-3 py-2"
+          role="alertdialog"
         >
-          <span class="flex-1 min-w-0 truncate text-sm text-primary">{% trans icon="", name=pm.name | pm_label %}Supprimer {{ icon }} {{ name }} ?{% endtrans %}</span>
-          <button type="submit" class="btn btn-danger shrink-0 px-4">
-            {{ _("Oui") }}
-          </button>
-          <button
-            type="button"
-            @click="mode = 'view'"
-            class="btn btn-secondary border-border-strong shrink-0 px-4"
-          >
-            {{ _("Non") }}
-          </button>
+          <div class="flex flex-col gap-1">
+            <p class="text-sm font-semibold text-primary">{% trans name=pm.name | pm_label %}Supprimer « {{ name }} » ?{% endtrans %}</p>
+            <p class="text-sm text-secondary">{{ _("Les opérations qui l'utilisent déjà ne sont pas modifiées.") }}</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" @click="mode = 'view'" class="btn btn-secondary border-border-strong flex-1">
+              {{ _("Non, garder") }}
+            </button>
+            <button type="submit" class="btn btn-danger flex-1">
+              {{ icon('trash', size=18) }} {{ _("Oui, supprimer") }}
+            </button>
+          </div>
         </form>
       </div>
       {% else %}
-      <p class="text-sm text-secondary text-center px-4 pb-6">{{ _("Aucun mode de paiement pour l'instant.") }}</p>
+      <p class="text-sm text-secondary text-center px-4 pb-6">{{ _("Aucun mode de paiement pour l'instant. Ajoute le premier avec le formulaire.") }}</p>
       {% endfor %}
     </section>
 
@@ -112,16 +119,14 @@
       <section class="card flex flex-col gap-3">
         <h2 class="text-section-title">{{ _("Ajouter") }}</h2>
         <form method="post" action="/payment-methods/create" class="flex flex-col gap-3">
-          <div class="flex gap-2">
-            <label class="form-group w-20 shrink-0">
-              <span class="form-label">{{ _("Icône") }}</span>
-              <input name="icon" placeholder="💳" maxlength="10" class="input-base px-1 text-center" />
-            </label>
-            <label class="form-group flex-1 min-w-0">
-              <span class="form-label">{{ _("Nom") }}</span>
-              <input name="name" placeholder="{{ _("Nom") }}" required class="input-base" />
-            </label>
+          <div class="form-group">
+            <span class="form-label" id="add-icon-label">{{ _("Icône") }}</span>
+            {{ icon_picker("credit-card", "add-icon-label") }}
           </div>
+          <label class="form-group">
+            <span class="form-label">{{ _("Nom") }}</span>
+            <input name="name" placeholder="{{ _("Nom") }}" required autocomplete="off" class="input-base" />
+          </label>
           <button type="submit" class="btn btn-primary">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</button>
         </form>
       </section>

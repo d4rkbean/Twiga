@@ -537,6 +537,50 @@
   }
   .check-box:focus-visible { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
 
+  /* Liste déroulante habillée comme la maquette : le champ de 50 px avec un
+     chevron à droite, jamais le contrôle natif brut.
+         <div class="select-field"><select class="input-base">...</select></div> */
+  .select-field { position: relative; }
+  .select-field > select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: 2.5rem;
+    cursor: pointer;
+  }
+  .select-field::after {
+    content: "";
+    position: absolute;
+    inset-inline-end: 0.875rem;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    background-color: var(--color-secondary);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+
+  /* Pastille de choix (filtre, compte, montant rapide) : 50 px, la pastille
+     active porte le liseré et le fond ambre doux de la maquette. */
+  .chip {
+    min-height: 50px;
+    border-radius: 12px;
+    border: 1px solid var(--color-field);
+    background-color: var(--color-container);
+    color: var(--color-primary);
+    padding-inline: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .chip[aria-checked="true"], .chip[aria-pressed="true"], .chip.is-active {
+    border: 2px solid var(--color-accent);
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent-ink);
+    font-weight: 600;
+  }
+
   /* ---------- CARTES ---------- */
   .card {
     background-color: var(--color-container);
@@ -575,6 +619,7 @@
     background-color: var(--color-warning-soft);
   }
   .badge-neutral { color: var(--color-secondary); background-color: var(--color-sunken); }
+  .badge-info { color: var(--color-info); background-color: var(--color-info-soft); }
   .badge-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
 
   /* ---------- ALERTES ---------- */
