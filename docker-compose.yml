@@ -22,8 +22,11 @@ services:
   app:
     build: .
     restart: always
+    # BIND_ADDRESS (optional): the host address to listen on, for example
+    # 127.0.0.1 to only accept connections from this machine (behind a reverse
+    # proxy on the same host). Unset: every address, IPv4 and IPv6, as before.
     ports:
-      - "${PORT:-8181}:8080"
+      - "${BIND_ADDRESS:-}${BIND_ADDRESS:+:}${PORT:-8181}:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -31,6 +34,9 @@ services:
       DATABASE_URL: postgresql://finance:${DB_PASSWORD:-finance}@db:5432/finance
       AUTH_ENABLED: ${AUTH_ENABLED:-true}
       AUTH_PASSWORD: ${AUTH_PASSWORD:-changeme}
+      # Optional security settings, empty by default (see .env.example).
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
       # Living style guide at /design-system. Off by default: the route
       # returns 404 unless this variable is true.
       SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}

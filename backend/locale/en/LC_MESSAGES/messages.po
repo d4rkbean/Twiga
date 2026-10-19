@@ -328,6 +328,9 @@ msgstr "On-site activities"
 msgid "Administrateur"
 msgstr "Administrator"
 
+msgid "Adresse du serveur non autorisée."
+msgstr "Server address not allowed."
+
 msgid "Afficher :"
 msgstr "Show:"
 
@@ -1898,6 +1901,9 @@ msgstr "Fill in at least one of the two fields above: check number, or payment m
 #, python-format
 msgid "Reprendre %(previous_month_label)s"
 msgstr "Reuse %(previous_month_label)s"
+
+msgid "Requête refusée : elle ne vient pas de Twiga."
+msgstr "Request refused: it does not come from Twiga."
 
 #, python-format
 msgid "Ressources de %(period_label)s :"
