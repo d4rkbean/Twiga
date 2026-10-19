@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud, report_view
 from backend.budget_month import period_containing, period_of_month
 from backend.database import get_db
 from backend.dates import (
@@ -503,6 +503,8 @@ def _build_report_context(
         "expense_total": expense_total,
         "result_total": result_total,
         "savings_rate": savings_rate,
+        "prev_income": prev_income,
+        "prev_expense": prev_expense,
         "income_change": _percent_change(income_total, prev_income),
         "expense_change": _percent_change(expense_total, prev_expense),
         "result_change": result_change,
@@ -547,6 +549,15 @@ def _build_report_context(
     }
 
 
+def _add_other_way_context(request: Request, db: Session, context: dict, question: str | None) -> None:
+    """The nine questions of the other way's Rapports: only computed for it, so the
+    Classic page renders exactly what it always did."""
+    if getattr(request.state, "ui_variant", None) != "other_way":
+        return
+    context.update(report_view.build_other_way_context(db, context, date.today()))
+    context["question"] = question if question in answers.REPORT_QUESTION_IDS else "dep"
+
+
 @router.get("", response_class=HTMLResponse)
 def reports_page(
     request: Request,
@@ -559,6 +570,7 @@ def reports_page(
     date_to: str | None = None,
     account_id: str | None = None,
     shift_income: str | None = None,
+    q: str | None = None,
     db: Session = Depends(get_db),
 ):
     context = _build_report_context(
@@ -566,6 +578,7 @@ def reports_page(
         shift_income=shift_income == "1",
     )
     context["request"] = request
+    _add_other_way_context(request, db, context, q)
     return templates.TemplateResponse("reports/index.html", context)
 
 
@@ -581,6 +594,7 @@ def reports_content(
     date_to: str | None = None,
     account_id: str | None = None,
     shift_income: str | None = None,
+    q: str | None = None,
     db: Session = Depends(get_db),
 ):
     context = _build_report_context(
@@ -588,6 +602,7 @@ def reports_content(
         shift_income=shift_income == "1",
     )
     context["request"] = request
+    _add_other_way_context(request, db, context, q)
     return templates.TemplateResponse("reports/_content.html", context)
 
 
@@ -667,6 +682,71 @@ def report_transactions(
         "report_qs": _build_report_qs(period, parsed_account_id),
     }
     return templates.TemplateResponse("reports/_transactions_list.html", context)
+
+
+@router.get("/category-sheet", response_class=HTMLResponse)
+def category_sheet(
+    request: Request,
+    period_type: str | None = None,
+    month: int | None = None,
+    year: int | None = None,
+    quarter: int | None = None,
+    semester: int | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    account_id: str | None = None,
+    type: str = "expense",
+    category_id: str | None = None,
+    exact_category_id: str | None = None,
+    category_name: str = "",
+    shift_income: str | None = None,
+    db: Session = Depends(get_db),
+):
+    # The side sheet of a category (the other way): what it weighs, its
+    # subcategories, then its twelve months and its operations. The trend and the
+    # operations are the existing fragments, which the sheet loads by itself; this
+    # route only draws the head: the sentence, the total and the subcategories.
+    today = date.today()
+    period = _resolve_period(
+        period_type, month, year, quarter, semester, date_from, date_to, today, crud.get_budget_start_day(db)
+    )
+    parsed_account_id = _parse_account_id(account_id)
+    uncategorized = category_id == "none"
+    parsed_category_id = int(category_id) if category_id and not uncategorized else None
+    parsed_exact_id = int(exact_category_id) if exact_category_id else None
+    positive = type == "income"
+    shifted = shift_income == "1" and period.period_type == "mois"
+    if positive and shifted:
+        query_start, query_end = period.prev_start, period.prev_end
+    else:
+        query_start, query_end = period.start, period.end
+
+    rows = _build_category_rows(
+        db, query_start, query_end, period.prev_start, period.prev_end, parsed_account_id, positive=positive
+    )
+    row = next((r for r in rows if r["category_id"] == parsed_category_id), None)
+    _, count = crud.get_report_transactions_page(
+        db, query_start, query_end, parsed_account_id,
+        positive=positive, category_id=parsed_category_id, exact_category_id=parsed_exact_id,
+        uncategorized=uncategorized, page=1, page_size=1,
+    )
+    context = {
+        "request": request,
+        "report_qs": _build_report_qs(period, parsed_account_id, shift_income == "1"),
+        "type": type,
+        "category_id": category_id or "",
+        "exact_category_id": exact_category_id or "",
+        "category_name": category_name,
+        "uncategorized": uncategorized,
+        "parent_name": row["name"] if row else category_name,
+        "total": row["amount"] if row else Decimal("0.00"),
+        "percent": row["percent_of_total"] if row else 0,
+        "count": count,
+        "subcategories": row["subcategories"] if row and not exact_category_id else [],
+        "period_label": period.label,
+        "positive": positive,
+    }
+    return templates.TemplateResponse("other_way/reports/_category_sheet.html", context)
 
 
 @router.get("/category-trend", response_class=HTMLResponse)

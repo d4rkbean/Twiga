@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "other_way/_plan_kit.html" import neighbours %}
+
+{#- Rapports de L'autre voie : neuf questions plutôt que sept onglets. Chaque
+    question a sa phrase (backend/answers.py, report_answers) et son panneau ; tout
+    le corps de la page est le fragment #reports-content (reports/_content.html, celui
+    de L'autre voie), que la période (liens), le compte ou le décalage (formulaire)
+    remplacent. La question choisie, la feuille des critères et la liste des
+    questions (mobile) vivent ici, sur <main>, qui survit à l'échange. -#}
+{% set shell_page_title = _("Rapports") %}
+{% block title %}{{ _("Rapport complet — Twiga") }}{% endblock %}
+{% block shell_head %}{{ super() }}
+  <script src="{{ static_url('/static/js/reports-plan.js') }}" defer></script>
+{% endblock %}
+{% block extra_head %}
+  <script src="{{ static_url('/static/vendor/chart.min.js') }}" defer></script>
+  <script src="{{ static_url('/static/js/report-category-trend.js') }}" defer></script>
+  <link rel="stylesheet" href="{{ static_url('/static/css/reports-print.css') }}" media="print" />
+{% endblock %}
+{% block body_chrome %}pt-[64px] pb-[130px] lg:pb-0{% endblock %}
+
+{% block content %}
+{% set is_admin = get_current_user(request) is none or get_current_user(request).role == "admin" %}
+{{ neighbours(_("Écrans de Plus"), [
+  {"href": "/transactions/list", "label": _("Opérations"), "current": false},
+] + ([{"href": "/imports/new", "label": _("Import"), "current": false}] if is_admin else []) + [
+  {"href": "/reports", "label": _("Rapports"), "current": true},
+  {"href": "/settings", "label": _("Paramètres"), "current": false},
+]) }}
+<main x-data="{ q: '{{ question }}', crit: false, psheet: false, qopen: false }" @keydown.escape.window="psheet = false" class="flex flex-col px-4 pt-5 pb-6 lg:px-10 lg:pt-8 lg:pb-10">
+  <div id="reports-content">
+    {% include "reports/_content.html" %}
+  </div>
+</main>
+{% endblock %}
