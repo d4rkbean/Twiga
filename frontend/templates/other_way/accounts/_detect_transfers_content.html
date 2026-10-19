@@ -1,0 +1,43 @@
+{#- Pairs of operations that look like a transfer between two of the user's own
+    accounts: confirm one, confirm all (in the header), or ignore one for this visit. -#}
+{% set write = can_edit("/accounts/create") %}
+<section id="detect-transfers-content" class="card flex flex-col gap-3" aria-labelledby="detect-title">
+  <h2 id="detect-title" class="text-section-title">{{ _("Détecter les virements internes") }}</h2>
+  <p class="text-sm text-secondary">{{ _("Recherche, sur tout l'historique, des paires de transactions qui se ressemblent comme un virement interne entre deux de tes comptes (montant opposé, ± 3 jours, ± 1 € de tolérance).") }}</p>
+  <ul class="border-t border-border">
+    {% for pair in pairs %}
+    <li data-pair class="py-4 flex flex-col gap-2 border-b border-border last:border-0">
+      <p class="font-semibold flex items-center gap-2">
+        {{ icon('repeat', size=16) }} {{ pair.negative.account.name }} {{ icon('arrow-narrow-right', size=14) }} {{ pair.positive.account.name }}
+      </p>
+      <p class="text-sm text-secondary tabular-nums flex flex-wrap items-center gap-x-2">
+        <span class="amount-blur text-primary font-medium">{{ pair.negative.amount | eur }}</span>
+        <span>{% trans date=pair.negative.date | long_date %}le {{ date }}{% endtrans %}</span>
+        {{ icon('arrows-left-right', size=14) }}
+        <span class="amount-blur text-primary font-medium">+{{ pair.positive.amount | eur }}</span>
+        <span>{% trans date=pair.positive.date | long_date %}le {{ date }}{% endtrans %}</span>
+      </p>
+      <p class="text-xs text-secondary">
+        {%- set gap = (pair.positive.date - pair.negative.date).days | abs -%}
+        {%- if pair.positive.amount == pair.negative.amount | abs -%}
+          {%- if gap == 0 -%}{{ _("Même montant, le même jour.") }}
+          {%- else -%}{% trans n=gap %}Même montant, un jour d'écart.{% pluralize %}Même montant, {{ n }} jours d'écart.{% endtrans %}{%- endif -%}
+        {%- else -%}{% trans n=gap %}Montants proches, un jour d'écart.{% pluralize %}Montants proches, {{ n }} jours d'écart.{% endtrans %}{%- endif -%}
+      </p>
+      {% if write %}
+      <div class="grid grid-cols-2 gap-2">
+        <form hx-post="/accounts/detect-transfers/confirm" hx-target="#detect-transfers-content" hx-swap="outerHTML">
+          <input type="hidden" name="tx_a_id" value="{{ pair.negative.id }}" />
+          <input type="hidden" name="tx_b_id" value="{{ pair.positive.id }}" />
+          <button type="submit" class="btn btn-secondary border-border-strong w-full">{{ icon('check', size=18) }} {{ _("Confirmer") }}</button>
+        </form>
+        <button type="button" @click="$el.closest('[data-pair]').remove()" class="btn btn-ghost text-secondary">{{ icon('x', size=18) }} {{ _("Ignorer") }}</button>
+      </div>
+      {% endif %}
+    </li>
+    {% else %}
+    <li class="py-4 text-sm text-secondary">{{ _("Aucun virement interne non confirmé détecté.") }}</li>
+    {% endfor %}
+  </ul>
+  {% if request.headers.get("HX-Request") %}<span hidden x-init="window.dispatchEvent(new CustomEvent('accounts-changed'))"></span>{% endif %}
+</section>
