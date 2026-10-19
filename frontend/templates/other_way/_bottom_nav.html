@@ -14,8 +14,17 @@
   <a
     href="{{ destination.href }}"
     {% if active %}aria-current="page"{% endif %}
-    class="flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs {{ 'text-accent-ink font-semibold' if active else 'text-secondary font-medium' }}"
-  >{{ tab(active, destination.label, destination.icon) }}</a>
+    class="relative flex-1 min-h-[50px] flex flex-col items-center justify-center gap-0.5 text-xs {{ 'text-accent-ink font-semibold' if active else 'text-secondary font-medium' }}"
+  >{{ tab(active, destination.label, destination.icon) }}{% if destination.key == "savane" %}
+    {#- Badge on the icon: the number of operations to sort, hidden while empty (see _topbar.html). -#}
+    <span
+      id="savane-count-bottom"
+      class="absolute top-1 left-1/2 ml-2 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-ink text-container text-[11px] font-semibold leading-[18px] text-center tabular-nums empty:hidden"
+      data-noblur="1"
+      hx-get="/dashboard/sidebar-pending"
+      hx-trigger="load, htmx:afterRequest[detail.successful && detail.requestConfig.verb == 'post'] from:body delay:400ms"
+      hx-swap="innerHTML"
+    ></span>{% endif %}</a>
   {% endfor %}
   <button
     id="tour-b-bottom-plus"
