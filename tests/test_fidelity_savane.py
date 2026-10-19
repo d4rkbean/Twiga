@@ -354,8 +354,33 @@ def test_operations_screen_draws_every_control(clients):
         'name="f_search"',
     ):
         assert marker in html, marker
-    for text in ("+ de critères", "Nouvelle opération", "Réinitialiser les filtres", "Tout sélectionner"):
+    for text in ("+ de critères", "Nouvelle opération", "Réinitialiser", "Tout sélectionner"):
         assert text in html, text
+
+
+def test_operations_filter_bar_is_one_line_of_drawn_menus_with_reset_on_the_right(clients):
+    html = _operation(clients)
+    form = html.split('id="transactions-filters"')[1]
+    line = form.split("lg:flex-nowrap")[1].split('x-show="adv"')[0]
+    names = ('name="f_date_from"', 'name="f_date_to"', 'name="f_amount_min"', 'name="f_amount_max"', 'aria-label="Catégorie"')
+    positions = [line.index(name) for name in names]
+    assert positions == sorted(positions)
+    # The reset link closes the same line, pushed to the right.
+    assert line.index('href="/transactions/list"') > positions[-1]
+    assert "lg:ml-auto" in line
+    # The amounts are menus of steps, not free fields (the typed one only opens on « Autre montant… »).
+    for text in ("Montant min", "Montant max", "Autre montant…", "10 €", "500 €"):
+        assert text in line, text
+    assert 'name="f_amount_min" :value="amin"' in line
+    assert 'name="f_amount_max" :value="amax"' in line
+    assert 'placeholder="Montant min"' not in line
+
+
+def test_operations_amount_filters_keep_the_same_parameters(clients):
+    page = clients["admin"].get("/transactions/list?f_amount_min=37&f_amount_max=200").text
+    assert "&#34;amin&#34;: &#34;37&#34;" in page
+    narrowed = clients["admin"].get("/transactions/list/content?f_amount_min=37&f_amount_max=200", headers=HTMX)
+    assert narrowed.status_code == 200
 
 
 def test_operations_summary_sits_under_the_title_and_follows_the_filters(clients):

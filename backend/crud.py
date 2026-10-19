@@ -13,7 +13,8 @@ import bcrypt
 from sqlalchemy import and_, case, delete, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
-from backend.dates import format_date_long, month_range, months_between, shift_month
+from backend.budget_month import budget_months_within, period_containing, period_of_month
+from backend.dates import format_date_long, months_between, shift_month
 from backend.models import (
     Account,
     AppState,
@@ -1264,9 +1265,10 @@ def get_period_monthly_breakdown(
 def get_budget_progress(
     db: Session, start: date, end: date, account_id: int | None = None
 ) -> list[dict]:
+    first_budget_month, last_budget_month = budget_months_within(start, end, get_budget_start_day(db))
     budget_stmt = (
         select(Budget.category_id, func.sum(Budget.amount))
-        .where(Budget.month >= start, Budget.month <= end)
+        .where(Budget.month >= first_budget_month, Budget.month <= last_budget_month)
         .group_by(Budget.category_id)
     )
     budget_totals = {category_id: total for category_id, total in db.execute(budget_stmt).all()}
@@ -1549,9 +1551,10 @@ def get_category_monthly_typical(
     if not enfants:
         return {}
 
+    start_day = get_budget_start_day(db)
     mois = [shift_month(month_start, -(i + 1)) for i in range(lookback)]
-    debut = min(mois)
-    _, fin = month_range(max(mois).year, max(mois).month)
+    debut = period_of_month(min(mois).year, min(mois).month, start_day).start
+    fin = period_of_month(max(mois).year, max(mois).month, start_day).last_day
 
     stmt = (
         select(Transaction.category_id, Transaction.date, func.sum(Transaction.amount))
@@ -1565,7 +1568,7 @@ def get_category_monthly_typical(
         .group_by(Transaction.category_id, Transaction.date)
     )
 
-    # (racine, 1er du mois) -> total dépensé
+    # (racine, mois budgétaire nommé par son 1er) -> total dépensé
     par_mois: dict[tuple[int, date], Decimal] = {}
     racine_de: dict[int, int] = {}
     for racine_id, ids in enfants.items():
@@ -1575,7 +1578,7 @@ def get_category_monthly_typical(
         racine_id = racine_de.get(category_id)
         if racine_id is None:
             continue
-        cle = (racine_id, date(jour.year, jour.month, 1))
+        cle = (racine_id, period_containing(jour, start_day).month)
         par_mois[cle] = par_mois.get(cle, Decimal("0.00")) + (-total)
 
     resultat: dict[int, Decimal] = {}
@@ -1707,10 +1710,6 @@ INCOME_SOURCES: list[tuple[str, str, str]] = [
 ]
 INCOME_SOURCE_CODES = {code for code, _, _ in INCOME_SOURCES}
 
-# Days a budget month can start on (Paramètres > Préférences).
-BUDGET_START_DAYS = (1, 5, 10, 15)
-
-
 def get_cap_settings(db: Session) -> CapSettings:
     """Réglages du rituel — ligne unique, créée si absente.
 
@@ -1723,6 +1722,11 @@ def get_cap_settings(db: Session) -> CapSettings:
         db.add(settings)
         db.commit()
     return settings
+
+
+def get_budget_start_day(db: Session) -> int:
+    """Day of the month the budget month starts on (1 unless the household chose otherwise)."""
+    return get_cap_settings(db).budget_start_day or 1
 
 
 def get_incoming_transfers_since_last_cap(
@@ -1739,8 +1743,8 @@ def get_incoming_transfers_since_last_cap(
     """
     if account_id is None:
         return []
-    debut = _previous_month_start(month_start)
-    _, fin = month_range(month_start.year, month_start.month)
+    period = period_of_month(month_start.year, month_start.month, get_budget_start_day(db))
+    debut, fin = period.shifted(-1).start, period.last_day
     stmt = (
         select(Transaction)
         .where(
@@ -1768,18 +1772,17 @@ def get_income_prefill(db: Session, month_start: date) -> Decimal:
     if source == "fixe":
         return settings.income_fixed_amount or Decimal("0.00")
 
+    period = period_of_month(month_start.year, month_start.month, get_budget_start_day(db))
     if source == "recettes_courant":
-        _, fin = month_range(month_start.year, month_start.month)
-        return get_income_total(db, month_start, fin)
+        return get_income_total(db, period.start, period.last_day)
 
     if source == "virements":
         # Rien de présélectionné : c'est la liste à cocher du rituel qui
         # construit le total (voir routers/cap.py).
         return Decimal("0.00")
 
-    precedent = _previous_month_start(month_start)
-    debut, fin = month_range(precedent.year, precedent.month)
-    return get_income_total(db, debut, fin)
+    precedent = period.shifted(-1)
+    return get_income_total(db, precedent.start, precedent.last_day)
 
 
 def get_cap_allocation(db: Session, month_start: date) -> dict[str, dict]:

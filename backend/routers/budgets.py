@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from backend import crud
+from backend.budget_month import period_containing
 from backend.database import get_db
 from backend.dates import month_label, month_names, month_range
 from backend.pillars import PILLAR_ORDER, get_pillar_label
@@ -50,13 +51,13 @@ def _build_context(db: Session, month: int, year: int) -> dict:
         month_resources = crud.get_income_prefill(db, month_start)
         resources_from_cap = False
 
-    # Toujours le mois CIVIL en cours, indépendamment du mois consulté/édité
+    # Toujours le mois budgétaire en cours, indépendamment du mois consulté/édité
     # ci-dessus dans le formulaire : ce statut doit rester visible quel que
     # soit le mois affiché, pour remplacer la bannière d'alertes de La
     # Savane une fois ses alertes masquées.
     today = date.today()
-    current_month_start, current_month_end = month_range(today.year, today.month)
-    current_month_status = crud.get_budget_progress(db, current_month_start, current_month_end)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
+    current_month_status = crud.get_budget_progress(db, current_period.start, current_period.last_day)
 
     # Les catégories rangées par pilier (même résolution que « Mon mois » et
     # le rituel : voir crud.resolve_budget_pillar), pour que l'écran où l'on
@@ -78,7 +79,7 @@ def _build_context(db: Session, month: int, year: int) -> dict:
         "groups": [group for group in groups if group["categories"]],
         "budgets": budgets,
         "current_month_status": current_month_status,
-        "current_month_label": month_label(today.year, today.month),
+        "current_month_label": current_period.label,
         "month_resources": month_resources,
         "resources_from_cap": resources_from_cap,
         "savings_withdrawal": crud.get_savings_withdrawal(db, month_start),
@@ -93,10 +94,11 @@ def budgets_page(
     db: Session = Depends(get_db),
 ):
     today = date.today()
-    month = month if month and 1 <= month <= 12 else today.month
-    year = year or today.year
+    current_month = period_containing(today, crud.get_budget_start_day(db)).month
+    month = month if month and 1 <= month <= 12 else current_month.month
+    year = year or current_month.year
 
-    years = sorted(set(range(today.year - 1, today.year + 2)) | set(crud.get_transaction_years(db)), reverse=True)
+    years = sorted(set(range(current_month.year - 1, current_month.year + 2)) | set(crud.get_transaction_years(db)), reverse=True)
     if year not in years:
         years = sorted(set(years) | {year}, reverse=True)
 

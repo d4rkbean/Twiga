@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from backend import auth, crud
+from backend import auth, budget_month, crud
 from backend.auth_middleware import AuthMiddleware
 from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
@@ -171,7 +171,7 @@ def settings(request: Request, db: Session = Depends(get_db)):
 def save_budget_start_day(budget_start_day: int = Form(...), db: Session = Depends(get_db)):
     """"Début du mois budgétaire" (Préférences): the day the budget month
     starts on. Saved as soon as it is picked."""
-    if budget_start_day not in crud.BUDGET_START_DAYS:
+    if budget_start_day not in budget_month.BUDGET_START_DAYS:
         raise HTTPException(status_code=400, detail=_t("Jour de début invalide."))
     crud.get_cap_settings(db).budget_start_day = budget_start_day
     db.commit()
