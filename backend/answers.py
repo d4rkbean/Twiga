@@ -285,6 +285,40 @@ def payments_answer(modes: int, missing: int) -> dict:
     return {"phrase": phrase, "detail": detail}
 
 
+def recurring_state(item: dict) -> str:
+    """Where a detected subscription stands: "ignored", "inactive", "seen" (already debited
+    this month) or "pending" (expected this month, not seen yet)."""
+    if item["status"] == "ignored":
+        return "ignored"
+    if item["activity_status"] == "inactive":
+        return "inactive"
+    return "seen" if item["seen_this_month"] else "pending"
+
+
+def recurring_answer(active: int, expected: int, total: str) -> dict:
+    """The sentence of the Abonnements screen: how many, and how many are still expected this month."""
+    if not active:
+        return {
+            "phrase": _t("Aucun abonnement détecté pour l'instant."),
+            "detail": _t("Un abonnement apparaît quand le même montant revient à intervalle régulier."),
+        }
+    count = ngettext("%(n)s abonnement", "%(n)s abonnements", active) % {"n": active}
+    if expected:
+        phrase = count + ", " + ngettext(
+            "%(n)s attendu ce mois n'est pas encore passé.",
+            "%(n)s attendus ce mois ne sont pas encore passés.",
+            expected,
+        ) % {"n": expected}
+    else:
+        phrase = count + ", " + _t("tous sont passés ce mois-ci.")
+    detail = ngettext(
+        "%(n)s abonnement détecté · Total mensuel estimé : %(total)s",
+        "%(n)s abonnements détectés · Total mensuel estimé : %(total)s",
+        active,
+    ) % {"n": active, "total": total}
+    return {"phrase": phrase, "detail": detail}
+
+
 # --- Import -----------------------------------------------------------------
 
 
