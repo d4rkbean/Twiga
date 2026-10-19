@@ -51,27 +51,27 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <label class="form-group">
           <span class="form-label">{{ _("Moyen de paiement (si pas de chèque)") }}</span>
-          <select name="payment_method" class="input-base">
+          <span class="select-field"><select name="payment_method" class="input-base">
             <option value="" selected>{{ _("— Moyen de paiement (si pas de chèque) —") }}</option>
             {% for code, meta in payment_methods.items() %}
             <option value="{{ code }}">{{ meta.label }}</option>
             {% endfor %}
-          </select>
+          </select></span>
           <span class="input-hint">{{ _("Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque, ou moyen de paiement (Wero, PayPal...).") }}</span>
         </label>
         <label class="form-group">
           <span class="form-label">{{ _("Compte débité...") }}</span>
-          <select name="account_id" required class="input-base">
+          <span class="select-field"><select name="account_id" required class="input-base">
             <option value="" disabled selected>{{ _("Compte débité...") }}</option>
             {% for account in accounts %}
             <option value="{{ account.id }}">{{ account.name }}</option>
             {% endfor %}
-          </select>
+          </select></span>
         </label>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:grid-cols-1 xl:grid-cols-2">
           <label class="form-group">
             <span class="form-label">{{ _("Catégorie...") }}</span>
-            <select
+            <span class="select-field"><select
               name="parent_category_id"
               required
               hx-get="/transactions/subcategories?field_name=category_id&element_id=new-check-subcategory&allow_empty=false"
@@ -84,7 +84,7 @@
               {% for category in parent_categories %}
               <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
               {% endfor %}
-            </select>
+            </select></span>
           </label>
           <div class="form-group">
             <span class="form-label">{{ _("Sous-catégorie") }}</span>

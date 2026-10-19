@@ -11,7 +11,7 @@ from backend.i18n import lazy_gettext
 PILLARS: dict[str, dict[str, str]] = {
     "essentiel": {"label": lazy_gettext("Essentiel")},
     "choix": {"label": lazy_gettext("Choix")},
-    "imprevu": {"label": lazy_gettext("Imprévu")},
+    "imprevu": {"label": lazy_gettext("Imprévus")},
 }
 
 # Ordre d'affichage stable pour les dropdowns/légendes (dict Python déjà

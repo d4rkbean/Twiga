@@ -9,7 +9,9 @@
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
-  {% call page_header(_("Comptes"), back_href="/settings", back_label=_("Paramètres")) %}
+  {% set accounts_total = items | sum(attribute="balance") %}
+  {% set accounts_subtitle %}<span class="amount-blur">{% trans count=items | length, total=accounts_total | eur %}{{ count }} compte · total {{ total }}{% pluralize %}{{ count }} comptes · total {{ total }}{% endtrans %}</span>{% endset %}
+  {% call page_header(_("Comptes"), subtitle=accounts_subtitle, back_href="/settings", back_label=_("Paramètres")) %}
   <button
     type="button"
     onclick="document.getElementById('new-account-dialog').showModal()"
@@ -34,11 +36,11 @@
       </label>
       <label class="form-group">
         <span class="form-label">{{ _("Type") }}</span>
-        <select name="type" class="input-base">
+        <span class="select-field"><select name="type" class="input-base">
           {% for code, meta in account_types.items() %}
           <option value="{{ code }}" {% if code == "courant" %}selected{% endif %}>{{ meta.label }}</option>
           {% endfor %}
-        </select>
+        </select></span>
       </label>
       <label class="form-group">
         <span class="form-label">{{ _("Solde initial (avant la 1ère opération importée)") }}</span>
@@ -46,9 +48,9 @@
       </label>
       <label class="form-group">
         <span class="form-label">{{ _("Devise") }}</span>
-        <select name="currency" class="input-base">
+        <span class="select-field"><select name="currency" class="input-base">
           <option value="EUR" selected>{{ _("EUR — €") }}</option>
-        </select>
+        </select></span>
       </label>
       <div class="flex flex-col gap-2">
         <button type="submit" class="btn btn-primary">{{ _("Ajouter") }}</button>
