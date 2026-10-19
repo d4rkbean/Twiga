@@ -81,6 +81,7 @@ PAGES = [
     # Le Cap
     Page("/cap"),
     Page("/cap/mid"),
+    Page("/cap/reopen", htmx=True),
     # Projects, recurring, checks, rules
     Page("/projects"),
     Page("/recurring"),
