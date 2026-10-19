@@ -41,7 +41,9 @@ from backend.i18n import gettext as _t, ngettext
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-app = FastAPI(title="Twiga")
+# No /docs, /redoc nor /openapi.json: open to every role (to anyone without
+# authentication), loaded from a CDN, and no API here is meant for other clients.
+app = FastAPI(title="Twiga", docs_url=None, redoc_url=None, openapi_url=None)
 
 # Starlette exécute les middlewares dans l'ordre INVERSE de add_middleware
 # (le dernier ajouté est le plus externe) : SecurityHeadersMiddleware doit
