@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 04:39+0000\n"
+"POT-Creation-Date: 2026-10-19 04:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -635,6 +635,9 @@ msgid "Afficher les sous-catégories"
 msgstr ""
 
 msgid "Agios et frais exceptionnels"
+msgstr ""
+
+msgid "Aide"
 msgstr ""
 
 msgid "Aide &amp; raccourcis"
@@ -1410,6 +1413,9 @@ msgstr ""
 msgid "Densité"
 msgstr ""
 
+msgid "Densité d'affichage"
+msgstr ""
+
 msgid "Dentiste et optique"
 msgstr ""
 
@@ -1861,6 +1867,9 @@ msgstr ""
 msgid ""
 "Ils servent à la fin du parcours de La Savane, aux filtres d'Opérations, "
 "aux règles et aux chèques."
+msgstr ""
+
+msgid "Import"
 msgstr ""
 
 msgid "Import en cours"
