@@ -1,0 +1,46 @@
+{#-
+  Pieces shared by the screens of the other way (lot 5 : Projets, Import,
+  Paramètres and the setting pages, Connexion).
+
+    {% from "other_way/_ui.html" import answer_head, section_tabs, tone_text %}
+
+  answer_head(phrase, detail)   the sentence of Twiga: the giraffe, the answer in
+                                the display font, one line of detail and, in the
+                                `call` block, the action(s) of the screen (the only
+                                amber fill of the screen goes there)
+  section_tabs(tabs)            the strip of sibling screens under the top bar,
+                                [{"label", "href", "active"}]
+  tone_text(tone)               the text colour of a verdict (a word always goes with it)
+
+  These live in their own file (and not in `other_way/base.html`) because a
+  template cannot include the one it overrides: see "The Unique Name Rule" in
+  DESIGN.md.
+-#}
+{% from "_macros/brand.html" import mascot %}
+
+{% macro answer_head(phrase, detail=none, state="default", id="answer", blur_phrase=false, blur_detail=false) -%}
+<header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+  <div class="flex items-start gap-3 lg:gap-4 min-w-0">
+    <span class="shrink-0 mt-1 block w-[52px] h-[38px] overflow-hidden">{{ mascot(state, 52, cls="-mt-1") if state == "default" else mascot(state, 52) }}</span>
+    <div class="flex flex-col gap-1.5 min-w-0">
+      <h1 id="{{ id }}" class="text-page-title{{ ' amount-blur' if blur_phrase }}">{{ phrase }}</h1>
+      {% if detail %}<p class="text-secondary max-w-[70ch]{{ ' amount-blur' if blur_detail }}">{{ detail }}</p>{% endif %}
+    </div>
+  </div>
+  {% if caller %}<div class="flex flex-col gap-2 sm:flex-row lg:shrink-0 lg:pt-1">{{ caller() }}</div>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro section_tabs(tabs) -%}
+<nav aria-label="{{ _("Dans cette section") }}" class="-mx-4 px-4 lg:-mx-8 lg:px-8 border-b border-border flex gap-1 overflow-x-auto">
+  {% for tab in tabs %}
+  <a href="{{ tab.href }}"
+     {% if tab.active %}aria-current="page"{% endif %}
+     class="min-h-[50px] inline-flex items-center px-3 text-sm whitespace-nowrap border-b-2 {{ 'border-accent text-primary font-semibold' if tab.active else 'border-transparent text-secondary font-medium' }}">{{ tab.label }}</a>
+  {% endfor %}
+</nav>
+{%- endmacro %}
+
+{% macro tone_text(tone) -%}
+{{ {"success": "text-success", "warning": "text-warning", "danger": "text-danger", "neutral": "text-secondary"}.get(tone, "text-primary") }}
+{%- endmacro %}
