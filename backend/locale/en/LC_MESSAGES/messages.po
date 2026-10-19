@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 09:37+0000\n"
+"POT-Creation-Date: 2026-10-19 09:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -5363,6 +5363,9 @@ msgstr "Name"
 msgid "Nom affiché"
 msgstr "Display name"
 
+msgid "Nom affiché (facultatif)"
+msgstr "Display name (optional)"
+
 msgid "Nom d'utilisateur"
 msgstr "Username"
 
@@ -5381,8 +5384,8 @@ msgstr "Account name"
 msgid "Nom du projet"
 msgstr "Project name"
 
-msgid "Nom, mot de passe et sortie."
-msgstr "Name, password and sign-out."
+msgid "Nom, mot de passe et appareils connectés."
+msgstr "Name, password and signed-in devices."
 
 msgid "Nombre d'opérations importées"
 msgstr "Number of imported transactions"
@@ -8828,4 +8831,7 @@ msgstr "≥ 90 %%"
 
 #~ msgid "Te déconnecter"
 #~ msgstr "Sign out"
+
+#~ msgid "Nom, mot de passe et sortie."
+#~ msgstr "Name, password and sign-out."
 

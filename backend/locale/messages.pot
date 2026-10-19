@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 09:37+0000\n"
+"POT-Creation-Date: 2026-10-19 09:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -5824,6 +5824,9 @@ msgstr ""
 msgid "Nom affiché"
 msgstr ""
 
+msgid "Nom affiché (facultatif)"
+msgstr ""
+
 msgid "Nom d'utilisateur"
 msgstr ""
 
@@ -5842,7 +5845,7 @@ msgstr ""
 msgid "Nom du projet"
 msgstr ""
 
-msgid "Nom, mot de passe et sortie."
+msgid "Nom, mot de passe et appareils connectés."
 msgstr ""
 
 msgid "Nombre d'opérations importées"
