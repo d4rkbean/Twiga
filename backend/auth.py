@@ -194,4 +194,6 @@ def check_role_access(role: str, method: str, path: str) -> bool:
         return False  # suppression toujours réservée à l'admin
     if path.startswith("/settings") or path == "/export/restore":
         return False
+    if path == "/backlog/create-rule":
+        return False  # rules are the administrator's, as on the Rules screen
     return any(path.startswith(prefix) for prefix in _EDITOR_WRITE_PREFIXES)
