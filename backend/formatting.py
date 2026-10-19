@@ -20,8 +20,8 @@ def format_amount_for_export(value: Decimal) -> str:
 
 
 def format_amount_as(value: Decimal, number_format: str, ascii_minus: bool = False) -> str:
-    quantized = value.quantize(Decimal("0.01"))
-    sign = ("-" if ascii_minus else _MINUS) if quantized < 0 else ""
+    quantized = Decimal(value).quantize(Decimal("0.01"))
+    sign =("-" if ascii_minus else _MINUS) if quantized < 0 else ""
     integer_part, _, decimal_part = f"{abs(quantized):.2f}".partition(".")
 
     groups = []

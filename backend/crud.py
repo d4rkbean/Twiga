@@ -2326,11 +2326,52 @@ def get_project_movements(db: Session, project_id: int, limit: int = 10) -> list
     return list(db.execute(stmt).scalars().all())
 
 
+def compute_project_effort(db: Session, project_id: int, today: date, months: int = 3) -> Decimal:
+    """What is really put aside each month: the deposits of the last `months`
+    calendar months (the current one included) divided by `months`. Spending
+    from the project does not lower it; zero when nothing was deposited."""
+    first = today.replace(day=1)
+    for _ in range(months - 1):
+        first = (first - timedelta(days=1)).replace(day=1)
+    total = db.execute(
+        select(func.coalesce(func.sum(ProjectMovement.amount), 0)).where(
+            ProjectMovement.project_id == project_id,
+            ProjectMovement.date >= first,
+            ProjectMovement.amount > 0,
+        )
+    ).scalar_one()
+    return max(Decimal(total) / months, Decimal("0")).quantize(Decimal("0.01"))
+
+
+def project_rhythm(
+    target_amount: Decimal, current_amount: Decimal, target_date: date, effort: Decimal, today: date
+) -> dict:
+    """Where the current rhythm leads: state is "done", "none" (no regular
+    deposit), "early", "on_time" or "late"; `reach` is the month the target is
+    reached and `gap_months` how many months after the deadline (negative:
+    before it)."""
+    remaining = target_amount - current_amount
+    if remaining <= 0:
+        return {"state": "done", "reach": None, "gap_months": 0}
+    if effort <= 0:
+        return {"state": "none", "reach": None, "gap_months": 0}
+    months = -int(-remaining // effort)  # ceiling
+    index = today.year * 12 + today.month - 1 + months
+    reach = date(index // 12, index % 12 + 1, 1)
+    gap = (reach.year - target_date.year) * 12 + reach.month - target_date.month
+    state = "late" if gap > 0 else ("on_time" if gap == 0 else "early")
+    return {"state": state, "reach": reach, "gap_months": gap}
+
+
 def add_project_funds(
-    db: Session, project: Project, amount: Decimal, note: str | None
+    db: Session, project: Project, amount: Decimal, note: str | None, account_id: int | None = None
 ) -> Project:
     project.current_amount = project.current_amount + amount
-    db.add(ProjectMovement(project_id=project.id, date=date.today(), amount=amount, note=note))
+    db.add(
+        ProjectMovement(
+            project_id=project.id, date=date.today(), amount=amount, note=note, account_id=account_id
+        )
+    )
     db.commit()
     db.refresh(project)
     return project

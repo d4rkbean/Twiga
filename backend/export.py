@@ -147,6 +147,7 @@ def _serialize_project_movement(movement: ProjectMovement) -> dict:
         "date": movement.date.isoformat(),
         "amount": str(movement.amount),
         "note": movement.note,
+        "account_id": movement.account_id,
     }
 
 
