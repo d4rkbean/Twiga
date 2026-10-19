@@ -1389,6 +1389,11 @@ msgstr ""
 msgid "Le mot de passe doit faire au moins 8 caractères."
 msgstr ""
 
+msgid ""
+"Le mot de passe est trop long : 72 caractères au plus (moins avec des "
+"accents ou des emoji)."
+msgstr ""
+
 msgid "Le nom d'utilisateur est obligatoire."
 msgstr ""
 

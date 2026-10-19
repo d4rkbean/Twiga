@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from starlette.requests import Request
 
+from backend.i18n import lazy_gettext
+
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
@@ -76,6 +78,18 @@ def _dummy_hash() -> bytes:
     import bcrypt
 
     return bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt())
+
+
+# bcrypt only reads the first 72 bytes of a password: a longer one would be
+# accepted with any ending. New passwords are refused beyond that.
+PASSWORD_MAX_BYTES = 72
+PASSWORD_TOO_LONG = lazy_gettext(
+    "Le mot de passe est trop long : 72 caractères au plus (moins avec des accents ou des emoji)."
+)
+
+
+def password_too_long(password: str) -> bool:
+    return len(password.encode("utf-8")) > PASSWORD_MAX_BYTES
 
 
 def verify_password(db: "Session", username: str, password: str) -> "User | None":
