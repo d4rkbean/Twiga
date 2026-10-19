@@ -3,24 +3,27 @@
 {# Icônes de la nav principale : la macro nav_icon (_macros/brand.html), un
    seul système au trait (stroke currentColor, poids 2, coins arrondis,
    viewBox 24x24) partagé avec la barre du bas mobile (_nav.html). #}
-{# Cinq entrées, identiques à la barre basse mobile (_nav.html) : on doit
-   retrouver la même carte mentale d'un écran à l'autre. Trois départs par
-   rapport à l'état précédent :
+{# Entrées de la maquette A : La Savane (avec son compteur et, dessous,
+   « Traitement en masse »), Panorama, Opérations, Mon mois, Le Cap, Projets,
+   un séparateur, puis Import, Rapports et Paramètres. La barre du bas mobile
+   (_nav.html) garde ses cinq entrées : Le Cap s'y atteint depuis Mon mois.
+   « Importer » reste aussi une ACTION de l'en-tête (_header.html).
 
-   - « Mon mois » remplace Budgets ET Le Cap, qui posaient la même question
-     (combien je peux dépenser ce mois) avec deux modèles concurrents. Le
-     plan est désormais unique — budgets par catégorie, piliers calculés —
-     donc une seule entrée, active sur /cap comme sur /budgets.
-   - « Rapports » quitte le menu : le Panorama en est la version courte et
-     porte déjà un lien « Voir le rapport complet ».
-   - « Importer » n'est pas ici mais dans l'en-tête : c'est une ACTION, et
-     le début de chaque cycle mensuel — pas un lieu où l'on se rend. #}
+   Chaque ligne : (href, icône, libellé, actif, id de la visite). Les icônes
+   absentes de nav_icon viennent du jeu Tabler (macro icon). #}
+{% set cap_active = path.startswith("/cap") and not path.startswith("/cap/mid") %}
 {% set sidebar_items = [
   ("/transactions/inbox", "savane", _("La Savane"), path.startswith("/transactions/inbox"), "tour-sidebar-savane"),
+  ("/backlog", "masse", _("Traitement en masse"), path.startswith("/backlog"), "tour-sidebar-backlog"),
   ("/dashboard", "panorama", _("Panorama"), path.startswith("/dashboard"), "tour-sidebar-dashboard"),
   ("/transactions/list", "operations", _("Opérations"), path.startswith("/transactions/list"), "tour-sidebar-transactions"),
-  ("/cap/mid", "month", _("Mon mois"), path.startswith("/cap") or path.startswith("/budgets"), none),
+  ("/cap/mid", "month", _("Mon mois"), path.startswith("/cap/mid") or path.startswith("/budgets"), none),
+  ("/cap", "cap", _("Le Cap"), cap_active, "tour-sidebar-cap"),
   ("/projects", "projects", _("Projets"), path.startswith("/projects"), "tour-sidebar-projects"),
+  ("separator", none, none, false, none),
+  ("/imports/new", "import", _("Import"), path.startswith("/imports"), none),
+  ("/reports", "reports", _("Rapports"), path.startswith("/reports"), none),
+  ("/settings", "settings", _("Paramètres"), path.startswith("/settings"), none),
 ] %}
 {# Un seul gabarit de ligne pour toute la barre (navigation, confidentialité,
    thème, menu utilisateur) : 50px de haut, 12px de rayon, texte encre.
@@ -111,16 +114,41 @@
 
   <nav class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 p-3">
     {% for href, icon_name, label, active, tour_id in sidebar_items %}
+    {% if href == "separator" %}
+    <div class="h-px bg-border my-3"></div>
+    {% else %}
+    {% set is_sub = icon_name == "masse" %}
     <a
       {% if tour_id %}id="{{ tour_id }}"{% endif %}
       href="{{ href }}"
       title="{{ label }}"
       {% if active %}aria-current="page"{% endif %}
-      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[50px] flex items-center gap-3 rounded-xl text-sm {{ 'bg-accent-soft text-accent-ink font-semibold' if active else 'text-primary font-medium hover:bg-sunken' }}"
+      {% if is_sub %}x-show="expanded"{% endif %}
+      :class="expanded ? 'justify-start {{ "pl-8 pr-3" if is_sub else "px-3" }}' : 'justify-center px-0'" class="min-h-[50px] flex items-center gap-3 rounded-xl {{ 'text-[13px]' if is_sub else 'text-sm' }} {{ 'bg-accent-soft text-accent-ink font-semibold' if active else 'text-primary font-medium hover:bg-sunken' }}"
     >
-      <span class="text-lg flex items-center justify-center w-5 flex-shrink-0">{{ nav_icon(icon_name) }}</span>
-      <span x-show="expanded" class="truncate">{{ label }}</span>
+      <span class="flex items-center justify-center w-5 flex-shrink-0 {{ '' if active else 'text-secondary' }}">
+        {%- if icon_name == "masse" %}{{ icon('folder', size=18) }}
+        {%- elif icon_name == "cap" %}{{ icon('compass') }}
+        {%- elif icon_name == "import" %}{{ icon('download') }}
+        {%- elif icon_name == "reports" %}{{ icon('chart-line') }}
+        {%- elif icon_name == "settings" %}{{ icon('settings') }}
+        {%- else %}{{ nav_icon(icon_name) }}{% endif -%}
+      </span>
+      <span x-show="expanded" class="truncate flex-1">{{ label }}</span>
+      {% if icon_name == "savane" %}
+      {# Compteur des opérations en attente (même source que « À trier » du
+         Panorama) ; rien d'affiché quand La Savane est vide. #}
+      <span
+        id="sidebar-pending-count"
+        x-show="expanded"
+        class="text-sm font-medium tabular-nums flex-shrink-0"
+        hx-get="/dashboard/sidebar-pending"
+        hx-trigger="load"
+        hx-swap="innerHTML"
+      ></span>
+      {% endif %}
     </a>
+    {% endif %}
     {% endfor %}
   </nav>
 
@@ -223,15 +251,6 @@
       <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
       <span x-show="expanded">{{ _("Thème") }}</span>
     </button>
-    <a
-      href="/settings"
-      title="{{ _("Paramètres") }}"
-      {% if path.startswith('/settings') %}aria-current="page"{% endif %}
-      :class="expanded ? 'justify-start px-3' : 'justify-center px-0'" class="min-h-[50px] flex items-center gap-3 rounded-xl text-sm {{ 'bg-accent-soft text-accent-ink font-semibold' if path.startswith('/settings') else 'text-primary font-medium hover:bg-sunken' }}"
-    >
-      {{ icon('settings', cls='flex-shrink-0') }}
-      <span x-show="expanded">{{ _("Paramètres") }}</span>
-    </a>
     {% endif %}
   </div>
 </aside>

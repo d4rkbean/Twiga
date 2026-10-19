@@ -9,7 +9,7 @@
    le Panorama — on changeait d'application en changeant d'écran. Cinq est
    la limite haute d'une barre basse, pas un compromis. #}
 {% set nav_items = [
-  ("/transactions/inbox", "savane", _("La Savane"), path.startswith("/transactions/inbox"), "tour-nav-savane"),
+  ("/transactions/inbox", "savane", _("La Savane"), path.startswith("/transactions/inbox") or path.startswith("/backlog"), "tour-nav-savane"),
   ("/dashboard", "panorama", _("Panorama"), path.startswith("/dashboard"), "tour-nav-dashboard"),
   ("/transactions/list", "operations", _("Opérations"), path.startswith("/transactions/list"), "tour-nav-transactions"),
   ("/cap/mid", "month", _("Mon mois"), path.startswith("/cap") or path.startswith("/budgets"), none),
