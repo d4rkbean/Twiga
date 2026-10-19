@@ -10,8 +10,15 @@
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
   {% set accounts_total = items | sum(attribute="balance") %}
-  {% set accounts_subtitle %}<span class="amount-blur">{% trans count=items | length, total=accounts_total | eur %}{{ count }} compte · total {{ total }}{% pluralize %}{{ count }} comptes · total {{ total }}{% endtrans %}</span>{% endset %}
+  {% set accounts_subtitle %}<span class="amount-blur max-lg:hidden">{% trans count=items | length, total=accounts_total | eur %}{{ count }} compte · total {{ total }}{% pluralize %}{{ count }} comptes · total {{ total }}{% endtrans %}</span>{% endset %}
   {% call page_header(_("Comptes"), subtitle=accounts_subtitle, back_href="/settings", back_label=_("Paramètres")) %}
+  <div class="card flex items-end justify-between gap-3 lg:hidden sm:flex-1">
+    <div class="flex flex-col gap-1">
+      <span class="text-xs text-secondary">{{ _("Total des comptes") }}</span>
+      <span class="amount-blur text-2xl font-bold tabular-nums text-primary">{{ accounts_total | eur }}</span>
+    </div>
+    <span class="text-sm text-secondary">{% trans count=items | length %}{{ count }} au total{% endtrans %}</span>
+  </div>
   <button
     type="button"
     onclick="document.getElementById('new-account-dialog').showModal()"
@@ -19,6 +26,9 @@
   >
     {{ icon('plus', size=18) }} {{ _("Ajouter un compte") }}
   </button>
+  <a href="/accounts/detect-transfers" class="btn btn-secondary border-border-strong lg:hidden">
+    {{ icon('repeat', size=18) }} {{ _("Détecter virements") }}
+  </a>
   {% endcall %}
 
   <dialog id="new-account-dialog" class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm">
@@ -62,7 +72,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
     {% include "accounts/_content.html" %}
 
-    <aside class="card flex flex-col gap-3">
+    <aside class="card hidden lg:flex flex-col gap-3">
       <h2 class="text-section-title flex items-center gap-2">{{ icon('repeat', size=20) }} {{ _("Détecter les virements internes") }}</h2>
       <p class="text-sm text-secondary">
         {{ _("Recherche, sur tout l'historique, des paires de transactions qui se ressemblent comme un virement interne entre deux de tes comptes (montant opposé, ± 3 jours, ± 1 € de tolérance).") }}

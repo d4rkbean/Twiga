@@ -47,7 +47,7 @@
   </div>
   <label class="form-group">
     <span class="form-label">{{ _("Rayon de ticket auto (optionnel)") }}</span>
-    <span class="select-field lg:max-w-sm"><select name="receipt_family" class="input-base lg:max-w-sm">
+    <span class="select-field"><select name="receipt_family" class="input-base">
       <option value="" {% if not rule.receipt_family %}selected{% endif %}>{{ _("Rayon de ticket auto (optionnel)") }}</option>
       {% for code, family_icon, label in receipt_families %}
       <option value="{{ code }}" {% if rule.receipt_family == code %}selected{% endif %}>{{ family_icon }} {{ label }}</option>

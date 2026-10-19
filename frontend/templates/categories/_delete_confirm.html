@@ -31,7 +31,7 @@
     hx-confirm="{{ confirm_message }}"
     class="flex flex-col gap-2 lg:flex-row"
   >
-    <span class="select-field lg:max-w-sm"><select name="reassign_to" required aria-label="{{ _("Choisir une catégorie...") }}" class="input-base lg:max-w-sm">
+    <span class="select-field lg:flex-1"><select name="reassign_to" required aria-label="{{ _("Choisir une catégorie...") }}" class="input-base">
       <option value="" disabled selected>{{ _("Choisir une catégorie...") }}</option>
       {% for other in all_categories %}
       {% if other.id != category.id %}
