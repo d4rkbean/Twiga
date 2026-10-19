@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import hashlib
 import os
 import secrets
@@ -69,6 +70,14 @@ def _password_fingerprint(hashed_password: str) -> str:
     return hashlib.sha256(hashed_password.encode("utf-8")).hexdigest()[:16]
 
 
+@functools.lru_cache(maxsize=1)
+def _dummy_hash() -> bytes:
+    # Same cost as the real hashes (bcrypt.gensalt() defaults, see crud.create_user).
+    import bcrypt
+
+    return bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt())
+
+
 def verify_password(db: "Session", username: str, password: str) -> "User | None":
     import bcrypt
 
@@ -76,6 +85,9 @@ def verify_password(db: "Session", username: str, password: str) -> "User | None
 
     user = crud.get_user_by_username(db, username)
     if user is None or not user.is_active:
+        # The same bcrypt work as for a real account: the answer time does not
+        # tell whether the username exists.
+        bcrypt.checkpw(password.encode("utf-8"), _dummy_hash())
         return None
     if not bcrypt.checkpw(password.encode("utf-8"), user.hashed_password.encode("utf-8")):
         return None
