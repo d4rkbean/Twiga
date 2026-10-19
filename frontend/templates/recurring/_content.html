@@ -41,7 +41,7 @@
       </div>
       <div class="flex flex-col items-end shrink-0">
         <span class="amount-blur font-bold tabular-nums text-primary">−{{ item.amount | eur }}</span>
-        <span class="text-xs text-secondary">{{ item.frequency_label }}</span>
+        <span class="text-xs text-secondary">{{ item.frequency_label }} · {% trans days=item.frequency_days %}{{ days }} jours{% endtrans %}</span>
       </div>
     </div>
 
@@ -74,7 +74,7 @@
         <input type="hidden" name="frequency_days" value="{{ item.frequency_days }}" />
         <input type="hidden" name="category_id" value="{{ item.category.id if item.category else '' }}" />
         {% if item.status == 'confirmed' %}
-        <button type="submit" class="btn w-full bg-success-soft border-success text-success font-semibold">
+        <button type="submit" class="btn w-full bg-success border-success text-container font-semibold">
           {{ icon('check', size=16) }} {{ _("Confirmé") }}
         </button>
         {% else %}
