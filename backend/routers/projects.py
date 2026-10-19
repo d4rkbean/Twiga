@@ -5,10 +5,11 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud
 from backend.database import get_db
 from backend.dates import month_label
 from backend.models import Account, Project
+from backend.project_path import project_path
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
 from backend.i18n import current_language, gettext as _t
@@ -49,23 +50,50 @@ def _build_context(db: Session) -> dict:
         )
         if rhythm["reach"] is not None:
             rhythm["reach_label"] = _month_text(rhythm["reach"])
+        movements = crud.get_project_movements(db, project.id)
+        # The account the deposits usually come from ("Versé depuis le Livret").
+        sources = [m.account.name for m in movements if m.amount > 0 and m.account is not None]
+        verdict_tone, verdict_word = answers.project_verdict(rhythm["state"], rhythm["gap_months"])
+        need_tone, need_sentence = answers.project_need_sentence(rhythm["state"], monthly_effort, effort)
         items.append(
             {
                 "project": project,
+                "path": project_path(today, project.target_date, rhythm["reach"], rhythm["state"]),
+                "verdict_tone": verdict_tone,
+                "verdict_word": verdict_word,
+                "need_tone": need_tone,
+                "need_sentence": need_sentence,
+                "source": max(set(sources), key=sources.count) if sources else None,
                 "monthly_effort": monthly_effort,
                 "effort": effort,
                 "rhythm": rhythm,
                 "deadline_label": _month_text(project.target_date),
                 "percentage_display": round(percentage),
                 "bar_width": max(0, min(round(percentage), 100)),
-                "movements": crud.get_project_movements(db, project.id),
+                "movements": movements,
             }
         )
 
     late = next((item for item in items if item["rhythm"]["state"] == "late"), None)
+    answer = answers.projects_answer(
+        [
+            {
+                "name": item["project"].name,
+                "state": item["rhythm"]["state"],
+                "gap_months": item["rhythm"]["gap_months"],
+                "monthly_effort": item["monthly_effort"],
+                "effort": item["effort"],
+            }
+            for item in items
+        ],
+        today,
+    )
     return {
         "items": items,
         "late": late,
+        "answer": answer,
+        "cap_label": answers.cap_of_month(today),
+        "today": today,
         "accounts": crud.list_accounts(db),
         "deadline_options": _deadline_options(today),
     }
