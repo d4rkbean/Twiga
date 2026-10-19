@@ -52,6 +52,8 @@ def create_user(
         error = _t("Rôle invalide.")
     elif len(password) < 8:
         error = _t("Le mot de passe doit faire au moins 8 caractères.")
+    elif auth.password_too_long(password):
+        error = str(auth.PASSWORD_TOO_LONG)
     elif crud.get_user_by_username(db, username) is not None:
         error = _t('Un utilisateur "%(username)s" existe déjà.') % {"username": username}
 
@@ -94,6 +96,9 @@ def reset_password(
     context = {"request": request, **_list_context(db)}
     if len(new_password) < 8:
         context["error"] = _t("Le mot de passe doit faire au moins 8 caractères.")
+        return templates.TemplateResponse("users/_content.html", context, status_code=400)
+    if auth.password_too_long(new_password):
+        context["error"] = str(auth.PASSWORD_TOO_LONG)
         return templates.TemplateResponse("users/_content.html", context, status_code=400)
 
     crud.set_user_password(db, user_id, new_password)

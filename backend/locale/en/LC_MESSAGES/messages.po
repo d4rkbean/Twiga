@@ -1319,6 +1319,9 @@ msgstr "The change applies immediately."
 msgid "Le mot de passe doit faire au moins 8 caractères."
 msgstr "The password must be at least 8 characters long."
 
+msgid "Le mot de passe est trop long : 72 caractères au plus (moins avec des accents ou des emoji)."
+msgstr "The password is too long: 72 characters at most (fewer with accents or emoji)."
+
 msgid "Le nom d'utilisateur est obligatoire."
 msgstr "The username is required."
 

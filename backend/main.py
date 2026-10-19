@@ -198,6 +198,10 @@ def change_password(
     confirm_password: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    if auth.password_too_long(new_password):
+        return HTMLResponse(
+            '<p class="text-sm text-danger py-2">{}</p>'.format(str(auth.PASSWORD_TOO_LONG)), status_code=400
+        )
     # Change le mot de passe de l'utilisateur CONNECTÉ (n'importe quel rôle
     # peut changer le sien — voir auth._SELF_SERVICE_PATHS) ; réinitialiser
     # le mot de passe d'un AUTRE utilisateur passe par Paramètres >
