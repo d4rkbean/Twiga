@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, false
+from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
@@ -409,6 +409,10 @@ class User(Base):
     # localStorage pour qu'un nouvel appareil ou un navigateur vidé ne la
     # rejoue pas. La migration marque les comptes existants comme l'ayant vue.
     tour_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Visite guidée de chaque écran : {identifiant d'écran: date de la
+    # proposition} (voir backend/tours.py). Une visite d'écran ne se propose
+    # qu'une fois par compte ; NULL = aucune proposée.
+    tours_seen: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # Langue de l'interface ("fr" / "en", voir backend/i18n.py) et format des
     # montants et dates ("fr" / "en-GB" / "en-US"). Deux réglages distincts.
     # number_format NULL = celui de la langue choisie.

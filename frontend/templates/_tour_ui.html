@@ -2,7 +2,13 @@
     pose avant l'inclusion `tour` (tour_context) et `tour_steps`, la liste des
     étapes : id, icon, target (sélecteur de la cible, ou none), altTarget et
     altPosition (cible de repli, selon le point de rupture), position, skipImport,
-    title, text. tour.js n'a aucune étape en dur. -#}
+    title, text. tour.js n'a aucune étape en dur.
+
+    Ce balisage porte deux visites : celle d'accueil (data-steps, ci-dessus) et
+    celle de l'écran ouvert (data-screen-steps, lue par _layout.html dans le
+    bloc tour_steps de la page : voir backend/tours.py). La seconde se lance par
+    Aide, ou par la petite invitation de la première ouverture de l'écran. -#}
+{% set screen_steps = screen_tour_data.steps if screen_tour_data else [] %}
 <div
   x-data="twigaTour()"
   data-steps="{{ tour_steps | tojson | forceescape }}"
@@ -10,12 +16,35 @@
   data-tracked="{{ 'true' if tour.tracked else 'false' }}"
   data-pending="{{ 'true' if tour.pending else 'false' }}"
   data-skip-import="{{ 'true' if tour.skip_import else 'false' }}"
+  data-screen="{{ screen_tour_data.screen if screen_tour_data else '' }}"
+  data-screen-steps="{{ screen_steps | tojson | forceescape }}"
+  data-screen-seen="{{ 'true' if screen_tour_data and screen_tour_data.screen in tour.screens_seen else 'false' }}"
 >
   <div id="tour-icons" hidden>
-    {% for name in tour_steps | map(attribute='icon') | unique %}
+    {% for name in (tour_steps + screen_steps) | map(attribute='icon') | unique %}
     <span data-icon="{{ name }}">{{ icon(name, size=20) }}</span>
     {% endfor %}
   </div>
+  {#- Invitation de la première ouverture d'un écran : discrète, jamais un
+      lancement forcé. « Oui » joue la visite de l'écran, « Plus tard » la ferme ;
+      dans les deux cas l'écran ne la reproposera plus. -#}
+  <div
+    x-show="inviteVisible"
+    style="display: none;"
+    x-transition.opacity
+    role="dialog"
+    aria-live="polite"
+    aria-label="{{ _("Découvrir cet écran ?") }}"
+    class="twiga-tour-invite"
+    @keydown.window.escape="inviteVisible && dismissInvite()"
+  >
+    <p class="twiga-tour-invite-title">{{ _("Découvrir cet écran ?") }}</p>
+    <div class="twiga-tour-invite-buttons">
+      <button type="button" @click="acceptInvite()" class="twiga-tour-btn">{{ _("Oui") }}</button>
+      <button type="button" @click="dismissInvite()" class="twiga-tour-btn twiga-tour-btn-secondary">{{ _("Plus tard") }}</button>
+    </div>
+  </div>
+
   <div x-show="visible && !hasTarget" x-transition.opacity class="twiga-tour-overlay"></div>
   <div x-show="visible && hasTarget" x-transition.opacity class="twiga-tour-spotlight" :style="spotlightStyle"></div>
 

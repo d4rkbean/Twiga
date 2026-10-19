@@ -137,13 +137,13 @@ def get_current_user(request: Request) -> "User | None":
 #           délibérée plutôt qu'une extension non demandée de ses droits.
 # admin   : accès complet, sans restriction.
 #
-# /settings/change-password, /profile/update, /profile/tour-seen et /logout restent accessibles
+# /settings/change-password, /profile/update, /profile/tour-seen, /profile/screen-tour-seen et /logout restent accessibles
 # à N'IMPORTE QUEL rôle authentifié (changer son propre mot de passe/profil,
 # se déconnecter) : ce sont des actions sur soi-même, pas sur les données de
 # l'application. GET /profile n'a pas besoin d'être listé ici : déjà
 # autorisé pour tout rôle par la règle GET/HEAD générale ci-dessous (pas un
 # préfixe admin-only).
-_SELF_SERVICE_PATHS = {"/settings/change-password", "/profile/update", "/profile/tour-seen", "/profile/preferences", "/logout"}
+_SELF_SERVICE_PATHS = {"/settings/change-password", "/profile/update", "/profile/tour-seen", "/profile/screen-tour-seen", "/profile/preferences", "/logout"}
 
 # Préfixes réservés à l'admin même en LECTURE (pas seulement en écriture) :
 # assistant d'import et gestion des utilisateurs n'ont pas d'intérêt à être

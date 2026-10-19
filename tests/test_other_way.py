@@ -253,7 +253,7 @@ def test_the_help_sheet_reuses_the_dialogs_of_the_layout(clients, other_way):
     html = page_of(clients, "admin", "/dashboard")
     sheet = html[html.index('aria-label="Aide &amp; raccourcis"'):][:8000]
 
-    assert "Revoir la visite guidée" in sheet and "startTwigaTour()" in sheet
+    assert "Revoir la visite de bienvenue" in sheet and "startTwigaTour()" in sheet
     assert "Raccourcis clavier" in sheet and "twiga-help-dialog" in sheet
     assert "À propos de Twiga" in sheet and "twiga-about-dialog" in sheet
     assert 'id="twiga-help-dialog"' in html and 'id="twiga-about-dialog"' in html

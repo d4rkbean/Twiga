@@ -7,6 +7,13 @@
    (« Importer ») passe alors en bouton secondaire. #}
 {% set demote_import = true %}
 
+{% block tour_steps %}{{ screen_tour("budgets", [
+  tour_step("#budgets-filters", _("Choisir le mois"), _("Les flèches changent de mois. Le plan affiché est celui de ce mois."), "calendar", position="bottom"),
+  tour_step('[data-tour="budgets-copy"]', _("Repartir du mois dernier"), _("Copie le plan du mois précédent : tu n'ajustes que ce qui change."), "clipboard-copy", position="bottom", write=True),
+  tour_step('[data-tour="budgets-groups"]', _("Un montant par catégorie"), [_("Tape un montant, ou avance par pas de 10, 50 ou 100 €."), _("Le pourcentage montre la part de tes ressources que ça représente.")], "adjustments", position="top"),
+  tour_step('[data-tour="budgets-save"]', _("Enregistrer le plan"), _("Rien n'est gardé tant que tu n'as pas enregistré. Le reste à répartir t'indique ce qu'il te reste."), "device-floppy", position="left", alt_position="top", write=True),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-8 lg:py-6">
   <header class="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
@@ -53,6 +60,7 @@
         type="button"
         :hx-post="'/budgets/copy-previous?month=' + month + '&year=' + year"
         hx-post="/budgets/copy-previous?month={{ month }}&year={{ year }}"
+        data-tour="budgets-copy"
         class="btn btn-secondary whitespace-nowrap"
       >{{ _("Copier le mois précédent") }}</button>
     </form>

@@ -45,7 +45,7 @@ def test_top_bar_has_density_theme_privacy_help_and_import(clients):
 def test_avatar_sheet_matches_the_mobile_mockup(clients):
     sheet = clients["admin"].get("/dashboard").text.split("BOTTOM SHEET")[1]
     for label in ("Le Cap", "Budgets", "Rapports", "Mon profil", "Paramètres", "Aide &amp; raccourcis",
-                  "Revoir la visite guidée", "Thème", "Se déconnecter"):
+                  "Revoir la visite de bienvenue", "Thème", "Se déconnecter"):
         assert label in sheet
     order = [sheet.index(x) for x in ("Le Cap", "Mon profil", "Aide &amp; raccourcis", "Se déconnecter")]
     assert order == sorted(order)
