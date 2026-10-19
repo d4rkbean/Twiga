@@ -597,6 +597,42 @@
     font-weight: 600;
   }
 
+  /* Interrupteur : une piste de 44 x 24 px et son bouton rond. Se pose dans une
+     cible de 50 px (le <label> ou le <button role="switch"> qui l'entoure) ;
+     l'état se lit à la case cochée voisine (`input:checked + .switch`) ou à
+     aria-checked sur le bouton parent. Ambre doux quand il est actif, comme la
+     pastille choisie. */
+  .switch {
+    position: relative;
+    flex: none;
+    display: inline-block;
+    width: 2.75rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    background-color: var(--color-field);
+    transition: background-color var(--duration-fast);
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background-color: var(--color-container);
+    transition: transform var(--duration-fast);
+  }
+  input:checked + .switch,
+  [aria-checked="true"] > .switch {
+    background-color: var(--color-accent);
+  }
+  input:checked + .switch::after,
+  [aria-checked="true"] > .switch::after {
+    transform: translateX(1.25rem);
+  }
+  input:focus-visible + .switch { outline: 2px solid var(--color-accent-ink); outline-offset: 2px; }
+
   /* ---------- CARTES ---------- */
   .card {
     background-color: var(--color-container);
