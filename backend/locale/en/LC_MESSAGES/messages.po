@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 09:44+0000\n"
+"POT-Creation-Date: 2026-10-19 10:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -6324,6 +6324,9 @@ msgstr "Taken from your rules. Change them line by line with the arrow."
 
 msgid "Repérer les virements internes"
 msgstr "Spot internal transfers"
+
+msgid "Requête refusée : elle ne vient pas de Twiga."
+msgstr "Request refused: it does not come from Twiga."
 
 #, python-format
 msgid "Ressemble à « %(label)s » (%(confidence)s %%)."

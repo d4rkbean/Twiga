@@ -178,6 +178,17 @@ def test_delete_all_transactions_is_admin_only_and_needs_the_confirmation(client
 # --- Modes de paiement ------------------------------------------------------
 
 
+def test_sensitive_settings_refuse_a_request_from_another_site(clients):
+    """A page on another site cannot wipe the operations or change the login
+    page, even for a signed-in administrator: its Origin is not Twiga's."""
+    foreign = {"Origin": "http://evil.example"}
+    admin = clients["admin"]
+    assert admin.post("/settings/delete-all-transactions", data={"confirm": "yes"}, headers=foreign).status_code == 403
+    assert admin.post("/settings/login-accounts", data={"show": "on"}, headers=foreign).status_code == 403
+    same = {"Origin": "http://testserver"}
+    assert admin.post("/settings/login-accounts", data={"show": ""}, headers=same).status_code == 200
+
+
 def test_payment_method_icon_is_chosen_from_the_picker(clients):
     page = clients["admin"].get("/payment-methods").text
     assert 'role="radiogroup"' in page and 'value="piggy-bank"' not in page
