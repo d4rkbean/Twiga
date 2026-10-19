@@ -13,18 +13,19 @@
   largeur.
 #}
 {% macro page_header(title, subtitle=None, back_href=None, back_label=None) -%}
-<header class="flex flex-col gap-1">
+<header class="flex flex-col gap-3 lg:gap-1">
   {% if back_href %}
-  <a href="{{ back_href }}" class="-my-3 min-h-[50px] inline-flex items-center gap-1 self-start text-sm font-medium text-accent-ink">
-    {{ icon('arrow-left', size=16) }} {{ back_label }}
+  {# On a phone the title comes first and the way back sits under it (mockup A-M-*); from lg the breadcrumb stays above the title. #}
+  <a href="{{ back_href }}" class="-my-3 min-h-[50px] inline-flex items-center gap-1 self-start text-sm font-medium text-accent-ink max-lg:order-2">
+    {{ icon('chevron-left', size=16) }} {{ back_label }}
   </a>
   {% endif %}
-  <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
-    <div class="flex flex-col gap-1 min-w-0">
-      <h1 class="text-page-title">{{ title }}</h1>
+  <div class="flex flex-col gap-3 max-lg:contents lg:flex-row lg:items-end lg:justify-between lg:gap-6">
+    <div class="flex flex-col gap-1 min-w-0 max-lg:order-1">
+      <h1 class="text-page-title max-lg:!text-xl max-lg:!font-bold">{{ title }}</h1>
       {% if subtitle %}<p class="text-sm text-secondary">{{ subtitle }}</p>{% endif %}
     </div>
-    {% if caller %}<div class="flex flex-col gap-2 sm:flex-row lg:shrink-0">{{ caller() }}</div>{% endif %}
+    {% if caller %}<div class="flex flex-col gap-2 max-lg:order-3 sm:flex-row lg:shrink-0">{{ caller() }}</div>{% endif %}
   </div>
 </header>
 {%- endmacro %}
