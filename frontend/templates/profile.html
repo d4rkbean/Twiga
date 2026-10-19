@@ -50,7 +50,7 @@
           <input type="text" name="username" value="{{ current.username }}" required autocomplete="username" class="input-base" />
         </label>
         <div class="flex flex-wrap items-center gap-3 mt-auto pt-2">
-          <button type="submit" class="btn btn-primary px-6">{{ _("Enregistrer") }}</button>
+          <button type="submit" class="btn btn-primary px-6 w-full lg:w-auto lg:self-start">{{ _("Enregistrer") }}</button>
           <div id="profile-update-result" aria-live="polite"></div>
         </div>
       </form>
@@ -94,7 +94,7 @@
         {# Un seul bouton plein par écran : celui d'Identité. Celui-ci est
            secondaire. #}
         <div class="flex flex-wrap items-center gap-3 mt-auto pt-2">
-          <button type="submit" :disabled="!can" class="btn btn-secondary border-border-strong px-5 disabled:bg-sunken disabled:text-secondary">
+          <button type="submit" :disabled="!can" class="btn btn-secondary border-border-strong px-5 w-full lg:w-auto lg:self-start disabled:bg-sunken disabled:text-secondary">
             {{ _("Changer le mot de passe") }}
           </button>
           <div id="profile-password-result" aria-live="polite"></div>
