@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 05:20+0000\n"
+"POT-Creation-Date: 2026-10-19 05:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -12,7 +12,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.16.0\n"
+"Generated-By: Babel 2.18.0\n"
 
 msgid " du total"
 msgstr " of total"
@@ -162,6 +162,10 @@ msgstr "%(current_month_label)s · day %(day)s of %(days)s"
 #, python-format
 msgid "%(date)s · %(count)s occurrences"
 msgstr "%(date)s · %(count)s occurrences"
+
+#, python-format
+msgid "%(days)s jours"
+msgstr "%(days)s days"
 
 #, python-format
 msgid "%(detailed)s course(s)"
@@ -1898,8 +1902,8 @@ msgstr "Enter a target amount above 0."
 msgid "Indique un montant supérieur à 0."
 msgstr "Enter an amount above 0."
 
-msgid "Instance privée, hébergée chez toi."
-msgstr "Private instance, hosted at your place."
+msgid "Instance privée, hébergée chez toi. Aucune donnée ne quitte ton réseau."
+msgstr "Private instance, hosted at your place. No data leaves your network."
 
 msgid "Intention"
 msgstr "Intention"
@@ -3296,6 +3300,9 @@ msgstr "Total"
 msgid "Total budgété"
 msgstr "Total budgeted"
 
+msgid "Total des comptes"
+msgstr "Total of accounts"
+
 msgid "Total des lignes"
 msgstr "Total of the lines"
 
@@ -3637,6 +3644,13 @@ msgstr "Check"
 
 msgid "Vérifier ligne par ligne"
 msgstr "Check line by line"
+
+#, python-format
+msgid "Vérifié il y a %(minutes)s min"
+msgstr "Checked %(minutes)s min ago"
+
+msgid "Vérifié à l'instant"
+msgstr "Checked just now"
 
 msgid "Vétérinaire"
 msgstr "Vet"
@@ -4038,9 +4052,6 @@ msgstr "— %(name)s (no subcategory)"
 msgid "— (non défini)"
 msgstr "— (not set)"
 
-msgid "— Moyen de paiement (si pas de chèque) —"
-msgstr "— Payment method (if not a check) —"
-
 msgid "— Rayon —"
 msgstr "— Aisle —"
 
@@ -4066,4 +4077,10 @@ msgstr "− fewer criteria"
 #, python-format
 msgid "≥ 90 %%"
 msgstr "≥ 90 %%"
+
+#~ msgid "Instance privée, hébergée chez toi."
+#~ msgstr "Private instance, hosted at your place."
+
+#~ msgid "— Moyen de paiement (si pas de chèque) —"
+#~ msgstr "— Payment method (if not a check) —"
 

@@ -1,15 +1,24 @@
 <section id="suspicious-content" class="card flex flex-col gap-4">
   <div class="flex items-center justify-between gap-2">
     <h2 class="text-section-title flex items-center gap-2">{{ icon('search', size=20) }}{{ _("Opérations suspectes") }}</h2>
-    <button
-      type="button"
-      hx-get="/accounts/suspicious"
-      hx-target="#suspicious-content"
-      hx-swap="outerHTML"
-      class="btn btn-secondary border-border-strong"
-    >
-      {{ icon('refresh', size=18) }} {{ _("Rafraîchir") }}
-    </button>
+    {% set checked_ago %}{% trans minutes="__N__" %}Vérifié il y a {{ minutes }} min{% endtrans %}{% endset %}
+    <div class="flex items-center gap-3">
+      <span
+        class="hidden sm:inline text-sm text-secondary"
+        aria-live="polite"
+        x-data="{ at: Date.now(), now: Date.now(), init() { setInterval(() => { this.now = Date.now(); }, 30000); }, get minutes() { return Math.floor((this.now - this.at) / 60000); } }"
+        x-text="minutes < 1 ? '{{ _("Vérifié à l'instant") | jsq }}' : '{{ checked_ago | jsq }}'.replace('__N__', minutes)"
+      >{{ _("Vérifié à l'instant") }}</span>
+      <button
+        type="button"
+        hx-get="/accounts/suspicious"
+        hx-target="#suspicious-content"
+        hx-swap="outerHTML"
+        class="btn btn-secondary border-border-strong"
+      >
+        {{ icon('refresh', size=18) }} {{ _("Rafraîchir") }}
+      </button>
+    </div>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

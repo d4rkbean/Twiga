@@ -15,7 +15,7 @@
       <span class="w-10 h-10 shrink-0 rounded-full bg-accent-soft text-accent-ink text-xs font-semibold flex items-center justify-center">{{ user_initials(user) }}</span>
       <div class="flex flex-col min-w-0 flex-1">
         <span class="font-semibold text-primary truncate">
-          {{ user.username }}{% if current and current.id == user.id %} <span class="text-xs font-normal text-secondary">{{ _("(toi)") }}</span>{% endif %}
+          {{ user.display_name or user.username }}{% if current and current.id == user.id %} <span class="text-xs font-normal text-secondary">{{ _("(toi)") }}</span>{% endif %}
         </span>
         <span class="text-xs text-secondary">
           {% if user.last_login %}{% trans M=user.last_login.strftime("%d/%m/%Y %H:%M") %}Connecté {{ M }}{% endtrans %}{% else %}{{ _("Jamais connecté") }}{% endif %}
@@ -56,7 +56,7 @@
           hx-swap="outerHTML"
           hx-trigger="change"
         />
-        <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center text-center text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-accent-soft peer-checked:text-accent-ink peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">{{ role_labels[role] }}</span>
+        <span class="min-h-[42px] rounded-lg px-1 flex items-center justify-center text-center text-xs sm:text-sm text-secondary cursor-pointer peer-checked:bg-container peer-checked:text-primary peer-checked:shadow-sm peer-checked:font-semibold peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent-ink">{{ role_labels[role] }}</span>
       </label>
       {% endfor %}
     </div>
