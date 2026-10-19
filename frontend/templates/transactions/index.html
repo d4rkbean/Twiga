@@ -9,6 +9,15 @@
 
 {% block title %}{{ _("Opérations — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("operations", [
+  tour_step('[data-tour="operations-tabs"]', _("Un coup d'œil par type"), _("Toutes, Dépenses, Recettes ou À trier : les onglets filtrent la liste en un clic."), "filter", position="bottom"),
+  tour_step('[data-tour="operations-filters"]', _("Affiner par critères"), _("Dates, montants, catégorie : la liste se met à jour toute seule. + de critères ajoute le compte, le paiement et le tri."), "adjustments", position="bottom"),
+  tour_step("#transactions-content", _("La liste des opérations"), _("Clique une ligne pour voir son détail. Coche plusieurs lignes pour les catégoriser ou les modifier ensemble."), "list-details", position="top"),
+  tour_step("#transaction-detail-dialog", _("Le détail d'une opération"), _("Le compte, la catégorie, le mode de paiement et une note : tout ce qu'il faut savoir sur la ligne choisie."), "info-circle", position="left"),
+  tour_step('[data-tour="operations-new"]', _("Ajouter une opération"), _("Une dépense en espèces, un oubli : saisis-la toi-même et elle rejoint la liste."), "plus", position="bottom", write=True),
+  tour_step("#transactions-export", _("Exporter en CSV"), _("Télécharge les opérations qui correspondent à tes filtres, pour les ouvrir dans un tableur."), "download", position="bottom"),
+]) }}{% endblock %}
+
 {% block content %}
 {% set tree = {} %}
 {% for parent in categories %}
@@ -102,7 +111,7 @@
           class="input-base pl-[42px]"
         />
       </div>
-      <div role="group" aria-label="{{ _("Type d'opération") }}" class="grid grid-cols-4 gap-1 rounded-xl border border-border bg-sunken p-1 lg:w-[320px] lg:flex-none">
+      <div data-tour="operations-tabs" role="group" aria-label="{{ _("Type d'opération") }}" class="grid grid-cols-4 gap-1 rounded-xl border border-border bg-sunken p-1 lg:w-[320px] lg:flex-none">
         {% for value, label in [("all", _("Toutes")), ("expense", _("Dépenses")), ("income", _("Recettes")), ("todo", _("À trier"))] %}
         <button
           type="button"
@@ -119,6 +128,7 @@
         </button>
         <button
           type="button"
+          data-tour="operations-new"
           hx-get="/transactions/new"
           hx-target="#transaction-detail-content"
           hx-swap="innerHTML"
@@ -141,7 +151,7 @@
     {% endfor %}
     {% if amin_options.append(("other", _("Autre montant…"))) %}{% endif %}
     {% if amax_options.append(("other", _("Autre montant…"))) %}{% endif %}
-    <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap lg:items-start">
+    <div data-tour="operations-filters" class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap lg:items-start">
       <div class="lg:min-w-0 lg:flex-[1_1_180px]">{{ date_field("f_date_from", date_from, prefix=_("Du :"), empty=_("toutes"), aria=_("Du")) }}</div>
       <div class="lg:min-w-0 lg:flex-[1_1_180px]">{{ date_field("f_date_to", date_to, prefix=_("Au :"), empty=_("toutes"), aria=_("Au")) }}</div>
       {% for field, options, label in [("amin", amin_options, _("Montant min")), ("amax", amax_options, _("Montant max"))] %}

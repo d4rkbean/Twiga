@@ -17,6 +17,7 @@
   {% endif %}
 
   {% for item in items %}
+  {% set first_row = loop.first %}
   {% include "accounts/_row.html" %}
   {% else %}
   <p class="text-sm text-secondary text-center px-4 pb-6 lg:px-6">{{ _("Aucun compte pour l'instant.") }}</p>

@@ -59,12 +59,12 @@
 </div>
 
 {# Phones: the two bulk buttons sit above the rows (on a computer they are in the side panel). #}
-<div class="flex gap-2 border-b border-border px-4 py-3 lg:hidden">
+<div data-tour="backlog-bulk-pair" class="flex gap-2 border-b border-border px-4 py-3 lg:hidden">
   {{ bulk_pair(counts, "flex-1") }}
 </div>
 
 {% if rows %}
-<ul class="flex flex-col">
+<ul data-tour="backlog-row" class="flex flex-col">
   {% for row in rows %}
   {% set suggestion = row.suggestion %}
   {% set klass = "high" if row.confidence is not none and row.confidence >= 90 else ("mid" if row.confidence is not none and row.confidence >= 70 else "low") %}

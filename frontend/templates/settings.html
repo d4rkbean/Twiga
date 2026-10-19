@@ -6,6 +6,14 @@
 
 {% block title %}{{ _("Paramètres — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("settings", [
+  tour_step('[data-tour="settings-nav"]', _("Les rubriques"), _("Choisis une rubrique pour y aller directement. Celle où tu te trouves reste en surbrillance pendant que tu défiles."), "list-details", position="right", alt_position="bottom"),
+  tour_step("#s-gerer", _("Tous les endroits de travail"), _("Comptes, catégories, règles, budgets, abonnements, chèques : chaque carte ouvre l'écran où se règle cette partie."), "tool", position="top"),
+  tour_step("#s-cap", _("D'où viennent tes ressources"), _("Décide ce que Twiga propose comme ressources du mois dans Le Cap : un compte qui reçoit les virements, ou un montant fixe."), "wallet", position="top", write=True),
+  tour_step("#s-preferences", _("Ton affichage"), _("Interface, thème, densité, début du mois budgétaire et langue. Chaque choix s'applique tout de suite."), "adjustments", position="top"),
+  tour_step("#s-donnees", _("Exporter et sauvegarder"), _("Exporte tes opérations en CSV ou tout en JSON. L'administrateur peut aussi faire une sauvegarde et restaurer."), "download", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 {# UNE PAGE, HUIT RUBRIQUES — comme la maquette : toutes les rubriques sont sur
    la page, la liste de gauche (pastilles défilantes sur mobile) y saute et
@@ -61,6 +69,7 @@
   <div class="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start">
     {# Rubriques : pastilles défilantes sur mobile, liste verticale au bureau. #}
     <nav
+      data-tour="settings-nav"
       aria-label="{{ _("Sections des paramètres") }}"
       class="flex lg:flex-col gap-2 lg:gap-1 overflow-x-auto lg:overflow-visible -mx-4 px-4 lg:mx-0 lg:px-0 lg:w-[220px] lg:shrink-0 lg:sticky lg:top-20 sticky top-0 z-10 bg-page py-2 lg:py-0"
     >

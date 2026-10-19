@@ -10,6 +10,15 @@
 <script src="{{ static_url('/static/vendor/chartjs-chart-sankey.min.js') }}"></script>
 {% endblock %}
 
+{% block tour_steps %}{{ screen_tour("dashboard", [
+  tour_step("#dashboard-filters", _("Choisir la période"), _("Mois en cours, mois dernier, 90 jours ou dates à toi : tout le Panorama suit. Tu peux aussi ne garder qu'un compte."), "calendar", position="bottom"),
+  tour_step('[data-tour="dashboard-figures"]', _("Les six chiffres clés"), _("Solde, recettes, dépenses, résultat, taux d'épargne et opérations à trier. La case Décaler recettes avance les recettes du mois précédent."), "wallet", position="bottom"),
+  tour_step('[data-tour="dashboard-accounts-toggle"]', _("Voir les comptes"), _("Un clic déplie le solde de chaque compte, avec son évolution du mois, en bas de page."), "building-bank", position="bottom"),
+  tour_step("#panorama-plan", _("Où en est ton mois"), _("Cette carte résume le plan du mois en cours. Le lien en haut à droite ouvre Mon mois, ou Le Cap s'il reste à fixer."), "target", position="top"),
+  tour_step('[data-tour="dashboard-trend"]', _("Le flux sur 12 mois"), _("Les boutons Dépenses, Recettes et Les deux changent la courbe. Touche un mois pour lire son détail."), "chart-line", position="top"),
+  tour_step('[data-tour="dashboard-expenses"]', _("Les dépenses par catégorie"), _("Le disque montre où part l'argent. Clique une catégorie pour voir les opérations qui la composent."), "chart-bar", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 <main x-data="{ showAccounts: false }" class="flex flex-col gap-[var(--space-block)] px-4 pb-4 lg:px-8 lg:py-6">
 

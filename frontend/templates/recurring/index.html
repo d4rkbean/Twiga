@@ -7,6 +7,13 @@
 
 {% block title %}{{ _("Abonnements récurrents — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("recurring", [
+  tour_step("#recurring-content", _("Tes abonnements"), _("Twiga repère les prélèvements qui reviennent d'un mois sur l'autre. En haut, leur nombre et leur total mensuel."), "repeat", position="bottom"),
+  tour_step('[data-tour="recurring-card"]', _("Une carte par abonnement"), _("Le libellé, le montant et le rythme. Le badge dit s'il a déjà été prélevé ce mois-ci ou s'il est encore attendu."), "calendar-event", position="bottom", optional=True),
+  tour_step('[data-tour="recurring-actions"]', _("Confirmer ou ignorer"), _("Confirmer garde l'abonnement dans ta liste. Ignorer l'écarte, par exemple pour un achat régulier qui n'en est pas un."), "check", position="top", optional=True, write=True),
+  tour_step('[data-tour="recurring-merge"]', _("Fusionner les doublons"), _("Quand plusieurs entrées semblent être le même abonnement, Fusionner les regroupe en une seule."), "arrows-left-right", position="bottom", optional=True, write=True),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {{ page_header(_("Abonnements récurrents"), back_href="/settings", back_label=_("Paramètres")) }}

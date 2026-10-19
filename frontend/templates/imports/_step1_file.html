@@ -19,7 +19,7 @@
   >
     {# Zone de dépôt : l'<input> couvre toute la zone (invisible), si bien que
        le glisser-déposer et le clic tombent sur lui. #}
-    <label class="relative min-h-[160px] rounded-xl border border-dashed border-border-strong bg-sunken/40 flex flex-col items-center justify-center gap-1 px-4 text-center focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-ink">
+    <label data-tour="import-drop" class="relative min-h-[160px] rounded-xl border border-dashed border-border-strong bg-sunken/40 flex flex-col items-center justify-center gap-1 px-4 text-center focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-ink">
       <span class="text-accent-ink">{{ icon('upload', size=24) }}</span>
       <span class="font-semibold text-primary" id="import-drop-title">{{ _("Fichier QIF, CSV ou OFX") }}</span>
       <span class="text-xs text-secondary">{{ _("Déposer ici ou choisir un fichier · .qif, .csv, .ofx, .qfx · 5 Mo maximum") }}</span>

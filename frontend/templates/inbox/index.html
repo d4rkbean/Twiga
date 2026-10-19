@@ -6,6 +6,15 @@
 
 {% block title %}{{ _("La Savane — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("savane", [
+  tour_step('[data-tour="savane-progress"]', _("Ta progression"), _("La barre avance à chaque opération rangée, et Twiga la suit jusqu'au bout de la savane."), "chart-line", position="bottom"),
+  tour_step('[data-tour="savane-card"]', _("Une opération à la fois"), [_("La carte montre l'opération à ranger : clique son libellé pour le corriger."), _("Quand il n'en reste plus, la savane est propre.")], "inbox", position="bottom"),
+  tour_step("#inbox-validate-btn", _("Valider la proposition"), _("Twiga te propose une catégorie. Un clic sur Valider, ou la touche Entrée, et l'opération est rangée."), "check", position="bottom", optional=True, write=True),
+  tour_step("#tour-category-buttons", _("Ou choisir une catégorie"), _("Pas d'accord avec la proposition ? Clique une autre catégorie, puis précise la sous-catégorie."), "tag", position="top", optional=True, write=True),
+  tour_step('[data-tour="savane-nav"]', _("Passer, revenir, imprévu"), _("Passer laisse l'opération pour plus tard, Précédente annule la dernière, Imprévu marque une dépense hors budget."), "arrow-narrow-right", position="top", optional=True, write=True),
+  tour_step("#inbox-upcoming", _("Les prochaines à ranger"), _("Cette liste montre ce qui attend derrière la carte. Sur téléphone, touche son titre pour la déplier."), "list-details", position="right"),
+]) }}{% endblock %}
+
 {% block content %}
 {# From lg: three columns — « À suivre », the card with the other categories
    under it, then the panel of the visit (greeting, mid-month, budget alerts,
@@ -28,7 +37,7 @@
       </div>
       {% include "inbox/_counter.html" %}
     </div>
-    <div class="min-w-0 flex-[2_1_420px]">
+    <div data-tour="savane-progress" class="min-w-0 flex-[2_1_420px]">
       {% include "inbox/_progress.html" %}
     </div>
     <a
@@ -64,7 +73,7 @@
       <div :class="panel === 'budget' ? '' : 'hidden lg:contents'">{% include "inbox/_budget_alerts.html" %}</div>
     </div>
 
-    <div class="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1">
+    <div data-tour="savane-card" class="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1">
       {% include "inbox/_card.html" %}
     </div>
 

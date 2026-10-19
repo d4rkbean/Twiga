@@ -6,7 +6,7 @@
   saisie, sans requête) ; aux étapes 1 et 3 c'est un état figé par le serveur
   (cap/_panel_state.html).
 #}
-<aside class="flex flex-col gap-5 lg:sticky lg:top-20" aria-label="{{ _("Le plan en direct") }}">
+<aside data-tour="cap-live" class="flex flex-col gap-5 lg:sticky lg:top-20" aria-label="{{ _("Le plan en direct") }}">
   <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3" aria-labelledby="cap-live-title">
     <h2 id="cap-live-title" class="text-section-title">{% trans month=current_month_name %}{{ month }}, en direct{% endtrans %}</h2>
     <dl class="flex flex-col text-sm">

@@ -6,7 +6,7 @@
 {% endmacro %}
 
 <div id="checks-content" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
-  <section class="card p-0 overflow-hidden flex flex-col">
+  <section data-tour="checks-pending" class="card p-0 overflow-hidden flex flex-col">
     <div class="flex items-baseline justify-between gap-2 px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
       <h2 class="text-section-title">{{ _("En attente") }}</h2>
       {% if outstanding_checks %}
@@ -50,7 +50,7 @@
   </section>
 
   {% if matched_checks %}
-  <section class="card p-0 overflow-hidden flex flex-col">
+  <section data-tour="checks-matched" class="card p-0 overflow-hidden flex flex-col">
     <div class="px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
       <h2 class="text-section-title">{{ _("Récemment rapprochés") }}</h2>
     </div>

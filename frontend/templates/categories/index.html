@@ -8,6 +8,14 @@
 
 {% block title %}{{ _("Catégories — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("categories", [
+  tour_step('[data-tour="categories-add"]', _("Ajouter une catégorie"), _("Donne un nom et choisis l'emplacement : au premier niveau, ou comme sous-catégorie d'une autre."), "plus", position="bottom", alt_target='[data-tour="categories-add-mobile"]', alt_position="bottom", write=True),
+  tour_step('[data-tour="categories-pillar"]', _("Le pilier du Cap"), _("Chaque catégorie compte dans un pilier du Cap : Essentiel, Choix ou Imprévus. Une sous-catégorie reprend celui de sa catégorie."), "compass", position="bottom"),
+  tour_step("#categories-content", _("Tes catégories"), _("Chaque ligne indique son pilier du Cap et ses budgets. Les sous-catégories sont rangées en dessous."), "tag", position="top"),
+  tour_step('[data-tour="categories-toggle"]', _("Déplier une catégorie"), _("La flèche à gauche ouvre les sous-catégories. C'est là que tu peux en ajouter une."), "chevron-right", position="bottom", optional=True),
+  tour_step('[data-tour="categories-reset"]', _("Réinitialiser les piliers"), _("Efface les piliers réglés à la main sur les sous-catégories : elles reprennent celui de leur catégorie."), "refresh", position="bottom", write=True),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {% set child_total = categories | map(attribute="children") | map("length") | sum %}
@@ -46,6 +54,7 @@
   <button
     type="button"
     onclick="document.getElementById('new-category-dialog').showModal()"
+    data-tour="categories-add-mobile"
     class="btn {{ 'btn-primary' if categories else 'btn-secondary border-border-strong' }} lg:hidden"
   >
     {{ icon('plus', size=18) }} {{ _("Ajouter une catégorie") }}
@@ -60,12 +69,12 @@
   </dialog>
 
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 lg:gap-6 items-start">
-    <section class="card hidden lg:flex flex-col gap-3">
+    <section data-tour="categories-add" class="card hidden lg:flex flex-col gap-3">
       <h2 class="text-section-title">{{ _("Ajouter une catégorie") }}</h2>
       {{ add_form }}
     </section>
 
-    <aside class="card flex flex-col gap-3">
+    <aside data-tour="categories-pillar" class="card flex flex-col gap-3">
       <h2 class="text-section-title">{{ _("Pilier du Cap") }}</h2>
       <p class="text-sm text-secondary">{{ _("Chaque catégorie compte dans un pilier du Cap. Une sous-catégorie hérite de sa catégorie, sauf si tu lui en donnes un autre.") }}</p>
       <ul class="hidden lg:flex flex-col gap-2 text-sm">
@@ -78,6 +87,7 @@
         <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink whitespace-nowrap">{{ _("Ouvrir Le Cap") }} {{ icon('arrow-narrow-right', size=16) }}</a>
         <button
           type="button"
+          data-tour="categories-reset"
           hx-post="/categories/reset-pillar-overrides"
           hx-target="#categories-content"
           hx-swap="outerHTML"

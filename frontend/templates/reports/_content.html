@@ -126,7 +126,7 @@
 
   {# LES QUATRE CHIFFRES DE LA PÉRIODE, d'un seul tenant (filet de 1 px entre
      les cellules). Toujours calculés serveur en NUMERIC(15,2). #}
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm">
+  <div data-tour="reports-figures" class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm">
     <div class="bg-container p-4 flex flex-col gap-1">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('trending-up', size=14) }} {{ _("Recettes") }}</p>
       <p class="amount-blur text-xl lg:text-2xl font-bold tabular-nums text-primary">{{ signed(income_total, plus=true) }}</p>
@@ -180,7 +180,7 @@
 
   {# CASHFLOW — toujours visible, 12 mois glissants jusqu'au mois en cours,
      indépendant de l'onglet de détail actif ci-dessous. #}
-  <section aria-labelledby="cashflow-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
+  <section data-tour="reports-cashflow" aria-labelledby="cashflow-title" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
     <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
       <h2 id="cashflow-title" class="text-section-title">{{ _("Flux financier — 12 derniers mois") }}</h2>
       <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary">
@@ -200,7 +200,7 @@
   {# ONGLETS DE DÉTAIL — état géré entièrement côté client (Alpine), toutes
      les données des 7 onglets sont déjà rendues ci-dessous, aucun aller-retour
      serveur au changement d'onglet. #}
-  <div role="tablist" aria-label="{{ _("Détail du rapport") }}" class="flex overflow-x-auto border-b border-border" style="scrollbar-width: none;">
+  <div data-tour="reports-tabs" role="tablist" aria-label="{{ _("Détail du rapport") }}" class="flex overflow-x-auto border-b border-border" style="scrollbar-width: none;">
     {% for tab_id, tab_label in (("depenses", _("Dépenses")), ("recettes", _("Recettes")), ("balance", _("Balance")), ("budget", _("Budget")), ("patrimoine", _("Patrimoine")), ("le_cap", _("Le Cap")), ("courses", _("Courses"))) %}
     <button
       type="button"

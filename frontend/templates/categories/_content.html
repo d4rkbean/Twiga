@@ -19,7 +19,7 @@
 
   {% for parent in categories %}
   <div x-data="{ expanded: false }" class="max-lg:bg-container max-lg:rounded-xl max-lg:shadow-sm max-lg:overflow-hidden">
-    {% with category = parent, is_child = false %}
+    {% with category = parent, is_child = false, first_row = loop.first %}
     {% include "categories/_row.html" %}
     {% endwith %}
 

@@ -6,6 +6,14 @@
 
 {% block title %}{{ _("Importer un fichier — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("import", [
+  tour_step('[data-tour="import-drop"]', _("Déposer ton fichier"), _("Dépose un fichier QIF, CSV ou OFX, ou clique pour le choisir. Un QIF crée tes comptes et tes catégories tout seul."), "upload", position="bottom", write=True),
+  tour_step("#import-account-field", _("Choisir le compte"), _("Pour un CSV ou un OFX, indique de quel compte vient le relevé. Un QIF n'en a pas besoin : il contient déjà les comptes."), "building-bank", position="top", write=True),
+  tour_step("#import-step2-form", _("Contrôler ce qui a été lu"), _("Pour un CSV, vérifie quelle colonne porte la date, le libellé et le montant. Twiga propose déjà un choix."), "adjustments", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="import-review"]', _("Vérifier avant d'importer"), _("Twiga écarte les doublons et repère les virements. Décoche une ligne pour ne pas l'importer, puis lance l'import."), "circle-check", position="top", optional=True, write=True),
+  tour_step("#import-history", _("Derniers imports"), _("Chaque fichier importé est listé ici, avec ses doublons écartés et le nombre d'opérations ajoutées."), "clock", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   <div class="flex flex-col gap-1">

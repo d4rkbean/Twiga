@@ -215,7 +215,7 @@
        mock-up. « Imprévu » is a switch added to the decision (the category
        stays the one chosen); its state travels in the hidden field, taken up by
        the buttons that save (/finalize), at any step. #}
-    <div class="flex flex-wrap gap-2" x-data="{ unexpected: {{ 'true' if transaction.is_unexpected else 'false' }} }">
+    <div data-tour="savane-nav" class="flex flex-wrap gap-2" x-data="{ unexpected: {{ 'true' if transaction.is_unexpected else 'false' }} }">
       <input type="hidden" id="inbox-unexpected" name="unexpected" :value="unexpected ? '1' : ''" />
       <button
         type="button"
