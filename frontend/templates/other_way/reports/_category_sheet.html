@@ -1,0 +1,73 @@
+{% from "_macros/signed_amount.html" import signed %}
+{#- La feuille d'une catégorie (Rapports, L'autre voie) : ce qu'elle pèse, ses
+    sous-catégories, ses douze mois et ses opérations. La tête est dessinée ici ; la
+    courbe (/reports/category-trend) et la liste (/reports/transactions) sont les
+    fragments existants, chargés par la feuille elle-même. Sur mobile elle monte du bas,
+    avec son voile. -#}
+{% set sub = exact_category_id != "" %}
+{% set sheet_qs = report_qs ~ "&type=" ~ type %}
+{% set cat = category_id if category_id else ("none" if uncategorized else "") %}
+<div class="lg:hidden fixed inset-0 z-[9000] bg-scrim" data-close-sheet aria-hidden="true"></div>
+<section aria-label="{{ _("Détail de la catégorie") }}" class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[9001] max-lg:max-h-[85vh] max-lg:overflow-y-auto max-lg:shadow-lg flex flex-col gap-3 rounded-xl border border-border bg-container p-4 max-lg:rounded-b-none">
+  <div class="flex items-center gap-2">
+    <h3 class="min-w-0 flex-1 truncate font-display text-lg font-extrabold tracking-tight text-primary">{{ category_name }}</h3>
+    {% if sub %}
+    <button
+      type="button"
+      hx-get="/reports/category-sheet?{{ sheet_qs }}&category_id={{ cat }}&category_name={{ parent_name | urlencode }}"
+      hx-target="#report-sheet"
+      hx-swap="innerHTML"
+      class="min-h-[50px] px-2 text-sm font-medium text-accent-ink underline"
+    >{{ _("Retour") }}</button>
+    {% endif %}
+    <button type="button" data-close-sheet aria-label="{{ _("Fermer le détail") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-secondary">{{ icon('x', size=20) }}</button>
+  </div>
+
+  {% if not sub %}
+  {% if uncategorized and not positive %}
+  <p class="text-sm text-secondary">{{ _("Ces dépenses n'ont pas encore de catégorie : elles se rangent d'un geste dans La Savane.") }}</p>
+  <a href="/transactions/inbox" class="btn btn-secondary self-start">{{ _("Ranger dans La Savane") }}</a>
+  {% else %}
+  <p class="text-sm text-primary">{% if positive %}{{ _("%(name)s fait %(percent)s %% des recettes.", name=category_name, percent=percent) }}{% else %}{{ _("%(name)s pèse %(percent)s %% des dépenses.", name=category_name, percent=percent) }}{% endif %}</p>
+  {% endif %}
+  <p class="amount-blur text-sm text-secondary"><span class="font-semibold tabular-nums text-primary">{{ signed(total if positive else -total, plus=positive) }}</span> · {{ ngettext("%(n)s opération", "%(n)s opérations", count, n=count) }}</p>
+
+  {% if subcategories %}
+  <div class="flex flex-col border-t border-border">
+    {% for subcategory in subcategories %}
+    {% set exact = subcategory.category_id if subcategory.category_id is not none else category_id %}
+    <button
+      type="button"
+      hx-get="/reports/category-sheet?{{ sheet_qs }}&category_id={{ cat }}&exact_category_id={{ exact }}&category_name={{ subcategory.name | urlencode }}"
+      hx-target="#report-sheet"
+      hx-swap="innerHTML"
+      aria-label="{{ _("Voir les opérations de %(name)s", name=subcategory.name) }}"
+      class="flex min-h-[50px] items-center gap-3 border-b border-border text-left"
+    >
+      <span class="min-w-0 flex-1 truncate text-sm text-primary">{{ subcategory.icon or "" }} {{ subcategory.name }}</span>
+      <span class="amount-blur flex-none text-sm font-semibold tabular-nums text-primary">{{ signed(subcategory.amount if positive else -subcategory.amount, plus=positive) }}</span>
+      <span class="w-10 flex-none text-right text-xs tabular-nums text-secondary">{{ subcategory.percent_of_total if subcategory.percent_of_total is defined else "" }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {% if not uncategorized %}
+  <h4 class="border-t border-border pt-3 text-sm font-semibold text-primary">{{ _("Évolution sur 12 mois") }}</h4>
+  <div
+    id="category-trend-content"
+    hx-get="/reports/category-trend?{{ sheet_qs }}&category_id={{ exact_category_id if sub else cat }}&category_name={{ category_name | urlencode }}{% if sub %}&exact=true{% endif %}"
+    hx-trigger="load"
+    hx-swap="innerHTML"
+  ></div>
+  {% endif %}
+
+  <h4 class="border-t border-border pt-3 text-sm font-semibold text-primary">{{ _("Opérations") }}</h4>
+  <div
+    id="report-tx-list-{{ type }}"
+    hx-get="/reports/transactions?{{ sheet_qs }}{% if sub %}&exact_category_id={{ exact_category_id }}{% else %}&category_id={{ cat }}{% endif %}&category_name={{ category_name | urlencode }}"
+    hx-trigger="load"
+    hx-swap="outerHTML"
+  ></div>
+</section>

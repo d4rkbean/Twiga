@@ -98,6 +98,7 @@ PAGES = [
     Page("/reports/content", htmx=True),
     Page("/reports/transactions", {"type": "expense"}, htmx=True),
     Page("/reports/category-trend", {"category_id": "{category_id}"}, htmx=True),
+    Page("/reports/category-sheet", {"category_id": "{category_id}"}, htmx=True),
     Page("/reports/export.csv"),
     Page("/reports/transactions/export.csv"),
     # Search, export, import, users
