@@ -15,6 +15,7 @@
       {% if not is_child %}
       <button
         type="button"
+        {% if first_row %}data-tour="categories-toggle"{% endif %}
         @click="expanded = !expanded"
         :aria-expanded="expanded"
         :aria-label="expanded ? '{{ _("Masquer les sous-catégories") | jsq }}' : '{{ _("Afficher les sous-catégories") | jsq }}'"

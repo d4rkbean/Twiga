@@ -7,6 +7,15 @@
 
 {% block title %}{{ _("Comptes — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("accounts", [
+  tour_step("#accounts-content", _("Tes comptes"), _("Chaque compte avec son type et son solde. Le total de tous les comptes est en bas de la liste."), "building-bank", position="top"),
+  tour_step('[data-tour="accounts-diagnostic"]', _("Comprendre un solde"), _("La loupe détaille le calcul : solde initial, plus la somme des opérations importées, dont les virements."), "zoom-in", position="left", alt_position="bottom", optional=True),
+  tour_step('[data-tour="accounts-add"]', _("Ajouter un compte"), _("Un nom, un type, le solde avant la première opération importée : le compte est prêt à recevoir un import."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="accounts-edit"]', _("Modifier ou supprimer"), _("Le crayon change le nom, le type ou le solde initial. La corbeille supprime le compte, après confirmation."), "pencil", position="left", alt_position="bottom", optional=True, write=True),
+  tour_step('[data-tour="accounts-detect"]', _("Détecter les virements"), _("Twiga cherche les paires d'opérations qui ressemblent à un virement entre deux de tes comptes, pour ne pas les compter deux fois."), "repeat", position="left", alt_target='[data-tour="accounts-detect-mobile"]', alt_position="bottom"),
+  tour_step("#suspicious-content", _("Opérations suspectes"), _("Doublons possibles, montants inhabituels, opérations sans compte : Twiga les signale. Rafraîchir relance la vérification."), "search", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {% set accounts_total = items | sum(attribute="balance") %}
@@ -22,11 +31,12 @@
   <button
     type="button"
     onclick="document.getElementById('new-account-dialog').showModal()"
+    data-tour="accounts-add"
     class="btn btn-primary"
   >
     {{ icon('plus', size=18) }} {{ _("Ajouter un compte") }}
   </button>
-  <a href="/accounts/detect-transfers" class="btn btn-secondary border-border-strong lg:hidden">
+  <a href="/accounts/detect-transfers" data-tour="accounts-detect-mobile" class="btn btn-secondary border-border-strong lg:hidden">
     {{ icon('repeat', size=18) }} {{ _("Détecter virements") }}
   </a>
   {% endcall %}
@@ -72,7 +82,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
     {% include "accounts/_content.html" %}
 
-    <aside class="card hidden lg:flex flex-col gap-3">
+    <aside data-tour="accounts-detect" class="card hidden lg:flex flex-col gap-3">
       <h2 class="text-section-title flex items-center gap-2">{{ icon('repeat', size=20) }} {{ _("Détecter les virements internes") }}</h2>
       <p class="text-sm text-secondary">
         {{ _("Recherche, sur tout l'historique, des paires de transactions qui se ressemblent comme un virement interne entre deux de tes comptes (montant opposé, ± 3 jours, ± 1 € de tolérance).") }}

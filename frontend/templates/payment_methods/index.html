@@ -20,6 +20,14 @@
 
 {% block title %}{{ _("Modes de paiement — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("payment_methods", [
+  tour_step('[data-tour="pm-list"]', _("Tes modes de paiement"), _("La liste des modes proposés dans La Savane, les filtres d'Opérations, les règles et les chèques."), "credit-card", position="top"),
+  tour_step('[data-tour="pm-icon"]', _("Une icône par mode"), _("L'icône à gauche accompagne le mode partout où il apparaît : opérations, règles, chèques."), "eye", position="bottom", optional=True),
+  tour_step('[data-tour="pm-add"]', _("Ajouter un mode"), _("Choisis une icône, donne un nom : le mode apparaît tout de suite dans les listes."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="pm-edit"]', _("Renommer ou supprimer"), _("Le crayon change le nom et l'icône, la corbeille supprime le mode. Les opérations déjà rangées ne changent pas."), "pencil", position="left", alt_position="bottom", optional=True, write=True),
+  tour_step('[data-tour="pm-detect"]', _("Retrouver les modes manquants"), _("Twiga devine le mode d'après le libellé : CB, chèque, virement, prélèvement, espèces. Seules les opérations sans mode sont remplies."), "search", position="top", write=True),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {{ page_header(
@@ -30,7 +38,7 @@
   ) }}
 
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4 lg:gap-6 items-start">
-    <section class="card p-0 overflow-hidden flex flex-col order-2 lg:order-none">
+    <section data-tour="pm-list" class="card p-0 overflow-hidden flex flex-col order-2 lg:order-none">
       <div class="flex items-baseline justify-between gap-2 px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
         <h2 class="text-section-title">{{ _("Modes de paiement") }}</h2>
         <p class="text-xs text-secondary">{% trans count=methods | length %}{{ count }} modes{% endtrans %}</p>
@@ -40,11 +48,12 @@
       <div x-data="{ mode: 'view' }" class="px-4 lg:px-6 py-2 border-t border-border">
         <!-- Vue normale -->
         <div x-show="mode === 'view'" class="flex items-center gap-3">
-          <span class="w-10 h-10 shrink-0 rounded-full bg-sunken text-secondary flex items-center justify-center">{{ icon(get_payment_method_icon_name(pm.name), size=18) }}</span>
+          <span {% if loop.first %}data-tour="pm-icon" {% endif %}class="w-10 h-10 shrink-0 rounded-full bg-sunken text-secondary flex items-center justify-center">{{ icon(get_payment_method_icon_name(pm.name), size=18) }}</span>
           <span class="flex-1 min-w-0 truncate text-primary font-medium">{{ pm.name | pm_label }}</span>
           <button
             type="button"
             @click="mode = 'edit'"
+            {% if loop.first %}data-tour="pm-edit"{% endif %}
             aria-label="{{ _("Modifier") }}"
             class="w-[50px] h-[50px] shrink-0 rounded-xl text-secondary flex items-center justify-center hover:bg-sunken"
           >
@@ -116,7 +125,7 @@
     </section>
 
     <div class="contents lg:flex lg:flex-col lg:gap-4 lg:order-last">
-      <section class="card flex flex-col gap-3 order-1 lg:order-none">
+      <section data-tour="pm-add" class="card flex flex-col gap-3 order-1 lg:order-none">
         <h2 class="text-section-title">{{ _("Ajouter") }}</h2>
         <form method="post" action="/payment-methods/create" class="flex flex-col gap-3">
           <div class="form-group">
@@ -131,7 +140,7 @@
         </form>
       </section>
 
-      <section class="card flex flex-col gap-3 order-3 lg:order-none">
+      <section data-tour="pm-detect" class="card flex flex-col gap-3 order-3 lg:order-none">
         <div class="flex flex-col gap-1">
           <h2 class="text-section-title">{{ _("Opérations sans mode de paiement") }}</h2>
           <p class="text-sm text-secondary">{{ _("Twiga devine le mode de paiement d'après le libellé : CB, chèque, virement, prélèvement, espèces.") }}</p>

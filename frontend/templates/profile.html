@@ -6,6 +6,13 @@
 
 {% block title %}{{ _("Mon profil — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("profile", [
+  tour_step('[data-tour="profile-identity"]', _("Ton nom et ton identifiant"), _("Le nom affiché apparaît dans Twiga. L'identifiant sert à te connecter. Enregistrer applique les deux."), "user", position="bottom"),
+  tour_step('[data-tour="profile-password"]', _("Changer ton mot de passe"), _("Saisis l'actuel puis le nouveau deux fois, 8 caractères au moins. Le bouton s'active quand tout est en règle."), "lock", position="top"),
+  tour_step('[data-tour="profile-display"]', _("Ton affichage"), _("Interface, thème et densité. Chaque clic s'applique tout de suite, sur cet appareil et sur ton compte."), "sun", position="top"),
+  tour_step('[data-tour="profile-logout"]', _("Te déconnecter"), _("Ferme ta session sur cet appareil. Tu retrouveras tout en te reconnectant."), "logout", position="top", optional=True),
+]) }}{% endblock %}
+
 {% block content %}
 {% set since = current.created_at | month_year %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
@@ -30,7 +37,7 @@
          de reset du formulaire au succès (contrairement au mot de passe) —
          les champs doivent garder les valeurs qui viennent d'être
          enregistrées, pas revenir à un état "vide". -->
-    <section aria-labelledby="h-id" class="card flex flex-col gap-4">
+    <section data-tour="profile-identity" aria-labelledby="h-id" class="card flex flex-col gap-4">
       <h2 id="h-id" class="text-section-title">{{ _("Identité") }}</h2>
       <form
         hx-post="/profile/update"
@@ -66,7 +73,7 @@
          backend/auth.py). Le bouton reste éteint tant que le mot de passe
          actuel manque, que le nouveau a moins de 8 caractères ou que la
          confirmation diffère. -->
-    <section aria-labelledby="h-pw" class="card flex flex-col gap-4">
+    <section data-tour="profile-password" aria-labelledby="h-pw" class="card flex flex-col gap-4">
       <h2 id="h-pw" class="text-section-title">{{ _("Mot de passe") }}</h2>
       <form
         hx-post="/settings/change-password"
@@ -111,14 +118,14 @@
   <div class="grid grid-cols-1 gap-4 lg:gap-6 items-start">
     <!-- Affichage : interface, thème, densité. S'enregistre au clic (voir
          _display_preferences.html), comme la langue. -->
-    <section aria-labelledby="h-disp" class="card flex flex-col gap-4">
+    <section data-tour="profile-display" aria-labelledby="h-disp" class="card flex flex-col gap-4">
       <h2 id="h-disp" class="text-section-title">{{ _("Affichage sur cet appareil") }}</h2>
       {% include "_display_preferences.html" %}
     </section>
 
     {% if auth_enabled %}
     {# « Sessions ouvertes » viendra plus tard ; la sortie, elle, est là. #}
-    <section aria-labelledby="h-session" class="card flex flex-col gap-4">
+    <section data-tour="profile-logout" aria-labelledby="h-session" class="card flex flex-col gap-4">
       <h2 id="h-session" class="sr-only">{{ _("Session") }}</h2>
       <form hx-post="/logout">
         <button type="submit" class="btn btn-danger">

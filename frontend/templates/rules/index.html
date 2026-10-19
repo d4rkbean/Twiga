@@ -7,6 +7,13 @@
 
 {% block title %}{{ _("Règles — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("rules", [
+  tour_step('[data-tour="rules-add"]', _("Ajouter une règle"), _("Un mot du libellé et la catégorie où le ranger : toutes les opérations qui le contiennent iront au bon endroit."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="rules-suggestions"]', _("Les règles proposées"), _("En rangeant tes opérations, tu fais naître des idées de règles. Créer en garde une, Ignorer l'écarte."), "bulb", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="rules-list"]', _("Tes règles"), _("Les plus utilisées d'abord. Chaque ligne dit dans quelle catégorie un mot-clé range ses opérations."), "list-details", position="top"),
+  tour_step('[data-tour="rules-test"]', _("Tester un libellé"), _("Saisis un libellé de ta banque : Twiga te dit quelle règle s'appliquerait, sans rien modifier."), "tool", position="bottom"),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {% set rules_subtitle %}{% trans count=rules_with_usage | length %}{{ count }} règle{% pluralize %}{{ count }} règles{% endtrans %} · {% if pending_suggestions %}{% trans count=pending_suggestions | length %}{{ count }} suggestion en attente{% pluralize %}{{ count }} suggestions en attente{% endtrans %}{% else %}{{ _("aucune suggestion en attente") }}{% endif %}{% endset %}
@@ -14,6 +21,7 @@
   <button
     type="button"
     onclick="document.getElementById('new-rule-dialog').showModal()"
+    data-tour="rules-add"
     class="btn btn-primary"
   >
     {{ icon('plus', size=18) }} {{ _("Ajouter une règle") }}
@@ -84,7 +92,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
     {% include "rules/_content.html" %}
 
-    <aside class="card flex flex-col gap-3 lg:order-last order-first">
+    <aside data-tour="rules-test" class="card flex flex-col gap-3 lg:order-last order-first">
       <h2 class="text-section-title flex items-center gap-2">{{ icon('tool', size=20) }} {{ _("Tester une règle") }}</h2>
       <form hx-post="/rules/test" hx-target="#rule-test-result" hx-swap="innerHTML" class="flex flex-col gap-2">
         <input

@@ -137,7 +137,7 @@
        précédent, à cocher. Rien n'est pré-coché, parce qu'aucune fenêtre
        automatique ne distingue de façon fiable un virement de fin de mois qui
        finance le mois suivant d'un rajout fait pour le mois courant. #}
-    <div class="flex flex-col gap-2">
+    <div data-tour="cap-income" class="flex flex-col gap-2">
       <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border p-4">
         <div class="flex flex-col min-w-0">
           <span class="text-sm font-semibold text-primary">{{ _("Ressources du mois") }}</span>
@@ -197,7 +197,7 @@
        entre les catégories), le détail par catégorie se règle dessous. #}
     {% for g in groupes %}
     {% set code = g.code %}
-    <div class="flex flex-col">
+    <div {% if loop.first %}data-tour="cap-pillar" {% endif %}class="flex flex-col">
       <div class="flex items-center justify-between gap-3">
         <h3 class="text-sm font-semibold text-primary">{{ g.label }}</h3>
         <span class="amount-blur inline-flex items-center gap-1 text-sm text-secondary tabular-nums">
@@ -305,7 +305,7 @@
     {% else %}
     <button type="button" disabled class="btn btn-secondary">{{ icon('arrow-narrow-left') }} {{ _("Précédent") }}</button>
     {% endif %}
-    <button type="submit" class="btn btn-primary">
+    <button type="submit" data-tour="cap-save" class="btn btn-primary">
       {{ _("Fixer le cap") }} {{ icon('arrow-narrow-right') }}
     </button>
   </div>

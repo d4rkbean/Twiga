@@ -6,6 +6,15 @@
 
 {% block title %}{{ _("Projets — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("projects", [
+  tour_step('[data-tour="projects-summary"]', _("Ce que tu as mis de côté"), _("Sous le titre : la somme déjà épargnée sur la somme visée, tous projets confondus."), "pig-money", position="bottom"),
+  tour_step('[data-tour="projects-new"]', _("Créer un projet"), _("Un nom, un montant cible et une échéance : Twiga calcule ce qu'il faut mettre de côté chaque mois."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="projects-card"]', _("Le cercle de progression"), _("Le cercle montre la part de l'objectif atteinte. Dessous : ce qu'il manque et l'effort mensuel pour tenir l'échéance."), "target", position="bottom", optional=True),
+  tour_step('[data-tour="projects-actions"]', _("Ajouter, dépenser, modifier"), _("Ajouter met de l'argent de côté, Dépenser en retire pour payer le projet, Modifier change le nom, le montant ou l'échéance."), "coins", position="top", optional=True, write=True),
+  tour_step('[data-tour="projects-history"]', _("L'historique des mouvements"), _("Les entrées et les sorties de tes projets, les plus récentes en haut. Les pastilles filtrent par projet."), "list-details", position="top", optional=True),
+  tour_step('[data-tour="projects-rhythm"]', _("Au rythme actuel"), _("Pour chaque projet, la date où l'objectif sera atteint à ton rythme d'épargne, avant ou après l'échéance."), "trending-up", position="top", optional=True),
+]) }}{% endblock %}
+
 {% block content %}
 {# Tout l'écran (titre compris) vit dans #projects-list : chaque action
    renvoie projects/_list.html, et le résumé sous le titre doit suivre. #}

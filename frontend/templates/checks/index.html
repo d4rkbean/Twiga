@@ -7,6 +7,13 @@
 
 {% block title %}{{ _("Chèques & paiements en attente — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("checks", [
+  tour_step('[data-tour="checks-form"]', _("Noter un paiement émis"), _("Tu viens d'émettre un chèque ou un virement : note le montant, la date, le compte débité et la catégorie."), "writing", position="bottom", write=True),
+  tour_step('[data-tour="checks-method"]', _("Chèque ou autre moyen"), _("Indique le numéro du chèque, ou choisis un moyen de paiement comme Wero ou PayPal. L'un des deux suffit."), "credit-card", position="top", write=True),
+  tour_step('[data-tour="checks-pending"]', _("Les paiements en attente"), _("Dès que le débit est importé, Twiga le retrouve et le range dans la catégorie choisie. Annuler en retire un de la liste."), "clock", position="top"),
+  tour_step('[data-tour="checks-matched"]', _("Récemment rapprochés"), _("Les paiements dont le débit a été retrouvé à l'import, rangés tout seuls dans leur catégorie."), "circle-check", position="top", optional=True),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {{ page_header(
@@ -16,7 +23,7 @@
     back_label=_("Paramètres"),
   ) }}
 
-  <section class="card flex flex-col gap-4">
+  <section data-tour="checks-form" class="card flex flex-col gap-4">
     <div class="flex flex-col gap-1">
       <h2 class="text-section-title">{{ _("Enregistrer un paiement émis") }}</h2>
       <p class="text-sm text-secondary max-w-prose">
@@ -50,7 +57,7 @@
         </label>
       </div>
 
-      <div class="form-group">
+      <div data-tour="checks-method" class="form-group">
         <span class="form-label" id="check-method-label">{{ _("Moyen de paiement (si pas de chèque)") }}</span>
         <input type="hidden" name="payment_method" :value="method" />
         <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-method-label">

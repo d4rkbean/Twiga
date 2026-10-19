@@ -11,6 +11,15 @@
 <link rel="stylesheet" href="{{ static_url('/static/css/reports-print.css') }}" media="print" />
 {% endblock %}
 
+{% block tour_steps %}{{ screen_tour("reports", [
+  tour_step('[data-tour="reports-period"]', _("Choisir la période"), _("Mois, trimestre, semestre, année ou dates à toi. Les flèches passent à la période d'avant ou d'après."), "calendar", position="bottom"),
+  tour_step("#reports-account-filter", _("Compte et recettes décalées"), _("Garde un seul compte si tu veux. Décaler les recettes met le salaire de fin de mois en face des dépenses du mois suivant."), "filter", position="bottom"),
+  tour_step('[data-tour="reports-figures"]', _("Les quatre chiffres"), _("Recettes, dépenses, résultat net et Budget Performance, avec leur évolution par rapport à la période d'avant."), "chart-bar", position="bottom"),
+  tour_step('[data-tour="reports-cashflow"]', _("Le flux sur 12 mois"), _("Touche un mois du graphique pour lire ses chiffres, ses plus grosses dépenses et ouvrir son rapport."), "chart-line", position="top"),
+  tour_step('[data-tour="reports-tabs"]', _("Sept façons de lire"), _("Dépenses, Recettes, Balance, Budget, Patrimoine, Le Cap et Courses : un clic change d'onglet, sans recharger."), "list-details", position="bottom"),
+  tour_step('[data-tour="reports-export"]', _("Imprimer ou exporter"), _("Imprime le rapport, ou télécharge-le en CSV avec les mêmes réglages que ceux de l'écran."), "printer", position="bottom"),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
 
@@ -25,7 +34,7 @@
         <h1 class="text-page-title">{{ _("Rapports") }}</h1>
         <p class="text-sm text-secondary">{{ period_bar_label }}</p>
       </div>
-      <div class="flex gap-2">
+      <div data-tour="reports-export" class="flex gap-2">
         <button type="button" onclick="window.print()" class="btn btn-secondary">
           {{ icon('printer', size=18) }} {{ _("Imprimer") }}
         </button>
@@ -46,7 +55,7 @@
      affiché (onglet actif, flèches, sélecteurs) ne peut jamais se
      désynchroniser du contenu, y compris juste après un clic sur une
      flèche ← / →. #}
-  <div class="print:hidden flex flex-col gap-3">
+  <div data-tour="reports-period" class="print:hidden flex flex-col gap-3">
     <nav aria-label="{{ _("Type de période") }}" class="flex overflow-x-auto border-b border-border" style="scrollbar-width: none;">
       {% for type_code, type_label in [("mois", _("Mois")), ("trimestre", _("Trimestre")), ("semestre", _("Semestre")), ("annee", _("Année")), ("personnalise", _("Personnalisé"))] %}
       <a

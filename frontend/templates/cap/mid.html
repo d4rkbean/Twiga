@@ -6,6 +6,14 @@
 {% set demote_import = true %}
 {% block title %}{{ _("Mon mois — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("month", [
+  tour_step('[data-tour="month-cap-link"]', _("Le Cap du mois"), _("Ce bouton ouvre l'assistant en trois étapes pour préparer ou fixer le cap du mois."), "compass", position="bottom"),
+  tour_step('[data-tour="month-verdict"]', _("Le verdict en une phrase"), _("La couleur et les mots te disent si le mois est dans le rythme, à surveiller ou dépassé."), "circle-check", position="bottom", optional=True),
+  tour_step('[data-tour="month-figures"]', _("Trois chiffres à suivre"), _("L'épargne en cours, ce qui est déjà dépensé et ce qui reste dans les enveloppes jusqu'à la fin du mois."), "wallet", position="bottom", optional=True),
+  tour_step('[data-tour="month-pillars"]', _("Les piliers du mois"), _("Chaque pilier compare le dépensé au prévu. Clique-le pour voir ses catégories, le trait noir marque le rythme du mois."), "target", position="top", optional=True),
+  tour_step('[data-tour="month-links"]', _("Ajuster en cours de route"), _("Retouche le plan du mois, revois le cap ou règle le pilier de chaque catégorie."), "adjustments", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-8 lg:py-6">
   {# Cette page est une DESTINATION de la navigation (« Mon mois », voir
@@ -16,14 +24,14 @@
       <h1 class="text-page-title">{{ _("Mon mois") }}</h1>
       <p class="text-sm text-secondary">{% trans current_month_label=current_month_label, day=day_of_month, days=days_in_month %}{{ current_month_label }} · jour {{ day }} sur {{ days }}{% endtrans %}</p>
     </div>
-    <a href="/cap" class="btn btn-primary">
+    <a href="/cap" data-tour="month-cap-link" class="btn btn-primary">
       {{ icon('compass', size=18) }} {{ _("Préparer Le Cap") if entry else _("Fixer le cap") }}
     </a>
   </header>
 
   {% if entry %}
   {# Le verdict d'abord, en une phrase : la couleur ne vient qu'avec les mots. #}
-  <p class="alert alert-{{ status }} font-semibold" role="status">
+  <p data-tour="month-verdict" class="alert alert-{{ status }} font-semibold" role="status">
     {{ icon('circle-check' if status == 'success' else 'alert-triangle', size=20) }}
     <span>{{ status_message }}</span>
   </p>
@@ -32,7 +40,7 @@
      reste. L'encaissé est à côté de l'engagé : comparer à l'engagement rend la
      jauge juste dès le 1er du mois, mais masquerait un mois où l'argent promis
      n'arrive jamais. #}
-  <div class="grid gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm lg:grid-cols-[1.6fr_1fr_1fr]">
+  <div data-tour="month-figures" class="grid gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm lg:grid-cols-[1.6fr_1fr_1fr]">
     <div class="bg-container p-4 lg:p-5 flex flex-col gap-1">
       <p class="text-xs font-medium text-secondary">{{ _("Épargne en cours") }}</p>
       <p class="amount-blur text-amount-large lg:text-[2rem] tabular-nums {{ 'text-success' if savings_so_far >= 0 else 'text-danger' }}">{{ signed(savings_so_far, plus=true) }}</p>
@@ -70,7 +78,7 @@
      catégories. La barre porte le dépensé (couleur du pilier), puis en gris
      ce que le tri y ajouterait ; le trait noir est le rythme du mois. #}
   {% set pillar_colors = {"essentiel": "var(--color-chart-1)", "choix": "var(--color-chart-3)", "imprevu": "var(--color-chart-6)", "savings": "var(--color-chart-2)"} %}
-  <section aria-labelledby="pillars-title" class="flex flex-col gap-3">
+  <section data-tour="month-pillars" aria-labelledby="pillars-title" class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <h2 id="pillars-title" class="text-section-title">{% trans count=pillars | length %}Les {{ count }} piliers du mois{% endtrans %}</h2>
       <div class="flex flex-wrap items-center gap-2 text-xs text-secondary">
@@ -154,7 +162,7 @@
   </div>
   {% endif %}
 
-  <div class="flex flex-wrap gap-2">
+  <div data-tour="month-links" class="flex flex-wrap gap-2">
     <a href="/budgets" class="btn btn-secondary">{{ icon('arrow-right', size=16) }} {{ _("Ajuster le plan du mois") }}</a>
     {% if entry %}<a href="/cap" class="btn btn-secondary">{{ icon('arrow-right', size=16) }} {{ _("Revoir le cap du mois") }}</a>{% endif %}
     <a href="/categories" class="btn btn-secondary">{{ icon('arrow-right', size=16) }} {{ _("Régler le pilier de chaque catégorie") }}</a>

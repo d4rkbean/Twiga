@@ -9,7 +9,7 @@
 
   {# Trois chiffres du mois écoulé. L'écart avec ce qui était prévu se lit sous
      les recettes et le résultat quand un cap avait été fixé. #}
-  <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+  <div data-tour="cap-bilan-figures" class="grid grid-cols-1 gap-3 sm:grid-cols-3">
     <div class="rounded-xl border border-border p-4 flex flex-col gap-1">
       <p class="text-xs font-medium text-secondary">{{ _("Recettes") }}</p>
       <p class="amount-blur text-amount-large tabular-nums text-success">{{ signed(bilan_income, plus=true) }}</p>
@@ -36,7 +36,7 @@
      ne doit pas obliger à quitter le bilan. Même donnée que « Mon mois »
      (crud.get_month_detail_by_pillar) pour que les deux écrans racontent la
      même chose. Revenus et épargne ont leurs cartes juste au-dessus. #}
-  <div class="overflow-x-auto rounded-xl border border-border" x-data="{ ouverts: {} }">
+  <div data-tour="cap-bilan-table" class="overflow-x-auto rounded-xl border border-border" x-data="{ ouverts: {} }">
     <table class="w-full text-xs lg:text-sm">
       <thead>
         <tr class="text-xs text-secondary bg-sunken">

@@ -8,7 +8,7 @@
      Triées par nombre d'occurrences : une proposition vue dix fois fait
      gagner plus de temps qu'un achat unique. #}
   {% if pending_suggestions %}
-  <section class="card p-0 overflow-hidden">
+  <section data-tour="rules-suggestions" class="card p-0 overflow-hidden">
     <div class="flex items-center gap-2 px-4 py-4 lg:px-6">
       <span class="text-secondary">{{ icon('bulb', size=20) }}</span>
       <h2 class="text-section-title">{{ _("En attente de validation") }}</h2>
@@ -50,7 +50,7 @@
   </section>
   {% endif %}
 
-  <section class="card p-0 overflow-hidden flex flex-col">
+  <section data-tour="rules-list" class="card p-0 overflow-hidden flex flex-col">
     <div class="flex items-baseline justify-between gap-2 px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
       <h2 class="text-section-title">{{ _("Règles existantes") }}</h2>
       {% if rules_with_usage %}<p class="text-xs text-secondary">{{ _("les plus utilisées d'abord") }}</p>{% endif %}

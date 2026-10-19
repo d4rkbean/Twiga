@@ -41,7 +41,7 @@
       </label>
     </div>
 
-    <div role="radiogroup" aria-label="{{ _("Rôle") }}" class="flex gap-1 rounded-xl bg-sunken p-1">
+    <div role="radiogroup" {% if loop.first %}data-tour="users-role" {% endif %}aria-label="{{ _("Rôle") }}" class="flex gap-1 rounded-xl bg-sunken p-1">
       {% for role in ["admin", "editor", "viewer"] %}
       <label class="flex-1 min-w-0">
         <input

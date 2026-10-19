@@ -62,7 +62,7 @@
      un filet de 1 px (le fond de la grille montre à travers l'écart). Les
      montants restent à l'encre : un montant négatif n'est pas un verdict ;
      seul le résultat porte une couleur, doublée d'un mot. #}
-  <div class="grid grid-cols-2 lg:grid-cols-6 gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm">
+  <div data-tour="dashboard-figures" class="grid grid-cols-2 lg:grid-cols-6 gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm">
     <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('wallet', size=14) }} {{ _("Solde total") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(total_balance) }}</p>
@@ -70,7 +70,7 @@
       {# Déplie le détail par compte (la carte « Comptes » plus bas, repliée par
          défaut : la liste complète prenait trop de place en permanence).
          `showAccounts` vit sur <main> (index.html). #}
-      <button type="button" @click="showAccounts = !showAccounts" :aria-expanded="showAccounts ? 'true' : 'false'" aria-controls="dashboard-accounts" class="min-h-[50px] -mb-3 inline-flex items-center gap-1 text-xs font-semibold text-primary text-left">
+      <button type="button" data-tour="dashboard-accounts-toggle" @click="showAccounts = !showAccounts" :aria-expanded="showAccounts ? 'true' : 'false'" aria-controls="dashboard-accounts" class="min-h-[50px] -mb-3 inline-flex items-center gap-1 text-xs font-semibold text-primary text-left">
         <span x-show="!showAccounts">{{ _("Voir les comptes") }}</span>
         <span x-show="showAccounts" style="display: none;">{{ _("Masquer les comptes") }}</span>
         <span class="transition-transform" :class="showAccounts ? 'rotate-180' : ''">{{ icon('chevron-down', size=14) }}</span>
@@ -186,7 +186,7 @@
        à droite suivent le MOIS CIVIL en cours (un budget est un
        engagement mensuel) ; le mois est rappelé dans leur titre pour que
        l'écart avec le reste de la page soit explicite. #}
-    <section aria-labelledby="trend-title" class="lg:col-span-8 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+    <section data-tour="dashboard-trend" aria-labelledby="trend-title" class="lg:col-span-8 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <div class="flex items-center justify-between gap-3">
         <h2 id="trend-title" class="text-section-title">{{ _("Flux sur 12 mois") }}</h2>
         <a href="/reports" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Rapports") }} {{ icon('arrow-right', size=16) }}</a>
@@ -272,7 +272,7 @@
     {# Les deux répartitions côte à côte : on lit ce qui est entré avant ce
        qui est sorti. Une rangée de 50 px par catégorie, cliquable pour ouvrir
        le détail des opérations. #}
-    <section aria-labelledby="expense-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+    <section data-tour="dashboard-expenses" aria-labelledby="expense-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <h2 id="expense-title" class="text-section-title">{% trans period_label=period_label %}Dépenses par catégorie — {{ period_label }}{% endtrans %}</h2>
       {% if category_spending %}
       <div class="flex flex-col gap-3">

@@ -19,6 +19,7 @@
     <div class="flex gap-2 justify-end lg:col-start-4 lg:row-start-1">
       <button
         type="button"
+        {% if first_row %}data-tour="accounts-diagnostic"{% endif %}
         @click="expanded = !expanded"
         :aria-expanded="expanded"
         :aria-label="expanded ? '{{ _("Masquer le diagnostic") | jsq }}' : '{{ _("Voir le diagnostic de solde") | jsq }}'"
@@ -29,6 +30,7 @@
       <button
         type="button"
         hx-get="/accounts/{{ item.account.id }}/edit"
+        {% if first_row %}data-tour="accounts-edit"{% endif %}
         hx-target="#account-row-{{ item.account.id }}"
         hx-swap="outerHTML"
         aria-label="{{ _("Modifier") }}"

@@ -1,6 +1,6 @@
 {% from "imports/_stepper.html" import stepper, scene, step_nav %}
 {{ stepper(3, _("Aperçu QIF"), _("Importer")) }}
-<div class="card flex flex-col gap-4" x-data="{ busy: false }">
+<div class="card flex flex-col gap-4" data-tour="import-review" x-data="{ busy: false }">
   {% set summary %}{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} opérations à importer, {{ duplicate_count }} doublons écartés.{% endtrans %}{% endset %}
   {{ scene(_("Tout est prêt."), summary) }}
 

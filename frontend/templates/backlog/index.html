@@ -13,6 +13,14 @@
 <script src="{{ static_url('/static/js/backlog.js') }}"></script>
 {% endblock %}
 
+{% block tour_steps %}{{ screen_tour("backlog", [
+  tour_step('[data-tour="backlog-list"]', _("Les opérations à traiter"), _("Chaque ligne montre la catégorie proposée et son degré de confiance. Coche celles que tu veux traiter ensemble."), "list-details", position="top"),
+  tour_step('[data-tour="backlog-filters"]', _("Filtrer la liste"), _("Cherche un libellé, ou garde un compte ou une catégorie pour ne traiter qu'un paquet à la fois."), "filter", position="left", alt_target='[data-tour="backlog-filters-toggle"]', alt_position="bottom"),
+  tour_step("#backlog-chips", _("Le degré de confiance"), _("Les pastilles trient les suggestions de la plus sûre à la moins sûre, avec leur nombre."), "scale", position="left"),
+  tour_step('[data-tour="backlog-row"]', _("Ranger une ligne"), _("La coche range l'opération dans la catégorie proposée, la croix écarte la suggestion, l'étiquette te laisse choisir."), "check", position="top", optional=True, write=True),
+  tour_step('[data-tour="backlog-bulk"]', _("Traiter en masse"), _("Applique une catégorie aux lignes cochées, ou valide d'un coup toutes les suggestions sûres."), "folders", position="left", alt_target='[data-tour="backlog-bulk-pair"]', alt_position="bottom", write=True),
+]) }}{% endblock %}
+
 {% block content %}
 {% set board = {
   "q": state.search,
@@ -51,6 +59,7 @@
       <h1 class="text-page-title flex-1 max-lg:!text-xl max-lg:!font-bold">{{ _("Traitement en masse") }}</h1>
       <button
         type="button"
+        data-tour="backlog-filters-toggle"
         @click="filtersOpen = !filtersOpen"
         :aria-expanded="filtersOpen"
         aria-label="{{ _("Filtres") }}"
@@ -85,7 +94,7 @@
 
   <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
     <div class="flex min-w-0 flex-col gap-3 lg:flex-[3_1_520px]">
-      <section class="overflow-hidden rounded-xl border border-border bg-container shadow-sm" aria-label="{{ _("Opérations à traiter") }}">
+      <section data-tour="backlog-list" class="overflow-hidden rounded-xl border border-border bg-container shadow-sm" aria-label="{{ _("Opérations à traiter") }}">
         <div id="backlog-list">
           {% include "backlog/_content.html" %}
         </div>
@@ -94,6 +103,7 @@
     </div>
 
     <aside
+      data-tour="backlog-filters"
       class="overflow-hidden rounded-xl border border-border bg-container shadow-sm lg:sticky lg:top-[72px] lg:w-[340px] lg:flex-none"
       :class="filtersOpen ? '' : 'max-lg:hidden'"
       aria-label="{{ _("Filtres et actions") }}"
@@ -160,7 +170,7 @@
       </div>
 
       {# Bulk categorization: computer only (on a phone: the bar and sheets below). #}
-      <div class="hidden border-t border-border px-5 pb-5 pt-4 lg:block">
+      <div data-tour="backlog-bulk" class="hidden border-t border-border px-5 pb-5 pt-4 lg:block">
         <div x-show="!pick" class="flex flex-col gap-2.5">
           <h2 class="text-base font-semibold text-primary">{{ _("Catégorisation en masse") }}</h2>
           <p class="mb-1 text-xs tabular-nums text-secondary">
