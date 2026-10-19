@@ -752,8 +752,12 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
     days_in_month = (current_period.end - current_period.start).days
     day_of_month = (today - current_period.start).days + 1
     rhythm = round(day_of_month / days_in_month * 100)
-    planned_total = sum((p["planned"] or Decimal("0.00") for p in pillars), Decimal("0.00"))
-    spent_total = sum((p["actual"] for p in pillars), Decimal("0.00"))
+    # The envelopes are the three spending pillars: the savings pillar measures
+    # what is left over, it is neither planned spending nor spent money. The
+    # spent figure includes what still waits in La Savane (the "of which" line).
+    envelopes = [p for p in pillars if p["code"] != "savings"]
+    planned_total = sum((p["planned"] or Decimal("0.00") for p in envelopes), Decimal("0.00"))
+    spent_total = sum((p["actual"] + p["pending"] for p in envelopes), Decimal("0.00"))
 
     context = {
         "request": request,

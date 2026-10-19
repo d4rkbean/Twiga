@@ -245,7 +245,7 @@ A **mobile-first** application with two layouts, switched at `lg` (1024px) and o
 - **Below 1024px**: a fixed header at the top (56px) and a fixed navigation bar at the bottom (50px + 1px border), four destinations. The `<body>` reserves the space once for everyone (`pt-[64px] pb-[59px]`); no page adds its own compensation.
 - **From 1024px**: the bottom bar gives way to a fixed full-height sidebar with three modes: pinned (240px), automatic (a 64px rail that expands on hover, overlaying the content), hidden (0). The content offset follows the mode, not the hover.
 
-Content is constrained to `max-w-lg` (32rem) for forms and panels, `max-w-sm` (24rem) for cards and mobile dialogs; the categorization card widens to 600px on large screens. Spacing rhythm relies on a short range from 4px to 32px, with `gap-2` (8px) as the default breathing room between elements of a same group and `p-4` / `p-6` (16/24px) as card padding depending on width.
+A screen uses the whole width the shell leaves it, at every width up to and beyond 2000px (see The Full Width Rule); only dialogs are narrow: `max-w-sm` (24rem) or `max-w-md` for confirmations and forms, with `calc(100% - 2rem)` on a phone. Spacing rhythm relies on a short range from 4px to 32px, with `gap-2` (8px) as the default breathing room between elements of a same group and `p-4` / `p-6` (16/24px) as card padding depending on width.
 
 ### Named Rules
 
@@ -254,6 +254,8 @@ Content is constrained to `max-w-lg` (32rem) for forms and panels, `max-w-sm` (2
 **The Density Never Touches the 50px Rule.** Density (below) changes air, never size: the text keeps its size, and everything you tap stays at least 50px tall in Compact exactly as in Airy. Only rows nobody touches (`--row-static`) may go lower.
 
 **The Balanced Columns Rule.** When cards of very different heights share a page (Settings), do not use a grid: it aligns by rows and leaves two columns half empty next to a column three screens tall. `.settings-columns` (CSS columns: 2 from `lg`, 3 from `xl`, `break-inside: avoid`) fills top to bottom and balances itself; the order of the markup groups the cards by purpose.
+
+**The Full Width Rule.** A screen fills all the width available next to the sidebar, from 390px to 2000px and more. The mockups are drawn at 1320px: that width is a sample, not a ceiling. So no `max-w-*`, no fixed `px` width and no `minmax(0, …px)` on a page, a list column, a grid, a table or a filter bar. Columns share the width with `flex` / `fr` (`flex-1`, `flex-[1_1_180px]`, `grid-cols-[minmax(0,1fr)_380px]`), and a filter bar lets its fields grow and wrap (`flex-wrap`) instead of squeezing them until a label is cut. Below `lg`, the page is not centred in a narrow column either: no `max-w-lg mx-auto` on `<main>`. Exceptions, and only these: a side column (filters, detail, live panel) may keep a fixed width (300 to 380px) next to a `1fr` column; a paragraph or sentence meant to be read is capped at `70ch`; the search field of a filter bar may be capped; a `<dialog>` is a dialog, not a page; and a control that stands alone (a segmented switch, a stepper, a ring) keeps its own size. Check any new screen at 2000px before calling it done.
 
 **The Single Breakpoint Rule.** The switch from mobile to desktop happens at `lg` and nowhere else. `sm` and `md` only adjust internal details (card padding, the orientation of a button group), never the navigation structure.
 

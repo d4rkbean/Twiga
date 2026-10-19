@@ -8,7 +8,7 @@
 {% block title %}{{ _("Comptes — Twiga") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {% set accounts_total = items | sum(attribute="balance") %}
   {% set accounts_subtitle %}<span class="amount-blur max-lg:hidden">{% trans count=items | length, total=accounts_total | eur %}{{ count }} compte · total {{ total }}{% pluralize %}{{ count }} comptes · total {{ total }}{% endtrans %}</span>{% endset %}
   {% call page_header(_("Comptes"), subtitle=accounts_subtitle, back_href="/settings", back_label=_("Paramètres")) %}

@@ -1,0 +1,64 @@
+{#- La séance (the other way): what this visit has done, what comes next, the journal
+    of the last filings and the keyboard shortcuts. On a phone it folds under the
+    question; on a computer it is a column. -#}
+<aside id="inbox-session" aria-label="{{ _("La séance") }}" x-data="{ open: false }" class="min-w-0 rounded-xl border border-border bg-container shadow-sm">
+  <button type="button" @click="open = !open" :aria-expanded="open" class="flex min-h-[50px] w-full items-center justify-between gap-3 px-5 text-left lg:pointer-events-none lg:cursor-default">
+    <h2 class="font-display text-lg font-extrabold tracking-tight text-primary">{{ _("La séance") }}</h2>
+    <span :class="open ? 'rotate-180' : ''" class="text-secondary transition-transform lg:hidden">{{ icon('chevron-down', size=18) }}</span>
+  </button>
+  <div :class="open ? '' : 'max-lg:hidden'" class="flex flex-col gap-4 px-5 pb-5">
+    <dl class="grid grid-cols-2 gap-x-4 gap-y-4">
+      <div>
+        <dt class="text-xs font-medium text-secondary">{{ _("Rangées") }}</dt>
+        <dd class="mt-1 font-display text-[28px] font-extrabold leading-none tabular-nums text-primary">{{ session_filed }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-secondary">{{ _("Montant rangé") }}</dt>
+        <dd class="amount-blur mt-1 font-display text-[28px] font-extrabold leading-none tabular-nums text-primary">{{ session_amount | eur }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-secondary">{{ _("À décider") }}</dt>
+        <dd class="mt-1 font-display text-[28px] font-extrabold leading-none tabular-nums text-primary">{{ pending_count }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-secondary">{{ _("Passées") }}</dt>
+        <dd class="mt-1 font-display text-[28px] font-extrabold leading-none tabular-nums text-primary">{{ session_skipped }}</dd>
+      </div>
+    </dl>
+
+    <div class="flex flex-col gap-1 border-t border-border pt-4">
+      <h3 class="text-base font-semibold text-primary">{{ _("Ensuite") }}</h3>
+      <p class="text-sm text-secondary">{{ next_text }}</p>
+    </div>
+
+    <div class="flex flex-col gap-1 border-t border-border pt-4">
+      <h3 class="text-base font-semibold text-primary">{{ _("Journal") }}</h3>
+      {% for entry in session_journal %}
+      <div class="flex flex-col border-b border-border py-2.5 last:border-b-0">
+        <span class="text-sm font-semibold text-primary">{{ entry.label or entry.raw_label }}</span>
+        <span class="text-xs text-secondary">
+          {{ (entry.category.parent.name ~ " › " ~ entry.category.name) if entry.category and entry.category.parent else (entry.category.name if entry.category else _("Virement")) }}{% if entry.payment_method %} · {{ entry.payment_method | pm_label }}{% endif %}
+        </span>
+      </div>
+      {% else %}
+      <p class="py-1 text-sm text-secondary">{{ _("Rien pour l'instant.") }}</p>
+      {% endfor %}
+    </div>
+
+    <div x-data="{ keys: false }" class="flex flex-col border-t border-border max-lg:hidden">
+      <button type="button" @click="keys = !keys" :aria-expanded="keys" class="flex min-h-[50px] w-full items-center justify-between gap-3 text-left">
+        <h3 class="text-base font-semibold text-primary">{{ _("Raccourcis clavier") }}</h3>
+        <span :class="keys ? 'rotate-180' : ''" class="text-secondary transition-transform">{{ icon('chevron-down', size=18) }}</span>
+      </button>
+      <ul x-show="keys" style="display: none;" class="flex flex-col gap-2 pb-1 text-sm text-primary">
+        <li class="flex items-center justify-between gap-3"><span>{{ _("Passer") }}</span><span class="flex gap-1"><kbd class="kbd-hint">→</kbd><kbd class="kbd-hint">{{ _("Espace") }}</kbd></span></li>
+        <li class="flex items-center justify-between gap-3"><span>{{ _("Annuler") }}</span><kbd class="kbd-hint">←</kbd></li>
+        <li class="flex items-center justify-between gap-3"><span>{{ _("Choisir par position") }}</span><span class="flex items-center gap-1"><kbd class="kbd-hint">1</kbd> {{ _("à") }} <kbd class="kbd-hint">9</kbd></span></li>
+        <li class="flex items-center justify-between gap-3"><span>{{ _("Valider") }}</span><kbd class="kbd-hint">{{ _("Entrée") }}</kbd></li>
+        <li class="flex items-center justify-between gap-3"><span>{{ _("Retour aux catégories") }}</span><kbd class="kbd-hint">{{ _("Échap") }}</kbd></li>
+        <li class="flex items-center justify-between gap-3"><span>{{ _("Imprévu") }}</span><kbd class="kbd-hint">I</kbd></li>
+        <li class="text-xs text-secondary">{{ _("Clique dans la question pour les activer. Ils restent muets quand tu écris dans un champ.") }}</li>
+      </ul>
+    </div>
+  </div>
+</aside>

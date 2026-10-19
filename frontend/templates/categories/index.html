@@ -9,7 +9,7 @@
 {% block title %}{{ _("Catégories — Twiga") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {% set child_total = categories | map(attribute="children") | map("length") | sum %}
   {% set categories_subtitle %}{% trans count=categories | length %}{{ count }} catégorie{% pluralize %}{{ count }} catégories{% endtrans %} · {% trans count=child_total %}{{ count }} sous-catégorie{% pluralize %}{{ count }} sous-catégories{% endtrans %}{% endset %}
   {{ page_header(_("Catégories"), subtitle=categories_subtitle, back_href="/settings", back_label=_("Paramètres")) }}
