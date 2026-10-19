@@ -10,7 +10,7 @@ import re
 import pytest
 
 from tests.conftest import ROOT
-from tests.test_amber import FULL_PAGES
+from tests.test_amber import FULL_PAGES, render
 from tests.test_pages import request
 
 PICTOGRAPH = re.compile("[↩☀-➿⭐⭕️\U0001f000-\U0001faff]")
@@ -26,11 +26,21 @@ def test_no_translatable_text_carries_an_emoji():
 
 
 @pytest.mark.parametrize("page", FULL_PAGES, ids=lambda page: page.template)
-def test_page_titles_have_no_emoji(clients, demo, page):
-    client = clients["anonymous"] if page.public else clients["admin"]
-    html = request(client, page, demo).text
+def test_page_titles_have_no_emoji(clients, demo, variant, page):
+    html = render(clients, demo, page, variant).text
     match = TITLE.search(html)
     assert match and not PICTOGRAPH.search(match.group(1)), match and match.group(1)
+
+
+def test_the_shell_and_the_tour_have_no_emoji(clients, demo, variant):
+    # Everything the shell writes: the bars and the menus before <main>, the
+    # bottom bar, and the steps of the guided tour (titles and texts).
+    html = request(clients["admin"], next(page for page in FULL_PAGES if page.template == "/dashboard"), demo).text
+    shell = html[: html.index("<main")] + html[html.rindex("<nav "):][:4000]
+    shell = re.sub(r"<script.*?</script>|<!--.*?-->", "", shell, flags=re.S)
+    assert not PICTOGRAPH.search(shell), PICTOGRAPH.search(shell).group(0)
+    steps = re.search(r'data-steps="([^"]*)"', html).group(1)
+    assert not PICTOGRAPH.search(steps)
 
 
 def test_the_flash_fragment_carries_an_icon_and_the_text():

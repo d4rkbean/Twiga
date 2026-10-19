@@ -1,0 +1,27 @@
+{% extends "_layout.html" %}
+{#- Interface « L'autre voie » : la même page que la Classique, une autre coque.
+
+    Pas de barre latérale. En haut, une barre fixe de 56px : sur ordinateur le
+    logo, quatre destinations (La Savane, Panorama, Le Cap, Plus), la recherche,
+    l'œil et l'avatar ; sur mobile le titre de la page, la loupe, l'œil et
+    l'avatar, avec les quatre destinations dans une barre fixe en bas. Tout le
+    reste se range sous « Plus ».
+
+    Les dégagements sont ceux de la Classique (64px en haut, 59px en bas sur
+    mobile) : une page n'a donc rien à savoir de la coque qui l'entoure, et les
+    barres collantes en top-14 des écrans restent justes.
+
+    L'état de la coque (quel menu est ouvert) vit sur <body> (`shell`), pour que
+    la barre du haut et celle du bas pilotent les mêmes feuilles ; la logique est
+    dans static/js/other-way.js, jamais dans un script en ligne.
+
+    Les blocs sidebar / header / nav gardent leurs noms : une page sans coque
+    (la connexion) les vide comme dans la Classique. -#}
+{% block shell_head %}
+  <script src="{{ static_url('/static/js/other-way.js') }}" defer></script>
+{% endblock %}
+{% block body_chrome %}pt-[64px] pb-[59px] lg:pb-0{% endblock %}
+{% block body_state %}...twigaShell(),{% endblock %}
+{% block body_offset %}'max-lg:overflow-hidden': shell !== null,{% endblock %}
+{% block header %}{% include "other_way/_topbar.html" %}{% endblock %}
+{% block nav %}{% include "other_way/_bottom_nav.html" %}{% endblock %}

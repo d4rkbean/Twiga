@@ -1,8 +1,11 @@
 """One solid amber fill per screen.
 
 Amber is the colour of the primary action: a screen with two amber buttons has
-no primary action. The shell's "Importer" button (frontend/templates/_header.html)
-is amber unless the screen sets `demote_import` because it has its own.
+no primary action. In the Classic interface the shell's "Importer" button
+(frontend/templates/_header.html) is amber unless the screen sets
+`demote_import` because it has its own. The other way's shell has no amber fill
+at all (the import lives under Plus > Alimenter): the screen's own action is
+the only one. Both interfaces are checked.
 
 An amber fill is an element carrying `btn-primary` or `bg-accent`. Not counted:
 the progress stripes of the import stepper (`h-1`), the confirmation dialog
@@ -10,6 +13,7 @@ the progress stripes of the import stepper (`h-1`), the confirmation dialog
 `<template>` (a form that opens on a click is not on the screen yet).
 """
 
+import re
 from html.parser import HTMLParser
 
 import pytest
@@ -61,6 +65,14 @@ def amber_fills(html: str) -> list[str]:
     return counter.fills
 
 
+def render(clients, demo, page, variant, role="admin"):
+    """The page in an interface; the login page has no account, so the cookie decides."""
+    if page.public:
+        clients["anonymous"].cookies.set("twiga_ui", variant)
+        return request(clients["anonymous"], page, demo)
+    return request(clients[role], page, demo)
+
+
 # The style guide shows every button variant on purpose.
 NOT_SCREENS = {"/", "/health", "/design-system", "/export/json", "/export/restore/progress"}
 FULL_PAGES = [
@@ -70,11 +82,10 @@ FULL_PAGES = [
 
 
 @pytest.mark.parametrize("page", FULL_PAGES, ids=lambda page: page.template)
-def test_a_screen_has_at_most_one_amber_fill(clients, demo, page):
-    client = clients["anonymous"] if page.public else clients["admin"]
-    html = request(client, page, demo).text
+def test_a_screen_has_at_most_one_amber_fill(clients, demo, variant, page):
+    html = render(clients, demo, page, variant).text
     fills = amber_fills(html)
-    assert len(fills) <= 1, f"{page.template}: {len(fills)} amber fills: {fills}"
+    assert len(fills) <= 1, f"{variant} {page.template}: {len(fills)} amber fills: {fills}"
 
 
 @pytest.mark.parametrize("page", FULL_PAGES, ids=lambda page: page.template)
@@ -88,3 +99,23 @@ def test_a_screen_with_its_own_primary_action_demotes_importer(clients, demo, pa
     # count here: the screen owns an amber action, so Importer must stay quiet.
     if "btn-primary" in html:
         assert not amber_import, f"{page.template} has its own btn-primary: add demote_import"
+
+
+@pytest.mark.parametrize("page", [page for page in FULL_PAGES if not page.public], ids=lambda page: page.template)
+def test_the_other_ways_shell_carries_no_amber_fill(clients, demo, monkeypatch, page):
+    # The shell is the top bar, the bottom bar and the menus they open: it has
+    # no "Importer" button to demote, the destination that is active is a soft
+    # amber background with amber-ink text, never a solid fill.
+    from tests.conftest import switch_variant
+
+    monkeypatch.setenv("ENABLE_OTHER_WAY", "true")
+    switch_variant("other_way")
+    try:
+        html = request(clients["admin"], page, demo).text
+    finally:
+        switch_variant("classic")
+    assert 'id="tour-b-nav"' in html
+    shell = html[: html.index("<main")] + html[html.index('<nav id="tour-b-bottom-nav"'):][:3000]
+    tokens = {token for classes in re.findall(r'class="([^"]*)"', shell) for token in classes.split()}
+    assert not (AMBER_CLASSES & tokens), f"{page.template}: amber fill in the shell"
+    assert "tour-import" not in html, "the other way's shell has no Importer button"
