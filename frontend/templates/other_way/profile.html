@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "other_way/_ui.html" import answer_head %}
+{% from "_macros/brand.html" import mascot %}
 
 {% block title %}{{ _("Mon profil — Twiga") }}{% endblock %}
 
@@ -103,10 +104,11 @@
       <section data-tour="profile-preview" class="rounded-xl bg-sunken p-4 lg:p-6 min-w-0" aria-label="{{ _("Aperçu") }}">
         <div class="pref-preview !p-0 overflow-hidden" :class="dark ? 'dark' : 'pref-light'" :data-density="density" aria-hidden="true">
           <div class="flex items-center gap-3 px-4 py-3 bg-container border-b border-border">
-            <span class="font-display font-extrabold tracking-tight text-sm">{{ _("Twiga") }}</span>
+            <span class="flex items-center gap-1.5">{{ mascot(size=18) }}<span class="font-display font-extrabold tracking-tight text-sm">{{ _("Twiga") }}</span></span>
             <span class="rounded-full bg-accent-soft text-accent-ink text-xs font-semibold px-3 py-1">{{ _("La Savane") }}</span>
             <span class="text-xs text-secondary">{{ _("Panorama") }}</span>
             <span class="text-xs text-secondary">{{ _("Le Cap") }}</span>
+            <span class="text-xs text-secondary">{{ _("Plus") }}</span>
             <span class="ml-auto grid place-items-center w-6 h-6 rounded-full bg-accent-soft text-accent-ink text-[10px] font-bold">{{ user_initials(current) }}</span>
           </div>
           <div class="p-4 flex flex-col gap-3">
@@ -132,18 +134,18 @@
   <section class="flex flex-col gap-4" aria-labelledby="h-account">
     <div class="flex flex-col gap-1">
       <h2 id="h-account" class="text-section-title">{{ _("Ton compte") }}</h2>
-      <p class="text-sm text-secondary">{{ _("Nom, mot de passe et sortie.") }}</p>
+      <p class="text-sm text-secondary">{{ _("Nom, mot de passe et appareils connectés.") }}</p>
     </div>
     <div class="grid gap-[var(--space-block)] lg:grid-cols-3 items-start">
       <section data-tour="profile-info" aria-labelledby="h-id" class="card flex flex-col gap-4">
         <h3 id="h-id" class="text-section-title">{{ _("Informations") }}</h3>
         <form hx-post="/profile/update" hx-target="#profile-update-result" hx-swap="innerHTML" class="flex flex-col gap-4">
           <label class="form-group">
-            <span class="form-label">{{ _("Nom affiché") }}</span>
+            <span class="form-label">{{ _("Nom affiché (facultatif)") }}</span>
             <input type="text" name="display_name" value="{{ current.display_name or '' }}" placeholder="{{ _("ex. Jean Dupont") }}" autocomplete="nickname" maxlength="100" class="input-base" />
           </label>
           <label class="form-group">
-            <span class="form-label">{{ _("Identifiant") }}</span>
+            <span class="form-label">{{ _("Nom d'utilisateur") }}</span>
             <input type="text" name="username" value="{{ current.username }}" required autocomplete="username" class="input-base" />
           </label>
           <div class="flex flex-wrap items-center gap-3">
@@ -154,7 +156,7 @@
       </section>
 
       <section data-tour="profile-password" aria-labelledby="h-pw" class="card flex flex-col gap-4">
-        <h3 id="h-pw" class="text-section-title">{{ _("Mot de passe") }}</h3>
+        <h3 id="h-pw" class="text-section-title">{{ _("Changer le mot de passe") }}</h3>
         <form hx-post="/settings/change-password" hx-target="#profile-password-result" hx-swap="innerHTML"
               hx-on:htmx:after-request="if(event.detail.successful) { this.reset(); this.dispatchEvent(new Event('reset')); }"
               x-data="{ cur: '', pw: '', pw2: '', get ok() { return this.pw.length >= 8 }, get match() { return this.pw2.length > 0 && this.pw === this.pw2 }, get can() { return this.cur.length > 0 && this.ok && this.match } }"
