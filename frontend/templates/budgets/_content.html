@@ -28,6 +28,8 @@
       bumpWithdrawal(direction) {
         this.savingsWithdrawal = Math.max(0, Math.round(((Number(this.savingsWithdrawal) || 0) + direction * this.step) * 100) / 100)
       },
+      num(text) { var n = parseFloat(String(text).replace(/\s/g, '').replace(',', '.')); return isNaN(n) ? 0 : n },
+      fmt2(v) { return (Number(v) || 0).toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) },
       fmt(v) { return v.toLocaleString((document.documentElement.dataset.numberLocale || 'fr-FR'), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('-', '−') + ' €' },
     }"
   >
@@ -42,7 +44,7 @@
            plan, elles ne peuvent pas proposer deux bases de répartition. #}
         {% if month_resources %}
         <p class="text-sm text-secondary">
-          {% trans period_label=period_label %}Ressources de {{ period_label }} :{% endtrans %}
+          {{ _("Ressources du mois :") }}
           <span class="amount-blur text-primary font-semibold">{{ month_resources | eur }}</span>
           {% if resources_from_cap %}
           {{ _("— le montant fixé dans Le Cap.") }}
@@ -68,16 +70,20 @@
           </div>
           <div class="flex items-center gap-2">
             <button type="button" @click="bumpWithdrawal(-1)" aria-label="{{ _("Diminuer") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('minus') }}</button>
-            <input
-              id="savings-withdrawal"
-              type="text"
-              inputmode="decimal"
-              name="savings_withdrawal"
-              x-model.number="savingsWithdrawal"
-              value="{% if savings_withdrawal %}{{ '%.2f' % savings_withdrawal }}{% endif %}"
-              placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-              class="amount-blur input-base w-24 text-right tabular-nums font-semibold"
-            />
+            <span class="amount-blur inline-flex items-center gap-1 font-semibold tabular-nums text-primary">
+              <input
+                id="savings-withdrawal"
+                type="text"
+                inputmode="decimal"
+                name="savings_withdrawal"
+                value="{% if savings_withdrawal %}{{ '%.2f' % savings_withdrawal }}{% endif %}"
+                placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+                x-effect="document.activeElement === $el || ($el.value = fmt2(savingsWithdrawal))"
+                @input="savingsWithdrawal = num($event.target.value)"
+                @blur="$el.value = fmt2(savingsWithdrawal)"
+                class="h-[50px] w-[92px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums font-semibold hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+              />&euro;
+            </span>
             <button type="button" @click="bumpWithdrawal(1)" aria-label="{{ _("Augmenter") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('plus') }}</button>
           </div>
         </div>
@@ -114,16 +120,20 @@
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <button type="button" @click="bump({{ category.id }}, -1)" aria-label="{{ _("Diminuer") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('minus') }}</button>
-              <input
-                id="amount-{{ category.id }}"
-                type="text"
-                inputmode="decimal"
-                name="amount_{{ category.id }}"
-                x-model.number="amounts[{{ category.id }}]"
-                value="{% if existing is not none %}{{ '%.2f' % existing }}{% endif %}"
-                placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
-                class="amount-blur input-base w-[88px] px-2 text-right tabular-nums font-semibold"
-              />
+              <span class="amount-blur inline-flex items-center gap-1 font-semibold tabular-nums text-primary">
+                <input
+                  id="amount-{{ category.id }}"
+                  type="text"
+                  inputmode="decimal"
+                  name="amount_{{ category.id }}"
+                  value="{% if existing is not none %}{{ '%.2f' % existing }}{% endif %}"
+                  placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+                  x-effect="document.activeElement === $el || ($el.value = fmt2(amounts[{{ category.id }}]))"
+                  @input="amounts[{{ category.id }}] = num($event.target.value)"
+                  @blur="$el.value = fmt2(amounts[{{ category.id }}])"
+                  class="h-[50px] w-[92px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums font-semibold hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+                />&euro;
+              </span>
               <button type="button" @click="bump({{ category.id }}, 1)" aria-label="{{ _("Augmenter") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('plus') }}</button>
             </div>
           </div>
@@ -145,13 +155,13 @@
       <div class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3">
         <div class="flex items-baseline justify-between gap-3">
           <span class="text-sm text-secondary">{{ _("Total budgété") }}</span>
-          <span class="amount-blur text-sm font-semibold tabular-nums text-primary" x-text="available ? fmt(total) + ' (' + totalPct.toFixed(0) + ' %)' : fmt(total)"></span>
+          <span class="amount-blur text-sm font-semibold tabular-nums text-primary" x-text="fmt(total)"></span>
         </div>
         <div class="flex items-baseline justify-between gap-3 pt-3 border-t border-border" x-show="available" style="display: none;">
           <span class="text-sm text-secondary">{{ _("Reste à répartir") }}</span>
           <span
             class="amount-blur text-amount-large tabular-nums"
-            :class="available - total >= 0 ? 'text-primary' : 'text-danger'"
+            :class="available - total >= 0 ? 'text-success' : 'text-danger'"
             x-text="fmt(available - total)"
           ></span>
         </div>
@@ -161,7 +171,7 @@
         </p>
         <button type="submit" class="btn btn-primary w-full">{{ _("Enregistrer") }}</button>
       </div>
-      <a href="/cap/mid" class="btn btn-secondary w-full">{{ _("Revenir à Mon mois") }}</a>
+      <a href="/cap/mid" class="btn btn-secondary w-full justify-start">{{ _("Revenir à Mon mois") }}</a>
     </aside>
     {% endif %}
   </form>
