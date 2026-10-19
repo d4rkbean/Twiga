@@ -7,12 +7,19 @@ from sqlalchemy.orm import Session
 
 from backend import crud
 from backend.database import get_db
-from backend.models import Project
+from backend.dates import month_label
+from backend.models import Account, Project
 from backend.templating import templates
 from imports.common import ImportParseError, parse_decimal_amount
-from backend.i18n import gettext as _t
+from backend.i18n import current_language, gettext as _t
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+def _month_text(value: date) -> str:
+    """"juin 2027" in French (lowercase mid-sentence), "June 2027" in English."""
+    label = month_label(value.year, value.month)
+    return label.lower() if current_language() == "fr" else label
 
 
 def _parse_positive_amount(raw: str) -> Decimal:
@@ -36,17 +43,42 @@ def _build_context(db: Session) -> dict:
             if project.target_amount
             else Decimal("0")
         )
+        effort = crud.compute_project_effort(db, project.id, today)
+        rhythm = crud.project_rhythm(
+            project.target_amount, project.current_amount, project.target_date, effort, today
+        )
+        if rhythm["reach"] is not None:
+            rhythm["reach_label"] = _month_text(rhythm["reach"])
         items.append(
             {
                 "project": project,
                 "monthly_effort": monthly_effort,
+                "effort": effort,
+                "rhythm": rhythm,
+                "deadline_label": _month_text(project.target_date),
                 "percentage_display": round(percentage),
                 "bar_width": max(0, min(round(percentage), 100)),
                 "movements": crud.get_project_movements(db, project.id),
             }
         )
 
-    return {"items": items}
+    late = next((item for item in items if item["rhythm"]["state"] == "late"), None)
+    return {
+        "items": items,
+        "late": late,
+        "accounts": crud.list_accounts(db),
+        "deadline_options": _deadline_options(today),
+    }
+
+
+def _deadline_options(today: date) -> list[dict]:
+    """The next 48 months, as first-of-month dates (the form's "Date cible")."""
+    options = []
+    for offset in range(1, 49):
+        index = today.year * 12 + today.month - 1 + offset
+        year, month = index // 12, index % 12 + 1
+        options.append({"value": date(year, month, 1).isoformat(), "label": month_label(year, month)})
+    return options
 
 
 @router.get("", response_class=HTMLResponse)
@@ -107,13 +139,17 @@ def add_funds(
     project_id: int,
     amount: str = Form(...),
     note: str = Form(""),
+    account_id: str = Form(""),
     db: Session = Depends(get_db),
 ):
     project = db.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=404, detail=_t("Projet introuvable"))
 
-    crud.add_project_funds(db, project, _parse_positive_amount(amount), note.strip() or None)
+    value = _parse_positive_amount(amount)
+    account = db.get(Account, int(account_id)) if account_id.isdigit() else None
+    if value > 0:
+        crud.add_project_funds(db, project, value, note.strip() or None, account.id if account else None)
     context = {"request": request, **_build_context(db)}
     return templates.TemplateResponse("projects/_list.html", context)
 
@@ -130,7 +166,9 @@ def spend_funds(
     if project is None:
         raise HTTPException(status_code=404, detail=_t("Projet introuvable"))
 
-    crud.spend_project_funds(db, project, _parse_positive_amount(amount), note.strip() or None)
+    value = _parse_positive_amount(amount)
+    if 0 < value <= project.current_amount:
+        crud.spend_project_funds(db, project, value, note.strip() or None)
     context = {"request": request, **_build_context(db)}
     return templates.TemplateResponse("projects/_list.html", context)
 

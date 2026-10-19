@@ -12,6 +12,7 @@ from backend.account_types import ACCOUNT_TYPES, get_account_type_icon, get_acco
 from backend.auth import get_current_user
 from backend.category_icons import get_category_icon, get_category_icon_name
 from backend.crud import resolve_category_pillar, resolve_transaction_pillar
+from backend.dates import month_label
 from backend.icons import available as icon_names, icon
 from backend.formatting import format_amount, format_amount_as, format_date, format_date_as
 from backend import i18n, preferences
@@ -192,6 +193,7 @@ def static_url(path: str) -> str:
 templates = Jinja2Templates(directory=BASE_DIR / "frontend" / "templates")
 templates.env.filters["eur"] = format_amount
 templates.env.filters["fr_date"] = format_date
+templates.env.filters["month_year"] = lambda value: month_label(value.year, value.month)
 templates.env.filters["tojson"] = tojson_filter
 templates.env.filters["category_color"] = category_color_filter
 templates.env.filters["category_display"] = category_display_filter

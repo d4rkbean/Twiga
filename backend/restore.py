@@ -169,6 +169,7 @@ def _project_movement_fields(row: dict) -> dict:
         "date": _parse_date(row["date"]),
         "amount": _parse_decimal(row.get("amount")),
         "note": row.get("note"),
+        "account_id": row.get("account_id"),
     }
 
 

@@ -212,8 +212,14 @@ class ProjectMovement(Base):
     # Signé, comme Transaction.amount : positif = ajout, négatif = dépense.
     amount: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Compte d'où vient l'argent ajouté (facultatif : une dépense, ou un
+    # mouvement ancien, n'en a pas).
+    account_id: Mapped[int | None] = mapped_column(
+        ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True
+    )
 
     project: Mapped["Project"] = relationship(back_populates="movements")
+    account: Mapped["Account | None"] = relationship()
 
 
 class CapSettings(Base):
