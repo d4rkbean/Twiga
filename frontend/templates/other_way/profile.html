@@ -160,18 +160,18 @@
               @reset="cur = ''; pw = ''; pw2 = ''" class="flex flex-col gap-4">
           <div class="form-group">
             <label for="password-field-profile-current" class="form-label">{{ _("Mot de passe actuel") }}</label>
-            {% with field_name = "current_password", field_id = "profile-current", field_autocomplete = "current-password" %}{% include "_password_field.html" %}{% endwith %}
+            {% with field_name = "current_password", field_id = "profile-current", field_autocomplete = "current-password", field_model = "cur" %}{% include "_password_field.html" %}{% endwith %}
           </div>
           <div class="form-group">
-            <label for="profile-new-password" class="form-label">{{ _("Nouveau mot de passe") }}</label>
-            <input id="profile-new-password" type="password" name="new_password" autocomplete="new-password" minlength="8" x-model="pw" required class="input-base" />
+            <label for="password-field-profile-new" class="form-label">{{ _("Nouveau mot de passe") }}</label>
+            {% with field_name = "new_password", field_id = "profile-new", field_autocomplete = "new-password", field_minlength = 8, field_model = "pw" %}{% include "_password_field.html" %}{% endwith %}
             <div class="h-1.5 rounded-full bg-sunken overflow-hidden mt-1" aria-hidden="true"><div class="h-1.5 rounded-full transition-all" :class="ok ? 'bg-success' : 'bg-warning-gauge'" :style="'width: ' + Math.min(pw.length / 8, 1) * 100 + '%'"></div></div>
             <p class="text-xs font-medium" :class="pw.length === 0 ? 'text-secondary' : (ok ? 'text-success' : 'text-warning')" aria-live="polite"
                x-text="pw.length === 0 ? '{{ _("8 caractères au moins.") | jsq }}' : (ok ? '{{ _("Assez long.") | jsq }}' : (8 - pw.length === 1 ? '{{ _("Encore 1 caractère.") | jsq }}' : '{{ _("Encore %(n)s caractères.", n="__N__") | jsq }}'.replace('__N__', 8 - pw.length)))"></p>
           </div>
           <div class="form-group">
-            <label for="profile-confirm-password" class="form-label">{{ _("Confirmer le nouveau mot de passe") }}</label>
-            <input id="profile-confirm-password" type="password" name="confirm_password" autocomplete="new-password" minlength="8" x-model="pw2" required class="input-base" />
+            <label for="password-field-profile-confirm" class="form-label">{{ _("Confirmer le nouveau mot de passe") }}</label>
+            {% with field_name = "confirm_password", field_id = "profile-confirm", field_autocomplete = "new-password", field_minlength = 8, field_model = "pw2" %}{% include "_password_field.html" %}{% endwith %}
             <p x-show="pw2.length > 0" style="display: none" class="text-xs font-medium" :class="match ? 'text-success' : 'text-danger'" aria-live="polite"
                x-text="match ? '{{ _("Les deux sont identiques.") | jsq }}' : '{{ _("Les deux ne sont pas identiques.") | jsq }}'"></p>
           </div>
