@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 05:20+0000\n"
+"POT-Creation-Date: 2026-10-19 05:46+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -12,7 +12,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.16.0\n"
+"Generated-By: Babel 2.18.0\n"
 
 msgid " du total"
 msgstr " of total"
@@ -540,6 +540,9 @@ msgstr "YY"
 msgid "AAAA"
 msgstr "YYYY"
 
+msgid "Abonnements"
+msgstr "Subscriptions"
+
 msgid "Abonnements et factures"
 msgstr "Subscriptions and bills"
 
@@ -680,6 +683,9 @@ msgstr "Food"
 msgid "Alimentation des animaux"
 msgstr "Pet food"
 
+msgid "Alimenter"
+msgstr "Feed"
+
 msgid "Aller au Panorama"
 msgstr "Go to Panorama"
 
@@ -760,6 +766,9 @@ msgstr "To"
 
 msgid "Au :"
 msgstr "To:"
+
+msgid "Au quotidien"
+msgstr "Every day"
 
 msgid "Au rythme actuel"
 msgstr "At the current pace"
@@ -969,11 +978,17 @@ msgstr "Based on: « %(based_on_label)s »"
 msgid "Basé sur les"
 msgstr "Based on the"
 
+msgid "Besoin d'aide ?"
+msgstr "Need help?"
+
 msgid "Bien-être"
 msgstr "Wellness"
 
 msgid "Bientôt"
 msgstr "Coming soon"
+
+msgid "Bienvenue chez Twiga"
+msgstr "Welcome to Twiga"
 
 msgid "Bienvenue dans Le Cap !"
 msgstr "Welcome to Le Cap!"
@@ -1134,6 +1149,9 @@ msgstr "Building charges"
 msgid "Chauffage"
 msgstr "Heating"
 
+msgid "Chercher"
+msgstr "Search"
+
 msgid "Choisir la facture PDF"
 msgstr "Choose the PDF invoice"
 
@@ -1182,6 +1200,9 @@ msgstr "Check"
 
 msgid "Chèque introuvable"
 msgstr "Check not found"
+
+msgid "Chèques"
+msgstr "Cheques"
 
 msgid "Chèques & paiements en attente"
 msgstr "Checks & pending payments"
@@ -1651,6 +1672,9 @@ msgstr "Export as CSV"
 msgid "Facture PDF de l'appli du magasin : les lignes sont proposées seules, rayon compris, à vérifier. Ticket papier : ajoute les lignes à la main."
 msgstr "PDF invoice from the shop's app: the lines are proposed on their own, aisle included, to be checked. Paper receipt: add the lines by hand."
 
+msgid "Faire le point"
+msgstr "Take stock"
+
 #, python-format
 msgid "Fais le bilan de %(previous)s et fixe les enveloppes du mois."
 msgstr "Review %(previous)s and set this month's envelopes."
@@ -1968,6 +1992,9 @@ msgstr "The usual balance"
 msgid "La Savane"
 msgstr "La Savane"
 
+msgid "La Savane pour ranger, Panorama pour comprendre, Le Cap pour viser."
+msgstr "La Savane to sort, Panorama to understand, Le Cap to aim."
+
 msgid "La Savane vide"
 msgstr "La Savane is empty"
 
@@ -2021,6 +2048,9 @@ msgstr "Choice is at %(percentage)s %% with sorting: keep an eye on it."
 msgid "Le Panorama montre où va l'argent. Mon mois fixe ce qu'on se donne le droit de dépenser."
 msgstr "Panorama shows where your money goes. My month is where you run Le Cap (“the heading” in French): the spending course you set for the month, inspired by the Japanese kakeibo method — Needs, Wants, Unexpected."
 
+msgid "Le bouton Aide relance cette visite à tout moment."
+msgstr "The Help button restarts this tour at any time."
+
 msgid "Le cap est fixé !"
 msgstr "The cap is set!"
 
@@ -2050,6 +2080,9 @@ msgstr "Each category's pillar is set in"
 
 msgid "Le plan en direct"
 msgstr "The plan, live"
+
+msgid "Le reste se cache sous Plus"
+msgstr "The rest is under More"
 
 #, python-format
 msgid "Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes. On regarde %(previous)s, puis on fixe le cap."
@@ -2393,6 +2426,9 @@ msgstr "Health insurance top-up"
 msgid "Médecin et spécialistes"
 msgstr "Doctor and specialists"
 
+msgid "Navigation principale"
+msgstr "Main navigation"
+
 msgid "Net"
 msgstr "Net"
 
@@ -2509,6 +2545,9 @@ msgstr "Operations to process"
 msgid "Opérations — Twiga"
 msgstr "Transactions — Twiga"
 
+msgid "Opérations, budgets, rapports, import et réglages : tout est rangé par intention."
+msgstr "Operations, budgets, reports, import and settings: everything is filed by intention."
+
 msgid "Ou une autre catégorie"
 msgstr "Or another category"
 
@@ -2608,6 +2647,9 @@ msgstr "Investments"
 
 msgid "Plan non fixé"
 msgstr "Plan not set"
+
+msgid "Plus"
+msgstr "More"
 
 msgid "Plus bas :"
 msgstr "Lowest:"
@@ -2710,6 +2752,12 @@ msgstr "QIF, CSV or OFX. Everything stays on your server."
 msgid "Qu'est-ce qui a bien fonctionné ce mois ?"
 msgstr "What worked well this month?"
 
+msgid "Quatre destinations"
+msgstr "Four destinations"
+
+msgid "Que cherches-tu ?"
+msgstr "What are you looking for?"
+
 msgid "Quels ont été nos imprévus ? Étaient-ils évitables ?"
 msgstr "What were our unexpected expenses? Could they have been avoided?"
 
@@ -2807,6 +2855,9 @@ msgstr "Global search"
 
 msgid "Recherche, sur tout l'historique, des paires de transactions qui se ressemblent comme un virement interne entre deux de tes comptes (montant opposé, ± 3 jours, ± 1 € de tolérance)."
 msgstr "Search the whole history for pairs of transactions that look like an internal transfer between two of your accounts (opposite amount, ± 3 days, ± €1 tolerance)."
+
+msgid "Rechercher"
+msgstr "Search"
 
 msgid "Rechercher un libellé"
 msgstr "Search for a label"
@@ -2991,6 +3042,9 @@ msgstr "Try again"
 
 msgid "Réglage enregistré"
 msgstr "Setting saved"
+
+msgid "Régler Twiga"
+msgstr "Set up Twiga"
 
 msgid "Régler le pilier de chaque catégorie"
 msgstr "Set the pillar of each category"
@@ -3266,6 +3320,9 @@ msgstr "Finish"
 msgid "Terminé"
 msgstr "Done"
 
+msgid "Tes données restent sur ce serveur. Rien ne part sur Internet."
+msgstr "Your data stays on this server. Nothing leaves for the Internet."
+
 msgid "Tes règles de rangement, appliquées d'office"
 msgstr "Your sorting rules, applied automatically"
 
@@ -3440,6 +3497,9 @@ msgstr "Quarterly"
 msgid "Trois temps : importer ses opérations, les catégoriser, puis suivre ses comptes."
 msgstr "Twiga (“giraffe” in Swahili) works in three steps: import your transactions, categorize them, then follow your accounts. Its motto, “Voir loin. Voir juste.”, means “See far. See true.”"
 
+msgid "Trois temps : importer tes opérations, les ranger, puis suivre tes comptes."
+msgstr "Three steps: import your operations, sort them, then follow your accounts."
+
 msgid "Trop de tentatives. Réessaie dans quelques minutes."
 msgstr "Too many attempts. Try again in a few minutes."
 
@@ -3538,6 +3598,9 @@ msgstr "A user \"%(username)s\" already exists."
 
 msgid "Une autre façon de parcourir Twiga."
 msgstr "Another way to move around Twiga."
+
+msgid "Une opération, une catégorie, un projet"
+msgstr "An operation, a category, a project"
 
 msgid "Une ou deux phrases, que tu retrouveras en ouvrant Mon mois."
 msgstr "One or two sentences, which you will find again on My month."
@@ -3846,6 +3909,12 @@ msgstr "will be created"
 
 msgid "sorties, loisirs, plaisirs"
 msgstr "going out, leisure, treats"
+
+#, python-format
+msgid "sur %(count)s compte"
+msgid_plural "sur %(count)s comptes"
+msgstr[0] "across %(count)s account"
+msgstr[1] "across %(count)s accounts"
 
 #, python-format
 msgid "sur %(planned_total)s prévus"
