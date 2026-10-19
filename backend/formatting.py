@@ -38,6 +38,20 @@ def format_amount_as(value: Decimal, number_format: str, ascii_minus: bool = Fal
     return f"{sign}€{','.join(groups)}.{decimal_part}"
 
 
+def format_integer(value: int) -> str:
+    """A whole number with the thousands mark of the chosen format (1 482 or 1,482)."""
+    grouped = f"{abs(int(value)):,}".replace(",", _THIN_SPACE if current_format() == "fr" else ",")
+    return f"-{grouped}" if value < 0 else grouped
+
+
+def format_kilobytes(size: int) -> str:
+    """The size of a file in kilobytes with one decimal (3,2 or 3.2): the unit goes in the template."""
+    text = f"{size / 1024:,.1f}".replace(",", " ")
+    if current_format() == "fr":
+        return text.replace(".", ",")
+    return text.replace(" ", ",")
+
+
 def format_date(value: date) -> str:
     return format_date_as(value, current_format())
 

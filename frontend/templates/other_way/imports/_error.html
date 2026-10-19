@@ -1,0 +1,16 @@
+{#- An import that cannot go on: the giraffe says so, the message says why, and
+    the way back is one button. Never a bare error code. -#}
+{% from "_macros/brand.html" import mascot %}
+<section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center" role="alert">
+  <div class="rounded-xl bg-sunken grid place-items-center py-8 lg:py-10">{{ mascot("default", 140, label=true) }}</div>
+  <div class="flex flex-col gap-3 min-w-0">
+    <p class="text-sm font-semibold text-danger">{{ _("Erreur d'import") }}</p>
+    <h1 id="answer" class="text-page-title">{{ _("Je n'arrive pas à lire ce fichier.") }}</h1>
+    <p class="max-w-[70ch]">{{ error }}</p>
+    {% if filename %}<p class="font-mono text-sm text-secondary break-all">{{ filename }}</p>{% endif %}
+    <div class="flex flex-col gap-2 sm:flex-row">
+      <button type="button" hx-get="/imports/step1" hx-target="#import-wizard" hx-swap="innerHTML" class="btn btn-primary">{{ _("Réessayer") }}</button>
+    </div>
+    <p class="text-sm text-secondary">{{ _("Twiga lit les fichiers QIF, CSV et OFX, 5 Mo au maximum.") }}</p>
+  </div>
+</section>

@@ -20,6 +20,8 @@ from backend.formatting import (
     format_amount_as,
     format_date,
     format_date_as,
+    format_integer,
+    format_kilobytes,
     format_plain_amount,
     format_short_date,
 )
@@ -248,6 +250,8 @@ def configure_environment(env: Environment) -> Environment:
     env.filters["fr_date"] = format_date
     env.filters["short_date"] = format_short_date
     env.filters["plain_amount"] = format_plain_amount
+    env.filters["integer"] = format_integer
+    env.filters["kilobytes"] = format_kilobytes
     env.filters["long_date"] = format_date_long
     env.filters["month_year"] = lambda value: month_label(value.year, value.month)
     env.filters["tojson"] = tojson_filter
