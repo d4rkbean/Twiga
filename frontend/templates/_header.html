@@ -6,7 +6,7 @@
     'lg:left-[64px]': sidebarMode === 'auto',
     'lg:left-0 lg:pl-12': sidebarMode === 'hidden',
   }"
-  x-data="{ searchOpen: false }"
+  x-data="{ searchOpen: false, density: '{{ current_density() }}' }"
   @keydown.window="
     if (($event.ctrlKey || $event.metaKey) && $event.key.toLowerCase() === 'k') {
       $event.preventDefault();
@@ -58,19 +58,22 @@
     <div id="search-results" class="fixed top-14 inset-x-0 z-20 px-4"></div>
   </div>
 
-  <div class="flex items-center gap-1 lg:gap-2 flex-shrink-0">
+  <div class="flex items-center gap-1 lg:gap-2.5 flex-shrink-0 lg:flex-shrink lg:flex-1 lg:min-w-0">
     <!-- Desktop (lg:) : champ de recherche toujours visible (pas de
-         bascule ouvert/fermé comme sur mobile), Ctrl+K le cible directement
-         (voir @keydown.window ci-dessus). Résultats dans leur propre
-         conteneur (#search-results-desktop, positionné en dropdown 300px
-         sous ce champ) plutôt que de réutiliser #search-results : celui-ci
-         reste imbriqué dans le panneau de recherche mobile (x-show=
-         "searchOpen"), qui doit rester inchangé. -->
-    <div id="tour-desktop-search" class="hidden lg:block relative" @click.outside="searchOpen = false">
+         bascule ouvert/fermé comme sur mobile), à gauche comme sur la
+         maquette, avec sa loupe. Ctrl+K le cible directement (voir
+         @keydown.window ci-dessus). Résultats dans leur propre conteneur
+         (#search-results-desktop, positionné en dropdown sous ce champ)
+         plutôt que de réutiliser #search-results : celui-ci reste imbriqué
+         dans le panneau de recherche mobile (x-show="searchOpen"), qui doit
+         rester inchangé. -->
+    <div id="tour-desktop-search" class="hidden lg:block relative flex-1 min-w-[160px] max-w-[420px] lg:mr-auto" @click.outside="searchOpen = false">
+      <span class="absolute left-3.5 top-0 h-[46px] flex items-center text-secondary pointer-events-none">{{ icon('search', size=18) }}</span>
       <input
         type="search"
         name="q"
         x-ref="desktopSearchInput"
+        aria-label="{{ _("Rechercher...") }}"
         placeholder="{{ _("Rechercher... Ctrl+K") }}"
         autocomplete="off"
         hx-get="/search/quick"
@@ -79,15 +82,63 @@
         hx-swap="innerHTML"
         @focus="searchOpen = true"
         @input="if ($event.target.value.length < 2) document.getElementById('search-results-desktop').innerHTML = ''"
-        class="w-[300px] min-h-[46px] rounded-xl border border-field bg-container text-primary px-3 text-sm"
+        class="w-full min-h-[46px] rounded-xl border border-field bg-container text-primary pl-[42px] pr-3 text-sm"
       />
       <div
         id="search-results-desktop"
         x-show="searchOpen"
         style="display: none;"
-        class="absolute top-full right-0 mt-1 w-[300px] z-20"
+        class="absolute top-full left-0 mt-1 w-[380px] max-w-[calc(100vw-48px)] z-20"
       ></div>
     </div>
+    {# Réglages d'affichage, à droite de la recherche (maquette A) : densité,
+       thème, confidentialité, aide. Ordinateur seulement ; sur mobile, la
+       confidentialité reste dans l'en-tête et le thème dans la feuille de
+       l'avatar. Chaque geste s'applique tout de suite puis s'enregistre sur
+       le compte (POST /profile/preferences, voir base.html), sans rechargement. #}
+    <div
+      id="tour-density"
+      role="radiogroup"
+      aria-label="{{ _("Densité d'affichage") }}"
+      class="hidden lg:flex p-[3px] rounded-xl bg-sunken flex-shrink-0"
+    >
+      {% for code, label in [("compact", _("Compact")), ("normal", _("Normal")), ("comfortable", _("Aéré"))] %}
+      <button
+        type="button"
+        role="radio"
+        :aria-checked="density === '{{ code }}'"
+        @click="density = '{{ code }}'; window.twigaSetDensity('{{ code }}')"
+        :class="density === '{{ code }}' ? 'bg-container text-primary font-semibold shadow-sm' : 'text-secondary font-medium hover:text-primary'"
+        class="min-h-[40px] px-3 rounded-[9px] text-sm"
+      >{{ label }}</button>
+      {% endfor %}
+    </div>
+    <button
+      id="tour-theme-toggle"
+      type="button"
+      onclick="window.toggleTheme()"
+      aria-label="{{ _("Basculer entre thème clair et sombre") }}"
+      title="{{ _("Basculer entre thème clair et sombre") }}"
+      class="hidden lg:flex w-[46px] h-[46px] items-center justify-center rounded-xl border border-border-strong bg-container text-primary hover:bg-sunken flex-shrink-0"
+    >
+      <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
+    </button>
+    <button
+      id="tour-header-privacy"
+      type="button"
+      aria-label="{{ _("Basculer le mode confidentialité") }}"
+      title="{{ _("Basculer le mode confidentialité") }}"
+      class="hidden lg:flex w-[46px] h-[46px] items-center justify-center rounded-xl border border-border-strong bg-container text-primary hover:bg-sunken flex-shrink-0"
+      @click="privacy = !privacy; localStorage.setItem('privacy', privacy)"
+    >
+      <span class="flex-shrink-0"><span x-show="!privacy">{{ icon('eye') }}</span><span x-show="privacy" style="display:none">{{ icon('eye-off') }}</span></span>
+    </button>
+    <button
+      type="button"
+      onclick="document.getElementById('twiga-help-dialog').showModal()"
+      title="{{ _("Aide &amp; raccourcis") }}"
+      class="hidden lg:flex items-center gap-2 min-h-[46px] px-3.5 rounded-xl border border-border-strong bg-container text-primary text-sm font-medium hover:bg-sunken flex-shrink-0"
+    >{{ icon('help-circle') }}{{ _("Aide") }}</button>
     {# Importer est une ACTION, pas un lieu : elle vit donc dans l'en-tête et
        non dans la navigation, alors qu'elle ouvre chaque cycle mensuel
        (import → Savane → Panorama). Elle était jusqu'ici enfouie dans
@@ -110,7 +161,7 @@
       class="inline-flex items-center justify-center w-[50px] h-[50px] lg:w-auto flex-shrink-0 text-sm font-semibold"
     >
       <span class="inline-flex items-center justify-center gap-2 w-10 h-10 lg:w-auto lg:h-[50px] lg:px-4 rounded-xl {{ 'bg-container border border-border-strong text-primary hover:bg-sunken' if demote_import else 'bg-accent text-on-accent hover:bg-accent-hover' }}">
-        {{ icon('file-import', size=18) }}<span class="hidden lg:inline">{{ _("Importer") }}</span>
+        {{ icon('upload', size=18) }}<span class="hidden lg:inline">{{ _("Importer") }}</span>
       </span>
     </a>
     <button
@@ -230,7 +281,7 @@
       <span class="w-10 h-1.5 rounded-full bg-border"></span>
     </div>
     <div class="flex flex-col overflow-y-auto" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
-      {% with show_theme_row = true %}{% include "_user_menu_content.html" %}{% endwith %}
+      {% with show_theme_row = true, sheet = true %}{% include "_user_menu_content.html" %}{% endwith %}
     </div>
   </div>
 </div>

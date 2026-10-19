@@ -498,6 +498,15 @@ def category_transactions(
     return templates.TemplateResponse("dashboard/_category_transactions.html", context)
 
 
+@router.get("/sidebar-pending", response_class=HTMLResponse)
+def sidebar_pending(db: Session = Depends(get_db)):
+    # Compteur de La Savane dans la barre latérale (hx-trigger="load", comme
+    # le solde ci-dessous) : nombre d'opérations en attente de catégorie.
+    # Vide quand il n'y en a plus, pour ne pas afficher un « 0 » inutile.
+    count = crud.count_pending_transactions(db)
+    return HTMLResponse(content=str(count) if count else "")
+
+
 @router.get("/sidebar-balance", response_class=HTMLResponse)
 def sidebar_balance(db: Session = Depends(get_db)):
     # Chargé en hx-trigger="load" depuis _sidebar.html (desktop) : la sidebar

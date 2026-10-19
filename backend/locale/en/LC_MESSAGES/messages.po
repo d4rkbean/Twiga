@@ -3685,3 +3685,11 @@ msgstr "≥ 90 %%"
 #~ msgid "— Transaction : %(transaction_abs_amount)s"
 #~ msgstr "— Transaction: %(transaction_abs_amount)s"
 
+msgid "Aide"
+msgstr "Help"
+
+msgid "Densité d'affichage"
+msgstr "Display density"
+
+msgid "Import"
+msgstr "Import"
