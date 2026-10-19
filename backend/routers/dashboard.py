@@ -6,28 +6,26 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from backend import crud
+from backend.budget_month import period_containing, period_spanning
 from backend.database import get_db
 from backend.dates import (
     month_names,
     format_date_long,
-    month_label,
-    month_range,
+    MONTH_ABBR_EN,
+    MONTH_ABBR_FR,
+    format_date_short,
     shift_month,
     trailing_months_ending,
 )
 from backend.formatting import format_amount
 from backend.templating import templates
-from backend.i18n import gettext as _t, lazy_gettext
+from backend.i18n import current_language, gettext as _t, lazy_gettext
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 def _parse_account_id(raw: str | None) -> int | None:
     return int(raw) if raw else None
-
-
-def _prev_month_year(month: int, year: int) -> tuple[int, int]:
-    return (12, year - 1) if month == 1 else (month - 1, year)
 
 
 # Raccourcis de période proposés dans le Panorama, dans l'ordre d'affichage.
@@ -53,11 +51,14 @@ def _parse_iso_date(raw: str | None) -> date | None:
 
 
 def _resolve_period(
-    period: str | None, start: str | None, end: str | None, today: date
+    period: str | None, start: str | None, end: str | None, today: date, start_day: int = 1
 ) -> tuple[str, date, date, str, bool]:
     """Traduit le choix de période en un intervalle de dates concret.
 
     Renvoie `(clé, début, fin, libellé, est_un_mois_civil)`.
+
+    « Mois » désigne le mois budgétaire (voir backend/budget_month.py) : le
+    mois civil quand il commence le 1er.
 
     `est_un_mois_civil` commande tout ce qui n'a de sens qu'au mois : le
     décalage des recettes (« les recettes de M-1 financent les dépenses de
@@ -76,22 +77,38 @@ def _resolve_period(
             if custom_start > custom_end:
                 custom_start, custom_end = custom_end, custom_start
             label = f"{format_date_long(custom_start)} → {format_date_long(custom_end)}"
-            is_month = (custom_start, custom_end) == month_range(
-                custom_start.year, custom_start.month
-            )
+            is_month = period_spanning(custom_start, custom_end, start_day) is not None
             return key, custom_start, custom_end, label, is_month
         key = DEFAULT_PERIOD
 
-    if key == "mois":
-        period_start, period_end = month_range(today.year, today.month)
-        return key, period_start, period_end, month_label(today.year, today.month), True
-    if key == "mois-dernier":
-        prev_month, prev_year = _prev_month_year(today.month, today.year)
-        period_start, period_end = month_range(prev_year, prev_month)
-        return key, period_start, period_end, month_label(prev_year, prev_month), True
+    if key in ("mois", "mois-dernier"):
+        current = period_containing(today, start_day)
+        budget_period = current if key == "mois" else current.shifted(-1)
+        return key, budget_period.start, budget_period.last_day, budget_period.label, True
     days = {"90j": 90, "1an": 365}[key]
     label = {"90j": "90 derniers jours", "1an": "12 derniers mois"}[key]
     return key, today - timedelta(days=days - 1), today, label, False
+
+
+def _period_lead(
+    period_key: str, period_start: date, period_end: date, today: date, start_day: int = 1
+) -> str:
+    """Opening words of the summary sentence ("En septembre," ...)."""
+    if period_key in ("mois", "mois-dernier") or (
+        period_key == "perso" and period_spanning(period_start, period_end, start_day) is not None
+    ):
+        name = month_names()[period_start.month - 1]
+        if current_language() != "en":
+            name = name.lower()
+        return _t("En %(month)s,") % {"month": name}
+    if period_key == "90j":
+        return _t("Sur les 90 derniers jours,")
+    if period_key == "1an":
+        return _t("Sur les 12 derniers mois,")
+    return _t("Du %(start)s au %(end)s,") % {
+        "start": format_date_long(period_start),
+        "end": format_date_long(period_end),
+    }
 
 
 def _build_period_context(
@@ -106,6 +123,8 @@ def _build_period_context(
     today: date | None = None,
 ) -> dict:
     today = today or date.today()
+    start_day = crud.get_budget_start_day(db)
+    current_period = period_containing(today, start_day)
     raw_shift_income = shift_income
 
     # "Décalage recettes" (même logique que la page Rapports) : le salaire
@@ -123,10 +142,10 @@ def _build_period_context(
     # expliquer.
     shift_income = shift_income and is_calendar_month
     if shift_income:
-        prev_month, prev_year = _prev_month_year(period_start.month, period_start.year)
-        income_period_start, income_period_end = month_range(prev_year, prev_month)
+        income_period = period_containing(period_start, start_day).shifted(-1)
+        income_period_start, income_period_end = income_period.start, income_period.last_day
         shift_label = _t("Recettes %(month)s → Dépenses %(period)s") % {
-            "month": month_names()[prev_month - 1],
+            "month": month_names()[income_period.month.month - 1],
             "period": period_label,
         }
     else:
@@ -150,7 +169,10 @@ def _build_period_context(
     # une courbe lisible ; on garde donc la maille mensuelle et on situe la
     # période choisie dedans, plutôt que de faire varier l'échelle du
     # graphique avec le sélecteur.
-    months = trailing_months_ending(period_end.year, period_end.month)
+    # Un mois budgétaire se nomme d'après le mois où il commence : on ancre
+    # la courbe sur ce mois-là, pas sur celui où il se termine.
+    trend_anchor = period_start if is_calendar_month else period_end
+    months = trailing_months_ending(trend_anchor.year, trend_anchor.month)
     monthly_expense_totals = crud.get_monthly_expense_totals(db, months[0][0], months[-1][1], account_id)
     # La tendance des recettes suit le décalage, exactement comme
     # crud.get_period_monthly_breakdown(shift_income=True) le fait pour le
@@ -164,6 +186,8 @@ def _build_period_context(
         db, income_query_start, months[-1][1], account_id
     )
     trend_labels = [label for _, _, label in months]
+    abbreviations = MONTH_ABBR_EN if current_language() == "en" else MONTH_ABBR_FR
+    trend_short_labels = [abbreviations[start.month - 1].capitalize() for start, _, _ in months]
     trend_expense_values = [
         monthly_expense_totals.get(start, Decimal("0.00")) for start, _, _ in months
     ]
@@ -185,8 +209,7 @@ def _build_period_context(
     # montre pour chaque budget ce qu'il deviendrait avec les opérations
     # encore dans La Savane (get_budget_envelopes). Triées par pourcentage
     # consommé décroissant : les plus tendues d'abord.
-    budget_month_start, budget_month_end = month_range(today.year, today.month)
-    envelopes = crud.get_budget_envelopes(db, budget_month_start, budget_month_end, account_id)
+    envelopes = crud.get_budget_envelopes(db, current_period.start, current_period.last_day, account_id)
 
     return {
         "period_key": period_key,
@@ -194,9 +217,9 @@ def _build_period_context(
         "period_end": period_end,
         "is_calendar_month": is_calendar_month,
         "period_choices": PERIOD_CHOICES,
-        "budget_month": today.month,
-        "budget_year": today.year,
-        "budget_month_label": month_label(today.year, today.month),
+        "budget_month": current_period.month.month,
+        "budget_year": current_period.month.year,
+        "budget_month_label": current_period.label,
         "account_id": account_id,
         "period_label": period_label,
         "shift_income": shift_income,
@@ -213,6 +236,7 @@ def _build_period_context(
         "income_values": [amount for _, _, amount in income_spending],
         "income_category_ids": income_category_ids,
         "trend_labels": trend_labels,
+        "trend_short_labels": trend_short_labels,
         "trend_expense_values": trend_expense_values,
         "trend_income_values": trend_income_values,
         "trend_income_label": trend_income_label,
@@ -223,6 +247,12 @@ def _build_period_context(
         "total_balance": crud.get_total_balance(db),
         "accounts_count": len(crud.list_accounts(db)),
         "pending_count": crud.count_pending_transactions(db),
+        "pending_total": crud.get_pending_expense_total(db),
+        "pending_period_total": crud.get_pending_expense_total(db, period_start, period_end, account_id),
+        "period_lead": _period_lead(period_key, period_start, period_end, today, start_day),
+        # How far through the month we are: the "pace" tick on each envelope.
+        "month_pace": round(((today - current_period.start).days + 1) / (current_period.end - current_period.start).days * 100),
+        "pace_date": format_date_short(today),
         "today_long": format_date_long(today),
         **_build_month_overview(db, today, raw_shift_income),
     }
@@ -233,14 +263,14 @@ def _build_row1_totals(db: Session, today: date, shift_income: bool) -> tuple[De
     # mois sélectionné dans les filtres, voir _build_period_context pour
     # celui-là), avec le même décalage recettes que la carte "Recettes
     # période" quand actif. Dépenses jamais décalées.
-    current_month_start, current_month_end = month_range(today.year, today.month)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
     if shift_income:
-        prev_month, prev_year = _prev_month_year(today.month, today.year)
-        income_start, income_end = month_range(prev_year, prev_month)
+        income_period = current_period.shifted(-1)
+        income_start, income_end = income_period.start, income_period.last_day
     else:
-        income_start, income_end = current_month_start, current_month_end
+        income_start, income_end = current_period.start, current_period.last_day
     row1_income = crud.get_income_total(db, income_start, income_end, None)
-    row1_expense = crud.get_expense_total(db, current_month_start, current_month_end, None)
+    row1_expense = crud.get_expense_total(db, current_period.start, current_period.last_day, None)
     return row1_income, row1_expense, row1_income - row1_expense
 
 
@@ -265,12 +295,12 @@ def _build_cap_progress(db: Session, today: date):
     « dépensé / prévu » à côté de la jauge, un pourcentage seul ne dit pas
     de combien on dépasse.
     """
-    current_month_start, _ = month_range(today.year, today.month)
-    cap_entry = crud.get_cap_entry_for_month(db, current_month_start)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
+    cap_entry = crud.get_cap_entry_for_month(db, current_period.month)
     if cap_entry is None:
         return None, None, None
 
-    actuals = crud.get_pillar_actuals(db, current_month_start, today)
+    actuals = crud.get_pillar_actuals(db, current_period.start, today)
     # Même règle que /cap/mid : on compare à ce qui était engagé, pas à ce
     # qui est encaissé — le budget arrive par virement, exclu des recettes.
     savings_so_far = cap_entry.planned_income - sum(actuals.values(), Decimal("0.00"))
@@ -305,10 +335,10 @@ def _build_month_overview(db: Session, today: date, shift_income: bool) -> dict:
     #dashboard-content, donc rafraîchi avec lui à chaque changement de filtre
     (la case « Décaler recettes » en fait partie).
     """
-    current_month_start, current_month_end = month_range(today.year, today.month)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
     row1_income, row1_expense, row1_result = _build_row1_totals(db, today, shift_income)
 
-    budget_progress = crud.get_budget_progress(db, current_month_start, current_month_end, None)
+    budget_progress = crud.get_budget_progress(db, current_period.start, current_period.last_day, None)
     cap_entry, cap_pillar_progress, cap_savings_so_far = _build_cap_progress(db, today)
     return {
         "row1_income": row1_income,
@@ -321,7 +351,7 @@ def _build_month_overview(db: Session, today: date, shift_income: bool) -> dict:
         "cap_entry": cap_entry,
         "cap_pillar_progress": cap_pillar_progress,
         "cap_savings_so_far": cap_savings_so_far,
-        "cap_month_label": f"{month_names()[today.month - 1]} {today.year}",
+        "cap_month_label": current_period.label,
     }
 
 
@@ -343,6 +373,13 @@ def _build_project_summaries(db: Session, today: date) -> tuple[list[dict], int]
                 "project": project,
                 "percentage_display": round(percentage),
                 "bar_width": max(0, min(round(percentage), 100)),
+                "deadline_label": (
+                    (lambda name: f"{name if current_language() == 'en' else name.lower()} {project.target_date.year}")(
+                        month_names()[project.target_date.month - 1]
+                    )
+                    if project.target_date
+                    else None
+                ),
                 "monthly_effort": crud.compute_monthly_effort(
                     project.target_amount, project.current_amount, project.target_date, today
                 ),
@@ -362,18 +399,19 @@ def dashboard(
     db: Session = Depends(get_db),
 ):
     today = date.today()
+    start_day = crud.get_budget_start_day(db)
+    current_period = period_containing(today, start_day)
     period_key, period_start, period_end, period_label, is_calendar_month = _resolve_period(
-        period, start, end, today
+        period, start, end, today, start_day
     )
     parsed_account_id = _parse_account_id(account_id)
     parsed_shift_income = shift_income == "1"
 
-    # Détail par compte : l'évolution est toujours celle du mois CIVIL en
-    # cours, indépendamment de la période sélectionnée dans les filtres (qui
-    # ne s'applique qu'à la section #dashboard-content).
-    current_month_start, current_month_end = month_range(today.year, today.month)
+    # Détail par compte : l'évolution est toujours celle du mois budgétaire
+    # en cours, indépendamment de la période sélectionnée dans les filtres
+    # (qui ne s'applique qu'à la section #dashboard-content).
     account_balances = crud.get_account_balances_with_monthly_evolution(
-        db, current_month_start, current_month_end
+        db, current_period.start, current_period.last_day
     )
     accounts = crud.list_accounts(db)
 
@@ -390,8 +428,10 @@ def dashboard(
         "accounts": accounts,
         "project_summaries": project_summaries,
         "project_summaries_total": project_summaries_total,
-        "show_le_cap_banner": today.day == 1 and crud.get_cap_entry_for_month(db, current_month_start) is None,
-        "current_month_key": today.strftime("%Y-%m"),
+        "show_le_cap_banner": today == current_period.start and crud.get_cap_entry_for_month(db, current_period.month) is None,
+        "cap_banner_month": month_names()[current_period.month.month - 1].lower() if current_language() != "en" else month_names()[current_period.month.month - 1],
+        "cap_banner_previous_month": month_names()[current_period.shifted(-1).month.month - 1].lower() if current_language() != "en" else month_names()[current_period.shifted(-1).month.month - 1],
+        "current_month_key": current_period.month.strftime("%Y-%m"),
         **content,
     }
     return templates.TemplateResponse("dashboard/index.html", context)
@@ -410,7 +450,7 @@ def dashboard_content(
     today = date.today()
     parsed_shift_income = shift_income == "1"
     period_key, period_start, period_end, period_label, is_calendar_month = _resolve_period(
-        period, start, end, today
+        period, start, end, today, crud.get_budget_start_day(db)
     )
     content = _build_period_context(
         db, period_key, period_start, period_end, period_label,
@@ -438,7 +478,7 @@ def category_transactions(
     # Le donut transmet désormais l'intervalle exact affiché (et son libellé)
     # plutôt qu'un couple mois/année : depuis le sélecteur de période, la
     # fenêtre du Panorama n'est plus forcément un mois civil.
-    period_start = _parse_iso_date(start) or date.today().replace(day=1)
+    period_start = _parse_iso_date(start) or period_containing(date.today(), crud.get_budget_start_day(db)).start
     period_end = _parse_iso_date(end) or date.today()
     parsed_category_id = None if category_id == "none" else int(category_id)
     transactions = crud.get_category_transactions(
@@ -455,6 +495,15 @@ def category_transactions(
         "period_label": label,
     }
     return templates.TemplateResponse("dashboard/_category_transactions.html", context)
+
+
+@router.get("/sidebar-pending", response_class=HTMLResponse)
+def sidebar_pending(db: Session = Depends(get_db)):
+    # Compteur de La Savane dans la barre latérale (hx-trigger="load", comme
+    # le solde ci-dessous) : nombre d'opérations en attente de catégorie.
+    # Vide quand il n'y en a plus, pour ne pas afficher un « 0 » inutile.
+    count = crud.count_pending_transactions(db)
+    return HTMLResponse(content=str(count) if count else "")
 
 
 @router.get("/sidebar-balance", response_class=HTMLResponse)

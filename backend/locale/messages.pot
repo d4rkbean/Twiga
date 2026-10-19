@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-18 19:19+0000\n"
+"POT-Creation-Date: 2026-10-19 05:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,6 +45,10 @@ msgid "%(amount)s à trier"
 msgstr ""
 
 #, python-format
+msgid "%(amount)s €"
+msgstr ""
+
+#, python-format
 msgid "%(budget_danger_count)s budget%(v)s dépassé%(v)s"
 msgstr ""
 
@@ -57,15 +61,7 @@ msgid "%(budgets)s %(rules)s règle%(v)s"
 msgstr ""
 
 #, python-format
-msgid "%(categories)s catégorie%(categories2)s"
-msgstr ""
-
-#, python-format
-msgid "%(category_count)s catégorie(s) (hiérarchie conservée)"
-msgstr ""
-
-#, python-format
-msgid "%(category_count)s catégorie(s) détectée(s) (hiérarchie conservée)"
+msgid "%(category_count)s catégories (hiérarchie conservée)"
 msgstr ""
 
 #, python-format
@@ -75,15 +71,37 @@ msgid ""
 msgstr ""
 
 #, python-format
+msgid "%(count)s abonnement détecté"
+msgid_plural "%(count)s abonnements détectés"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%(count)s au total"
 msgstr ""
+
+#, python-format
+msgid "%(count)s catégorie"
+msgid_plural "%(count)s catégories"
+msgstr[0] ""
+msgstr[1] ""
 
 #, python-format
 msgid "%(count)s catégories · %(subs)s sous-catégories"
 msgstr ""
 
 #, python-format
+msgid "%(count)s compte · total %(total)s"
+msgid_plural "%(count)s comptes · total %(total)s"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%(count)s compte%(v)s"
+msgstr ""
+
+#, python-format
+msgid "%(count)s fois"
 msgstr ""
 
 #, python-format
@@ -91,12 +109,42 @@ msgid "%(count)s modes"
 msgstr ""
 
 #, python-format
+msgid "%(count)s opération"
+msgid_plural "%(count)s opérations"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(count)s opération rangée"
+msgid_plural "%(count)s opérations rangées"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(count)s paiement en attente de débit"
+msgid_plural "%(count)s paiements en attente de débit"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%(count)s paiements"
 msgstr ""
 
 #, python-format
+msgid "%(count)s rangée sur %(total)s, encore %(left)s à brouter."
+msgid_plural "%(count)s rangées sur %(total)s, encore %(left)s à brouter."
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%(count)s restante"
 msgid_plural "%(count)s restantes"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(count)s règle"
+msgid_plural "%(count)s règles"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -107,15 +155,17 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, python-format
+msgid "%(count)s suggestion en attente"
+msgid_plural "%(count)s suggestions en attente"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%(current)s sur %(target)s"
 msgstr ""
 
 #, python-format
 msgid "%(current_month_label)s · jour %(day)s sur %(days)s"
-msgstr ""
-
-#, python-format
-msgid "%(current_month_label)s, en direct"
 msgstr ""
 
 #, python-format
@@ -131,12 +181,22 @@ msgid "%(duplicate_count)s doublon(s) ignoré(s)."
 msgstr ""
 
 #, python-format
+msgid "%(duplicate_count)s doublons écartés"
+msgstr ""
+
+#, python-format
 msgid "%(excluded_count)s opération(s) exclue(s) volontairement."
 msgstr ""
 
 #, python-format
-msgid "%(id)s art."
+msgid "%(filed)s sur %(total)s rangées"
 msgstr ""
+
+#, python-format
+msgid "%(files)s fichier · %(rows)s opérations"
+msgid_plural "%(files)s fichiers · %(rows)s opérations"
+msgstr[0] ""
+msgstr[1] ""
 
 #, python-format
 msgid "%(imported_count)s opération(s) importée(s)."
@@ -155,12 +215,36 @@ msgid "%(label)s presque épuisé !"
 msgstr ""
 
 #, python-format
+msgid ""
+"%(lead)s le foyer a reçu %(income)s et dépensé %(expense)s&nbsp;: il "
+"reste %(result)s."
+msgstr ""
+
+#, python-format
+msgid "%(month)s, en direct"
+msgstr ""
+
+#, python-format
+msgid "%(month)s, pilier par pilier"
+msgstr ""
+
+#, python-format
 msgid "%(monthly_effort)s / mois"
 msgstr ""
 
 #, python-format
 msgid "%(monthly_evolution)s ce mois-ci"
 msgstr ""
+
+#, python-format
+msgid "%(n)s art."
+msgstr ""
+
+#, python-format
+msgid "%(n)s opération"
+msgid_plural "%(n)s opérations"
+msgstr[0] ""
+msgstr[1] ""
 
 #, python-format
 msgid "%(n)s opération marquée comme imprévu"
@@ -181,8 +265,32 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, python-format
+msgid "%(n)s opération rangée"
+msgid_plural "%(n)s opérations rangées"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(n)s opération rangée (confiance ≥ %(threshold)s %%)"
+msgid_plural "%(n)s opérations rangées (confiance ≥ %(threshold)s %%)"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(n)s opération rangée dans %(path)s"
+msgid_plural "%(n)s opérations rangées dans %(path)s"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%(n)s opération remise dans La Savane"
 msgid_plural "%(n)s opérations remises dans La Savane"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(n)s opération renvoyée dans La Savane"
+msgid_plural "%(n)s opérations renvoyées dans La Savane"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -199,6 +307,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, python-format
+msgid "%(n)s sans suggestion gardée"
+msgid_plural "%(n)s sans suggestion gardées"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
 msgid "%(n)s transaction mise à jour"
 msgid_plural "%(n)s transactions mises à jour"
 msgstr[0] ""
@@ -209,7 +323,25 @@ msgid "%(name)s (général)"
 msgstr ""
 
 #, python-format
+msgid "%(name)s : %(pct)s %% de l'objectif"
+msgstr ""
+
+#, python-format
 msgid "%(name)s : %(percentage)s %% atteint"
+msgstr ""
+
+#, python-format
+msgid "%(name)s : %(percentage)s %% avec le tri, %(word)s"
+msgstr ""
+
+#, python-format
+msgid "%(name)s : passer à %(need)s par mois"
+msgstr ""
+
+#, python-format
+msgid ""
+"%(name)s et son historique de mouvements seront retirés. Cette action est"
+" définitive."
 msgstr ""
 
 #, python-format
@@ -217,11 +349,11 @@ msgid "%(name)s le %(date)s"
 msgstr ""
 
 #, python-format
-msgid "%(net_worth_delta)s depuis le début de la période"
+msgid "%(name)s · %(effort)s / mois"
 msgstr ""
 
 #, python-format
-msgid "%(new_account_count)s compte(s) seront créés"
+msgid "%(net_worth_delta)s depuis le début de la période"
 msgstr ""
 
 #, python-format
@@ -229,33 +361,11 @@ msgid "%(ok)s dans la cible · %(warning)s à surveiller · %(danger)s dépassé
 msgstr ""
 
 #, python-format
-msgid "%(payee_count)s bénéficiaire(s) distinct(s)"
-msgstr ""
-
-#, python-format
-msgid "%(pct)s %% de l'objectif"
-msgstr ""
-
-#, python-format
 msgid "%(pending_count)s opération%(v)s à vérifier"
 msgstr ""
 
 #, python-format
-msgid "%(pending_count)s transaction%(v)s restante%(v)s"
-msgstr ""
-
-#, python-format
 msgid "%(percentage)s %% consommé"
-msgstr ""
-
-#, python-format
-msgid ""
-"%(period)s : le foyer a reçu %(income)s et dépensé %(expense)s, soit un "
-"résultat de %(result)s."
-msgstr ""
-
-#, python-format
-msgid "%(previous_month_label)s, pilier par pilier"
 msgstr ""
 
 #, python-format
@@ -266,6 +376,10 @@ msgstr ""
 
 #, python-format
 msgid "%(relinked_count)s opération(s) existante(s) recatégorisée(s)."
+msgstr ""
+
+#, python-format
+msgid "%(role)s · membre depuis %(since)s"
 msgstr ""
 
 #, python-format
@@ -287,6 +401,14 @@ msgid "%(saved)s mis de côté sur %(target)s"
 msgstr ""
 
 #, python-format
+msgid "%(shown)s lignes sur %(total)s affichées."
+msgstr ""
+
+#, python-format
+msgid "%(shown)s sur %(total)s"
+msgstr ""
+
+#, python-format
 msgid "%(sign)s%(pct)s %% vs période précédente · %(word)s"
 msgstr ""
 
@@ -299,27 +421,11 @@ msgid "%(total)s opération%(v)s"
 msgstr ""
 
 #, python-format
-msgid "%(total)s opération%(v)s | %(Total)s :"
-msgstr ""
-
-#, python-format
-msgid "%(total)s transaction%(v)s à catégoriser"
-msgstr ""
-
-#, python-format
-msgid "%(total_count)s opération(s) détectée(s)"
-msgstr ""
-
-#, python-format
-msgid "%(total_count)s opération(s) détectée(s) dans le fichier OFX."
+msgid "%(total)s opération%(v)s · %(Total)s"
 msgstr ""
 
 #, python-format
 msgid "%(transaction_count)s opération%(v)s"
-msgstr ""
-
-#, python-format
-msgid "%(transaction_count)s opération(s)"
 msgstr ""
 
 #, python-format
@@ -337,7 +443,9 @@ msgid ""
 msgstr ""
 
 #, python-format
-msgid "%(unique_count)s nouvelle(s), %(duplicate_count)s doublon(s) ignoré(s)"
+msgid ""
+"%(unique_count)s opérations à importer, %(duplicate_count)s doublons "
+"écartés."
 msgstr ""
 
 #, python-format
@@ -345,7 +453,7 @@ msgid "%(usage_count)s transaction%(v)s"
 msgstr ""
 
 #, python-format
-msgid "(%(existing_account_count)s déjà existant(s))"
+msgid "(%(existing_account_count)s existants)"
 msgstr ""
 
 #, python-format
@@ -353,13 +461,11 @@ msgid "(+ %(project_movements)s mouvement(s))"
 msgstr ""
 
 msgid ""
-"(HomeBank) : il crée tes comptes et catégories automatiquement. Les "
-"imports"
-msgstr ""
-
-msgid ""
 "(aucun texte extrait — ce PDF n'a peut-être pas de calque de texte, par "
 "ex. une image scannée)"
+msgstr ""
+
+msgid "(catégorie seule)"
 msgstr ""
 
 msgid "(facultatif)"
@@ -381,7 +487,17 @@ msgid "+ le prélèvement sur épargne"
 msgstr ""
 
 #, python-format
+msgid ", %(months)s mois après l'échéance"
+msgstr ""
+
+#, python-format
 msgid ", %(rules)s règle(s)."
+msgstr ""
+
+msgid ", avant l'échéance"
+msgstr ""
+
+msgid ", à l'échéance"
 msgstr ""
 
 msgid ". Choisis une catégorie de remplacement avant de supprimer :"
@@ -401,6 +517,9 @@ msgid ""
 "=\"text-primary font-medium\">Voir les budgets</a>"
 msgstr ""
 
+msgid "/ mois"
+msgstr ""
+
 msgid "1 an"
 msgstr ""
 
@@ -411,14 +530,20 @@ msgstr ""
 msgid "100 %% local"
 msgstr ""
 
-#, python-format
-msgid "12 mois jusqu'à %(period_label)s"
-msgstr ""
-
 msgid "2. Fixer le cap"
 msgstr ""
 
 msgid "3. Le cap est fixé"
+msgstr ""
+
+msgid "500 caractères au maximum."
+msgstr ""
+
+#, python-format
+msgid "70–90 %%"
+msgstr ""
+
+msgid "8 caractères au moins."
 msgstr ""
 
 msgid "90 J"
@@ -427,7 +552,17 @@ msgstr ""
 msgid ": ce rapport mesure ce qui est acheté, pas ce qui est payé."
 msgstr ""
 
+#, python-format
+msgid "< 70 %%"
+msgstr ""
+
 msgid "= Disponible à répartir :"
+msgstr ""
+
+msgid "AA"
+msgstr ""
+
+msgid "AAAA"
 msgstr ""
 
 msgid "Abonnements et factures"
@@ -448,7 +583,16 @@ msgstr ""
 msgid "Actif"
 msgstr ""
 
+msgid "Actifs après un clic sur la planche, hors champ de saisie."
+msgstr ""
+
 msgid "Action réservée à un rôle supérieur."
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Actions groupées"
 msgstr ""
 
 msgid "Activités et loisirs"
@@ -463,13 +607,29 @@ msgstr ""
 msgid "Affichage"
 msgstr ""
 
-msgid "Afficher :"
+msgid "Affichage sur cet appareil"
+msgstr ""
+
+msgid "Afficher"
+msgstr ""
+
+msgid "Afficher : 100 par page"
+msgstr ""
+
+msgid "Afficher : 25 par page"
+msgstr ""
+
+msgid "Afficher : 50 par page"
 msgstr ""
 
 msgid "Afficher le menu"
 msgstr ""
 
 msgid "Afficher le mot de passe"
+msgstr ""
+
+#, python-format
+msgid "Afficher les %(n)s suivantes"
 msgstr ""
 
 msgid "Afficher les montants"
@@ -481,10 +641,20 @@ msgstr ""
 msgid "Agios et frais exceptionnels"
 msgstr ""
 
+msgid "Aide"
+msgstr ""
+
 msgid "Aide &amp; raccourcis"
 msgstr ""
 
 msgid "Ajouter"
+msgstr ""
+
+msgid "Ajouter de l'argent"
+msgstr ""
+
+#, python-format
+msgid "Ajouter de l'argent à %(name)s"
 msgstr ""
 
 msgid "Ajouter des catégories de base"
@@ -509,6 +679,9 @@ msgid "Ajouter une catégorie"
 msgstr ""
 
 msgid "Ajouter une ligne"
+msgstr ""
+
+msgid "Ajouter une note"
 msgstr ""
 
 msgid "Ajouter une règle"
@@ -570,6 +743,12 @@ msgstr ""
 msgid "Aperçu"
 msgstr ""
 
+msgid "Aperçu QIF"
+msgstr ""
+
+msgid "Aperçu avant import"
+msgstr ""
+
 msgid "Aperçu de l'import QIF"
 msgstr ""
 
@@ -582,7 +761,16 @@ msgstr ""
 msgid "Appliquer ces modifications aux opérations sélectionnées ?"
 msgstr ""
 
+msgid "Appliquer à la sélection"
+msgstr ""
+
+msgid "Appliquée"
+msgstr ""
+
 msgid "Article"
+msgstr ""
+
+msgid "Assez long."
 msgstr ""
 
 msgid "Assurance auto"
@@ -595,6 +783,15 @@ msgid "Attendu ce mois, pas encore vu"
 msgstr ""
 
 msgid "Au"
+msgstr ""
+
+msgid "Au :"
+msgstr ""
+
+msgid "Au rythme actuel"
+msgstr ""
+
+msgid "Aucun"
 msgstr ""
 
 msgid "Aucun abonnement récurrent détecté pour l'instant."
@@ -639,7 +836,12 @@ msgstr ""
 msgid "Aucun fichier choisi."
 msgstr ""
 
-msgid "Aucun mode de paiement pour l'instant."
+msgid "Aucun import pour l'instant."
+msgstr ""
+
+msgid ""
+"Aucun mode de paiement pour l'instant. Ajoute le premier avec le "
+"formulaire."
 msgstr ""
 
 msgid "Aucun montant hors norme détecté."
@@ -687,6 +889,9 @@ msgstr ""
 msgid "Aucune dépense sur cette période."
 msgstr ""
 
+msgid "Aucune opération"
+msgstr ""
+
 msgid "Aucune opération ne correspond à ces filtres."
 msgstr ""
 
@@ -699,6 +904,9 @@ msgstr ""
 msgid "Aucune règle ne correspond à ce libellé."
 msgstr ""
 
+msgid "Aucune règle pour l'instant."
+msgstr ""
+
 msgid ""
 "Aucune règle pour l'instant. Ajoutes-en une ci-dessus, ou valide des "
 "transactions dans La Savane pour qu'une règle te soit proposée "
@@ -706,9 +914,6 @@ msgid ""
 msgstr ""
 
 msgid "Aucune sauvegarde pour l'instant"
-msgstr ""
-
-msgid "Aucune suggestion"
 msgstr ""
 
 msgid "Aucune transaction trouvée (balise <STMTTRN> absente)."
@@ -720,10 +925,28 @@ msgstr ""
 msgid "Augmenter"
 msgstr ""
 
+msgid "Augmenter de 10 €"
+msgstr ""
+
+msgid "Augmenter l'objectif de 100 €"
+msgstr ""
+
+msgid "Augmenter la réserve de 10 €"
+msgstr ""
+
+msgid "Augmenter le prélèvement de 50 €"
+msgstr ""
+
+msgid "Augmenter les ressources de 100 €"
+msgstr ""
+
 msgid "Authentification désactivée."
 msgstr ""
 
 msgid "Autre"
+msgstr ""
+
+msgid "Autre montant…"
 msgstr ""
 
 msgid "Autres"
@@ -742,17 +965,25 @@ msgstr ""
 msgid "Avec le tri : %(percentage)s %%"
 msgstr ""
 
-#, python-format
-msgid "Avec suggestion &gt; 90%%"
-msgstr ""
-
 msgid "Aéré"
 msgstr ""
 
 msgid "Aïe, trop de feuilles mangées ce mois-ci !"
 msgstr ""
 
-msgid "Backlog vide — tout est catégorisé !"
+msgid "Baisser de 10 €"
+msgstr ""
+
+msgid "Baisser l'objectif de 100 €"
+msgstr ""
+
+msgid "Baisser la réserve de 10 €"
+msgstr ""
+
+msgid "Baisser le prélèvement de 50 €"
+msgstr ""
+
+msgid "Baisser les ressources de 100 €"
 msgstr ""
 
 msgid "Balance"
@@ -768,11 +999,11 @@ msgid "Basculer le mode confidentialité"
 msgstr ""
 
 #, python-format
-msgid "Basé sur : \"%(based_on_label)s\""
+msgid "Basé sur : « %(based_on)s »"
 msgstr ""
 
 #, python-format
-msgid "Basé sur : \"%(suggestion_based_on)s\""
+msgid "Basé sur : « %(based_on_label)s »"
 msgstr ""
 
 msgid "Basé sur les"
@@ -800,11 +1031,18 @@ msgstr ""
 msgid "Boissons"
 msgstr ""
 
+msgid "Bonjour"
+msgstr ""
+
 #, python-format
 msgid "Bonjour — %(routine_month_label)s"
 msgstr ""
 
 msgid "Budget"
+msgstr ""
+
+#, python-format
+msgid "Budget %(count)s"
 msgstr ""
 
 msgid "Budget Performance"
@@ -826,10 +1064,10 @@ msgstr ""
 msgid "Budgets — Twiga"
 msgstr ""
 
-msgid "CB"
+msgid "Bénéficiaires distincts"
 msgstr ""
 
-msgid "CSV"
+msgid "CB"
 msgstr ""
 
 msgid "Cadeaux"
@@ -853,13 +1091,16 @@ msgstr ""
 msgid "Catégorie introuvable"
 msgstr ""
 
-msgid "Catégorie proposée :"
+msgid "Catégorie suggérée"
 msgstr ""
 
 msgid "Catégorie..."
 msgstr ""
 
 msgid "Catégories"
+msgstr ""
+
+msgid "Catégories détectées"
 msgstr ""
 
 msgid "Catégories existantes"
@@ -894,13 +1135,7 @@ msgstr ""
 msgid "Ce que Twiga vérifie"
 msgstr ""
 
-msgid "Ce que le mois écoulé a vraiment coûté, rapporté au plan que tu fixes."
-msgstr ""
-
 msgid "Ce que permet chaque rôle"
-msgstr ""
-
-msgid "Ce que tu gères, et comment ton instance Twiga est réglée."
 msgstr ""
 
 msgid "Ce que tu sors de l'épargne pour financer ce mois"
@@ -917,6 +1152,9 @@ msgid "Changer la catégorie"
 msgstr ""
 
 msgid "Changer la source des ressources"
+msgstr ""
+
+msgid "Changer le mode de paiement"
 msgstr ""
 
 msgid "Changer le mot de passe"
@@ -944,15 +1182,46 @@ msgstr ""
 msgid "Chauffage"
 msgstr ""
 
+msgid "Choisir la facture PDF"
+msgstr ""
+
 msgid "Choisir le fichier"
+msgstr ""
+
+msgid "Choisir par position"
+msgstr ""
+
+msgid "Choisir un mois"
+msgstr ""
+
+msgid "Choisir une autre catégorie"
+msgstr ""
+
+msgid "Choisir une catégorie"
+msgstr ""
+
+#, python-format
+msgid "Choisir une catégorie pour %(label)s"
 msgstr ""
 
 msgid "Choisir une catégorie..."
 msgstr ""
 
+msgid "Choisir une catégorie…"
+msgstr ""
+
+msgid "Choisir une date"
+msgstr ""
+
 msgid ""
 "Choisis un compte existant, ou importe d'abord un fichier QIF pour en "
 "créer un."
+msgstr ""
+
+msgid "Choisis une catégorie"
+msgstr ""
+
+msgid "Choisis une opération pour voir son détail."
 msgstr ""
 
 msgid "Choix"
@@ -983,7 +1252,13 @@ msgstr ""
 msgid "Coche les virements qui financent %(current_month_label)s"
 msgstr ""
 
+msgid "Coche une ligne pour l'ajouter quand même à l'import."
+msgstr ""
+
 msgid "Coiffeur et beauté"
+msgstr ""
+
+msgid "Colonne"
 msgstr ""
 
 msgid "Colonne Date"
@@ -998,10 +1273,10 @@ msgstr ""
 msgid "Colonnes"
 msgstr ""
 
-msgid "Comment Twiga se présente pour toi, sur tous tes appareils."
+msgid "Compact"
 msgstr ""
 
-msgid "Compact"
+msgid "Compris"
 msgstr ""
 
 msgid "Compte"
@@ -1031,20 +1306,19 @@ msgstr ""
 msgid "Comptes existants"
 msgstr ""
 
+msgid "Comptes à créer"
+msgstr ""
+
 msgid "Comptes — Twiga"
 msgstr ""
 
 msgid "Confiance de la suggestion"
 msgstr ""
 
+msgid "Confirmation manquante."
+msgstr ""
+
 msgid "Confirmer"
-msgstr ""
-
-#, python-format
-msgid "Confirmer %(v)s %(name)s"
-msgstr ""
-
-msgid "Confirmer le nouveau mot de passe"
 msgstr ""
 
 #, python-format
@@ -1068,6 +1342,9 @@ msgid "Connexion — Twiga"
 msgstr ""
 
 msgid "Consultation uniquement."
+msgstr ""
+
+msgid "Contenu"
 msgstr ""
 
 msgid "Continuer"
@@ -1143,7 +1420,16 @@ msgstr ""
 msgid "Densité"
 msgstr ""
 
+msgid "Densité d'affichage"
+msgstr ""
+
 msgid "Dentiste et optique"
+msgstr ""
+
+msgid "Depuis"
+msgstr ""
+
+msgid "Derniers imports"
 msgstr ""
 
 msgid "Dernière fois :"
@@ -1151,6 +1437,9 @@ msgstr ""
 
 #, python-format
 msgid "Dernière sauvegarde : le %(date)s à %(time)s"
+msgstr ""
+
+msgid "Des opérations encore dans La Savane rapprochent l'enveloppe de sa limite."
 msgstr ""
 
 msgid "Destinataire / motif (optionnel)"
@@ -1177,11 +1466,13 @@ msgstr ""
 msgid "Dont virements (is_transfer = true)"
 msgstr ""
 
+msgid "Doublons"
+msgstr ""
+
 msgid "Doublons : même date, même montant, même libellé"
 msgstr ""
 
-#, python-format
-msgid "Doublons ignorés (%(duplicate_count)s)"
+msgid "Doublons ignorés"
 msgstr ""
 
 #, python-format
@@ -1189,6 +1480,13 @@ msgid "Doublons potentiels (%(duplicates_total)s)"
 msgstr ""
 
 msgid "Du"
+msgstr ""
+
+#, python-format
+msgid "Du %(start)s au %(end)s,"
+msgstr ""
+
+msgid "Du :"
 msgstr ""
 
 msgid ""
@@ -1200,6 +1498,9 @@ msgid ""
 msgstr ""
 
 msgid "Débit différé"
+msgstr ""
+
+msgid "Début du mois budgétaire"
 msgstr ""
 
 msgid "Décaler les recettes"
@@ -1217,6 +1518,12 @@ msgstr ""
 msgid "Déjà présente en base"
 msgstr ""
 
+msgid "Dépense"
+msgstr ""
+
+msgid "Dépense (−)"
+msgstr ""
+
 msgid "Dépense habituelle, médiane des 3 derniers mois"
 msgstr ""
 
@@ -1227,6 +1534,13 @@ msgid "Dépense · "
 msgstr ""
 
 msgid "Dépenser"
+msgstr ""
+
+#, python-format
+msgid "Dépenser depuis %(name)s"
+msgstr ""
+
+msgid "Dépenser depuis le projet"
 msgstr ""
 
 msgid "Dépenses"
@@ -1248,13 +1562,16 @@ msgstr ""
 msgid "Dépensé"
 msgstr ""
 
-msgid "Déposer ici ou choisir un fichier · .qif, .csv, .ofx, .qfx"
+msgid "Déposer ici ou choisir un fichier · .qif, .csv, .ofx, .qfx · 5 Mo maximum"
 msgstr ""
 
 msgid "Désépingler le menu"
 msgstr ""
 
 msgid "Détail"
+msgstr ""
+
+msgid "Détail de l'opération"
 msgstr ""
 
 msgid "Détail du rapport"
@@ -1292,13 +1609,30 @@ msgstr ""
 msgid "Eau"
 msgstr ""
 
+msgid "Effort"
+msgstr ""
+
 msgid "Emplacement"
+msgstr ""
+
+#, python-format
+msgid "En %(month)s,"
 msgstr ""
 
 msgid "En attente"
 msgstr ""
 
 msgid "En attente de validation"
+msgstr ""
+
+#, python-format
+msgid "Encore %(n)s caractères."
+msgstr ""
+
+msgid "Encore 1 caractère."
+msgstr ""
+
+msgid "Encore dans La Savane"
 msgstr ""
 
 msgid "Enfants"
@@ -1338,6 +1672,9 @@ msgstr ""
 msgid "Erreur pendant l'import : %(error)s"
 msgstr ""
 
+msgid "Espace"
+msgstr ""
+
 msgid "Espèces"
 msgstr ""
 
@@ -1353,6 +1690,9 @@ msgstr ""
 msgid "Ex : Régularisation, Achat en espèces..."
 msgstr ""
 
+msgid "Ex. boulangerie"
+msgstr ""
+
 msgid "Export CSV des opérations"
 msgstr ""
 
@@ -1366,14 +1706,18 @@ msgid "Exporter en CSV"
 msgstr ""
 
 msgid ""
-"Facture PDF de l'appli du magasin (Leclerc, Intermarché...) : les lignes "
-"en sont proposées automatiquement dès le fichier choisi ci-dessous, rayon"
-" compris quand il est reconnaissable — à vérifier avant d'enregistrer, "
-"l'extraction n'est jamais garantie exacte. Le fichier n'est pas conservé,"
-" seules les lignes le sont — et un nouvel import"
+"Facture PDF de l'appli du magasin : les lignes sont proposées seules, "
+"rayon compris, à vérifier. Ticket papier : ajoute les lignes à la main."
+msgstr ""
+
+#, python-format
+msgid "Fais le bilan de %(previous)s et fixe les enveloppes du mois."
 msgstr ""
 
 msgid "Fermer"
+msgstr ""
+
+msgid "Fermer la liste des catégories"
 msgstr ""
 
 msgid "Fermer la recherche"
@@ -1391,20 +1735,30 @@ msgstr ""
 msgid "Fichier de sauvegarde JSON"
 msgstr ""
 
-msgid "Filtrer par projet"
+msgid "Fichier trop volumineux (5 Mo maximum)."
 msgstr ""
 
 msgid "Filtres"
 msgstr ""
 
+msgid "Filtres et actions"
+msgstr ""
+
 msgid "Fixer Le Cap"
+msgstr ""
+
+msgid "Fixer l'enveloppe de chaque catégorie"
 msgstr ""
 
 msgid "Fixer le cap"
 msgstr ""
 
 #, python-format
-msgid "Fixer le cap de %(current_month_label)s"
+msgid "Fixer le cap d'%(month)s %(year)s"
+msgstr ""
+
+#, python-format
+msgid "Fixer le cap de %(month)s %(year)s"
 msgstr ""
 
 msgid "Fixer le cap du mois →"
@@ -1444,6 +1798,14 @@ msgid ""
 msgstr ""
 
 msgid "Fournitures scolaires"
+msgstr ""
+
+#, python-format
+msgid "Foyer d'%(names)s"
+msgstr ""
+
+#, python-format
+msgid "Foyer de %(names)s"
 msgstr ""
 
 msgid "Frais de tenue de compte et cartes"
@@ -1491,6 +1853,12 @@ msgstr ""
 msgid "Icône"
 msgstr ""
 
+msgid "Identifiant"
+msgstr ""
+
+msgid "Identité"
+msgstr ""
+
 msgid "Ignorer"
 msgstr ""
 
@@ -1508,6 +1876,9 @@ msgid ""
 "aux règles et aux chèques."
 msgstr ""
 
+msgid "Import"
+msgstr ""
+
 msgid "Import en cours"
 msgstr ""
 
@@ -1521,14 +1892,16 @@ msgstr ""
 msgid "Import terminé."
 msgstr ""
 
-msgid "Importe d'abord un fichier"
+msgid ""
+"Importe d'abord un fichier QIF (HomeBank) : il crée tes comptes et "
+"catégories automatiquement."
 msgstr ""
 
 msgid "Importer"
 msgstr ""
 
 #, python-format
-msgid "Importer %(unique_count)s opération(s)"
+msgid "Importer %(unique_count)s opérations"
 msgstr ""
 
 msgid "Importer des données"
@@ -1544,6 +1917,9 @@ msgid "Importer un fichier — Twiga"
 msgstr ""
 
 msgid "Importer un relevé"
+msgstr ""
+
+msgid "Importées"
 msgstr ""
 
 msgid "Impossible : il doit rester au moins un administrateur actif."
@@ -1584,7 +1960,10 @@ msgstr ""
 msgid "Inclure"
 msgstr ""
 
-msgid "Informations"
+msgid "Indique un montant cible supérieur à 0."
+msgstr ""
+
+msgid "Indique un montant supérieur à 0."
 msgstr ""
 
 msgid "Instance privée, hébergée chez toi."
@@ -1605,10 +1984,29 @@ msgstr ""
 msgid "Inverser le signe (dépense / recette)"
 msgstr ""
 
+msgid "Inverser le signe :"
+msgstr ""
+
+msgid "JJ"
+msgstr ""
+
 msgid "Jamais connecté"
 msgstr ""
 
 msgid "Jeux et hobbies"
+msgstr ""
+
+msgid "Jour de début invalide."
+msgstr ""
+
+msgid "Journal"
+msgstr ""
+
+msgid "Ko"
+msgstr ""
+
+#, python-format
+msgid "L'Essentiel est à %(percentage)s %% avec le tri : à surveiller."
 msgstr ""
 
 msgid "L'Imprévu (une réserve sans détail) et l'Épargne se fixent dans"
@@ -1624,6 +2022,12 @@ msgid "L'intention du mois, fixée dans"
 msgstr ""
 
 msgid "L'interface que tu connais."
+msgstr ""
+
+msgid "L'Épargne ne se choisit pas ici : elle se fixe dans Le Cap."
+msgstr ""
+
+msgid "L'épargne prévue se recalcule pendant que tu ajustes."
 msgstr ""
 
 msgid "L'équilibre habituel"
@@ -1653,10 +2057,33 @@ msgstr ""
 msgid "Langue"
 msgstr ""
 
+#, python-format
+msgid "Le %(day)s"
+msgstr ""
+
+msgid "Le 1er"
+msgstr ""
+
 msgid "Le Cap"
 msgstr ""
 
+#, python-format
+msgid "Le Cap d'%(month)s"
+msgstr ""
+
+#, python-format
+msgid "Le Cap de %(month)s"
+msgstr ""
+
+#, python-format
+msgid "Le Cap de %(month)s est ouvert"
+msgstr ""
+
 msgid "Le Cap — Twiga"
+msgstr ""
+
+#, python-format
+msgid "Le Choix est à %(percentage)s %% avec le tri : à surveiller."
 msgstr ""
 
 msgid ""
@@ -1671,6 +2098,14 @@ msgid "Le cap tient ! Continue comme ça."
 msgstr ""
 
 msgid "Le changement s'applique immédiatement."
+msgstr ""
+
+msgid ""
+"Le fichier n'est pas gardé, seules les lignes le sont — un nouvel import "
+"remplace le détail existant."
+msgstr ""
+
+msgid "Le montant dépasse l'épargne du projet"
 msgstr ""
 
 msgid "Le mot de passe doit faire au moins 8 caractères."
@@ -1688,7 +2123,10 @@ msgstr ""
 msgid "Le plan en direct"
 msgstr ""
 
-msgid "Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes."
+#, python-format
+msgid ""
+"Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes. On "
+"regarde %(previous)s, puis on fixe le cap."
 msgstr ""
 
 msgid "Le salaire arrive pendant le mois qu'il finance."
@@ -1715,10 +2153,27 @@ msgstr ""
 msgid "Lecture seule"
 msgstr ""
 
+#, python-format
+msgid "Les %(count)s piliers du mois"
+msgstr ""
+
+#, python-format
+msgid "Les Imprévus sont à %(percentage)s %% avec le tri : à surveiller."
+msgstr ""
+
 msgid "Les choix répétés sont mémorisés et proposés ensuite."
 msgstr ""
 
+msgid "Les comptes du foyer et le rôle de chacun"
+msgstr ""
+
 msgid "Les deux"
+msgstr ""
+
+msgid "Les deux ne sont pas identiques."
+msgstr ""
+
+msgid "Les deux sont identiques."
 msgstr ""
 
 msgid "Les données déjà présentes (même id) sont mises à jour, pas dupliquées."
@@ -1733,15 +2188,12 @@ msgstr ""
 msgid "Les nouveaux mots de passe ne correspondent pas."
 msgstr ""
 
+msgid "Les opérations qui l'utilisent déjà ne sont pas modifiées."
+msgstr ""
+
 msgid ""
 "Les personnes du foyer qui se connectent à Twiga, et ce que chacune peut "
 "faire."
-msgstr ""
-
-msgid "Les piliers du mois"
-msgstr ""
-
-msgid "Les prélèvements réguliers repérés dans tes opérations"
 msgstr ""
 
 msgid "Les recettes du mois en cours"
@@ -1753,10 +2205,19 @@ msgstr ""
 msgid "Les valider dans Règles"
 msgstr ""
 
+msgid "Les virements cochés ci-dessous s'ajoutent à ce montant."
+msgstr ""
+
 msgid "Les virements reçus sur un compte"
 msgstr ""
 
 msgid "Libellé"
+msgstr ""
+
+msgid "Libellé bancaire"
+msgstr ""
+
+msgid "Libellé brut :"
 msgstr ""
 
 #, python-format
@@ -1790,6 +2251,15 @@ msgstr ""
 msgid "Ligne introuvable"
 msgstr ""
 
+msgid "Lignes"
+msgstr ""
+
+msgid "Lignes lues"
+msgstr ""
+
+msgid "Liste des opérations"
+msgstr ""
+
 msgid "Livraison de repas"
 msgstr ""
 
@@ -1806,6 +2276,9 @@ msgid "Loisirs et culture"
 msgstr ""
 
 msgid "Loyer ou crédit immobilier"
+msgstr ""
+
+msgid "MM"
 msgstr ""
 
 msgid "Maison et loisirs"
@@ -1858,6 +2331,9 @@ msgstr ""
 msgid "Mettre de l'argent de côté pour un but précis, avec une date."
 msgstr ""
 
+msgid "Mi-mois"
+msgstr ""
+
 msgid "Mi-mois — Le cap tient-il ?"
 msgstr ""
 
@@ -1882,7 +2358,14 @@ msgstr ""
 msgid "Modifier"
 msgstr ""
 
+#, python-format
+msgid "Modifier %(name)s"
+msgstr ""
+
 msgid "Modifier l'opération"
+msgstr ""
+
+msgid "Modifier le mode de paiement"
 msgstr ""
 
 msgid "Modifier le projet"
@@ -1933,7 +2416,9 @@ msgstr ""
 msgid "Montant fixe"
 msgstr ""
 
-msgid "Montant fixe défini dans Paramètres."
+msgid ""
+"Montant fixe défini dans <a href=\"/settings\" class=\"font-medium text-"
+"primary underline\">Paramètres</a>."
 msgstr ""
 
 #, python-format
@@ -1999,7 +2484,7 @@ msgstr ""
 msgid "Nom"
 msgstr ""
 
-msgid "Nom affiché (facultatif)"
+msgid "Nom affiché"
 msgstr ""
 
 msgid "Nom d'utilisateur"
@@ -2023,9 +2508,6 @@ msgstr ""
 msgid "Nombre d'opérations importées"
 msgstr ""
 
-msgid "Non"
-msgstr ""
-
 msgid "Non catégorisé"
 msgstr ""
 
@@ -2033,6 +2515,9 @@ msgid "Non détaillé"
 msgstr ""
 
 msgid "Non merci"
+msgstr ""
+
+msgid "Non, garder"
 msgstr ""
 
 msgid "Normal"
@@ -2061,19 +2546,33 @@ msgstr ""
 msgid "Nouveau projet"
 msgstr ""
 
+msgid "Nouvelle catégorie"
+msgstr ""
+
 msgid "Nouvelle opération"
 msgstr ""
 
 msgid "Numéro de chèque (si chèque)"
 msgstr ""
 
-msgid "OFX"
-msgstr ""
-
 msgid "OK"
 msgstr ""
 
+msgid "Objectif atteint"
+msgstr ""
+
+msgid "Objectif d'épargne"
+msgstr ""
+
 msgid "Opération ajoutée"
+msgstr ""
+
+#, python-format
+msgid "Opération « %(label)s » enregistrée."
+msgstr ""
+
+#, python-format
+msgid "Opération « %(label)s » rangée dans %(path)s"
 msgstr ""
 
 msgid "Opérations"
@@ -2089,23 +2588,35 @@ msgstr ""
 msgid "Opérations suspectes"
 msgstr ""
 
+msgid "Opérations à traiter"
+msgstr ""
+
 msgid "Opérations — Twiga"
 msgstr ""
 
-msgid "Oui"
+msgid "Ou une autre catégorie"
+msgstr ""
+
+msgid "Oui, supprimer"
+msgstr ""
+
+msgid "Oui, tout supprimer"
 msgstr ""
 
 msgid "Ouvrir Le Cap"
+msgstr ""
+
+msgid "Ouvrir ce mois"
 msgstr ""
 
 #, python-format
 msgid "Page %(page)s / %(total_pages)s"
 msgstr ""
 
-msgid "Paiement..."
+msgid "Paiement :"
 msgstr ""
 
-msgid "Paiements émis, rapprochés tout seuls à l'import"
+msgid "Paiement..."
 msgstr ""
 
 msgid "Pains et pâtisseries"
@@ -2118,6 +2629,9 @@ msgid "Panorama et Mon mois"
 msgstr ""
 
 msgid "Panorama — Twiga"
+msgstr ""
+
+msgid "Par pas de 100 €"
 msgstr ""
 
 msgid "Paramètres"
@@ -2154,6 +2668,9 @@ msgid "Passer"
 msgstr ""
 
 msgid "Passer la visite guidée"
+msgstr ""
+
+msgid "Passées"
 msgstr ""
 
 msgid "Patrimoine"
@@ -2198,6 +2715,10 @@ msgstr ""
 msgid "Pour le foyer"
 msgstr ""
 
+#, python-format
+msgid "Pour tenir %(month)s. Le Cap du mois est le bon moment pour l'ajuster."
+msgstr ""
+
 msgid "Pour tenir l'échéance"
 msgstr ""
 
@@ -2208,6 +2729,9 @@ msgid ""
 msgstr ""
 
 msgid "Pour une saisie manuelle : régularisation, achat en espèces, etc."
+msgstr ""
+
+msgid "Première ligne lue"
 msgstr ""
 
 msgid "Primes et bonus"
@@ -2253,6 +2777,12 @@ msgstr ""
 msgid "Prélèvement sur épargne prévu ce mois-ci"
 msgstr ""
 
+msgid "Préparer"
+msgstr ""
+
+msgid "Préparer Le Cap"
+msgstr ""
+
 msgid "Prévu"
 msgstr ""
 
@@ -2263,9 +2793,6 @@ msgid "Période précédente"
 msgstr ""
 
 msgid "Période suivante"
-msgstr ""
-
-msgid "QIF"
 msgstr ""
 
 msgid "QIF, CSV ou OFX. Tout reste sur ton serveur."
@@ -2289,10 +2816,34 @@ msgstr ""
 msgid "Ranger"
 msgstr ""
 
+#, python-format
+msgid "Ranger %(label)s dans %(path)s"
+msgstr ""
+
 msgid "Ranger automatiquement les libellés connus"
 msgstr ""
 
 msgid "Ranger dans"
+msgstr ""
+
+msgid "Ranger dans La Savane"
+msgstr ""
+
+msgid "Ranger la sélection dans…"
+msgstr ""
+
+#, python-format
+msgid "Ranger toutes les suggestions à 90 %% de confiance ou plus ?"
+msgstr ""
+
+#, python-format
+msgid "Ranger « %(label)s » dans…"
+msgstr ""
+
+msgid "Rangé pendant cette séance"
+msgstr ""
+
+msgid "Rangées"
 msgstr ""
 
 msgid "Rapport Twiga"
@@ -2308,6 +2859,12 @@ msgid "Rayon"
 msgstr ""
 
 msgid "Rayon de ticket auto (optionnel)"
+msgstr ""
+
+msgid "Recette"
+msgstr ""
+
+msgid "Recette (+)"
 msgstr ""
 
 msgid "Recette · "
@@ -2345,10 +2902,7 @@ msgid ""
 "opposé, ± 3 jours, ± 1 € de tolérance)."
 msgstr ""
 
-msgid "Rechercher"
-msgstr ""
-
-msgid "Rechercher par libellé (ex : ORANGE)..."
+msgid "Rechercher un libellé"
 msgstr ""
 
 msgid "Rechercher un libellé..."
@@ -2360,13 +2914,11 @@ msgstr ""
 msgid "Rechercher... Ctrl+K"
 msgstr ""
 
-msgid "Rejeter la suggestion"
+msgid "Regrouper les libellés similaires"
 msgstr ""
 
 #, python-format
-msgid ""
-"Rejeter toutes les suggestions à moins de 70%% de confiance sur cette "
-"page ?"
+msgid "Rejeter < 70 %% (%(n)s)"
 msgstr ""
 
 msgid "Remboursement Pierre..."
@@ -2378,6 +2930,9 @@ msgstr ""
 msgid "Remettre ces opérations dans La Savane pour les recatégoriser ?"
 msgstr ""
 
+msgid "Remettre cette opération dans La Savane pour la recatégoriser ?"
+msgstr ""
+
 msgid "Remettre dans La Savane (non validée)"
 msgstr ""
 
@@ -2387,11 +2942,16 @@ msgid ""
 msgstr ""
 
 #, python-format
-msgid "Reprendre %(previous_month_label)s"
+msgid ""
+"Renvoyer dans La Savane toutes les suggestions à moins de 70 %% de "
+"confiance ?"
 msgstr ""
 
 #, python-format
-msgid "Ressources de %(period_label)s :"
+msgid "Reprendre %(previous_month_label)s"
+msgstr ""
+
+msgid "Reprendre le cap"
 msgstr ""
 
 #, python-format
@@ -2399,6 +2959,15 @@ msgid "Ressources de %(period_label)s non définies."
 msgstr ""
 
 msgid "Ressources du mois"
+msgstr ""
+
+msgid "Ressources du mois :"
+msgstr ""
+
+msgid "Ressources prévues"
+msgstr ""
+
+msgid "Restantes"
 msgstr ""
 
 msgid "Restaurants et cafés"
@@ -2421,6 +2990,18 @@ msgstr ""
 msgid "Reste à répartir"
 msgstr ""
 
+msgid "Retirer le détail"
+msgstr ""
+
+msgid "Retirer le détail du ticket ? Les lignes seront supprimées."
+msgstr ""
+
+msgid "Retirer le marquage virement de ces opérations ?"
+msgstr ""
+
+msgid "Retirer virement"
+msgstr ""
+
 msgid "Retour"
 msgstr ""
 
@@ -2428,6 +3009,9 @@ msgid "Retour au Panorama"
 msgstr ""
 
 msgid "Retour aux catégories"
+msgstr ""
+
+msgid "Retour à La Savane"
 msgstr ""
 
 msgid "Revenir à Mon mois"
@@ -2448,14 +3032,20 @@ msgstr ""
 msgid "Rien de prévu pour l'instant."
 msgstr ""
 
+msgid "Rien n'est encore rangé dans cette séance."
+msgstr ""
+
 msgid "Rien à suivre : La Savane est vide."
 msgstr ""
 
-msgid "Rubriques des paramètres"
+msgid "Rien à traiter ici"
 msgstr ""
 
 #, python-format
-msgid "Rythme au jour %(day)s (%(rhythm)s %%)"
+msgid "Rythme au %(date)s (%(percentage)s %%)"
+msgstr ""
+
+msgid "Règle"
 msgstr ""
 
 #, python-format
@@ -2468,7 +3058,13 @@ msgstr ""
 msgid "Règle introuvable"
 msgstr ""
 
+msgid "Règles"
+msgstr ""
+
 msgid "Règles de catégorisation"
+msgstr ""
+
+msgid "Règles de rangement"
 msgstr ""
 
 msgid "Règles existantes"
@@ -2522,6 +3118,12 @@ msgstr ""
 msgid "Répartition des recettes par catégorie"
 msgstr ""
 
+msgid "Réserve"
+msgstr ""
+
+msgid "Réservé à l'administrateur."
+msgstr ""
+
 msgid "Résultat"
 msgstr ""
 
@@ -2552,6 +3154,9 @@ msgstr ""
 msgid "Sans suggestion"
 msgstr ""
 
+msgid "Sans suggestion, choisis une catégorie."
+msgstr ""
+
 msgid "Santé"
 msgstr ""
 
@@ -2576,10 +3181,16 @@ msgstr ""
 msgid "Se déconnecter"
 msgstr ""
 
+msgid "Sections des paramètres"
+msgstr ""
+
 msgid "Semestre"
 msgstr ""
 
 msgid "Services en ligne"
+msgstr ""
+
+msgid "Session"
 msgstr ""
 
 msgid "Shopping"
@@ -2638,8 +3249,8 @@ msgid "Streaming et TV"
 msgstr ""
 
 msgid ""
-"Suggestions basées sur la similarité avec tes transactions déjà "
-"catégorisées, triées par confiance décroissante."
+"Suggestions tirées de tes opérations déjà rangées, de la plus sûre à la "
+"moins sûre."
 msgstr ""
 
 msgid "Suit ton appareil"
@@ -2649,6 +3260,9 @@ msgid "Suivant"
 msgstr ""
 
 msgid "Suivant →"
+msgstr ""
+
+msgid "Supprime toutes les opérations du foyer. Irréversible."
 msgstr ""
 
 msgid "Supprimer"
@@ -2662,10 +3276,6 @@ msgstr ""
 
 #, python-format
 msgid "Supprimer \"%(name)s\" ? Aucune transaction n'est rattachée à ce compte."
-msgstr ""
-
-#, python-format
-msgid "Supprimer %(icon)s %(name)s ?"
 msgstr ""
 
 msgid "Supprimer ce projet"
@@ -2700,30 +3310,36 @@ msgid "Supprimer l'utilisateur %(username)s ? Cette action est irréversible."
 msgstr ""
 
 #, python-format
+msgid "Supprimer « %(name)s » ?"
+msgstr ""
+
+#, python-format
 msgid "Sur %(income_reference)s prévus — %(income_actual)s encaissés à ce jour"
 msgstr ""
 
 msgid "Sur cet appareil seulement."
 msgstr ""
 
-msgid "Surgelés"
+msgid "Sur les 12 derniers mois,"
 msgstr ""
 
-#, python-format
-msgid "Surveille %(label)s dans les prochaines semaines."
+msgid "Sur les 90 derniers jours,"
+msgstr ""
+
+msgid "Surgelés"
 msgstr ""
 
 msgid "Système"
 msgstr ""
 
-msgid "Sécurité"
-msgstr ""
-
 msgid "Sélectionner catégorie"
 msgstr ""
 
+msgid "Sélectionner cette opération"
+msgstr ""
+
 #, python-format
-msgid "Séparateur détecté : « %(delimiter)s »"
+msgid "Séparateur détecté : « %(delimiter)s ». Contrôle sur la première ligne :"
 msgstr ""
 
 msgid "TWIGA"
@@ -2790,13 +3406,10 @@ msgstr ""
 msgid "Total"
 msgstr ""
 
-msgid "Total :"
-msgstr ""
-
 msgid "Total budgété"
 msgstr ""
 
-msgid "Total des lignes :"
+msgid "Total des lignes"
 msgstr ""
 
 msgid "Total dépenses"
@@ -2809,9 +3422,6 @@ msgid "Total patrimoine"
 msgstr ""
 
 msgid "Total recettes"
-msgstr ""
-
-msgid "Total réparti"
 msgstr ""
 
 msgid "Total économisé sur la période"
@@ -2830,6 +3440,12 @@ msgid "Tous les comptes"
 msgstr ""
 
 msgid "Tous les endroits où Twiga se règle et se travaille."
+msgstr ""
+
+msgid "Tous les projets tiennent leur échéance."
+msgstr ""
+
+msgid "Tous types"
 msgstr ""
 
 msgid "Tout : import, suppression, utilisateurs, réglages."
@@ -2851,18 +3467,14 @@ msgstr ""
 msgid "Tout mode de paiement"
 msgstr ""
 
-#, python-format
-msgid "Tout rejeter &lt; 70%%"
+msgid "Tout supprimer…"
 msgstr ""
 
 msgid "Tout sélectionner"
 msgstr ""
 
-msgid "Tout sélectionner (cette page)"
-msgstr ""
-
 #, python-format
-msgid "Tout valider &gt; 90%%"
+msgid "Tout valider ≥ 90 %% (%(n)s)"
 msgstr ""
 
 msgid "Toutes"
@@ -2879,6 +3491,9 @@ msgid "Toutes les opérations, catégories et règles, sans quitter ton réseau.
 msgstr ""
 
 msgid "Toutes les sous-catégories"
+msgstr ""
+
+msgid "Toutes les suggestions sont rangées."
 msgstr ""
 
 msgid "Traitement en masse"
@@ -2902,6 +3517,10 @@ msgstr ""
 
 #, python-format
 msgid "Transaction %(index)s : DTPOSTED ou TRNAMT manquant."
+msgstr ""
+
+#, python-format
+msgid "Transaction : %(transaction_abs_amount)s"
 msgstr ""
 
 msgid "Transaction introuvable"
@@ -2953,6 +3572,12 @@ msgstr ""
 msgid "Twiga"
 msgstr ""
 
+#, python-format
+msgid ""
+"Twiga a reconnu un CSV séparé par des %(delimiter)s. Contrôle sur la "
+"première ligne :"
+msgstr ""
+
 msgid "Twiga a tout avalé !"
 msgstr ""
 
@@ -2979,6 +3604,9 @@ msgstr ""
 msgid "Twiga tend le cou..."
 msgstr ""
 
+msgid "Twiga tend le cou… Lecture de la facture"
+msgstr ""
+
 msgid ""
 "Twiga tourne sur ton serveur, chez toi. Aucun service tiers, aucune "
 "télémétrie."
@@ -3000,6 +3628,9 @@ msgid "Twiga, repue, un relevé encore visible en bosse dans le cou"
 msgstr ""
 
 msgid "Type"
+msgstr ""
+
+msgid "Type d'opération"
 msgstr ""
 
 msgid "Type de période"
@@ -3025,9 +3656,6 @@ msgstr ""
 msgid "Un mot sur %(previous_month_label)s"
 msgstr ""
 
-msgid "Un nouveau mois commence — Fixe le cap ensemble !"
-msgstr ""
-
 msgid ""
 "Un pot commun alimenté par virement — tu coches ceux qui financent ce "
 "mois."
@@ -3038,6 +3666,9 @@ msgid "Un utilisateur \"%(username)s\" existe déjà."
 msgstr ""
 
 msgid "Une autre façon de parcourir Twiga."
+msgstr ""
+
+msgid "Une ou deux phrases, que tu retrouveras en ouvrant Mon mois."
 msgstr ""
 
 msgid "Une réserve, sans détail — un imprévu n'a pas de catégorie prévue"
@@ -3070,25 +3701,17 @@ msgstr ""
 msgid "Valider"
 msgstr ""
 
-msgid "Valider (swipe)"
-msgstr ""
-
 msgid "Valider catégorie"
-msgstr ""
-
-msgid "Valider la suggestion"
-msgstr ""
-
-#, python-format
-msgid ""
-"Valider toutes les suggestions à plus de 90%% de confiance sur cette page"
-" ?"
 msgstr ""
 
 msgid "Viandes et poissons"
 msgstr ""
 
 msgid "Virement"
+msgstr ""
+
+#, python-format
+msgid "Virement détecté ↔ %(account)s"
 msgstr ""
 
 #, python-format
@@ -3099,6 +3722,9 @@ msgid "Virement interne entre comptes"
 msgstr ""
 
 msgid "Virements"
+msgstr ""
+
+msgid "Virements exclus"
 msgstr ""
 
 msgid "Virements internes et chèques, rapprochés tout seuls"
@@ -3114,6 +3740,10 @@ msgid "Voir le diagnostic de solde"
 msgstr ""
 
 msgid "Voir le détail →"
+msgstr ""
+
+#, python-format
+msgid "Voir les %(count)s autre%(v)s enveloppe%(v)s"
 msgstr ""
 
 msgid "Voir les alertes budget masquées"
@@ -3137,6 +3767,9 @@ msgstr ""
 msgid "Vérifier"
 msgstr ""
 
+msgid "Vérifier ligne par ligne"
+msgstr ""
+
 msgid "Vétérinaire"
 msgstr ""
 
@@ -3152,25 +3785,66 @@ msgstr ""
 msgid "Y a-t-il une dépense dont tu n'es pas fier(e) ?"
 msgstr ""
 
-msgid "atteint"
+msgid "Zone sensible"
+msgstr ""
+
+msgid "affichées"
+msgstr ""
+
+msgid "atteint, marge"
+msgstr ""
+
+msgid "au plafond"
+msgstr ""
+
+msgid "aucun"
+msgstr ""
+
+msgid "aucun versement régulier"
 msgstr ""
 
 msgid "aucune sous-catégorie"
 msgstr ""
 
+msgid "aucune suggestion en attente"
+msgstr ""
+
 msgid "avant remises, bons d'achat et titres-restaurant"
+msgstr ""
+
+msgid "avec le tri :"
+msgstr ""
+
+msgid "barres verticales"
 msgstr ""
 
 msgid "bêta"
 msgstr ""
 
+msgid "celle proposée"
+msgstr ""
+
 msgid "dans la cible"
 msgstr ""
 
-msgid "dont le ticket a été importé — les autres n'apparaissent pas ici. Montants"
+msgid "dans le rythme"
 msgstr ""
 
-msgid "du plan"
+#, python-format
+msgid "dont %(count)s imprévu noté au passage"
+msgid_plural "dont %(count)s imprévus notés au passage"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "dont <span class=\"amount-blur\">%(amount)s</span> encore à trier"
+msgstr ""
+
+#, python-format
+msgid "dont <span class=\"amount-blur\">%(amount)s</span> à trier"
+msgstr ""
+
+msgid "dont le ticket a été importé — les autres n'apparaissent pas ici. Montants"
 msgstr ""
 
 msgid "du revenu"
@@ -3182,6 +3856,16 @@ msgstr ""
 msgid "dépassé"
 msgstr ""
 
+#, python-format
+msgid "dépense habituelle : %(amount)s"
+msgstr ""
+
+msgid "dépenses"
+msgstr ""
+
+msgid "détecté"
+msgstr ""
+
 msgid "en baisse"
 msgstr ""
 
@@ -3191,7 +3875,13 @@ msgstr ""
 msgid "en hausse"
 msgstr ""
 
+msgid "en retard"
+msgstr ""
+
 msgid "entrées et sorties"
+msgstr ""
+
+msgid "et"
 msgstr ""
 
 msgid "et au prélèvement"
@@ -3203,16 +3893,20 @@ msgstr ""
 msgid "excédent"
 msgstr ""
 
+msgid "existant"
+msgstr ""
+
+msgid "il manque"
+msgstr ""
+
 msgid "incertaine"
+msgstr ""
+
+msgid "instance locale"
 msgstr ""
 
 #, python-format
 msgid "le %(date)s"
-msgstr ""
-
-msgid ""
-"le détail existant. Pour un ticket papier (photo), pas d'extraction "
-"automatique possible : ajoute les lignes à la main ci-dessous."
 msgstr ""
 
 msgid "les plus utilisées d'abord"
@@ -3224,7 +3918,13 @@ msgstr ""
 msgid "léger écart"
 msgstr ""
 
-msgid "manque"
+msgid "objectif atteint"
+msgstr ""
+
+msgid "objectif atteint en"
+msgstr ""
+
+msgid "objectif tenu"
 msgstr ""
 
 #, python-format
@@ -3237,7 +3937,11 @@ msgstr ""
 msgid "override"
 msgstr ""
 
-msgid "par page"
+#, python-format
+msgid "paiement %(payment)s"
+msgstr ""
+
+msgid "points-virgules"
 msgstr ""
 
 #, python-format
@@ -3253,13 +3957,26 @@ msgstr ""
 msgid "probable"
 msgstr ""
 
-msgid "remplace"
+msgid "proposé"
+msgstr ""
+
+#, python-format
+msgid "prévu %(amount)s"
+msgstr ""
+
+msgid "recettes"
+msgstr ""
+
+msgid "recettes décalées"
+msgstr ""
+
+msgid "recettes − dépenses"
+msgstr ""
+
+msgid "sera créé"
 msgstr ""
 
 msgid "sorties, loisirs, plaisirs"
-msgstr ""
-
-msgid "suivants viendront alimenter un compte déjà existant."
 msgstr ""
 
 #, python-format
@@ -3270,13 +3987,31 @@ msgstr ""
 msgid "sur %(target)s"
 msgstr ""
 
+msgid "sur la période"
+msgstr ""
+
+msgid "sélectionnée"
+msgstr ""
+
+msgid "sélectionnées"
+msgstr ""
+
 msgid "sûre"
 msgstr ""
 
-msgid "transactions sélectionnées"
+msgid "tabulations"
+msgstr ""
+
+msgid "toutes"
 msgstr ""
 
 msgid "une réserve, sans détail"
+msgstr ""
+
+msgid "virgules"
+msgstr ""
+
+msgid "vous"
 msgstr ""
 
 #, python-format
@@ -3300,8 +4035,18 @@ msgstr ""
 
 #, python-format
 msgid ""
-"À ce jour, <strong class=\"font-bold\">%(count)s opération%(v)s</strong> "
-"attend%(v2)s encore dans La Savane."
+"À ce jour, <strong class=\"font-"
+"bold\">%(count)s&nbsp;opération%(v)s</strong> (%(amount)s) attend%(v2)s "
+"encore dans La Savane."
+msgstr ""
+
+msgid "À droite : valider"
+msgstr ""
+
+msgid "À gauche : passer"
+msgstr ""
+
+msgid "À importer"
 msgstr ""
 
 msgid "À propos de Twiga"
@@ -3317,6 +4062,9 @@ msgid "Écart"
 msgstr ""
 
 msgid "Écarter"
+msgstr ""
+
+msgid "Écarter la suggestion"
 msgstr ""
 
 msgid "Échap"
@@ -3347,9 +4095,6 @@ msgstr ""
 msgid "Épargne prévue"
 msgstr ""
 
-msgid "Épargne qui reste"
-msgstr ""
-
 msgid "Épargne visée"
 msgstr ""
 
@@ -3375,6 +4120,9 @@ msgstr ""
 msgid "Étapes du rituel"
 msgstr ""
 
+msgid "État"
+msgstr ""
+
 msgid "États-Unis"
 msgstr ""
 
@@ -3391,6 +4139,9 @@ msgstr ""
 msgid "Évolution vs période précédente"
 msgstr ""
 
+msgid "à"
+msgstr ""
+
 msgid "à surveiller"
 msgstr ""
 
@@ -3398,10 +4149,18 @@ msgstr ""
 msgid "écart de %(ecart)s"
 msgstr ""
 
+#, python-format
+msgid "échéance %(deadline)s"
+msgstr ""
+
 msgid "économisé"
 msgstr ""
 
 msgid "épargne au rendez-vous"
+msgstr ""
+
+#, python-format
+msgid "épargne prévue %(amount)s"
 msgstr ""
 
 msgid "épargnés à date"
@@ -3418,10 +4177,6 @@ msgid "— Moyen de paiement (si pas de chèque) —"
 msgstr ""
 
 msgid "— Rayon —"
-msgstr ""
-
-#, python-format
-msgid "— Transaction : %(transaction_abs_amount)s"
 msgstr ""
 
 msgid "— choisir —"
@@ -3441,5 +4196,9 @@ msgid "→ / Espace"
 msgstr ""
 
 msgid "− de critères"
+msgstr ""
+
+#, python-format
+msgid "≥ 90 %%"
 msgstr ""
 

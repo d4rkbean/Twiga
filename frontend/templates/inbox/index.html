@@ -7,35 +7,74 @@
 {% block title %}{{ _("La Savane — Twiga") }}{% endblock %}
 
 {% block content %}
-{# Carte au centre (24rem en mobile, 600px dès lg), « À suivre » en colonne à sa
-   gauche dès lg et repliée sous elle en mobile (l'ordre du DOM est celui du
-   mobile, `lg:order-first` place la colonne à gauche). Titre et compteur
-   passent au-dessus des deux. Pas de centrage vertical de la carte : il
-   ouvrait un grand vide entre le bandeau du haut et elle, et repoussait
-   « Valider » hors de l'écran. <body> réserve déjà l'en-tête et la barre du
-   bas (voir base.html). #}
-<main class="mx-auto w-full max-w-sm lg:max-w-[884px] flex flex-col gap-[var(--space-block)] px-4 pt-2 pb-6">
-  <div class="flex items-start justify-between gap-3">
-    <div class="flex flex-col gap-1 min-w-0">
-      <h1 class="text-page-title">{{ _("La Savane") }}</h1>
+{# From lg: three columns — « À suivre », the card with the other categories
+   under it, then the panel of the visit (greeting, mid-month, budget alerts,
+   counters, journal). On a phone one column, in the order of the DOM: the
+   chips that open the three notices, the card, « À suivre », the counters.
+   <body> already reserves the header and the bottom bar (see base.html). #}
+<main class="mx-auto flex w-full max-w-lg flex-col gap-[var(--space-block)] px-4 pb-6 pt-2 lg:max-w-none lg:px-8">
+  <header class="flex flex-wrap items-end gap-x-8 gap-y-3">
+    <div class="min-w-0 flex-[1_1_260px]">
+      <div class="flex items-start justify-between gap-3">
+        <h1 class="text-page-title">{{ _("La Savane") }}</h1>
+        <a
+          id="tour-bulk-link"
+          href="/backlog"
+          class="btn btn-ghost -mr-2 flex-shrink-0 px-3 lg:hidden"
+          aria-label="{{ _("Traitement en masse") }}"
+        >
+          {{ icon('folders') }}
+        </a>
+      </div>
       {% include "inbox/_counter.html" %}
     </div>
+    <div class="min-w-0 flex-[2_1_420px]">
+      {% include "inbox/_progress.html" %}
+    </div>
     <a
-      id="tour-bulk-link"
       href="/backlog"
-      class="btn btn-ghost flex-shrink-0 px-3 -mr-2"
+      class="btn btn-secondary hidden flex-none border-border-strong px-4 lg:inline-flex"
     >
-      {{ icon('folders') }}<span class="sr-only sm:not-sr-only">{{ _("Traitement en masse") }}</span>
+      {{ icon('folders') }} {{ _("Traitement en masse") }}
     </a>
-  </div>
-  <div class="flex flex-col gap-4 lg:grid lg:grid-cols-[260px_minmax(0,600px)] lg:gap-6 lg:items-start">
-    <div class="flex flex-col gap-4 min-w-0">
-      {% include "inbox/_budget_alerts.html" %}
-      {% include "inbox/_routine_banner.html" %}
-      {% include "inbox/_le_cap_midmonth_banner.html" %}
+  </header>
+
+  <div
+    x-data="{ panel: '' }"
+    class="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)_minmax(280px,320px)] lg:grid-rows-[auto_auto_1fr] lg:items-start lg:gap-x-5 lg:gap-y-4"
+  >
+    {# Phones: one chip per notice that exists today; a click shows it. #}
+    {% if show_routine_banner or show_le_cap_midmonth_banner or budget_alerts %}
+    <div class="flex gap-2 lg:hidden">
+      {% if show_routine_banner %}
+      <button type="button" @click="panel = panel === 'hello' ? '' : 'hello'" :aria-expanded="panel === 'hello'" class="btn btn-secondary flex-1 gap-2 border-border-strong px-2">{{ icon('inbox', size=18) }} {{ _("Bonjour") }}</button>
+      {% endif %}
+      {% if show_le_cap_midmonth_banner %}
+      <button type="button" @click="panel = panel === 'mid' ? '' : 'mid'" :aria-expanded="panel === 'mid'" class="btn btn-secondary flex-1 gap-2 border-border-strong px-2">{{ icon('calendar-event', size=18) }} {{ _("Mi-mois") }}</button>
+      {% endif %}
+      {% if pending_count > 0 and budget_alerts %}
+      <button type="button" @click="panel = panel === 'budget' ? '' : 'budget'" :aria-expanded="panel === 'budget'" class="btn btn-secondary flex-1 gap-2 border-border-strong px-2">{{ icon('alert-triangle', size=18) }} {% trans count=budget_alerts | length %}Budget {{ count }}{% endtrans %}</button>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="flex min-w-0 flex-col gap-4 lg:col-start-3 lg:row-start-1">
+      <div :class="panel === 'hello' ? '' : 'hidden lg:contents'">{% include "inbox/_routine_banner.html" %}</div>
+      <div :class="panel === 'mid' ? '' : 'hidden lg:contents'">{% include "inbox/_le_cap_midmonth_banner.html" %}</div>
+      <div :class="panel === 'budget' ? '' : 'hidden lg:contents'">{% include "inbox/_budget_alerts.html" %}</div>
+    </div>
+
+    <div class="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1">
       {% include "inbox/_card.html" %}
     </div>
-    {% include "inbox/_upcoming.html" %}
+
+    <div class="min-w-0 lg:col-start-1 lg:row-span-3 lg:row-start-1">
+      {% include "inbox/_upcoming.html" %}
+    </div>
+
+    <div class="min-w-0 lg:col-start-3 lg:row-start-2">
+      {% include "inbox/_session.html" %}
+    </div>
   </div>
 </main>
 {# Deux fenêtres flottantes (position: fixed), hors du flux de la colonne : leurs

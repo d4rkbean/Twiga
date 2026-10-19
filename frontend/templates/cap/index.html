@@ -6,14 +6,30 @@
    c'est lui qui porte l'ambre plein de l'écran, Importer passe en secondaire. #}
 {% set demote_import = true %}
 
+{% block extra_head %}
+<script>
+  {# Petits outils partagés par les trois étapes et leur panneau de droite :
+     mise en forme des montants, lecture d'un montant tapé, et le verdict d'un
+     pilier (toujours une couleur ET un mot). #}
+  window.twigaCap = {
+    locale: function () { return document.documentElement.dataset.numberLocale || "fr-FR"; },
+    fmt: function (v) { return (Number(v) || 0).toLocaleString(this.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace("-", "−") + " €"; },
+    fmt2: function (v) { return (Number(v) || 0).toLocaleString(this.locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+    num: function (text) { var n = parseFloat(String(text).replace(/\s/g, "").replace(",", ".")); return isNaN(n) ? 0 : n; },
+    word: function (pct) { return pct > 100 ? {{ _("dépassé") | tojson }} : pct >= 75 ? {{ _("à surveiller") | tojson }} : {{ _("dans le rythme") | tojson }}; },
+    tone: function (pct) { return pct > 100 ? "text-danger" : pct >= 75 ? "text-warning" : "text-success"; },
+    ratio: function (row) { return row.planned > 0 ? Math.round(((Number(row.spent) || 0) + (Number(row.pending) || 0)) / row.planned * 100) : null; },
+    spentWidth: function (row) { return row.planned > 0 ? Math.min(Math.round((Number(row.spent) || 0) / row.planned * 100), 100) : 0; },
+    pendingWidth: function (row) { return Math.max(0, Math.min(this.ratio(row) || 0, 100) - this.spentWidth(row)); },
+  };
+</script>
+{% endblock %}
+
 {% block content %}
-<main class="flex flex-col gap-5 px-4 pt-2 pb-8 max-w-lg mx-auto lg:max-w-5xl lg:px-8 lg:py-6">
-  <header class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-    <div class="flex flex-col gap-1">
-      <h1 class="text-page-title">{{ _("Le Cap") }}</h1>
-      <p class="text-sm text-secondary">{{ _("Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes.") }}</p>
-    </div>
-    <a href="/dashboard" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ icon('arrow-narrow-left') }} {{ _("Panorama") }}</a>
+<main class="flex flex-col gap-5 px-4 pt-2 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-page-title">{{ cap_title }}</h1>
+    <p class="text-sm text-secondary">{% trans previous=previous_month_name_lower %}Le rituel mensuel, méthode kakeibo : trois étapes, cinq minutes. On regarde {{ previous }}, puis on fixe le cap.{% endtrans %}</p>
   </header>
 
   <div id="cap-wizard" class="flex flex-col gap-5">

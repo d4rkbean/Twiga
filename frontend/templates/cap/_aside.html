@@ -1,0 +1,82 @@
+{#
+  Panneau de droite des trois étapes : le plan du mois « en direct », puis le
+  mois écoulé pilier par pilier. Il vit dans un état Alpine qui fournit :
+    income, catsTotal, imprevu, prelevement, goal, savings, couvert, reviewRows
+  À l'étape 2 cet état est celui du formulaire (tout se recalcule pendant la
+  saisie, sans requête) ; aux étapes 1 et 3 c'est un état figé par le serveur
+  (cap/_panel_state.html).
+#}
+<aside class="flex flex-col gap-5 lg:sticky lg:top-20" aria-label="{{ _("Le plan en direct") }}">
+  <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-3" aria-labelledby="cap-live-title">
+    <h2 id="cap-live-title" class="text-section-title">{% trans month=current_month_name %}{{ month }}, en direct{% endtrans %}</h2>
+    <dl class="flex flex-col text-sm">
+      <div class="flex items-baseline justify-between gap-3 min-h-[34px]">
+        <dt class="text-secondary">{{ _("Ressources prévues") }}</dt>
+        <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="twigaCap.fmt(Number(income) || 0)"></dd>
+      </div>
+      <div class="flex items-baseline justify-between gap-3 min-h-[34px]">
+        <dt class="text-secondary">{{ _("Catégories") }}</dt>
+        <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="twigaCap.fmt(-catsTotal)"></dd>
+      </div>
+      <div class="flex items-baseline justify-between gap-3 min-h-[34px]">
+        <dt class="text-secondary">{{ _("Imprévus") }}</dt>
+        <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="twigaCap.fmt(-(Number(imprevu) || 0))"></dd>
+      </div>
+      <div class="flex items-baseline justify-between gap-3 min-h-[34px]">
+        <dt class="text-secondary">{{ _("Prélèvement sur épargne") }}</dt>
+        <dd class="amount-blur tabular-nums font-semibold text-primary" x-text="twigaCap.fmt(Number(prelevement) || 0)"></dd>
+      </div>
+    </dl>
+    <div class="border-t border-border pt-3 flex flex-col gap-2">
+      <div class="flex items-baseline justify-between gap-3">
+        <span class="text-sm font-semibold text-primary">{{ _("Épargne prévue") }}</span>
+        <span
+          class="amount-blur text-amount-large tabular-nums"
+          :class="savings >= 0 ? 'text-success' : 'text-danger'"
+          x-text="(savings > 0 ? '+' : '') + twigaCap.fmt(savings)"
+        ></span>
+      </div>
+      <p x-show="Number(goal) > 0" style="display: none;" class="amount-blur text-xs text-secondary" aria-live="polite">
+        <span x-show="savings >= Number(goal)" x-text="'{{ _("Objectif d'épargne") | jsq }} ' + twigaCap.fmt(Number(goal)) + ' : {{ _("atteint, marge") | jsq }} ' + twigaCap.fmt(savings - Number(goal)) + '.'"></span>
+        <span x-show="savings < Number(goal)" style="display: none;" x-text="'{{ _("Objectif d'épargne") | jsq }} ' + twigaCap.fmt(Number(goal)) + ' : {{ _("il manque") | jsq }} ' + twigaCap.fmt(Number(goal) - savings) + '.'"></span>
+      </p>
+      <p x-show="savings < 0 && couvert >= 0" style="display: none;" class="alert alert-neutral">
+        {{ icon('info-circle', size=18) }} <span>{{ _("Déficit couvert par le prélèvement sur épargne.") }}</span>
+      </p>
+      <p x-show="couvert < 0" style="display: none;" class="alert alert-danger font-medium" role="alert">
+        {{ icon('alert-triangle', size=18) }} <span>{{ _("Tu répartis plus que tes ressources.") }}</span>
+      </p>
+    </div>
+  </section>
+
+  {# Le mois écoulé face au plan : le dépensé, ce qui attend encore dans La
+     Savane (en gris), et ce que ça donne « avec le tri ». Le mois est clos :
+     pas de repère de rythme ici. #}
+  <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-4" aria-labelledby="cap-previous-title">
+    <h2 id="cap-previous-title" class="text-section-title">{% trans month=previous_month_name %}{{ month }}, pilier par pilier{% endtrans %}</h2>
+    <template x-for="row in reviewRows" :key="row.code">
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-baseline justify-between gap-3 text-sm">
+          <span class="font-semibold text-primary" x-text="row.label"></span>
+          <span class="amount-blur tabular-nums text-primary"><span x-text="twigaCap.fmt(row.spent)"></span> <span class="text-secondary" x-text="'/ ' + twigaCap.fmt(row.planned)"></span></span>
+        </div>
+        <div class="progress-base flex" role="presentation">
+          <div class="h-full rounded-full" :style="'width: ' + twigaCap.spentWidth(row) + '%; background: ' + row.color"></div>
+          <div class="h-full bg-border-strong" :style="'width: ' + twigaCap.pendingWidth(row) + '%'"></div>
+        </div>
+        <p class="text-xs">
+          <template x-if="twigaCap.ratio(row) !== null">
+            <span class="text-secondary">{{ _("avec le tri :") }} <span class="font-semibold tabular-nums" :class="twigaCap.tone(twigaCap.ratio(row))" x-text="twigaCap.ratio(row) + ' % · ' + twigaCap.word(twigaCap.ratio(row))"></span></span>
+          </template>
+          <template x-if="twigaCap.ratio(row) === null">
+            <span class="text-secondary">{{ _("Rien de prévu pour l'instant.") }}</span>
+          </template>
+        </p>
+      </div>
+    </template>
+    <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary">
+      <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="w-3.5 h-2 rounded-full bg-primary"></span>{{ _("Dépensé") }}</span>
+      <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="w-3.5 h-2 rounded-full bg-border-strong"></span>{{ _("Encore dans La Savane") }}</span>
+    </p>
+  </section>
+</aside>

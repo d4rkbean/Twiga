@@ -1,0 +1,18 @@
+{% from "_macros/brand.html" import mascot %}
+{# The rail of the visit: a dark bar that grows with what was filed, one light
+   dot per filed operation, and Twiga at the end of it. Refreshed out of band
+   after each card. #}
+<div
+  id="inbox-progress"
+  {% if oob %}hx-swap-oob="true"{% endif %}
+  role="img"
+  aria-label="{% trans filed=session_filed, total=session_total %}{{ filed }} sur {{ total }} rangées{% endtrans %}"
+  class="relative h-[62px]"
+>
+  <div class="absolute inset-x-0 top-[30px] h-[18px] rounded-full bg-sunken"></div>
+  <div class="absolute left-0 top-[30px] h-[18px] rounded-full bg-secondary transition-[width] duration-[600ms]" style="width: {{ session_percent }}%;"></div>
+  {% for n in range(session_filed) %}
+  <span class="absolute top-[34px] -ml-[5px] h-2.5 w-2.5 rounded-full bg-page" style="left: {{ ((n + 0.5) * 100 / session_total) | round(2) }}%;"></span>
+  {% endfor %}
+  <div class="absolute top-0 -ml-[34px] w-[60px] transition-[left] duration-[600ms]" style="left: max(34px, {{ session_percent }}%);" aria-hidden="true">{{ mascot(size=56) }}</div>
+</div>

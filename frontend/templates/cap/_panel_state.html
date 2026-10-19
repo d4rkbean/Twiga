@@ -1,0 +1,21 @@
+{#
+  État Alpine figé du panneau de droite, pour les étapes où le plan n'est pas
+  en cours de saisie (bilan et confirmation). Même noms que l'état du
+  formulaire de l'étape 2, voir cap/_aside.html. Attend `plan` et `review`.
+#}
+{% set review_colors = {"essentiel": "var(--color-chart-1)", "choix": "var(--color-chart-3)", "imprevu": "var(--color-chart-6)"} %}
+{% macro panel_state() -%}
+{
+  income: {{ '%.2f' % plan.income }},
+  catsTotal: {{ '%.2f' % plan.categories }},
+  imprevu: {{ '%.2f' % plan.imprevu }},
+  prelevement: {{ '%.2f' % plan.withdrawal }},
+  goal: {{ '%.2f' % (plan.goal or 0) }},
+  get savings() { return this.income - this.catsTotal - this.imprevu },
+  get couvert() { return this.savings + this.prelevement },
+  reviewRows: [
+    {% for row in review %}{ code: {{ row.code | tojson | forceescape }}, label: {{ row.label | tojson | forceescape }}, spent: {{ '%.2f' % row.spent }}, pending: {{ '%.2f' % row.pending }}, planned: {{ '%.2f' % row.planned }}, color: {{ review_colors[row.code] | tojson | forceescape }} }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ],
+}
+{%- endmacro %}

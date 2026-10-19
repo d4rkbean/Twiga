@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from "_macros/signed_amount.html" import signed %}
+{% from "_macros/dropdown_field.html" import dropdown_field %}
 
+{% set demote_import = show_le_cap_banner %}
 {% block title %}{{ _("Panorama — Twiga") }}{% endblock %}
 
 {% block extra_head %}
@@ -62,14 +64,10 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <div class="relative flex-1 basis-[200px]">
-          <select name="account_id" aria-label="{{ _("Compte") }}" class="input-base appearance-none pr-10">
-            <option value="" {% if account_id is none %}selected{% endif %}>{{ _("Tous les comptes") }}</option>
-            {% for account in accounts %}
-            <option value="{{ account.id }}" {% if account.id == account_id %}selected{% endif %}>{{ account.name }}</option>
-            {% endfor %}
-          </select>
-          <span aria-hidden="true" class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">{{ icon('chevron-down', size=18) }}</span>
+        <div class="flex-1 basis-[200px]">
+          {% set account_options = [("", _("Tous les comptes"))] %}
+          {% for account in accounts %}{% set _ = account_options.append((account.id, account.name)) %}{% endfor %}
+          {{ dropdown_field("account_id", account_options, account_id if account_id is not none else "", aria_label=_("Compte")) }}
         </div>
 
         {# Désactivé hors d'un mois civil : « les recettes de M-1 financent les
@@ -94,6 +92,7 @@
             @change="localStorage.setItem('twiga_panorama_shift_income', $event.target.checked ? '1' : '0')"
             class="w-5 h-5 flex-shrink-0"
           />
+          <span class="text-secondary flex-shrink-0">{{ icon('sun', size=18) }}</span>
           <span class="text-sm text-primary whitespace-nowrap">{{ _("Décaler recettes") }}</span>
         </label>
       </div>
@@ -166,7 +165,7 @@
         </div>
         <p class="amount-blur flex flex-wrap justify-between gap-x-3 text-xs text-secondary tabular-nums">
           <span>{% trans current=item.project.current_amount | eur, target=item.project.target_amount | eur %}{{ current }} sur {{ target }}{% endtrans %}</span>
-          <span>{% trans monthly_effort=item.monthly_effort | eur %}{{ monthly_effort }} / mois{% endtrans %}</span>
+          <span>{% if item.deadline_label %}{% trans deadline=item.deadline_label %}échéance {{ deadline }}{% endtrans %} · {% endif %}{% trans monthly_effort=item.monthly_effort | eur %}{{ monthly_effort }} / mois{% endtrans %}</span>
         </p>
       </div>
       {% else %}
