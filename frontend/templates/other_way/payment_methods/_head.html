@@ -1,0 +1,20 @@
+{#- The sentence of Modes de paiement. "Détecter les modes de paiement manquants" is the
+    main action: it fills the operations that have no mode from their label.
+    The sentence refreshes itself once the detection has run (`payments-changed`). -#}
+{% from "other_way/_ui.html" import answer_head %}
+{% set write = can_edit("/payment-methods/create") %}
+<div id="payments-head" hx-get="/payment-methods/head" hx-trigger="payments-changed from:window" hx-swap="outerHTML">
+  {% call answer_head(answer.phrase, answer.detail) %}
+    {% if write %}
+    <button type="button" hx-post="/settings/detect-payment-methods" hx-target="#detect-payment-result" hx-swap="innerHTML"
+            hx-confirm="{{ _("Détecter automatiquement le mode de paiement des opérations qui n'en ont pas encore, à partir de leur libellé ?") }}"
+            @htmx:after-request="if ($event.detail.successful) { window.dispatchEvent(new CustomEvent('payments-changed')); }"
+            x-show="!adding" class="btn btn-primary">
+      {{ icon('search', size=18) }} {{ _("Détecter les modes de paiement manquants") }}
+    </button>
+    <button type="button" @click="adding = true; $nextTick(() => document.getElementById('new-method-name').focus())" class="btn btn-secondary border-border-strong">
+      {{ icon('plus', size=18) }} {{ _("Ajouter un mode") }}
+    </button>
+    {% endif %}
+  {% endcall %}
+</div>

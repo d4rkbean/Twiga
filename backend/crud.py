@@ -208,6 +208,13 @@ def bulk_update_transactions(
     return categorized_ids
 
 
+def count_transactions_without_payment_method(db: Session) -> int:
+    """Operations that have no payment mode yet (what "Détecter" would try to fill)."""
+    return db.execute(
+        select(func.count()).select_from(Transaction).where(Transaction.payment_method.is_(None))
+    ).scalar_one()
+
+
 def detect_missing_payment_methods(db: Session) -> int:
     # raw_label (jamais modifié), pas label (éditable par l'utilisateur) :
     # même principe que get_existing_transaction_keys, pour une détection
