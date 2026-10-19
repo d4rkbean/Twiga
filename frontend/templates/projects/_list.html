@@ -132,17 +132,29 @@
       <p x-show="err" x-text="err" role="alert" class="input-message font-semibold" style="display: none"></p>
       {{ dialog_actions(_("Enregistrer")) }}
     </form>
-    <form
-      hx-post="/projects/{{ item.project.id }}/delete"
-      hx-target="#projects-list"
-      hx-swap="innerHTML"
-      hx-confirm="{{ _("Supprimer ce projet ?") }}"
-      class="px-6 pb-6"
-    >
-      <button type="submit" class="btn btn-ghost text-danger w-full">
+    <div class="px-6 pb-6" x-data="{ asking: false }">
+      <button type="button" x-show="!asking" @click="asking = true" class="btn btn-ghost text-danger w-full">
         {{ icon('trash', size=18) }} {{ _("Supprimer ce projet") }}
       </button>
-    </form>
+      <form
+        x-show="asking"
+        style="display: none"
+        role="alertdialog"
+        hx-post="/projects/{{ item.project.id }}/delete"
+        hx-target="#projects-list"
+        hx-swap="innerHTML"
+        class="flex flex-col gap-3"
+      >
+        <div class="flex flex-col gap-1">
+          <p class="font-semibold text-primary">{{ _("Supprimer ce projet ?") }}</p>
+          <p class="text-sm text-secondary">{% trans name=item.project.name %}{{ name }} et son historique de mouvements seront retirés. Cette action est définitive.{% endtrans %}</p>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" @click="asking = false" class="btn btn-secondary border-border-strong flex-1">{{ _("Annuler") }}</button>
+          <button type="submit" class="btn btn-danger flex-1">{{ icon('trash', size=18) }} {{ _("Supprimer") }}</button>
+        </div>
+      </form>
+    </div>
   </dialog>
   {% endfor %}
 
