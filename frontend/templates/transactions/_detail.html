@@ -100,7 +100,7 @@
   </div>
 
   {% if not transaction.validated %}
-  <a href="/transactions/inbox" class="btn btn-secondary w-full border-border-strong">{{ icon('inbox') }} {{ _("Ranger dans La Savane") }}</a>
+  <a href="/transactions/inbox" class="btn btn-primary w-full">{{ icon('inbox') }} {{ _("Ranger dans La Savane") }}</a>
   {% endif %}
 
   <div class="flex flex-col gap-2 border-t border-border pt-3.5">
@@ -128,7 +128,7 @@
       hx-swap="innerHTML"
       hx-confirm="{{ _("Supprimer définitivement cette opération ?") }}"
       hx-on:htmx:after-request="if (event.detail.successful) window.closeTransactionDetail()"
-      class="btn btn-ghost w-full text-danger"
+      class="btn btn-danger w-full"
     >{{ icon('trash') }} {{ _("Supprimer cette transaction") }}</button>
   </div>
 </div>

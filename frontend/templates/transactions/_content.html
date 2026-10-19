@@ -286,7 +286,7 @@
           <span class="inline-block h-2 w-2 flex-shrink-0 rounded-full" style="background-color: {{ tx.account | account_color }};" aria-hidden="true"></span>
           <span class="truncate">{{ tx.account.name }}</span>
           {% if category %}
-          <span class="truncate">{{ (category.parent.name ~ " › " ~ category.name) if category.parent else category.name }}</span>
+          <span class="hidden truncate lg:inline">{{ (category.parent.name ~ " › " ~ category.name) if category.parent else category.name }}</span>
           {% else %}
           <span class="badge badge-neutral flex-shrink-0 font-semibold">{{ _("À trier") }}</span>
           {% endif %}
@@ -294,6 +294,9 @@
           {% if tx.is_transfer %}<span class="inline-flex flex-shrink-0 items-center gap-0.5">{{ icon('repeat', size=12) }}{{ _("Virement") }}</span>{% endif %}
           {% if tx.is_unexpected %}<span class="inline-flex flex-shrink-0 items-center gap-0.5">{{ icon('urgent', size=12) }}{{ _("Imprévu") }}</span>{% endif %}
         </span>
+        {% if category %}
+        <span class="truncate text-xs text-secondary lg:hidden">{{ (category.parent.name ~ " › " ~ category.name) if category.parent else category.name }}</span>
+        {% endif %}
         {% if tx.note %}
         <span class="hidden truncate text-xs text-secondary lg:block">{{ tx.note }}</span>
         {% endif %}
