@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% from "_macros/signed_amount.html" import signed %}
+{% from "other_way/_plan_kit.html" import voice, neighbours, verdict_word, gauge %}
+
+{#- « Mon mois » de L'autre voie : la phrase d'abord (quel pilier demande un
+    regard), puis les piliers du plus tendu au plus tranquille, le plus tendu
+    ouvert. Les montants se coupent en deux (rangé / encore à ranger dans La
+    Savane) et la part d'un pilier compte les deux : « rangement compris ».
+    L'unique aplat ambre est « Préparer Le Cap ». -#}
+{% set shell_subtitle = month_view.period.label ~ " · " ~ _("jour %(day)s sur %(days)s", day=month_view.day, days=month_view.days) %}
+{% block title %}{{ _("Mon mois — Twiga") }}{% endblock %}
+
+{% block content %}
+{{ neighbours(_("Panorama, écrans voisins"), [
+  {"href": "/dashboard", "label": _("Panorama"), "current": false},
+  {"href": "/cap/mid", "label": _("Mon mois"), "current": true},
+]) }}
+{% set view = month_view %}
+<main class="flex flex-col gap-[var(--space-block)] px-4 pt-5 pb-6 lg:px-10 lg:pt-8 lg:pb-10">
+
+  <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+    {% call voice(answer_headline, answer_sub) %}
+      {% if view.entry and view.entry.intention %}
+      <p class="text-sm text-primary lg:text-base">{{ _("Notre intention pour %(month)s :", month=month_word) }} <strong class="font-semibold">« {{ view.entry.intention }} »</strong></p>
+      {% endif %}
+    {% endcall %}
+    <a href="/cap" class="btn btn-primary w-full lg:w-auto lg:flex-none">{{ icon('compass', size=18) }} {{ _("Préparer %(cap)s", cap=next_cap_title) if view.entry else _("Fixer le cap") }}</a>
+  </header>
+
+  {% if not view.entry and not view.planned_total %}
+  <section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col items-center gap-3 text-center">
+    <span class="text-secondary">{{ icon('compass', size=32) }}</span>
+    <p class="text-section-title">{{ _("Aucun cap fixé pour %(month)s.", month=view.period.label) }}</p>
+    <a href="/budgets" class="btn btn-secondary">{{ _("Ajuster le plan du mois") }} {{ icon('arrow-right', size=16) }}</a>
+  </section>
+  {% else %}
+
+  {# Mobile : l'épargne juste sous la phrase, les piliers, puis le reste ; ordinateur :
+     les piliers à gauche, l'épargne et le reste empilés à droite. #}
+  <div class="grid gap-[var(--space-block)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start">
+
+    <div class="lg:col-start-2 lg:row-start-1">
+      <section class="bg-container rounded-xl border border-border shadow-sm overflow-hidden" aria-labelledby="savings-title">
+        <div class="p-[var(--space-card)] flex flex-col gap-1">
+          <h2 id="savings-title" class="text-xs font-medium text-secondary">{{ _("Épargne en cours") }}</h2>
+          <p class="amount-blur font-display text-[2rem] font-extrabold tabular-nums leading-tight {{ 'text-success' if view.savings_so_far >= 0 else 'text-danger' }}">{{ signed(view.savings_so_far, plus=true) }}</p>
+          <p class="text-xs font-medium {{ 'text-success' if view.savings_so_far >= 0 else 'text-danger' }}">{{ _("épargne au rendez-vous") if view.savings_so_far >= 0 else _("en dessous de zéro") }}</p>
+          {% if view.income_planned is not none %}
+          <p class="amount-blur text-xs text-secondary">{{ _("Sur %(planned)s prévus — %(real)s encaissés à ce jour", planned=view.income_planned | eur, real=view.income_real | eur) }}</p>
+          {% endif %}
+        </div>
+        <dl class="grid grid-cols-2 gap-px bg-border border-t border-border">
+          {% if view.savings_planned is not none %}
+          <div class="bg-container p-4 flex flex-col gap-0.5">
+            <dt class="text-xs text-secondary">{{ _("Épargne prévue") }}</dt>
+            <dd class="amount-blur text-base font-bold tabular-nums text-primary">{{ signed(view.savings_planned, plus=true) }}</dd>
+            <dd class="text-xs text-secondary">{{ _("après les trois piliers") }}</dd>
+          </div>
+          {% endif %}
+          <div class="bg-container p-4 flex flex-col gap-0.5">
+            <dt class="text-xs text-secondary">{{ _("Il reste") }}</dt>
+            <dd class="amount-blur text-base font-bold tabular-nums {{ 'text-success' if view.left >= 0 else 'text-danger' }}">{{ view.left | eur }}</dd>
+            <dd class="text-xs text-secondary">{{ ngettext("dans les budgets, %(n)s jour", "dans les budgets, %(n)s jours", view.days_left, n=view.days_left) }}</dd>
+          </div>
+          <div class="bg-container p-4 flex flex-col gap-0.5">
+            <dt class="text-xs text-secondary">{{ _("Déjà rangé") }}</dt>
+            <dd class="amount-blur text-base font-bold tabular-nums text-primary">{{ signed(-view.spent_total) }}</dd>
+          </div>
+          <div class="bg-container p-4 flex flex-col gap-0.5 {{ '' if view.savings_planned is not none else 'col-span-2' }}">
+            <dt class="text-xs text-secondary">{{ _("Encore à ranger") }}</dt>
+            <dd class="amount-blur text-base font-bold tabular-nums text-primary">{{ signed(-view.pending_total) }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <section aria-labelledby="pillars-title" class="flex flex-col gap-3 min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+      <h2 id="pillars-title" class="text-section-title lg:text-[1.0625rem]">{{ _("Les piliers, du plus tendu au plus tranquille") }}</h2>
+
+      {% for pillar in view.pillars %}
+      {% set v = pillar.verdict %}
+      {% set name = pillar_names[pillar.code] %}
+      {% set color = {"essentiel": "var(--color-chart-1)", "choix": "var(--color-chart-3)", "imprevu": "var(--color-chart-6)"}[pillar.code] %}
+      {% set expandable = pillar.lines or pillar.loose or pillar.events %}
+      <article class="bg-container rounded-xl border border-border shadow-sm" x-data="{ open: {{ 'true' if loop.first else 'false' }} }" aria-labelledby="pillar-{{ pillar.code }}">
+        <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" class="w-full min-h-[62px] px-[var(--space-card)] py-3 flex items-center gap-3 text-left">
+          <span aria-hidden="true" class="w-3 h-3 rounded-full flex-shrink-0" style="background: {{ color }}"></span>
+          <span class="flex-1 min-w-0 flex flex-col lg:flex-row lg:items-center lg:gap-6">
+            <span class="flex flex-col min-w-0 lg:flex-1">
+              <span id="pillar-{{ pillar.code }}" class="font-display text-lg font-extrabold tracking-tight text-primary">{{ name }}</span>
+              <span class="amount-blur text-xs text-secondary tabular-nums">{{ pillar.total | eur }} / {{ pillar.planned | eur }} — {{ pillar.percent | round | int }}&nbsp;%</span>
+              <span class="text-xs lg:hidden">{{ verdict_word(v) }}</span>
+            </span>
+            <span class="flex items-center gap-3 lg:w-[45%]">
+              <span class="w-14 lg:w-auto lg:flex-1">{{ gauge(pillar.spent_width, pillar.pending_width, v.fill, name ~ " : " ~ (pillar.percent | round | int) ~ " %", height="h-2") }}</span>
+              <span class="hidden lg:block text-sm lg:w-32 lg:text-right">{{ verdict_word(v) }}</span>
+            </span>
+          </span>
+          <span class="text-secondary transition-transform flex-shrink-0" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+        </button>
+
+        <div x-show="open" style="display: none;" class="px-[var(--space-card)] pb-[var(--space-card)] flex flex-col gap-3">
+          <p class="amount-blur text-lg font-extrabold tabular-nums text-primary lg:hidden">{{ pillar.total | eur }} / {{ pillar.planned | eur }} — {{ pillar.percent | round | int }}&nbsp;%</p>
+          {{ gauge(pillar.spent_width, pillar.pending_width, v.fill, name ~ " : " ~ (pillar.percent | round | int) ~ " %", pace=view.rhythm, height="h-3") }}
+          <p class="amount-blur text-xs text-secondary tabular-nums">{{ _("%(spent)s rangés", spent=pillar.spent | eur) }} · {{ _("%(pending)s encore à ranger", pending=pillar.pending | eur) }} · {{ _("trait : rythme du mois, %(rhythm)s %%", rhythm=view.rhythm) }}</p>
+
+          {% for line in pillar.lines %}
+          {% set lv = line.verdict %}
+          <div class="border-t border-border" x-data="{ more: {{ 'true' if loop.first and lv.key != 'ok' else 'false' }} }">
+            <button type="button" @click="more = !more" :aria-expanded="more ? 'true' : 'false'" class="w-full min-h-[56px] py-2 flex items-center gap-3 text-left">
+              <span class="flex-1 min-w-0 flex flex-col">
+                <span class="text-sm font-semibold text-primary truncate">{{ line.category.name | category_display }}</span>
+                <span class="amount-blur text-xs text-secondary tabular-nums">{{ line.total | eur }} / {{ line.budget | eur }} — {{ line.percent | round | int }}&nbsp;%</span>
+              </span>
+              <span class="hidden lg:block w-32">{{ gauge(line.spent_width, line.pending_width, lv.fill, line.category.name ~ " : " ~ (line.percent | round | int) ~ " %", height="h-2") }}</span>
+              <span class="text-xs lg:text-sm lg:w-32 text-right">{{ verdict_word(lv) }}</span>
+              <span class="text-secondary transition-transform flex-shrink-0" :class="more ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span>
+            </button>
+            <div x-show="more" style="display: none;" class="pb-3 grid gap-3 lg:grid-cols-2 lg:items-start">
+              <div class="flex flex-col gap-1.5">
+                {{ gauge(line.spent_width, line.pending_width, lv.fill, line.category.name ~ " : " ~ (line.percent | round | int) ~ " %", pace=view.rhythm, height="h-2.5") }}
+                <p class="amount-blur text-xs text-secondary tabular-nums">{{ _("%(spent)s rangé", spent=line.spent | eur) }} · {{ _("%(pending)s encore à ranger", pending=line.pending | eur) }}</p>
+              </div>
+              <div class="flex flex-col gap-2 text-sm">
+                <p class="text-primary">{{ verdict_word(lv) }}.
+                  {% if line.rest >= 0 %}{{ _("Il restera %(rest)s après le tri, à %(n)s jours de la fin du mois.", rest=line.rest | eur, n=view.days_left) if view.days_left != 1 else _("Il restera %(rest)s après le tri, à un jour de la fin du mois.", rest=line.rest | eur) }}
+                  {% else %}{{ _("Il manquera %(missing)s après le tri.", missing=(-line.rest) | eur) }}{% endif %}
+                </p>
+                {% if line.pending_ops %}
+                <p class="text-secondary">{{ _("Encore dans La Savane : %(names)s.", names=(line.pending_ops | map(attribute="label") | list)[:3] | join(", ")) }}</p>
+                {% endif %}
+                <p class="flex flex-wrap gap-x-5">
+                  <a href="/transactions/list?f_category={{ line.category.id }}&f_date_from={{ view.period.start.isoformat() }}&f_date_to={{ view.period.last_day.isoformat() }}&f_type=expense" class="min-h-[50px] inline-flex items-center text-sm font-medium text-accent-ink underline">{{ _("Voir ses opérations") }}</a>
+                  <a href="/budgets" class="min-h-[50px] inline-flex items-center text-sm font-medium text-accent-ink underline">{{ _("Ajuster ce budget") }}</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+
+          {% if pillar.loose %}
+          <div class="border-t border-border pt-2 flex flex-col">
+            <div class="flex items-center justify-between gap-3 min-h-[50px]">
+              <span class="flex flex-col min-w-0">
+                <span class="text-sm italic text-secondary">{{ _("Hors budget") }}</span>
+                <span class="text-xs text-secondary">{{ ngettext("%(n)s opération sans catégorie, à ranger dans La Savane", "%(n)s opérations sans catégorie, à ranger dans La Savane", pillar.loose | length, n=pillar.loose | length) }}</span>
+              </span>
+              <span class="flex items-center gap-4 flex-shrink-0">
+                <a href="/transactions/inbox" class="min-h-[50px] inline-flex items-center text-sm font-medium text-accent-ink underline">{{ _("Les ranger") }}</a>
+                <span class="amount-blur text-sm font-bold tabular-nums text-primary">{{ signed(-pillar.loose_total) }}</span>
+              </span>
+            </div>
+            {% for op in pillar.loose %}
+            <div class="flex items-center justify-between gap-3 min-h-[44px] pl-4 text-sm">
+              <span class="min-w-0 truncate text-primary">{{ op.label }} <span class="text-xs text-secondary">· {{ op.date | short_date }}, {{ _("sans catégorie") }}</span></span>
+              <span class="amount-blur tabular-nums text-secondary flex-shrink-0">{{ signed(op.amount) }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if pillar.events %}
+          <div class="border-t border-border pt-2 flex flex-col">
+            {% for op in pillar.events %}
+            <div class="flex items-center justify-between gap-3 min-h-[44px] text-sm">
+              <span class="min-w-0 truncate text-primary">{{ op.label }} <span class="text-xs text-secondary">· {{ op.date | short_date }}</span></span>
+              <span class="amount-blur tabular-nums text-primary flex-shrink-0">{{ signed(op.amount) }}</span>
+            </div>
+            {% endfor %}
+            <p class="text-xs text-secondary">{{ _("Une réserve, sans détail — un imprévu n'a pas de catégorie prévue.") }}</p>
+          </div>
+          {% endif %}
+
+          {% if pillar.code == "imprevu" %}
+          <a href="/cap" class="min-h-[50px] inline-flex items-center text-sm font-medium text-accent-ink underline self-start">{{ _("La réserve se fixe dans Le Cap") }}</a>
+          {% elif pillar.lines %}
+          <a href="/budgets" class="min-h-[50px] inline-flex items-center text-sm font-medium text-accent-ink underline self-start">{{ _("Ajuster ces budgets") }}</a>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+
+      <div class="flex flex-col gap-2 text-xs text-secondary">
+        <p>{{ _("Les pourcentages comptent ce qui reste à ranger dans La Savane. Au-delà de 75 %%, une enveloppe est « À surveiller » ; au-delà de 90 %%, « Presque épuisé » ; au-delà de 100 %%, « Dépassé ».") }}</p>
+        <p class="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="w-3.5 h-2 rounded-full bg-primary"></span>{{ _("Rangé") }}</span>
+          <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="w-3.5 h-2 rounded-full bg-border-strong"></span>{{ _("Encore à ranger") }}</span>
+          <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="w-0.5 h-3 rounded-full bg-primary"></span>{{ _("Rythme du mois, %(rhythm)s %%", rhythm=view.rhythm) }}</span>
+        </p>
+      </div>
+    </section>
+
+    <aside aria-label="{{ _("Plan, cap et charges fixes") }}" class="flex flex-col gap-[var(--space-block)] lg:col-start-2 lg:row-start-2">
+      <a href="/budgets" class="btn btn-secondary w-full">{{ icon('pencil', size=18) }} {{ _("Ajuster le plan du mois") }}</a>
+
+      {% if view.entry %}
+      <section class="bg-container rounded-xl border border-border shadow-sm" x-data="{ open: false }">
+        <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" class="w-full min-h-[62px] px-[var(--space-card)] py-3 flex items-center justify-between gap-3 text-left">
+          <span class="flex flex-col"><span class="text-section-title">{{ _("Revoir le cap de %(month)s", month=month_word) }}</span><span class="text-xs text-secondary">{{ _("Ce qui a été fixé au dernier rituel") }}</span></span>
+          <span class="text-secondary transition-transform" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+        </button>
+        <div x-show="open" style="display: none;" class="px-[var(--space-card)] pb-4 flex flex-col text-sm">
+          {% for code, label, amount in (("essentiel", _("Essentiel"), view.entry.planned_essentiel), ("choix", _("Choix"), view.entry.planned_choix), ("imprevu", _("Imprévus"), view.entry.planned_imprevu)) %}
+          <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="text-primary">{{ label }}</span><span class="amount-blur font-semibold tabular-nums text-primary">{{ amount | eur }}</span></p>
+          {% endfor %}
+          <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="font-semibold text-primary">{{ _("Épargne visée") }}</span><span class="amount-blur font-semibold tabular-nums text-primary">{{ signed(view.savings_planned, plus=true) }}</span></p>
+          <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink underline">{{ _("Revoir le cap du mois") }}</a>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if view.fixed['items'] %}
+      <section class="bg-container rounded-xl border border-border shadow-sm" x-data="{ open: false }" aria-labelledby="fixed-title">
+        <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" class="w-full min-h-[62px] px-[var(--space-card)] py-3 flex items-start justify-between gap-3 text-left">
+          <span class="flex flex-col gap-0.5">
+            <span id="fixed-title" class="text-section-title">{{ _("Charges fixes") }}</span>
+            <span class="text-xs text-secondary">
+              {% if view.fixed.all_taken %}
+                {% if view.fixed.category %}{{ ngettext("La charge est déjà prélevée ce mois-ci, dans %(category)s.", "Les %(n)s sont déjà prélevées ce mois-ci, dans %(category)s.", view.fixed.taken_count, n=view.fixed.taken_count, category=view.fixed.category) }}
+                {% else %}{{ ngettext("La charge est déjà prélevée ce mois-ci.", "Les %(n)s sont déjà prélevées ce mois-ci.", view.fixed.taken_count, n=view.fixed.taken_count) }}{% endif %}
+              {% else %}
+                {{ _("%(taken)s prélevées sur %(all)s ce mois-ci.", taken=view.fixed.taken_count, all=view.fixed['items'] | length) }}
+              {% endif %}
+            </span>
+          </span>
+          <span class="flex items-center gap-2 flex-shrink-0">
+            <span class="amount-blur font-semibold tabular-nums text-primary">{{ signed(-view.fixed.total) }}</span>
+            <span class="text-secondary transition-transform" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+          </span>
+        </button>
+        <ul x-show="open" style="display: none;" class="px-[var(--space-card)] pb-2 flex flex-col">
+          {% for item in view.fixed['items'] %}
+          <li class="flex items-center justify-between gap-3 min-h-[56px] border-t border-border">
+            <span class="flex flex-col min-w-0">
+              <span class="text-sm font-semibold text-primary truncate">{{ item.label }}</span>
+              <span class="text-xs text-secondary truncate">{{ _("le %(day)s", day=item.day) }} · {{ item.account }}{% if not item.taken %} · {{ _("attendue") }}{% endif %}</span>
+            </span>
+            <span class="amount-blur text-sm font-semibold tabular-nums text-primary flex-shrink-0">{{ signed(-item.amount) }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+    </aside>
+
+  </div>
+  {% endif %}
+</main>
+{% endblock %}
