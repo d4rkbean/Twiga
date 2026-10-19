@@ -1,6 +1,7 @@
 import os
 from decimal import Decimal
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -174,12 +175,24 @@ def settings(request: Request, db: Session = Depends(get_db)):
     )
 
 
+def _require_same_origin(request: Request) -> None:
+    """Refuse a request sent by another site. Browsers add `Origin` to every
+    cross-site POST, so a page elsewhere cannot trigger these routes even
+    when authentication is off and nobody is signed in."""
+    origin = request.headers.get("origin")
+    if origin is None:
+        return
+    if urlsplit(origin).netloc != request.headers.get("host", ""):
+        raise HTTPException(status_code=403, detail=_t("Requête refusée : elle ne vient pas de Twiga."))
+
+
 @app.post("/settings/login-accounts", response_class=HTMLResponse)
 def save_login_accounts(
     request: Request, show: str = Form(""), db: Session = Depends(get_db)
 ):
     """"Afficher les comptes sur la page de connexion" (Sécurité): administrator only.
     Off by default; when on, the other way's login offers the household as tiles."""
+    _require_same_origin(request)
     current_user = auth.get_current_user(request)
     if auth.AUTH_ENABLED and (current_user is None or current_user.role != "admin"):
         raise HTTPException(status_code=403, detail=_t("Réservé à l'administrateur."))
@@ -206,6 +219,7 @@ def delete_all_transactions(
     """"Zone sensible": deletes every transaction. Administrator only, and
     only after the second confirmation of the screen (the `confirm` field is
     sent by its "Oui, tout supprimer" button alone)."""
+    _require_same_origin(request)
     current_user = auth.get_current_user(request)
     if auth.AUTH_ENABLED and (current_user is None or current_user.role != "admin"):
         raise HTTPException(status_code=403, detail=_t("Réservé à l'administrateur."))
