@@ -514,3 +514,18 @@ def sidebar_balance(db: Session = Depends(get_db)):
     # endpoint dédié évite d'avoir à faire porter ce calcul par chaque
     # routeur de l'appli juste pour ce badge.
     return HTMLResponse(content=format_amount(crud.get_total_balance(db)))
+
+
+@router.get("/shell-balance", response_class=HTMLResponse)
+def shell_balance(request: Request, db: Session = Depends(get_db)):
+    # Head of the "Plus" menu of the other way's shell (other_way/_more_menu.html):
+    # the total balance and the number of accounts it adds up, loaded the first
+    # time the menu is opened.
+    return templates.TemplateResponse(
+        "dashboard/_shell_balance.html",
+        {
+            "request": request,
+            "total_balance": crud.get_total_balance(db),
+            "account_count": len(crud.list_accounts(db)),
+        },
+    )

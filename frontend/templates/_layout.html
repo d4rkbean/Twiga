@@ -1,0 +1,369 @@
+{#- Squelette commun aux deux interfaces : <head>, thème, police, scripts, dialogues
+    (confirmation, aide, à propos). Chaque interface l'étend par son base.html et
+    y pose sa coque (blocs sidebar, header, nav, tour) et ses dégagements. -#}
+{% from "_macros/brand.html" import mascot %}
+<!doctype html>
+{# Thème, densité et interface sont rendus par le serveur (compte, puis cookie,
+   puis défaut : voir backend/preferences.py) : la classe .dark est déjà sur
+   <html> à la première peinture, sans flash. Seul le thème « système » est
+   laissé au navigateur (script ci-dessous). #}
+<html lang="{{ current_language() }}" data-number-locale="{{ number_locale() }}" data-theme="{{ current_theme() }}" data-density="{{ current_density() }}" data-ui="{{ current_ui_variant() }}"{% if current_theme() == "dark" %} class="dark"{% endif %}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="{{ '#17130f' if current_theme() == 'dark' else '#faf8f5' }}" />
+  <!-- Annonce que la page gère elle-même clair ET sombre, avant même que le
+       CSS ne soit parsé. Sans ça, le « thème sombre automatique » de Chrome
+       Android réécrit toute la palette en gris neutres et supprime le motif
+       de fond. Le CSS le redéclare ensuite précisément selon la classe .dark
+       (voir design-system.css). -->
+  <meta name="color-scheme" content="light dark" />
+  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="/static/icons/twiga-logo.svg" />
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>{% block title %}{{ _("Twiga") }}{% endblock %}</title>
+  <!-- Doit s'exécuter avant le CSS pour éviter un flash du mauvais thème.
+       Clair et sombre sont décidés par le serveur (classe .dark déjà posée) ;
+       ce script n'agit qu'en thème « système » : il suit prefers-color-scheme,
+       y compris en direct. window.twigaApplyTheme(mode) est aussi appelée par
+       les pages qui changent le thème sans recharger. L'ancien choix mémorisé
+       dans localStorage (clé « theme ») n'est lu qu'une fois, pour reprendre
+       le choix d'un appareil tant que le compte est resté sur « système » ;
+       la clé est ensuite effacée et le choix enregistré sur le compte (voir
+       le script en bas de page). -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var query = window.matchMedia("(prefers-color-scheme: dark)");
+      window.twigaApplyTheme = function (mode) {
+        root.setAttribute("data-theme", mode);
+        var dark = mode === "dark" || (mode === "system" && query.matches);
+        root.classList.toggle("dark", dark);
+        if (window.twigaAfterTheme) window.twigaAfterTheme(dark);
+        return dark;
+      };
+      var legacy = null;
+      try {
+        legacy = localStorage.getItem("theme");
+        localStorage.removeItem("theme");
+      } catch (error) {}
+      if (root.getAttribute("data-theme") === "system" && (legacy === "light" || legacy === "dark")) {
+        window.twigaMigratedTheme = legacy;
+        window.twigaApplyTheme(legacy);
+      } else if (root.getAttribute("data-theme") === "system") {
+        window.twigaApplyTheme("system");
+      }
+      function onSystemChange() {
+        if (root.getAttribute("data-theme") === "system") window.twigaApplyTheme("system");
+      }
+      if (query.addEventListener) query.addEventListener("change", onSystemChange);
+      else if (query.addListener) query.addListener(onSystemChange);
+    })();
+  </script>
+  <!-- Police d'affichage (titres, répliques de la girafe), servie par
+       l'application : préchargée pour qu'un titre ne s'affiche pas d'abord
+       en police système puis ne saute. crossorigin est obligatoire même pour
+       une police de même origine, sans quoi le navigateur la télécharge deux
+       fois. Seule la graisse 800 (celle des titres) est préchargée. -->
+  <link rel="preload" href="/static/fonts/bricolage-grotesque-800.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="{{ static_url('/static/vendor/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/tour.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('/static/css/rule-suggestion.css') }}" />
+  <script src="{{ static_url('/static/vendor/htmx.min.js') }}" defer></script>
+  <script src="{{ static_url('/static/js/htmx-config.js') }}" defer></script>
+  <script src="{{ static_url('/static/js/htmx-confirm.js') }}" defer></script>
+  <!-- tour.js AVANT alpine.min.js : Alpine planifie son démarrage via
+       queueMicrotask() en toute fin de bundle, et un microtask checkpoint
+       a lieu entre deux <script defer> qui s'exécutent l'un après l'autre.
+       Si tour.js chargeait après, Alpine ferait déjà son scan du DOM (donc
+       évaluerait x-data="twigaTour()") avant que window.twigaTour existe :
+       ReferenceError silencieux, composant jamais initialisé, tour qui ne
+       démarre jamais (ni auto, ni relance manuelle). -->
+  <script src="{{ static_url('/static/js/tour.js') }}" defer></script>
+  <script src="{{ static_url('/static/js/header.js') }}" defer></script>
+  {#- Scripts propres à une interface (other-way.js), avant Alpine pour la même raison que tour.js. -#}
+  {% block shell_head %}{% endblock %}
+  <script src="{{ static_url('/static/vendor/alpine.min.js') }}" defer></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body
+  {# Les dégagements sont dans un bloc pour que les pages sans chrome (la
+     connexion, qui vide les blocs sidebar/header/nav) puissent les annuler :
+     sinon elles réservent de la place pour des éléments qu'elles ne rendent
+     pas. Chaque interface y met les siens (base.html, other_way/base.html). #}
+  class="bg-page text-primary min-h-screen {% block body_chrome %}{% endblock %} {% block body_brand %}{% endblock %}"
+  x-data="{
+    privacyOnOpen: localStorage.getItem('privacyOnOpen') === 'true',
+    privacy: localStorage.getItem('privacy') === 'true' || localStorage.getItem('privacyOnOpen') === 'true',
+    {% block body_state %}{% endblock %}
+  }"
+  {% block body_attrs %}{% endblock %}
+  :class="{
+    'privacy-mode': privacy,
+    {% block body_offset %}{% endblock %}
+  }"
+>
+  {% block sidebar %}{% endblock %}
+  {% block header %}{% endblock %}
+  {% block content %}{% endblock %}
+  {% block nav %}{% endblock %}
+  {% block tour %}{% include "_tour.html" %}{% endblock %}
+
+  <!-- Dialogue de confirmation "maison" (remplace window.confirm() sur
+       chaque hx-confirm="...", voir htmx-confirm.js) : la boîte native du
+       navigateur affiche un préfixe imposé ("La page à l'adresse ... indique
+       :"), jamais retirable côté page — seul un <dialog> stylé permet une
+       confirmation qui ressemble à une vraie application. -->
+  <dialog
+    id="twiga-confirm-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm"
+  >
+    <div class="flex flex-col gap-4 p-6">
+      <div class="flex items-center gap-2">
+        {{ mascot(size=28) }}
+        <p class="font-display text-lg font-extrabold tracking-[0.04em] text-primary">{{ _("Twiga") }}</p>
+      </div>
+      <p id="twiga-confirm-message" class="text-sm text-primary"></p>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          id="twiga-confirm-cancel"
+          class="flex-1 min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium"
+        >
+          {{ _("Annuler") }}
+        </button>
+        <button
+          type="button"
+          id="twiga-confirm-ok"
+          class="flex-1 min-h-[50px] rounded-xl bg-accent text-on-accent font-semibold"
+        >
+          {{ _("Confirmer") }}
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Aide & raccourcis : accessible depuis le menu utilisateur (sidebar
+       desktop ET bottom sheet mobile, voir _user_menu_content.html), un
+       seul exemplaire ici plutôt que dupliqué dans chacun des deux menus.
+       Fermeture par le bouton ✕ (même convention que les autres <dialog>
+       de l'appli, ex. category-transactions-dialog — pas de fermeture au
+       clic sur le fond, non plus utilisée ailleurs) ou Échap (natif à
+       <dialog>, sans JS supplémentaire). -->
+  <dialog
+    id="twiga-help-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-md"
+  >
+    <div class="flex flex-col gap-4 p-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl text-primary flex items-center gap-2">{{ icon('help-circle') }}{{ _("Aide &amp; raccourcis") }}</h2>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-help-dialog').close()"
+          aria-label="{{ _("Fermer") }}"
+          class="-m-3 w-[50px] h-[50px] flex items-center justify-center rounded-xl text-secondary text-xl leading-none"
+        >
+          {{ icon('x') }}
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-semibold text-primary flex items-center gap-2">{{ icon('keyboard') }}{{ _("Raccourcis clavier") }}</p>
+        <!-- Raccourcis vérifiés dans le code réel (frontend/static/js/
+             inbox-shortcuts.js pour →/←/1-9/Entrée/Échap/i, _header.html pour
+             Ctrl+K) — pas une liste inventée, elle doit rester exacte. -->
+        {% set shortcuts = [
+          ("Ctrl+K", _("Recherche globale")),
+          (_("→ / Espace"), _("Transaction suivante")),
+          ("←", _("Transaction précédente")),
+          ("1-9", _("Sélectionner catégorie")),
+          (_("Entrée"), _("Valider catégorie")),
+          (_("Échap"), _("Annuler / Retour")),
+          ("I", _("Marquer comme imprévu")),
+        ] %}
+        <div class="bg-page rounded-xl border border-border divide-y divide-border overflow-hidden">
+          {% for key, label in shortcuts %}
+          <div class="flex items-center justify-between gap-2 px-3 min-h-[46px]">
+            <span class="text-xs font-mono font-semibold text-primary bg-container border border-border-strong rounded-md px-2 py-0.5 flex-shrink-0">
+              {{ key }}
+            </span>
+            <span class="text-sm text-secondary text-right">{{ label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-sm font-semibold text-primary">{{ _("Liens utiles") }}</p>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-help-dialog').close(); window.startTwigaTour();"
+          class="min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium flex items-center justify-center gap-2"
+        >
+          {{ icon('book') }}{{ _("Revoir la visite guidée") }}
+        </button>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-about-dialog').showModal()"
+          class="min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium flex items-center justify-center gap-2"
+        >
+          {{ icon('info-circle') }}{{ _("À propos de Twiga") }}
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog
+    id="twiga-about-dialog"
+    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm"
+  >
+    <div class="flex flex-col gap-4 p-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          {{ mascot(size=28) }}
+          <h2 class="text-xl text-primary">{{ _("Twiga") }}</h2>
+        </div>
+        <button
+          type="button"
+          onclick="document.getElementById('twiga-about-dialog').close()"
+          aria-label="{{ _("Fermer") }}"
+          class="-m-3 w-[50px] h-[50px] flex items-center justify-center rounded-xl text-secondary text-xl leading-none"
+        >
+          {{ icon('x') }}
+        </button>
+      </div>
+      <p class="text-sm text-secondary">
+        {{ _("Tableau de bord financier personnel, 100&nbsp;%% local — aucune connexion bancaire automatique, aucun service tiers, aucune télémétrie. Import manuel QIF/CSV/OFX, catégorisation rapide, budgets et projets.") }}
+      </p>
+    </div>
+  </dialog>
+
+  {% block extra_scripts %}{% endblock %}
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/static/sw.js", { scope: "/" }).catch(function (error) {
+          console.error("Échec de l'enregistrement du service worker :", error);
+        });
+      });
+    }
+
+    (function () {
+      var THEME_COLORS = { light: "#faf8f5", dark: "#17130f" };
+      var root = document.documentElement;
+
+      function applyThemeColorMeta(isDark) {
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", isDark ? THEME_COLORS.dark : THEME_COLORS.light);
+      }
+
+      // Plus de synchronisation d'icône en JS : les trois bascules rendent
+      // les deux icônes (soleil et lune) et le CSS n'affiche que la bonne
+      // selon la classe .dark portée par <html> (voir design-system.css,
+      // .icon-theme-light / .icon-theme-dark). L'icône est donc correcte dès
+      // le premier rendu, sans attendre le premier tour de JS.
+
+      // Appelée par window.twigaApplyTheme (script de <head>) à chaque
+      // changement d'apparence : couleur de la barre du navigateur, événement
+      // pour ceux qui dessinent avec les couleurs du thème, graphiques.
+      window.twigaAfterTheme = function (isDark) {
+        applyThemeColorMeta(isDark);
+        window.dispatchEvent(new CustomEvent("themechange", { detail: { dark: isDark } }));
+        // Les graphiques Chart.js lisent leurs couleurs au moment du rendu :
+        // on redemande donc le contenu des pages qui en portent, avec les
+        // filtres courants (même requête qu'un changement de période).
+        if (window.htmx) {
+          ["dashboard-filters", "reports-account-filter"].forEach(function (id) {
+            var form = document.getElementById(id);
+            if (form) window.htmx.trigger(form, "change");
+          });
+        }
+      };
+      applyThemeColorMeta(root.classList.contains("dark"));
+
+      // Enregistre le thème sur le compte ET en cookie (même route que la
+      // langue) ; sans compte (authentification désactivée), le cookie seul
+      // décide. Sans rechargement : la page est déjà passée dans le bon thème.
+      function saveTheme(mode) {
+        fetch("/profile/preferences", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "HX-Request": "true" },
+          body: new URLSearchParams({ theme: mode }),
+        }).catch(function () {});
+      }
+
+      // Point de départ du changement de thème : le dernier endroit touché ou
+      // cliqué (bouton de la barre, du menu, carte du profil). Sans clic (appel
+      // au clavier), le cercle part du centre de l'écran.
+      var themeOrigin = null;
+      document.addEventListener(
+        "pointerdown",
+        function (event) {
+          themeOrigin = { x: event.clientX, y: event.clientY };
+        },
+        true
+      );
+
+      // Le nouveau thème se propage en cercle depuis le bouton (View
+      // Transitions). Changement instantané si le navigateur ne connaît pas
+      // l'API, si l'utilisateur a demandé moins d'animations, ou si le thème
+      // affiché ne change pas (« Système » qui retombe sur le même).
+      function revealTheme(mode) {
+        var wasDark = root.classList.contains("dark");
+        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!document.startViewTransition || reduced) {
+          window.twigaApplyTheme(mode);
+          return;
+        }
+        var x = themeOrigin ? themeOrigin.x : window.innerWidth / 2;
+        var y = themeOrigin ? themeOrigin.y : window.innerHeight / 2;
+        themeOrigin = null;
+        var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+        var transition = document.startViewTransition(function () {
+          window.twigaApplyTheme(mode);
+        });
+        transition.ready.then(function () {
+          if (root.classList.contains("dark") === wasDark) return;
+          root.animate(
+            { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + radius + "px at " + x + "px " + y + "px)"] },
+            { duration: 550, easing: "cubic-bezier(.16, 1, .3, 1)", pseudoElement: "::view-transition-new(root)" }
+          );
+        });
+      }
+
+      // Pour les cartes de thème du profil : le formulaire enregistre déjà le
+      // choix (htmx), on ne fait que l'animer.
+      window.twigaRevealTheme = revealTheme;
+
+      window.twigaSetTheme = function (mode) {
+        revealTheme(mode);
+        saveTheme(mode);
+      };
+
+      // Bascule rapide (barre latérale, menu) : clair <-> sombre, choix
+      // explicite. Le réglage « Système » se choisit dans le profil.
+      window.toggleTheme = function () {
+        window.twigaSetTheme(root.classList.contains("dark") ? "light" : "dark");
+      };
+
+      // Densité (sélecteur Compact / Normal / Aéré de la barre du haut) :
+      // appliquée tout de suite sur <html>, puis enregistrée comme le thème.
+      window.twigaSetDensity = function (mode) {
+        root.setAttribute("data-density", mode);
+        fetch("/profile/preferences", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "HX-Request": "true" },
+          body: new URLSearchParams({ density: mode }),
+        }).catch(function () {});
+      };
+
+      // Ancien choix mémorisé sur cet appareil : repris une fois sur le compte.
+      if (window.twigaMigratedTheme) saveTheme(window.twigaMigratedTheme);
+    })();
+  </script>
+</body>
+</html>

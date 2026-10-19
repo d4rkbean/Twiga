@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 05:56+0000\n"
+"POT-Creation-Date: 2026-10-19 06:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -569,6 +569,9 @@ msgstr ""
 msgid "AAAA"
 msgstr ""
 
+msgid "Abonnements"
+msgstr ""
+
 msgid "Abonnements et factures"
 msgstr ""
 
@@ -709,6 +712,9 @@ msgstr ""
 msgid "Alimentation des animaux"
 msgstr ""
 
+msgid "Alimenter"
+msgstr ""
+
 msgid "Aller au Panorama"
 msgstr ""
 
@@ -790,6 +796,9 @@ msgid "Au"
 msgstr ""
 
 msgid "Au :"
+msgstr ""
+
+msgid "Au quotidien"
 msgstr ""
 
 msgid "Au rythme actuel"
@@ -1013,10 +1022,16 @@ msgstr ""
 msgid "Basé sur les"
 msgstr ""
 
+msgid "Besoin d'aide ?"
+msgstr ""
+
 msgid "Bien-être"
 msgstr ""
 
 msgid "Bientôt"
+msgstr ""
+
+msgid "Bienvenue chez Twiga"
 msgstr ""
 
 msgid "Bienvenue dans Le Cap !"
@@ -1186,6 +1201,9 @@ msgstr ""
 msgid "Chauffage"
 msgstr ""
 
+msgid "Chercher"
+msgstr ""
+
 msgid "Choisir la facture PDF"
 msgstr ""
 
@@ -1235,6 +1253,9 @@ msgid "Chèque"
 msgstr ""
 
 msgid "Chèque introuvable"
+msgstr ""
+
+msgid "Chèques"
 msgstr ""
 
 msgid "Chèques & paiements en attente"
@@ -1714,6 +1735,9 @@ msgid ""
 "rayon compris, à vérifier. Ticket papier : ajoute les lignes à la main."
 msgstr ""
 
+msgid "Faire le point"
+msgstr ""
+
 #, python-format
 msgid "Fais le bilan de %(previous)s et fixe les enveloppes du mois."
 msgstr ""
@@ -2040,6 +2064,9 @@ msgstr ""
 msgid "La Savane"
 msgstr ""
 
+msgid "La Savane pour ranger, Panorama pour comprendre, Le Cap pour viser."
+msgstr ""
+
 msgid "La Savane vide"
 msgstr ""
 
@@ -2095,6 +2122,9 @@ msgid ""
 "droit de dépenser."
 msgstr ""
 
+msgid "Le bouton Aide relance cette visite à tout moment."
+msgstr ""
+
 msgid "Le cap est fixé !"
 msgstr ""
 
@@ -2125,6 +2155,9 @@ msgid "Le pilier de chaque catégorie se règle dans"
 msgstr ""
 
 msgid "Le plan en direct"
+msgstr ""
+
+msgid "Le reste se cache sous Plus"
 msgstr ""
 
 #, python-format
@@ -2482,6 +2515,9 @@ msgstr ""
 msgid "Médecin et spécialistes"
 msgstr ""
 
+msgid "Navigation principale"
+msgstr ""
+
 msgid "Net"
 msgstr ""
 
@@ -2598,6 +2634,11 @@ msgstr ""
 msgid "Opérations — Twiga"
 msgstr ""
 
+msgid ""
+"Opérations, budgets, rapports, import et réglages : tout est rangé par "
+"intention."
+msgstr ""
+
 msgid "Ou une autre catégorie"
 msgstr ""
 
@@ -2699,6 +2740,9 @@ msgid "Placements"
 msgstr ""
 
 msgid "Plan non fixé"
+msgstr ""
+
+msgid "Plus"
 msgstr ""
 
 msgid "Plus bas :"
@@ -2805,6 +2849,12 @@ msgstr ""
 msgid "Qu'est-ce qui a bien fonctionné ce mois ?"
 msgstr ""
 
+msgid "Quatre destinations"
+msgstr ""
+
+msgid "Que cherches-tu ?"
+msgstr ""
+
 msgid "Quels ont été nos imprévus ? Étaient-ils évitables ?"
 msgstr ""
 
@@ -2904,6 +2954,9 @@ msgid ""
 "Recherche, sur tout l'historique, des paires de transactions qui se "
 "ressemblent comme un virement interne entre deux de tes comptes (montant "
 "opposé, ± 3 jours, ± 1 € de tolérance)."
+msgstr ""
+
+msgid "Rechercher"
 msgstr ""
 
 msgid "Rechercher un libellé"
@@ -3094,6 +3147,9 @@ msgid "Réessayer"
 msgstr ""
 
 msgid "Réglage enregistré"
+msgstr ""
+
+msgid "Régler Twiga"
 msgstr ""
 
 msgid "Régler le pilier de chaque catégorie"
@@ -3381,6 +3437,9 @@ msgstr ""
 msgid "Terminé"
 msgstr ""
 
+msgid "Tes données restent sur ce serveur. Rien ne part sur Internet."
+msgstr ""
+
 msgid "Tes règles de rangement, appliquées d'office"
 msgstr ""
 
@@ -3562,6 +3621,11 @@ msgid ""
 "comptes."
 msgstr ""
 
+msgid ""
+"Trois temps : importer tes opérations, les ranger, puis suivre tes "
+"comptes."
+msgstr ""
+
 msgid "Trop de tentatives. Réessaie dans quelques minutes."
 msgstr ""
 
@@ -3673,6 +3737,9 @@ msgid "Un utilisateur \"%(username)s\" existe déjà."
 msgstr ""
 
 msgid "Une autre façon de parcourir Twiga."
+msgstr ""
+
+msgid "Une opération, une catégorie, un projet"
 msgstr ""
 
 msgid "Une ou deux phrases, que tu retrouveras en ouvrant Mon mois."
@@ -3992,6 +4059,12 @@ msgstr ""
 
 msgid "sorties, loisirs, plaisirs"
 msgstr ""
+
+#, python-format
+msgid "sur %(count)s compte"
+msgid_plural "sur %(count)s comptes"
+msgstr[0] ""
+msgstr[1] ""
 
 #, python-format
 msgid "sur %(planned_total)s prévus"

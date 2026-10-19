@@ -112,7 +112,12 @@ def update_preferences(
                 setattr(user, name, value)
             db.commit()
 
-    if "language" in sent or "number_format" in sent:
+    # Switching the interface variant changes the whole shell (navigation,
+    # menus, tour), so the page is rendered again, like for the language. The
+    # display form posts all its fields on every change: only a variant that
+    # differs from the one rendering this request counts.
+    variant_changed = "ui_variant" in sent and sent["ui_variant"] != getattr(request.state, "ui_variant", None)
+    if "language" in sent or "number_format" in sent or variant_changed:
         response = Response(status_code=200, headers={"HX-Refresh": "true"})
     else:
         response = HTMLResponse(flash_html("success", _t("Réglage enregistré")))
