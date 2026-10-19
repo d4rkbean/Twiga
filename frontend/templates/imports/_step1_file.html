@@ -1,15 +1,16 @@
 {% from "_macros/brand.html" import mascot %}
-{% from "imports/_stepper.html" import stepper %}
+{% from "imports/_stepper.html" import stepper, step_nav %}
 {{ stepper(1) }}
 <div class="card flex flex-col gap-4">
   <div class="flex flex-col gap-1">
     <h2 class="text-section-title">{{ _("Choisir le fichier") }}</h2>
     <p class="text-sm text-secondary">
-      {{ _("Importe d'abord un fichier") }} <strong class="text-primary">{{ _("QIF") }}</strong> {{ _("(HomeBank) : il crée tes comptes et catégories automatiquement. Les imports") }} <strong class="text-primary">{{ _("CSV") }}</strong>/<strong class="text-primary">{{ _("OFX") }}</strong> {{ _("suivants viendront alimenter un compte déjà existant.") }}
+      {{ _("Importe d'abord un fichier QIF (HomeBank) : il crée tes comptes et catégories automatiquement.") }}
     </p>
   </div>
 
   <form
+    id="import-step1-form"
     hx-post="/imports/preview"
     hx-target="#import-wizard"
     hx-swap="innerHTML"
@@ -21,7 +22,7 @@
     <label class="relative min-h-[160px] rounded-xl border border-dashed border-border-strong bg-sunken/40 flex flex-col items-center justify-center gap-1 px-4 text-center focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-ink">
       <span class="text-accent-ink">{{ icon('upload', size=24) }}</span>
       <span class="font-semibold text-primary" id="import-drop-title">{{ _("Fichier QIF, CSV ou OFX") }}</span>
-      <span class="text-xs text-secondary">{{ _("Déposer ici ou choisir un fichier · .qif, .csv, .ofx, .qfx") }}</span>
+      <span class="text-xs text-secondary">{{ _("Déposer ici ou choisir un fichier · .qif, .csv, .ofx, .qfx · 5 Mo maximum") }}</span>
       <input
         id="import-file-input"
         type="file"
@@ -36,10 +37,10 @@
     {% if accounts %}
     <fieldset id="import-account-field" class="flex flex-col gap-2">
       <legend class="form-label mb-1">{{ _("Compte concerné (CSV / OFX uniquement)") }}</legend>
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {% for account in accounts %}
         <label class="choice-card">
-          <input type="radio" name="account_id" value="{{ account.id }}" class="sr-only" required {% if loop.first %}checked{% endif %} />
+          <input type="radio" name="account_id" value="{{ account.id }}" data-name="{{ account.name }}" class="sr-only" required {% if loop.first %}checked{% endif %} />
           <span class="text-sm font-semibold text-primary">{{ account.name }}</span>
           <span class="text-xs text-secondary">{{ get_account_type_label(account.type) }}</span>
         </label>
@@ -52,29 +53,42 @@
     </p>
     {% endif %}
 
-    <div class="flex flex-col gap-2">
-      <button type="submit" class="btn btn-primary w-full lg:w-auto lg:self-end lg:px-8">
-        {{ _("Continuer") }} {{ icon('arrow-narrow-right', size=18) }}
-      </button>
-      <p class="htmx-indicator text-sm text-secondary text-center">{{ mascot(size=16) }} {{ _("Twiga tend le cou...") }}</p>
-    </div>
+    <p class="htmx-indicator text-sm text-secondary text-center">{{ mascot(size=16) }} {{ _("Twiga tend le cou...") }}</p>
   </form>
 
   <script>
-    document.getElementById("import-file-input").addEventListener("change", function (event) {
-      var value = event.target.value || "";
-      var isQif = /\.qif$/i.test(value);
-      var field = document.getElementById("import-account-field");
-      if (field) {
-        field.classList.toggle("hidden", isQif);
+    (function () {
+      var input = document.getElementById("import-file-input");
+      var next = document.getElementById("import-next");
+      var noFile = document.getElementById("import-file-empty");
+      var details = document.getElementById("import-file-details");
+      function accountName() {
+        var checked = document.querySelector("#import-step1-form input[name=account_id]:checked");
+        return checked ? checked.dataset.name : "";
       }
-      var name = document.getElementById("import-file-name");
-      if (name) {
-        var file = event.target.files && event.target.files[0];
-        name.textContent = file ? file.name : name.dataset.empty;
-        name.classList.toggle("text-primary", !!file);
-        name.classList.toggle("font-medium", !!file);
+      function refresh() {
+        var file = input.files && input.files[0];
+        var isQif = file ? /\.qif$/i.test(file.name) : /\.qif$/i.test(input.value || "");
+        var field = document.getElementById("import-account-field");
+        if (field) field.classList.toggle("hidden", isQif);
+        if (next) next.disabled = !file;
+        if (noFile) noFile.classList.toggle("hidden", !!file);
+        if (details) {
+          details.classList.toggle("hidden", !file);
+          if (file) {
+            details.querySelector("[data-file=name]").textContent = file.name;
+            details.querySelector("[data-file=size]").textContent =
+              (file.size / 1024).toLocaleString("{{ number_locale() }}", { maximumFractionDigits: 1 }) + " {{ _("Ko") }}";
+            details.querySelector("[data-file=account]").textContent = isQif ? {{ _("Tous les comptes") | tojson }} : accountName();
+          }
+        }
       }
-    });
+      input.addEventListener("change", refresh);
+      document.querySelectorAll("#import-step1-form input[name=account_id]").forEach(function (radio) {
+        radio.addEventListener("change", refresh);
+      });
+      refresh();
+    })();
   </script>
 </div>
+{{ step_nav(None, "import-step1-form", next_disabled=True) }}

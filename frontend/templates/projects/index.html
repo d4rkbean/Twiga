@@ -18,6 +18,49 @@
 
 {% block extra_scripts %}
 <script>
+  // Contrôles de saisie des boîtes de dialogue (avant l'envoi au serveur) :
+  // un montant doit être supérieur à 0, une dépense ne dépasse pas l'épargne.
+  function parseAmount(raw) {
+    return parseFloat(String(raw || "").replace(/\s/g, "").replace(",", "."));
+  }
+  function blockSubmit(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+  function projectForm() {
+    return {
+      err: "",
+      check(event) {
+        const goal = parseAmount(event.target.elements.target_amount.value);
+        if (!(goal > 0)) {
+          this.err = {{ _("Indique un montant cible supérieur à 0.") | tojson }};
+          blockSubmit(event);
+        } else {
+          this.err = "";
+        }
+      },
+    };
+  }
+  function movementForm(action, saved, savedLabel) {
+    return {
+      amount: "",
+      err: "",
+      check(event) {
+        const value = parseAmount(this.amount);
+        if (!(value > 0)) {
+          this.err = {{ _("Indique un montant supérieur à 0.") | tojson }};
+          blockSubmit(event);
+        } else if (action === "spend" && value > saved + 0.004) {
+          this.err = {{ _("Le montant dépasse l'épargne du projet") | tojson }} + " (" + savedLabel + ").";
+          blockSubmit(event);
+        } else {
+          this.err = "";
+        }
+      },
+    };
+  }
+</script>
+<script>
   // Arrivée depuis la recherche globale (/projects#project-card-N) : fait
   // défiler jusqu'à la carte visée et la met brièvement en évidence.
   (function () {

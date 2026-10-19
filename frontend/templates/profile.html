@@ -7,105 +7,121 @@
 {% block title %}{{ _("Mon profil — Twiga") }}{% endblock %}
 
 {% block content %}
+{% set since = current.created_at | month_year %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
-  <a href="/dashboard" class="-my-3 min-h-[50px] inline-flex items-center gap-1 self-start text-sm font-medium text-accent-ink">
-    {{ icon('arrow-left', size=16) }} {{ _("Retour") }}
-  </a>
-
   <header class="flex items-center gap-4">
-    <span class="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-xl lg:text-2xl font-bold flex-shrink-0">
+    <span class="w-16 h-16 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-xl lg:text-2xl font-bold flex-shrink-0">
       {{ user_initials(current) }}
     </span>
     <div class="flex flex-col min-w-0">
       <h1 class="text-page-title truncate">{{ current.display_name or current.username }}</h1>
-      <p class="text-sm text-secondary">{{ user_role_label(current.role) }}</p>
+      <p class="text-sm text-secondary">{% trans role=user_role_label(current.role), since=(since | lower if current_language() == "fr" else since) %}{{ role }} · membre depuis {{ since }}{% endtrans %}</p>
     </div>
   </header>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
-    <!-- Nom affiché / nom d'utilisateur : HTMX, résultat dans une petite zone
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-stretch">
+    <!-- Nom affiché / identifiant : HTMX, résultat dans une petite zone
          (même convention que le changement de mot de passe ci-dessous), pas
          de reset du formulaire au succès (contrairement au mot de passe) —
          les champs doivent garder les valeurs qui viennent d'être
          enregistrées, pas revenir à un état "vide". -->
-    <section class="card flex flex-col gap-4">
-      <h2 class="text-section-title">{{ _("Informations") }}</h2>
+    <section aria-labelledby="h-id" class="card flex flex-col gap-4">
+      <h2 id="h-id" class="text-section-title">{{ _("Identité") }}</h2>
       <form
         hx-post="/profile/update"
         hx-target="#profile-update-result"
         hx-swap="innerHTML"
-        class="flex flex-col gap-4"
+        class="flex flex-col gap-4 flex-1"
       >
         <label class="form-group">
-          <span class="form-label">{{ _("Nom affiché (facultatif)") }}</span>
+          <span class="form-label">{{ _("Nom affiché") }}</span>
           <input
             type="text"
             name="display_name"
             value="{{ current.display_name or '' }}"
             placeholder="{{ _("ex. Jean Dupont") }}"
+            autocomplete="nickname"
             maxlength="100"
             class="input-base"
           />
         </label>
         <label class="form-group">
-          <span class="form-label">{{ _("Nom d'utilisateur") }}</span>
-          <input type="text" name="username" value="{{ current.username }}" required class="input-base" />
+          <span class="form-label">{{ _("Identifiant") }}</span>
+          <input type="text" name="username" value="{{ current.username }}" required autocomplete="username" class="input-base" />
         </label>
-        <button type="submit" class="btn btn-primary self-start lg:px-8">
-          {{ icon('device-floppy', size=18) }} {{ _("Enregistrer") }}
-        </button>
-        <div id="profile-update-result" aria-live="polite"></div>
+        <div class="flex flex-wrap items-center gap-3 mt-auto pt-2">
+          <button type="submit" class="btn btn-primary px-6">{{ _("Enregistrer") }}</button>
+          <div id="profile-update-result" aria-live="polite"></div>
+        </div>
       </form>
     </section>
 
     <!-- Changement de mot de passe : réutilise TEL QUEL /settings/change-password
-         (même endpoint que Paramètres > Sécurité — auto-service, n'importe
-         quel rôle peut changer le sien, voir backend/auth.py). -->
-    <section class="card flex flex-col gap-4">
-      <h2 class="text-section-title">{{ _("Changer le mot de passe") }}</h2>
+         (auto-service, n'importe quel rôle peut changer le sien, voir
+         backend/auth.py). Le bouton reste éteint tant que le mot de passe
+         actuel manque, que le nouveau a moins de 8 caractères ou que la
+         confirmation diffère. -->
+    <section aria-labelledby="h-pw" class="card flex flex-col gap-4">
+      <h2 id="h-pw" class="text-section-title">{{ _("Mot de passe") }}</h2>
       <form
         hx-post="/settings/change-password"
         hx-target="#profile-password-result"
         hx-swap="innerHTML"
-        hx-on:htmx:after-request="if(event.detail.successful) this.reset()"
-        class="flex flex-col gap-4"
+        hx-on:htmx:after-request="if(event.detail.successful) { this.reset(); this.dispatchEvent(new Event('reset')); }"
+        x-data="{ cur: '', pw: '', pw2: '', get ok() { return this.pw.length >= 8 }, get match() { return this.pw2.length > 0 && this.pw === this.pw2 }, get can() { return this.cur.length > 0 && this.ok && this.match } }"
+        @reset="cur = ''; pw = ''; pw2 = ''"
+        class="flex flex-col gap-4 flex-1"
       >
         <label class="form-group">
           <span class="form-label">{{ _("Mot de passe actuel") }}</span>
-          {% with field_name = "current_password", field_autocomplete = "current-password" %}
-          {% include "_password_field.html" %}
-          {% endwith %}
+          <input type="password" name="current_password" autocomplete="current-password" x-model="cur" required class="input-base" />
         </label>
-        <label class="form-group">
-          <span class="form-label">{{ _("Nouveau mot de passe") }}</span>
-          {% with field_name = "new_password", field_autocomplete = "new-password", field_minlength = 8 %}
-          {% include "_password_field.html" %}
-          {% endwith %}
-        </label>
-        <label class="form-group">
-          <span class="form-label">{{ _("Confirmer le nouveau mot de passe") }}</span>
-          {% with field_name = "confirm_password", field_autocomplete = "new-password", field_minlength = 8 %}
-          {% include "_password_field.html" %}
-          {% endwith %}
-        </label>
-        {# Un seul bouton plein par écran : celui d'Informations. Celui-ci est
+        <div class="form-group">
+          <label for="profile-new-password" class="form-label">{{ _("Nouveau mot de passe") }}</label>
+          <input id="profile-new-password" type="password" name="new_password" autocomplete="new-password" minlength="8" x-model="pw" required class="input-base" />
+          <div class="h-1.5 rounded-full bg-sunken overflow-hidden mt-1" aria-hidden="true">
+            <div class="h-1.5 rounded-full transition-all" :class="ok ? 'bg-success' : 'bg-warning-gauge'" :style="'width: ' + Math.min(pw.length / 8, 1) * 100 + '%'"></div>
+          </div>
+          <p class="text-xs font-medium" :class="pw.length === 0 ? 'text-secondary' : (ok ? 'text-success' : 'text-warning')" aria-live="polite"
+             x-text="pw.length === 0 ? '{{ _("8 caractères au moins.") | jsq }}' : (ok ? '{{ _("Assez long.") | jsq }}' : (8 - pw.length === 1 ? '{{ _("Encore 1 caractère.") | jsq }}' : '{{ _("Encore %(n)s caractères.", n="__N__") | jsq }}'.replace('__N__', 8 - pw.length)))"></p>
+        </div>
+        <div class="form-group">
+          <label for="profile-confirm-password" class="form-label">{{ _("Confirmer") }}</label>
+          <input id="profile-confirm-password" type="password" name="confirm_password" autocomplete="new-password" minlength="8" x-model="pw2" required class="input-base" />
+          <p x-show="pw2.length > 0" style="display: none" class="text-xs font-medium" :class="match ? 'text-success' : 'text-danger'" aria-live="polite"
+             x-text="match ? '{{ _("Les deux sont identiques.") | jsq }}' : '{{ _("Les deux ne sont pas identiques.") | jsq }}'"></p>
+        </div>
+        {# Un seul bouton plein par écran : celui d'Identité. Celui-ci est
            secondaire. #}
-        <button type="submit" class="btn btn-secondary border-border-strong self-start lg:px-8">
-          {{ icon('key', size=18) }} {{ _("Changer le mot de passe") }}
-        </button>
-        <div id="profile-password-result" aria-live="polite"></div>
+        <div class="flex flex-wrap items-center gap-3 mt-auto pt-2">
+          <button type="submit" :disabled="!can" class="btn btn-secondary border-border-strong px-5 disabled:bg-sunken disabled:text-secondary">
+            {{ _("Changer le mot de passe") }}
+          </button>
+          <div id="profile-password-result" aria-live="polite"></div>
+        </div>
       </form>
     </section>
   </div>
 
-  <!-- Affichage : interface, thème, densité. S'enregistre au clic (voir
-       _display_preferences.html), comme la langue. -->
-  <section class="card flex flex-col gap-4">
-    <div class="flex flex-col gap-1">
-      <h2 class="text-section-title">{{ _("Affichage") }}</h2>
-      <p class="text-sm text-secondary">{{ _("Comment Twiga se présente pour toi, sur tous tes appareils.") }}</p>
-    </div>
-    {% include "_display_preferences.html" %}
-  </section>
+  <div class="grid grid-cols-1 gap-4 lg:gap-6 items-start">
+    <!-- Affichage : interface, thème, densité. S'enregistre au clic (voir
+         _display_preferences.html), comme la langue. -->
+    <section aria-labelledby="h-disp" class="card flex flex-col gap-4">
+      <h2 id="h-disp" class="text-section-title">{{ _("Affichage sur cet appareil") }}</h2>
+      {% include "_display_preferences.html" %}
+    </section>
+
+    {% if auth_enabled %}
+    {# « Sessions ouvertes » viendra plus tard ; la sortie, elle, est là. #}
+    <section aria-labelledby="h-session" class="card flex flex-col gap-4">
+      <h2 id="h-session" class="sr-only">{{ _("Session") }}</h2>
+      <form hx-post="/logout">
+        <button type="submit" class="btn btn-danger">
+          {{ icon('logout', size=18) }} {{ _("Se déconnecter") }}
+        </button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
 </main>
 {% endblock %}

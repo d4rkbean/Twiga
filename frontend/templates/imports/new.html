@@ -14,15 +14,25 @@
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-6 items-start">
-    <div id="import-wizard" class="flex flex-col gap-4 min-w-0">
-      {% include "imports/_step1_file.html" %}
+    <div class="flex flex-col gap-4 min-w-0">
+      <div id="import-wizard" class="flex flex-col gap-4 min-w-0">
+        {% include "imports/_step1_file.html" %}
+      </div>
+      {% include "imports/_history.html" %}
     </div>
 
     <aside class="hidden lg:flex flex-col gap-4">
       <section class="card flex flex-col gap-2">
         <h2 class="text-section-title">{{ _("Fichier") }}</h2>
-        <p id="import-file-name" class="text-sm text-secondary" data-empty="{{ _("Aucun fichier choisi.") }}">{{ _("Aucun fichier choisi.") }}</p>
-        <p class="text-xs text-secondary">{{ _("Formats reconnus : QIF (export HomeBank), CSV de la plupart des banques, OFX. Les doublons sont détectés sur la date, le montant et le libellé.") }}</p>
+        <div id="import-file-empty" class="flex flex-col gap-2">
+          <p class="text-sm text-secondary">{{ _("Aucun fichier choisi.") }}</p>
+          <p class="text-xs text-secondary">{{ _("Formats reconnus : QIF (export HomeBank), CSV de la plupart des banques, OFX. Les doublons sont détectés sur la date, le montant et le libellé.") }}</p>
+        </div>
+        <dl id="import-file-details" class="hidden flex flex-col text-sm">
+          <div class="flex justify-between gap-3 py-2 border-b border-border"><dt class="text-secondary">{{ _("Nom") }}</dt><dd data-file="name" class="font-medium text-right break-all"></dd></div>
+          <div class="flex justify-between gap-3 py-2 border-b border-border"><dt class="text-secondary">{{ _("Contenu") }}</dt><dd data-file="size" class="font-medium text-right"></dd></div>
+          <div class="flex justify-between gap-3 py-2"><dt class="text-secondary">{{ _("Compte") }}</dt><dd data-file="account" class="font-medium text-right"></dd></div>
+        </dl>
       </section>
       <section class="card flex flex-col gap-1">
         <h2 class="text-section-title mb-1">{{ _("Ce que Twiga vérifie") }}</h2>

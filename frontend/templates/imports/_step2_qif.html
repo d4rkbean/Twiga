@@ -1,29 +1,37 @@
-{% from "imports/_stepper.html" import stepper %}
-{{ stepper(2, _("Aperçu")) }}
+{% from "imports/_stepper.html" import stepper, step_nav %}
+{{ stepper(2, _("Aperçu QIF"), _("Importer")) }}
 <div class="card flex flex-col gap-4">
   <h2 class="text-section-title">{{ _("Aperçu de l'import QIF") }}</h2>
 
   <div class="flex flex-col gap-2">
-    <p class="text-sm font-medium text-primary">{{ _("Comptes détectés") }}</p>
-    <ul class="flex flex-col gap-1">
-      {% for account in accounts %}
-      <li class="text-sm text-primary">{{ account.name }} <span class="text-xs text-secondary">({{ account.type }})</span></li>
+    <h3 class="text-sm font-semibold text-primary">{{ _("Comptes détectés") }}</h3>
+    <ul class="flex flex-col">
+      {% for account, existing in accounts %}
+      <li class="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0 text-sm">
+        <span><strong>{{ account.name }}</strong> <span class="text-secondary">· {{ get_account_type_label(account.type) }}</span></span>
+        <span class="text-secondary">{{ _("existant") if existing else _("sera créé") }}</span>
+      </li>
       {% else %}
       <li class="text-sm text-secondary">{{ _("Aucun compte trouvé dans le fichier.") }}</li>
       {% endfor %}
     </ul>
   </div>
 
-  <div class="flex flex-col gap-1 text-sm text-secondary">
-    <p>{% trans category_count=category_count %}{{ category_count }} catégorie(s) (hiérarchie conservée){% endtrans %}</p>
-    <p>{% trans transaction_count=transaction_count %}{{ transaction_count }} opération(s){% endtrans %}</p>
-    <p>{% trans payee_count=payee_count %}{{ payee_count }} bénéficiaire(s) distinct(s){% endtrans %}</p>
+  <h3 class="text-sm font-semibold text-primary">{% trans category_count=category_count %}{{ category_count }} catégories (hiérarchie conservée){% endtrans %}</h3>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div class="rounded-xl bg-sunken p-3">
+      <p class="text-xs text-secondary">{{ _("Opérations") }}</p>
+      <p class="text-xl font-semibold tabular-nums">{{ transaction_count }}</p>
+    </div>
+    <div class="rounded-xl bg-sunken p-3">
+      <p class="text-xs text-secondary">{{ _("Bénéficiaires distincts") }}</p>
+      <p class="text-xl font-semibold tabular-nums">{{ payee_count }}</p>
+    </div>
   </div>
 
-  <form hx-post="/imports/{{ import_id }}/confirm" hx-target="#import-wizard" hx-swap="innerHTML">
+  <form id="import-step2-form" hx-post="/imports/{{ import_id }}/confirm" hx-target="#import-wizard" hx-swap="innerHTML">
     <input type="hidden" name="format" value="qif" />
-    <button type="submit" class="btn btn-primary w-full lg:w-auto lg:ml-auto lg:px-8">
-      {{ _("Continuer") }} {{ icon('arrow-narrow-right', size=18) }}
-    </button>
   </form>
 </div>
+{{ step_nav("/imports/step1", "import-step2-form") }}
