@@ -12,6 +12,7 @@ from backend.auth_middleware import AuthMiddleware
 from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
 from backend.security_headers import SecurityHeadersMiddleware
+from backend.request_guard import RequestGuardMiddleware
 from backend.routers import (
     accounts,
     auth as auth_router,
@@ -54,6 +55,9 @@ if auth.AUTH_ENABLED:
     # backend/auth.py) : pas besoin de SessionMiddleware ni de se soucier
     # d'un quelconque ordre d'empilement entre deux middlewares.
     app.add_middleware(AuthMiddleware)
+# Outside AuthMiddleware: a form sent by another site is refused before
+# anything else, signed in or not, and with authentication off as well.
+app.add_middleware(RequestGuardMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 

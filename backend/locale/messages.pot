@@ -362,6 +362,9 @@ msgstr ""
 msgid "Administrateur"
 msgstr ""
 
+msgid "Adresse du serveur non autorisée."
+msgstr ""
+
 msgid "Afficher :"
 msgstr ""
 
@@ -1985,6 +1988,9 @@ msgstr ""
 
 #, python-format
 msgid "Reprendre %(previous_month_label)s"
+msgstr ""
+
+msgid "Requête refusée : elle ne vient pas de Twiga."
 msgstr ""
 
 #, python-format

@@ -67,6 +67,27 @@ account's password).
 app beyond your local network (`AUTH_ENABLED=true`, the default, protects
 every page with a signed session cookie valid for 30 days).
 
+## Security settings (all optional)
+
+Nothing to set for a normal install: every variable below is empty by default
+and the app behaves as before. Set them in `.env`, then
+`docker compose up -d`.
+
+- **Forms sent by another site are refused** (with or without
+  authentication): a POST whose `Origin` (or `Referer`) is not the address
+  Twiga is reached at gets a 403. Behind a reverse proxy, the address is the
+  `Host` header the proxy forwards, or `X-Forwarded-Host` when the proxy sets
+  it. If your proxy changes `Host` and sets neither, list the public address
+  in `TRUSTED_ORIGINS` (comma-separated, e.g.
+  `TRUSTED_ORIGINS=https://twiga.example.com`); the refusal is logged with the
+  address to add.
+- `ALLOWED_HOSTS`: the host names Twiga answers to, comma-separated (e.g.
+  `ALLOWED_HOSTS=twiga.local,192.168.1.20`). Any other host name gets a 400,
+  which blocks DNS rebinding attacks from a web page. Empty: every host name.
+- `BIND_ADDRESS`: the host address the port listens on. `127.0.0.1` keeps the
+  app reachable from this machine only (when a reverse proxy runs on the same
+  host). Empty: every address, as before.
+
 ## Backing up your data
 
 Two complementary options:
