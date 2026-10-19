@@ -167,6 +167,22 @@
 }
 
 @layer base {
+  /* Changement de thème en cercle (View Transitions, voir revealTheme dans
+     base.html) : on supprime le fondu par défaut entre l'ancienne et la
+     nouvelle image, c'est le script qui anime le rayon du cercle. La nouvelle
+     image passe au-dessus de l'ancienne. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  ::view-transition-old(root) {
+    z-index: 1;
+  }
+  ::view-transition-new(root) {
+    z-index: 2;
+  }
+
   /* Pendant clair de color-scheme (voir le bloc .dark ci-dessus, non layered
      donc prioritaire quand la classe est présente). */
   :root {
