@@ -331,6 +331,34 @@ def recurring_answer(active: int, expected: int, total: str) -> dict:
     return {"phrase": phrase, "detail": detail}
 
 
+def users_answer(roles: dict, never_logged: list[str], admins: list[str]) -> dict:
+    """The sentence of the Utilisateurs screen: how many people have access, and who never opened
+    their account. `roles` counts the active accounts by role; `admins` names the active administrators."""
+    total = sum(roles.values())
+    phrase = ngettext("%(n)s personne a accès.", "%(n)s personnes ont accès.", total) % {"n": total}
+    if never_logged:
+        names = ", ".join(never_logged)
+        phrase += " " + ngettext(
+            "%(names)s n'a jamais ouvert son compte.", "%(names)s n'ont jamais ouvert leur compte.", len(never_logged)
+        ) % {"names": names}
+    counts = ", ".join(
+        [
+            ngettext("%(n)s administrateur", "%(n)s administrateurs", roles.get("admin", 0)) % {"n": roles.get("admin", 0)},
+            ngettext("%(n)s éditeur", "%(n)s éditeurs", roles.get("editor", 0)) % {"n": roles.get("editor", 0)},
+            _t("%(n)s en lecture seule") % {"n": roles.get("viewer", 0)},
+        ]
+    )
+    if admins:
+        keep = _t("Il doit toujours rester au moins un administrateur actif : pour l'instant, c'est %(names)s.") % {
+            "names": ", ".join(admins)
+        } if len(admins) == 1 else _t(
+            "Il doit toujours rester au moins un administrateur actif : pour l'instant, %(names)s."
+        ) % {"names": ", ".join(admins)}
+    else:
+        keep = _t("Il doit toujours rester au moins un administrateur actif.")
+    return {"phrase": phrase, "detail": f"{counts}. {keep}"}
+
+
 # --- Import -----------------------------------------------------------------
 
 
