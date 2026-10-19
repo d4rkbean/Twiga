@@ -13,7 +13,7 @@ from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
 from backend.security_headers import SecurityHeadersMiddleware
 from backend.request_guard import RequestGuardMiddleware
-from backend import import_storage, password_change
+from backend import access_log, import_storage, password_change
 from backend.routers import (
     accounts,
     auth as auth_router,
@@ -66,6 +66,7 @@ app.add_middleware(RequestGuardMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_event_handler("startup", password_change.warn_about_default_passwords)
 app.add_event_handler("startup", import_storage.purge_stale_uploads)
+access_log.install()
 
 
 @app.on_event("startup")
