@@ -13,6 +13,7 @@ from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
 from backend.security_headers import SecurityHeadersMiddleware
 from backend.request_guard import RequestGuardMiddleware
+from backend import password_change
 from backend.routers import (
     accounts,
     auth as auth_router,
@@ -50,6 +51,8 @@ app = FastAPI(title="Twiga")
 # LocaleMiddleware d'abord : elle doit s'exécuter APRÈS AuthMiddleware (ordre
 # inverse de l'ajout) pour lire request.state.user.
 app.add_middleware(LocaleMiddleware)
+# Inside AuthMiddleware (added before it): reads request.state.user.
+app.add_middleware(password_change.PasswordChangeMiddleware)
 if auth.AUTH_ENABLED:
     # AuthMiddleware gère elle-même son cookie de session signé (voir
     # backend/auth.py) : pas besoin de SessionMiddleware ni de se soucier
@@ -59,6 +62,7 @@ if auth.AUTH_ENABLED:
 # anything else, signed in or not, and with authentication off as well.
 app.add_middleware(RequestGuardMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_event_handler("startup", password_change.warn_about_default_passwords)
 
 
 @app.on_event("startup")
@@ -109,6 +113,7 @@ app.include_router(checks.router)
 app.include_router(reports.router)
 app.include_router(users_router.router)
 app.include_router(profile.router)
+app.include_router(password_change.router)
 
 
 @app.get("/")

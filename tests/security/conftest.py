@@ -6,6 +6,7 @@ PostgreSQL is mandatory (crud.py relies on date_trunc, extract, ilike): run the
 suite against a database whose name ends in "_test", it is dropped and rebuilt.
 """
 
+import logging
 import os
 from decimal import Decimal
 from pathlib import Path
@@ -42,6 +43,11 @@ def security_data():
     config = Config(str(ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(ROOT / "backend" / "alembic"))
     command.upgrade(config, "head")
+    # Alembic's logging setup (alembic.ini) disables the loggers that already
+    # exist; in production the migrations run in a process of their own.
+    for name in list(logging.root.manager.loggerDict):
+        if name.startswith("twiga"):
+            logging.getLogger(name).disabled = False
 
     ids = {}
     with SessionLocal() as db:
