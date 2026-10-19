@@ -1,0 +1,62 @@
+{#
+  Liste déroulante dessinée (jamais le <select> natif) : un champ de 50 px avec
+  chevron, qui ouvre une liste d'options de 50 px.
+
+    {% from "_macros/dropdown_field.html" import dropdown_field %}
+    {{ dropdown_field("account_id", options, selected, aria_label=_("Compte")) }}
+
+  `options` : liste de (valeur, libellé). Un champ caché porte la valeur et
+  reçoit un évènement « change » à chaque choix : un formulaire HTMX qui écoute
+  « change » (hx-trigger) réagit comme avec un <select>. Échap ferme, un clic
+  à l'extérieur aussi, les flèches parcourent la liste.
+#}
+{% macro dropdown_field(name, options, selected, aria_label=None) -%}
+{% set current = namespace(label=options[0][1] if options else "") %}
+{% for value, label in options %}{% if value|string == selected|string %}{% set current.label = label %}{% endif %}{% endfor %}
+<div
+  class="relative"
+  x-data="{ open: false, value: {{ selected | string | tojson | forceescape }}, label: {{ current.label | tojson | forceescape }},
+    pick(value, label) { this.value = value; this.label = label; this.open = false; this.$nextTick(() => this.$refs.field.dispatchEvent(new Event('change', { bubbles: true }))); },
+    move(step) { const items = [...this.$refs.list.querySelectorAll('[role=option]')]; const at = items.indexOf(document.activeElement); items[(at + step + items.length) % items.length]?.focus(); } }"
+  @keydown.escape="open = false"
+  @click.outside="open = false"
+>
+  <input type="hidden" name="{{ name }}" x-ref="field" :value="value" value="{{ selected | string }}" />
+  <button
+    type="button"
+    class="input-base flex items-center justify-between gap-3 text-left cursor-pointer"
+    aria-haspopup="listbox"
+    :aria-expanded="open ? 'true' : 'false'"
+    {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+    @click="open = !open"
+    @keydown.arrow-down.prevent="open = true; $nextTick(() => move(1))"
+  >
+    <span class="truncate" x-text="label">{{ current.label }}</span>
+    <span class="flex-shrink-0 text-secondary transition-transform" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+  </button>
+  <div
+    x-ref="list"
+    x-show="open"
+    x-transition.opacity
+    style="display: none;"
+    role="listbox"
+    class="absolute z-30 left-0 right-0 mt-1 max-h-72 overflow-y-auto rounded-xl border border-border-strong bg-container shadow-lg"
+    @keydown.arrow-down.prevent="move(1)"
+    @keydown.arrow-up.prevent="move(-1)"
+  >
+    {% for value, label in options %}
+    <button
+      type="button"
+      role="option"
+      aria-selected="{{ 'true' if value|string == selected|string else 'false' }}"
+      :aria-selected="value === {{ value | string | tojson | forceescape }} ? 'true' : 'false'"
+      class="w-full min-h-[50px] px-4 flex items-center justify-between gap-3 text-left text-sm text-primary hover:bg-sunken focus-visible:bg-sunken aria-selected:font-semibold aria-selected:text-accent-ink"
+      @click="pick({{ value | string | tojson | forceescape }}, {{ label | tojson | forceescape }})"
+    >
+      <span class="truncate">{{ label }}</span>
+      <span class="flex-shrink-0" x-show="value === {{ value | string | tojson | forceescape }}" {% if value|string != selected|string %}style="display: none;"{% endif %}>{{ icon('check', size=16) }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{%- endmacro %}

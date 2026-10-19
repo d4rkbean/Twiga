@@ -7,5 +7,5 @@
     {{ pillar_icon("essentiel") }}
 #}
 {% macro pillar_icon(key, size=18, cls="") -%}
-{{ icon({"essentiel": "home", "choix": "star", "imprevu": "urgent"}.get(key, "star"), size=size, cls=cls) }}
+{{ icon({"essentiel": "home", "choix": "star", "imprevu": "urgent", "savings": "pig-money"}.get(key, "star"), size=size, cls=cls) }}
 {%- endmacro %}

@@ -506,6 +506,7 @@ def _build_report_context(
         "income_bar_pct": income_bar_pct,
         "expense_bar_pct": expense_bar_pct,
         "expense_rows": expense_rows,
+        "pending_expense_total": crud.get_pending_expense_total(db, period.start, period.end, parsed_account_id),
         "income_rows": income_rows,
         "budget_progress": budget_progress,
         "period_months": period_months,

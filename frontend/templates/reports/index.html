@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% from "_macros/dropdown_field.html" import dropdown_field %}
+{# Rapports n'a aucune action principale : Importer reste secondaire, comme sur la maquette. #}
+{% set demote_import = true %}
 {% block title %}{{ _("Rapport complet — Twiga") }}{% endblock %}
 
 {% block extra_head %}
@@ -58,14 +61,14 @@
       <a
         href="/reports?{{ period.prev_params | urlencode }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
         aria-label="{{ _("Période précédente") }}"
-        class="w-[50px] h-[50px] flex items-center justify-center text-primary flex-shrink-0"
-      >{{ icon('arrow-narrow-left') }}</a>
+        class="w-[50px] h-[50px] flex items-center justify-center text-primary flex-shrink-0 rotate-180"
+      >{{ icon('chevron-right') }}</a>
       <span class="flex-1 min-w-0 truncate px-1 text-sm font-semibold text-primary text-center">{{ period_bar_label }}</span>
       <a
         href="/reports?{{ period.next_params | urlencode }}{% if account_id %}&account_id={{ account_id }}{% endif %}{% if shift_income %}&shift_income=1{% endif %}"
         aria-label="{{ _("Période suivante") }}"
         class="w-[50px] h-[50px] flex items-center justify-center text-primary flex-shrink-0"
-      >{{ icon('arrow-narrow-right') }}</a>
+      >{{ icon('chevron-right') }}</a>
     </div>
   </div>
 
@@ -105,14 +108,10 @@
     <input type="hidden" name="date_to" value="" />
     {% endif %}
 
-    <div class="relative flex-1 basis-[200px] max-w-sm">
-      <select name="account_id" aria-label="{{ _("Compte") }}" class="input-base appearance-none pr-10">
-        <option value="" {% if account_id is none %}selected{% endif %}>{{ _("Tous les comptes") }}</option>
-        {% for account in accounts %}
-        <option value="{{ account.id }}" {% if account.id == account_id %}selected{% endif %}>{{ account.name }}</option>
-        {% endfor %}
-      </select>
-      <span aria-hidden="true" class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">{{ icon('chevron-down', size=18) }}</span>
+    <div class="flex-1 basis-[200px] max-w-xs">
+      {% set account_options = [("", _("Tous les comptes"))] %}
+      {% for account in accounts %}{% set _ = account_options.append((account.id, account.name)) %}{% endfor %}
+      {{ dropdown_field("account_id", account_options, account_id if account_id is not none else "", aria_label=_("Compte")) }}
     </div>
 
     {# DÉCALAGE PÉRIODE — recettes du mois M-1 en face des dépenses du mois M
@@ -135,6 +134,7 @@
           @change="localStorage.setItem('twiga_reports_shift_income', $event.target.checked ? '1' : '0')"
           class="w-5 h-5 flex-shrink-0"
         />
+        <span class="text-secondary flex-shrink-0">{{ icon('adjustments', size=18) }}</span>
         <span class="text-sm text-primary whitespace-nowrap">{{ _("Décaler les recettes") }}</span>
       </label>
       <span
