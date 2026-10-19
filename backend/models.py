@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database import Base
@@ -374,6 +374,10 @@ class AppState(Base):
     # Données > « Sauvegarder maintenant » (jamais le fichier lui-même : il est
     # téléchargé, pas conservé sur le serveur). NULL = aucune pour l'instant.
     last_backup_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Setting "Afficher les comptes sur la page de connexion" (Paramètres):
+    # the other way's login shows the household as tiles to pick from. Off by
+    # default, set by the administrator only.
+    show_login_accounts: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
 
 
 class User(Base):

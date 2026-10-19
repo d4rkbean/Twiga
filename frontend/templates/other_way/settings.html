@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import answer_head, section_tabs %}
+
+{% block title %}{{ _("Paramètres — Twiga") }}{% endblock %}
+
+{% block content %}
+{#- Paramètres, the other way: settings arranged by use. What changes often comes
+    first (the subjects that have a page of their own, then summaries of
+    categories, rules and accounts), then what is set from time to time
+    (language and formats, where the month's resources come from, backup), and
+    the sensitive zone at the very bottom (who has access, security, deleting
+    everything). A search field filters every card on the page. -#}
+{% set current = get_current_user(request) %}
+{% set is_admin = (not auth_enabled) or (current and current.role == "admin") %}
+{% set write = can_edit("/settings/x") %}
+<main class="flex flex-col gap-8 px-4 pb-8 lg:px-8"
+      x-data="{
+        q: '',
+        has(text) { var q = this.q.trim().toLowerCase(); return !q || text.toLowerCase().indexOf(q) !== -1; },
+        found() { var self = this; return Array.prototype.filter.call(document.querySelectorAll('[data-card]'), function (el) { return self.has(el.textContent); }).length; },
+      }">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": false},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": true},
+  ]) }}
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    <div class="flex flex-col gap-4 min-w-0">
+      {{ answer_head(answer.phrase, answer.detail) }}
+      {% if answer.action %}
+      <a href="{{ answer.action[0] }}" class="btn btn-primary self-start">{{ answer.action[1] }} {{ icon('arrow-narrow-right', size=18) }}</a>
+      {% endif %}
+    </div>
+    <div class="flex flex-col gap-3 min-w-0">
+      <label class="relative block">
+        <span class="sr-only">{{ _("Chercher un réglage") }}</span>
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">{{ icon('search', size=18) }}</span>
+        <input type="search" x-model="q" autocomplete="off" placeholder="{{ _("Chercher un réglage : loyer, sauvegarde, Sam…") }}" class="input-base pl-10" />
+      </label>
+      <p class="flex flex-wrap items-center gap-x-1 gap-y-0 text-sm text-secondary">
+        <span>{{ _("Par exemple :") }}</span>
+        {% for example in search_examples %}
+        <button type="button" @click="q = {{ example | tojson | forceescape }}" class="min-h-[50px] px-2 font-medium text-accent-ink">{{ example }}</button>
+        {% endfor %}
+      </p>
+    </div>
+  </div>
+
+  <p x-show="q.trim() && found() === 0" style="display: none" role="status" class="card text-secondary">{{ _("Aucun réglage ne correspond. Essaie un autre mot : un compte, une règle, une langue…") }}</p>
+
+  {#- ---------- Ce qui change souvent ---------- -#}
+  <section aria-labelledby="h-often" class="flex flex-col gap-4" x-show="has($el.textContent)">
+    <div class="flex flex-col gap-1">
+      <h2 id="h-often" class="text-section-title">{{ _("Ce qui change souvent") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Paiements, abonnements, catégories, règles de rangement et comptes.") }}</p>
+    </div>
+
+    <div class="grid gap-[var(--space-list)] sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+      {% set t = tiles %}
+      {% set tile_list = [
+        ("/payment-methods", "credit-card", _("Modes de paiement"), none),
+        ("/recurring", "repeat", _("Abonnements récurrents"), none),
+        ("/checks", "receipt", _("Chèques et paiements en attente"), none),
+        ("/backlog", "list-details", _("Catégorisation en masse"), _("Ranger plusieurs opérations d'un coup")),
+        ("/budgets", "chart-line", _("Budgets"), _("Fixer l'enveloppe de chaque catégorie")),
+      ] %}
+      {% if is_admin %}{% set tile_list = tile_list + [("/imports/new", "upload", _("Importer un relevé"), none)] %}{% endif %}
+      {% for href, icon_name, title, hint in tile_list %}
+      <a href="{{ href }}" data-card x-show="has($el.textContent)" class="card flex items-start gap-3 min-h-[50px] hover:shadow-lg transition-shadow">
+        <span class="shrink-0 grid place-items-center w-10 h-10 rounded-full bg-sunken text-secondary">{{ icon(icon_name, size=18) }}</span>
+        <span class="flex-1 min-w-0 flex flex-col gap-0.5">
+          <span class="font-semibold">{{ title }}</span>
+          {% if href == "/payment-methods" %}
+          <span class="text-xs text-secondary">{% trans n=t.payment_methods.count, names=t.payment_methods.labels | join(", ") %}{{ n }} mode : {{ names }}{% pluralize %}{{ n }} modes : {{ names }}…{% endtrans %}</span>
+          {% elif href == "/recurring" %}
+          <span class="text-xs text-secondary amount-blur">{% trans n=t.recurring.detected, total=t.recurring.monthly_total | eur %}{{ n }} détecté · {{ total }} par mois{% pluralize %}{{ n }} détectés · {{ total }} par mois{% endtrans %}</span>
+          {% if t.recurring.expected %}<span class="badge badge-warning self-start whitespace-normal">{% trans n=t.recurring.expected %}{{ n }} attendu ce mois, pas encore vu{% pluralize %}{{ n }} attendus ce mois, pas encore vus{% endtrans %}</span>{% endif %}
+          {% elif href == "/checks" %}
+          <span class="text-xs text-secondary amount-blur">{% trans n=t.checks.count, total=t.checks.total | eur %}{{ n }} en attente · {{ total }}{% endtrans %}</span>
+          {% if t.checks.oldest_days is not none %}<span class="badge badge-warning self-start whitespace-normal">{% trans n=t.checks.oldest_days %}Le plus ancien attend depuis {{ n }} jour{% pluralize %}Le plus ancien attend depuis {{ n }} jours{% endtrans %}</span>{% endif %}
+          {% elif href == "/imports/new" %}
+          <span class="text-xs text-secondary">{% if t.last_import %}{% trans file=t.last_import.filename, date=t.last_import.imported_on | short_date %}Dernier import : {{ file }}, le {{ date }}{% endtrans %}{% else %}{{ _("Aucun import pour l'instant") }}{% endif %}</span>
+          {% elif hint %}<span class="text-xs text-secondary">{{ hint }}</span>{% endif %}
+        </span>
+        <span class="shrink-0 self-center text-secondary">{{ icon('chevron-right', size=18) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="grid gap-[var(--space-block)] lg:grid-cols-3 items-start">
+      {#- Catégories -#}
+      <section id="s-categories" data-card x-show="has($el.textContent)" aria-labelledby="h-categories" class="card flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="h-categories" class="text-section-title">{{ _("Catégories") }} <span class="font-normal text-secondary">· {{ categories | length }}</span></h3>
+          {% if write %}<a href="/categories" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Nouvelle catégorie") }}</a>{% endif %}
+        </div>
+        <ul>
+          {% for category in categories %}
+          <li class="flex items-center gap-3 min-h-[50px] py-[var(--row-pad)] {{ 'border-t border-border' if not loop.first else '' }}">
+            <span class="shrink-0 w-3 h-3 rounded-full" style="background-color: {{ category.id | category_color }}"></span>
+            <a href="/categories" class="flex-1 min-w-0 flex flex-col">
+              <span class="font-semibold truncate">{{ category.name }}</span>
+              <span class="text-xs text-secondary truncate">{% if category.children %}{{ category.children | map(attribute="name") | join(", ") }}{% else %}{{ _("aucune sous-catégorie") }}{% endif %}</span>
+            </a>
+            <a href="/categories" aria-label="{{ _("Modifier") }} {{ category.name }}" class="shrink-0 inline-flex w-[50px] h-[50px] items-center justify-center rounded-xl text-secondary hover:bg-sunken">{{ icon('pencil', size=18) }}</a>
+          </li>
+          {% else %}
+          <li class="text-sm text-secondary">{{ _("Aucune catégorie pour l'instant.") }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      {#- Règles de rangement -#}
+      <section id="s-regles" data-card x-show="has($el.textContent)" aria-labelledby="h-regles" class="card flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="h-regles" class="text-section-title">{{ _("Règles de rangement") }}</h3>
+          {% if write %}<a href="/rules" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</a>{% endif %}
+        </div>
+        <ul>
+          {% for item in rules %}
+          <li class="{{ 'border-t border-border' if not loop.first else '' }}">
+            <a href="/rules" class="flex items-center gap-3 min-h-[50px] py-[var(--row-pad)]">
+              <span class="flex-1 min-w-0 flex flex-col">
+                <span class="font-mono text-xs break-words">{{ item.rule.keyword }}</span>
+                <span class="text-xs text-secondary flex items-center gap-1.5 min-w-0">
+                  <span class="shrink-0 w-2 h-2 rounded-full" style="background-color: {{ item.rule.category.id | category_color }}"></span>
+                  <span class="truncate">{{ item.rule.category.name | category_display }} · {% trans n=item.usage_count %}{{ n }} fois{% endtrans %}</span>
+                </span>
+              </span>
+              <span class="shrink-0 text-secondary">{{ icon('chevron-right', size=18) }}</span>
+            </a>
+          </li>
+          {% else %}
+          <li class="text-sm text-secondary">{{ _("Aucune règle pour l'instant.") }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      {#- Comptes -#}
+      <section id="s-comptes" data-card x-show="has($el.textContent)" aria-labelledby="h-comptes" class="card flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="h-comptes" class="text-section-title">{{ _("Comptes") }}</h3>
+          {% if write %}<a href="/accounts" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Ajouter") }}</a>{% endif %}
+        </div>
+        {% if account_balances %}
+        <ul>
+          {% for account, balance in account_balances %}
+          <li class="flex items-center gap-3 min-h-[50px] py-[var(--row-pad)] {{ 'border-t border-border' if not loop.first else '' }}">
+            <span class="shrink-0 w-3 h-3 rounded-full" style="background-color: {{ account | account_color }}"></span>
+            <a href="/accounts" class="flex-1 min-w-0 flex flex-col">
+              <span class="font-semibold truncate">{{ account.name }}</span>
+              <span class="text-xs text-secondary">{{ get_account_type_label(account.type) }}</span>
+            </a>
+            <span class="amount-blur tabular-nums whitespace-nowrap">{{ balance | eur }}</span>
+            <a href="/accounts" aria-label="{{ _("Modifier") }} {{ account.name }}" class="shrink-0 inline-flex w-[50px] h-[50px] items-center justify-center rounded-xl text-secondary hover:bg-sunken">{{ icon('pencil', size=18) }}</a>
+          </li>
+          {% endfor %}
+          <li class="flex items-center justify-between gap-3 min-h-[var(--row-static)] py-[var(--row-pad)] border-t border-border font-semibold">
+            <span>{{ _("Total") }}</span><span class="amount-blur tabular-nums">{{ accounts_total | eur }}</span>
+          </li>
+        </ul>
+        {% else %}
+        <p class="text-sm text-secondary">{{ _("Aucun compte pour l'instant : importe d'abord un fichier QIF, il en créera automatiquement.") }}</p>
+        {% endif %}
+      </section>
+    </div>
+  </section>
+
+  {#- ---------- De temps en temps ---------- -#}
+  <section aria-labelledby="h-seldom" class="flex flex-col gap-4" x-show="has($el.textContent)">
+    <div class="flex flex-col gap-1">
+      <h2 id="h-seldom" class="text-section-title">{{ _("De temps en temps") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Langue et formats, source des ressources du mois, sauvegarde et export.") }}</p>
+    </div>
+
+    <div class="grid gap-[var(--space-block)] lg:grid-cols-3 items-start">
+      {#- Langue et formats: each choice applies on its own and reloads the page. -#}
+      <section id="s-preferences" data-card x-show="has($el.textContent)" aria-labelledby="h-lang" class="card flex flex-col gap-4">
+        <h3 id="h-lang" class="text-section-title">{{ _("Langue et formats") }}</h3>
+        <form hx-post="/profile/preferences" hx-trigger="twiga-prefs" hx-swap="none"
+              x-data="{ lang: '{{ current_language() }}', fmt: '{{ current_format() }}' }" class="flex flex-col gap-4">
+          <fieldset class="flex flex-col gap-2">
+            <legend class="form-label mb-1">{{ _("Langue") }}</legend>
+            <div class="grid grid-cols-2 gap-2">
+              {% for code, name in LANGUAGES.items() %}
+              <label class="choice-card">
+                <input type="radio" name="language" value="{{ code }}" class="sr-only" x-model="lang"
+                       @change="fmt = lang === 'fr' ? 'fr' : 'en-GB'; $nextTick(() => $dispatch('twiga-prefs'))" />
+                <span class="text-sm font-medium text-primary">{{ name }}{% if code == "en" %} <span class="text-xs text-secondary">({{ _("bêta") }})</span>{% endif %}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <fieldset class="flex flex-col gap-2">
+            <legend class="form-label mb-1">{{ _("Format des nombres et des dates") }}</legend>
+            <div class="grid gap-2">
+              {% for code, label in [("fr", _("Français")), ("en-GB", _("International")), ("en-US", _("États-Unis"))] %}
+              <label class="choice-card">
+                <input type="radio" name="number_format" value="{{ code }}" class="sr-only" x-model="fmt" @change="$nextTick(() => $dispatch('twiga-prefs'))" />
+                <span class="flex items-center justify-between gap-3 w-full">
+                  <span class="text-sm font-semibold text-primary">{{ label }}</span>
+                  <span class="text-xs text-secondary tabular-nums">{{ format_preview(code) }}</span>
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <p class="text-xs text-secondary">{{ _("Le changement s'applique immédiatement.") }}</p>
+        </form>
+        <div class="flex flex-col border-t border-border">
+          <a href="/profile" class="min-h-[50px] flex items-center justify-between gap-3 text-sm font-medium text-accent-ink">
+            <span>{{ _("Montants masqués, thème et mot de passe : dans Mon profil") }}</span>{{ icon('arrow-narrow-right', size=18) }}
+          </a>
+          <button type="button" onclick="window.startTwigaTour()" class="min-h-[50px] flex items-center justify-between gap-3 text-sm font-medium text-accent-ink border-t border-border text-left">
+            <span>{{ _("Revoir la visite guidée") }}</span>{{ icon('arrow-narrow-right', size=18) }}
+          </button>
+        </div>
+      </section>
+
+      {#- D'où viennent les ressources du mois ? (and the day the budget month starts) -#}
+      <section id="s-cap" data-card x-show="has($el.textContent)" aria-labelledby="h-cap" class="card flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <h3 id="h-cap" class="text-section-title">{{ _("D'où viennent les ressources du mois ?") }}</h3>
+          <p class="text-sm text-secondary">{{ _("Le Cap te propose ce montant au départ. Le suivi se réfère toujours à celui que tu saisis.") }}</p>
+        </div>
+        <form hx-post="/settings/cap-income-source" hx-target="#cap-income-result" hx-swap="innerHTML" class="flex flex-col gap-3"
+              x-data="{ source: '{{ cap_settings.income_source }}' }">
+          <fieldset class="flex flex-col gap-2" {% if not write %}disabled{% endif %}>
+            <legend class="sr-only">{{ _("D'où viennent les ressources du mois ?") }}</legend>
+            {% for code, label, aide in income_sources %}
+            <label class="choice-card">
+              <input type="radio" name="income_source" value="{{ code }}" x-model="source" class="sr-only" />
+              <span class="text-sm font-semibold text-primary">{{ label }}</span>
+              <span class="text-xs text-secondary">{{ aide }}</span>
+            </label>
+            {% endfor %}
+          </fieldset>
+          <div class="form-group" x-show="source === 'virements'" style="display: none;">
+            <span class="form-label" id="income-account-label">{{ _("Compte qui reçoit les virements") }}</span>
+            <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="income-account-label">
+              {% for account in accounts %}
+              <label class="choice-card !min-h-[50px] px-4 justify-center">
+                <input type="radio" name="income_account_id" value="{{ account.id }}" class="sr-only" {% if cap_settings.income_account_id == account.id %}checked{% endif %} />
+                <span class="text-sm font-medium">{{ account.name }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <label class="form-group" x-show="source === 'fixe'" style="display: none;">
+            <span class="form-label">{{ _("Montant fixe") }}</span>
+            <span class="flex items-center gap-2">
+              <input type="text" inputmode="decimal" name="income_fixed_amount" autocomplete="off" placeholder="{{ '0,00' if current_format() == 'fr' else '0.00' }}"
+                     value="{% if cap_settings.income_fixed_amount is not none %}{{ '%.2f' % cap_settings.income_fixed_amount }}{% endif %}" class="input-base flex-1 tabular-nums" />
+              <span class="text-secondary font-semibold" aria-hidden="true">€</span>
+            </span>
+          </label>
+          {% if write %}<button type="submit" class="btn btn-secondary border-border-strong self-start">{{ icon('device-floppy', size=18) }} {{ _("Enregistrer") }}</button>{% endif %}
+          <div id="cap-income-result" aria-live="polite"></div>
+        </form>
+
+        <form hx-post="/settings/budget-start-day" hx-trigger="change" hx-target="#budget-start-result" hx-swap="innerHTML" class="flex flex-col gap-2 border-t border-border pt-4">
+          <fieldset class="flex flex-col gap-2" {% if not write %}disabled{% endif %}>
+            <legend class="form-label mb-1">{{ _("Début du mois budgétaire") }}</legend>
+            <div class="flex flex-wrap gap-2">
+              {% for day in [1, 5, 10, 15] %}
+              <label class="choice-card !min-h-[50px] px-4 justify-center">
+                <input type="radio" name="budget_start_day" value="{{ day }}" class="sr-only" {% if cap_settings.budget_start_day == day %}checked{% endif %} />
+                <span class="text-sm font-medium">{{ _("Le 1er") if day == 1 else _("Le %(day)s", day=day) }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <div id="budget-start-result" aria-live="polite"></div>
+        </form>
+      </section>
+
+      {#- Sauvegarde et export -#}
+      <section id="s-donnees" data-card x-show="has($el.textContent)" aria-labelledby="h-data" class="card flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
+          <h3 id="h-data" class="text-section-title">{{ _("Sauvegarde et export") }}</h3>
+          <p class="text-sm text-secondary">{{ _("Tout reste sur ton réseau. Twiga ne sauvegarde pas tout seul : exporte quand tu veux une copie.") }}</p>
+        </div>
+        <div class="flex flex-col gap-2">
+          <a href="/export/transactions.csv" class="btn btn-secondary border-border-strong">{{ icon('file-download', size=18) }} {{ _("Exporter en CSV") }}</a>
+          <a href="/export/json" class="btn btn-secondary border-border-strong">{{ icon('file-download', size=18) }} {{ _("Exporter en JSON complet") }}</a>
+        </div>
+        {% if is_admin %}
+        <div class="flex flex-col gap-2 border-t border-border pt-4">
+          <p class="text-sm text-secondary">{{ _("La sauvegarde est le même fichier que l'export JSON : c'est celui que la restauration relit. Il est téléchargé, rien n'est gardé sur le serveur.") }}</p>
+          <div id="last-backup" hx-get="/export/backup/status" hx-trigger="backup-saved" hx-swap="innerHTML">
+            {% include "export/_backup_status.html" %}
+          </div>
+          <form id="backup-form" method="post" action="/export/backup" onsubmit="setTimeout(function () { htmx.trigger('#last-backup', 'backup-saved'); }, 1500)">
+            <button type="submit" class="btn btn-secondary border-border-strong w-full">{{ icon('device-floppy', size=18) }} {{ _("Sauvegarder maintenant") }}</button>
+          </form>
+        </div>
+        {% endif %}
+        <div class="flex flex-col gap-2 border-t border-border pt-4">
+          <p class="text-sm text-secondary">{{ _("Les données déjà présentes (même id) sont mises à jour, pas dupliquées.") }}</p>
+          <form hx-post="/export/restore" hx-target="#restore-progress" hx-swap="outerHTML" hx-encoding="multipart/form-data"
+                hx-confirm="{{ _("Restaurer depuis cette sauvegarde JSON ? Les données déjà présentes (même id) seront mises à jour, pas dupliquées.") }}"
+                hx-trigger="change from:#restore-file" x-data="{ name: '' }" class="flex flex-col gap-2">
+            <label class="btn btn-secondary border-border-strong cursor-pointer w-full relative">
+              {{ icon('upload', size=18) }} <span x-text="name || {{ _("Restaurer depuis une sauvegarde JSON") | tojson }}">{{ _("Restaurer depuis une sauvegarde JSON") }}</span>
+              <input id="restore-file" type="file" name="file" accept="application/json,.json" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                     @change="name = $event.target.files[0] ? $event.target.files[0].name : ''" aria-label="{{ _("Fichier de sauvegarde JSON") }}" />
+            </label>
+          </form>
+          <div id="restore-progress"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  {#- ---------- Zone sensible ---------- -#}
+  <section aria-labelledby="h-sensitive" class="flex flex-col gap-4 border-t border-border pt-8" x-show="has($el.textContent)">
+    <div class="flex flex-col gap-1">
+      <h2 id="h-sensitive" class="text-section-title">{{ _("Zone sensible") }}</h2>
+      <p class="text-sm text-secondary">{{ _("Utilisateurs, mot de passe et suppression : à manier avec précaution, rarement utile.") }}</p>
+    </div>
+
+    <div class="grid gap-[var(--space-block)] lg:grid-cols-2 items-start">
+      {% if auth_enabled %}
+      <section id="s-utilisateurs" data-card x-show="has($el.textContent)" aria-labelledby="h-users" class="card flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 id="h-users" class="text-section-title">{{ _("Utilisateurs") }}</h3>
+          {% if is_admin %}<a href="/users" class="btn btn-secondary border-border-strong shrink-0">{{ icon('plus', size=18) }} {{ _("Ajouter un utilisateur") }}</a>{% endif %}
+        </div>
+        <ul>
+          {% for user in users if user.is_active %}
+          <li class="flex items-center gap-3 min-h-[50px] py-[var(--row-pad)] {{ 'border-t border-border' if not loop.first else '' }}">
+            <span class="shrink-0 grid place-items-center w-10 h-10 rounded-full bg-accent-soft text-accent-ink text-sm font-bold">{{ user_initials(user) }}</span>
+            <span class="flex-1 min-w-0 flex flex-col">
+              <span class="font-medium truncate">{{ user_display_name(user) }}{% if current and current.id == user.id %} <span class="font-normal text-secondary">· {{ _("toi") }}</span>{% endif %}</span>
+              {% if user.last_login %}<span class="text-xs text-secondary tabular-nums">{% trans date=user.last_login | fr_date, time=user.last_login.strftime("%H:%M") %}Connecté {{ date }} {{ time }}{% endtrans %}</span>{% endif %}
+            </span>
+            <span class="badge badge-neutral">{{ user_role_label(user.role) }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section id="s-securite" data-card x-show="has($el.textContent)" aria-labelledby="h-security" class="card flex flex-col gap-3">
+        <h3 id="h-security" class="text-section-title">{{ _("Sécurité") }}</h3>
+        <p class="text-sm text-secondary">{{ _("Changer ton mot de passe et te déconnecter se font depuis ton profil.") }}</p>
+        <a href="/profile" class="min-h-[50px] flex items-center justify-between gap-3 text-sm font-medium text-accent-ink border-t border-border">
+          <span>{{ _("Ouvrir Mon profil") }}</span>{{ icon('arrow-narrow-right', size=18) }}
+        </a>
+        {% if is_admin %}
+        <form hx-post="/settings/login-accounts" hx-trigger="change" hx-target="#login-accounts-result" hx-swap="innerHTML" class="border-t border-border pt-3">
+          <label class="flex items-center justify-between gap-4 min-h-[50px] cursor-pointer">
+            <span class="flex flex-col">
+              <span class="text-sm font-medium">{{ _("Afficher les comptes sur la page de connexion") }}</span>
+              <span class="text-xs text-secondary">{{ _("Les prénoms du foyer apparaissent en tuiles. Désactivé par défaut : toute personne qui atteint cette page les verrait.") }}</span>
+            </span>
+            <input type="checkbox" name="show" value="on" role="switch" class="peer sr-only" {% if show_login_accounts %}checked{% endif %} />
+            <span aria-hidden="true" class="relative shrink-0 w-11 h-6 rounded-full bg-field transition-colors peer-checked:bg-accent-ink peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-ink after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-container after:shadow-sm after:transition-transform peer-checked:after:translate-x-5"></span>
+          </label>
+          <div id="login-accounts-result" aria-live="polite"></div>
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if is_admin %}
+      <section id="s-supprimer" data-card x-show="has($el.textContent)" class="card flex flex-col gap-3" x-data="{ asking: false }">
+        <div class="flex flex-col gap-1">
+          <h3 class="text-section-title">{{ _("Supprimer toutes les opérations") }}</h3>
+          <p class="text-sm text-secondary">{{ _("Supprime toutes les opérations du foyer. Irréversible.") }}</p>
+        </div>
+        <button type="button" x-show="!asking" @click="asking = true" class="btn btn-danger self-start">{{ icon('trash', size=18) }} {{ _("Tout supprimer…") }}</button>
+        <div x-show="asking" style="display: none;" role="alert" class="flex flex-col gap-2 sm:flex-row">
+          <button type="button" hx-post="/settings/delete-all-transactions" hx-vals='{"confirm": "yes"}' hx-target="#delete-all-result" hx-swap="innerHTML" @click="asking = false" class="btn btn-danger">
+            {{ icon('trash', size=18) }} {{ _("Oui, tout supprimer") }}
+          </button>
+          <button type="button" @click="asking = false" class="btn btn-secondary border-border-strong">{{ _("Annuler") }}</button>
+        </div>
+        <div id="delete-all-result" aria-live="polite"></div>
+      </section>
+      {% endif %}
+    </div>
+  </section>
+</main>
+{% endblock %}

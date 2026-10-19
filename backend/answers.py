@@ -126,6 +126,75 @@ def project_need_sentence(state: str, monthly_effort: Decimal, effort: Decimal) 
     }
 
 
+# --- Paramètres ---------------------------------------------------------------
+
+
+def settings_answer(
+    oldest_check: dict | None, suggestions: int, accounts: int, categories: int, rules: int
+) -> dict:
+    """The sentence of the settings hub: "all is in place", then the one thing that waits.
+
+    `oldest_check` is {"number", "days"} for the payment that has waited the longest
+    for its debit, or None. The action tells where to go and is None when nothing waits.
+    """
+    counts = " ".join(
+        [
+            ngettext("%(n)s compte,", "%(n)s comptes,", accounts) % {"n": accounts},
+            ngettext("%(n)s catégorie,", "%(n)s catégories,", categories) % {"n": categories},
+            ngettext("%(n)s règle de rangement.", "%(n)s règles de rangement.", rules) % {"n": rules},
+        ]
+    )
+    detail = counts + " " + _t("Ce qui bouge le plus est en haut, le plus délicat tout en bas.")
+    if oldest_check is not None:
+        if oldest_check.get("number"):
+            waiting = ngettext(
+                "Le chèque n° %(number)s attend son débit depuis %(n)s jour.",
+                "Le chèque n° %(number)s attend son débit depuis %(n)s jours.",
+                oldest_check["days"],
+            ) % {"number": oldest_check["number"], "n": oldest_check["days"]}
+        else:
+            waiting = ngettext(
+                "Un paiement attend son débit depuis %(n)s jour.",
+                "Un paiement attend son débit depuis %(n)s jours.",
+                oldest_check["days"],
+            ) % {"n": oldest_check["days"]}
+        return {
+            "phrase": _t("Tout est en place.") + " " + waiting,
+            "detail": detail,
+            "action": ("/checks", _t("Voir les paiements en attente")),
+        }
+    if suggestions:
+        waiting = ngettext(
+            "Une règle proposée attend ton avis.", "%(n)s règles proposées attendent ton avis.", suggestions
+        ) % {"n": suggestions}
+        return {
+            "phrase": _t("Tout est en place.") + " " + waiting,
+            "detail": detail,
+            "action": ("/rules", _t("Voir les règles proposées")),
+        }
+    return {"phrase": _t("Tout est en place."), "detail": detail, "action": None}
+
+
+def checks_answer(count: int, total: str | None, oldest_days: int | None) -> dict:
+    """The sentence of the Chèques screen: how many wait, for how much, since when."""
+    if count == 0:
+        return {
+            "phrase": _t("Aucun paiement n'attend son débit."),
+            "detail": _t("Un chèque ou un paiement émis s'enregistre ici, et Twiga le rapproche seul quand il passe sur le compte."),
+        }
+    phrase = ngettext(
+        "%(n)s paiement attend son débit : %(total)s.",
+        "%(n)s paiements attendent leur débit : %(total)s.",
+        count,
+    ) % {"n": count, "total": total}
+    detail = ngettext(
+        "Le plus ancien attend depuis %(n)s jour : un paiement oublié fausse le reste à dépenser.",
+        "Le plus ancien attend depuis %(n)s jours : un paiement oublié fausse le reste à dépenser.",
+        oldest_days or 0,
+    ) % {"n": oldest_days or 0}
+    return {"phrase": phrase, "detail": detail}
+
+
 # --- Import -----------------------------------------------------------------
 
 
