@@ -6,6 +6,7 @@ a database. The screens are rendered in the other way, for each role they are
 open to, and the gestures the Classic screens offer are checked to still exist.
 """
 
+import html as html_lib
 import re
 from datetime import date
 from decimal import Decimal
@@ -28,7 +29,8 @@ def other_way(monkeypatch, demo):
 
 def text_of(html: str) -> str:
     """The visible text of a page, tags and spacing removed."""
-    return re.sub(r"\s+", " ", re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>", " ", html, flags=re.S))
+    stripped = re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>", " ", html, flags=re.S)
+    return re.sub(r"\s+", " ", html_lib.unescape(stripped))
 
 
 # --- Projets: the sentence --------------------------------------------------

@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud
+from backend.formatting import format_amount
 from backend.database import get_db
 from backend.templating import templates
 
@@ -12,9 +13,19 @@ router = APIRouter(prefix="/recurring", tags=["recurring"])
 
 
 def _build_context(db: Session) -> dict:
+    overview = crud.get_recurring_patterns_overview(db)
+    sections = {key: [] for key in ("pending", "inactive", "seen", "ignored")}
+    for pattern in overview["recurring_patterns"]:
+        pattern["state"] = answers.recurring_state(pattern)
+        sections[pattern["state"]].append(pattern)
     return {
-        **crud.get_recurring_patterns_overview(db),
+        **overview,
         "payment_methods": crud.get_payment_methods_dict(db),
+        # The other way's sentence and the subscriptions grouped by state; Classic ignores them.
+        "sections": sections,
+        "answer": answers.recurring_answer(
+            overview["recurring_active_count"], len(sections["pending"]), format_amount(overview["recurring_monthly_total"])
+        ),
     }
 
 
