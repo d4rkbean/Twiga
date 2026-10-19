@@ -99,8 +99,10 @@
         </div>
         {% if suggestion %}
         <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ suggestion.category_top_id | category_color }}" aria-hidden="true"></span>
-          <span class="text-primary">{{ suggestion.category_path }}</span>
+          <span class="flex min-w-0 items-start gap-2">
+            <span class="mt-[7px] h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ suggestion.category_top_id | category_color }}" aria-hidden="true"></span>
+            <span class="text-primary">{{ suggestion.category_path }}</span>
+          </span>
           <span
             class="badge {{ 'badge-positive' if klass == 'high' else ('badge-warning' if klass == 'mid' else 'badge-negative') }} font-semibold"
             title="{% trans based_on_label=suggestion.based_on_label %}Basé sur : « {{ based_on_label }} »{% endtrans %}"
