@@ -154,14 +154,19 @@
         return k <= this.max ? "seen" : "todo";
       },
 
+      // Onze gestes au total (six au premier Cap, qui n'a ni bilan ni « un mot ») : le
+      // compteur et la barre de la moitié « plan » reprennent là où s'arrête le bilan.
       get total() {
-        return this.lastStep - this.firstStep + 1;
+        return this.first ? 6 : 11;
+      },
+      get position() {
+        return this.step - (this.first ? 5 : 0) + 1;
       },
       get counter() {
-        return this.step - this.firstStep + 1 + " / " + this.total;
+        return this.position + " / " + this.total;
       },
       get progress() {
-        return ((this.step - this.firstStep + 1) / this.total) * 100;
+        return (this.position / this.total) * 100;
       },
 
       get nextLabel() {

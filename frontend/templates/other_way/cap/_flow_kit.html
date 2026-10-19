@@ -80,7 +80,7 @@
 {% macro mobile_bar(step_labels) -%}
 <div class="print:hidden lg:hidden fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-container pl-1 pr-1">
   <a href="/dashboard" aria-label="{{ _("Quitter le rituel") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</a>
-  <div class="progress-base h-2.5 flex-1" role="progressbar" :aria-valuenow="Math.round(progress)" aria-valuemin="0" aria-valuemax="100" aria-label="{{ _("Avancement du rituel") }}"><div class="progress-fill bg-accent" :style="'width: ' + progress + '%'"></div></div>
+  <div class="progress-base h-2.5 flex-1" role="progressbar" :aria-valuenow="Math.round(progress)" aria-valuemin="0" aria-valuemax="100" aria-label="{{ _("Avancement du rituel") }}"><div class="progress-fill" :style="'width: ' + progress + '%; background: var(--color-accent)'"></div></div>
   <button type="button" @click="stepsSheet = true" aria-haspopup="dialog" class="inline-flex min-h-[50px] flex-none items-center gap-1 px-2 text-sm font-semibold tabular-nums text-primary"><span x-text="counter"></span>{{ icon('chevron-down', size=16) }}</button>
   <button type="button" aria-label="{{ _("Basculer le mode confidentialité") }}" @click="privacy = !privacy; localStorage.setItem('privacy', privacy)" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary"><span x-show="!privacy">{{ icon("eye") }}</span><span x-show="privacy" style="display: none;">{{ icon("eye-off") }}</span></button>
   {% if get_current_user(request) %}

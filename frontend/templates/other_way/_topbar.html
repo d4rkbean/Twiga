@@ -24,8 +24,8 @@
   <a href="{{ shell_back }}" aria-label="{{ _("Retour") }}" class="lg:hidden -ml-3 w-[50px] h-[50px] flex-shrink-0 flex items-center justify-center text-primary">{{ icon("arrow-left") }}</a>
   {% endif %}
   <div class="lg:hidden flex-1 min-w-0 flex flex-col {{ '-ml-2' if shell_back is defined and shell_back else '' }}">
-    <p class="truncate font-display text-xl font-extrabold tracking-tight leading-tight text-primary">{{ shell.shell_title }}</p>
-    {% if shell_subtitle is defined and shell_subtitle %}<p class="truncate text-xs text-secondary leading-tight">{{ shell_subtitle }}</p>{% endif %}
+    <p class="lg:hidden truncate font-display text-xl font-extrabold tracking-tight leading-tight text-primary">{{ shell.shell_title }}</p>
+    {% if shell_subtitle is defined and shell_subtitle %}<p class="lg:hidden truncate text-xs text-secondary leading-tight">{{ shell_subtitle }}</p>{% endif %}
   </div>
 
   <a id="tour-b-logo" href="/" class="hidden lg:flex items-center gap-2.5 flex-shrink-0" aria-label="{{ _("Twiga — retour à l'accueil") }}">
