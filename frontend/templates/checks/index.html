@@ -19,7 +19,7 @@
   <section class="card flex flex-col gap-4">
     <div class="flex flex-col gap-1">
       <h2 class="text-section-title">{{ _("Enregistrer un paiement émis") }}</h2>
-      <p class="text-sm text-secondary max-w-4xl">
+      <p class="text-sm text-secondary max-w-prose">
         {{ _("Dès que ce paiement sera débité (montant retrouvé, ET numéro de chèque ou moyen de paiement identifié dans le libellé d'une opération importée), il sera automatiquement catégorisé — sans passer par La Savane. Utile aussi pour les paiements via un intermédiaire (Wero, PayPal...) dont le libellé bancaire ne dit jamais à qui/pourquoi.") }}
       </p>
     </div>
@@ -28,74 +28,80 @@
       hx-target="#checks-content"
       hx-swap="outerHTML"
       class="flex flex-col gap-4"
+      x-data="{ method: '', account: '', parent: '', child: '', number: '' }"
+      hx-on::after-request="if (event.detail.successful) { this.reset(); Object.assign(Alpine.$data(this), { method: '', account: '', parent: '', child: '', number: '' }); }"
     >
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <label class="form-group">
           <span class="form-label">{{ _("Numéro de chèque (si chèque)") }}</span>
-          <input type="text" name="check_number" class="input-base" />
+          <input type="text" name="check_number" x-model="number" placeholder="{{ _("Numéro de chèque (si chèque)") }}" autocomplete="off" class="input-base" />
         </label>
         <label class="form-group">
           <span class="form-label">{{ _("Montant") }}</span>
-          <input type="text" inputmode="decimal" name="amount" required class="input-base" />
+          <input type="text" inputmode="decimal" name="amount" required placeholder="{{ _("Montant") }}" autocomplete="off" class="input-base" />
         </label>
         <label class="form-group">
           <span class="form-label">{{ _("Date d'émission") }}</span>
-          <input type="date" name="issued_date" required class="input-base" />
+          <input type="date" name="issued_date" required value="{{ today }}" class="input-base" />
         </label>
         <label class="form-group">
           <span class="form-label">{{ _("Destinataire / motif (optionnel)") }}</span>
-          <input type="text" name="recipient" class="input-base" />
+          <input type="text" name="recipient" placeholder="{{ _("Destinataire / motif (optionnel)") }}" autocomplete="off" class="input-base" />
         </label>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <label class="form-group">
-          <span class="form-label">{{ _("Moyen de paiement (si pas de chèque)") }}</span>
-          <span class="select-field"><select name="payment_method" class="input-base">
-            <option value="" selected>{{ _("— Moyen de paiement (si pas de chèque) —") }}</option>
-            {% for code, meta in payment_methods.items() %}
-            <option value="{{ code }}">{{ meta.label }}</option>
-            {% endfor %}
-          </select></span>
-          <span class="input-hint">{{ _("Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque, ou moyen de paiement (Wero, PayPal...).") }}</span>
-        </label>
-        <label class="form-group">
-          <span class="form-label">{{ _("Compte débité...") }}</span>
-          <span class="select-field"><select name="account_id" required class="input-base">
-            <option value="" disabled selected>{{ _("Compte débité...") }}</option>
-            {% for account in accounts %}
-            <option value="{{ account.id }}">{{ account.name }}</option>
-            {% endfor %}
-          </select></span>
-        </label>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:grid-cols-1 xl:grid-cols-2">
-          <label class="form-group">
-            <span class="form-label">{{ _("Catégorie...") }}</span>
-            <span class="select-field"><select
-              name="parent_category_id"
-              required
-              hx-get="/transactions/subcategories?field_name=category_id&element_id=new-check-subcategory&allow_empty=false"
-              hx-target="#new-check-subcategory"
-              hx-swap="outerHTML"
-              hx-trigger="change"
-              class="input-base"
-            >
-              <option value="" disabled selected>{{ _("Catégorie...") }}</option>
-              {% for category in parent_categories %}
-              <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
-              {% endfor %}
-            </select></span>
-          </label>
-          <div class="form-group">
-            <span class="form-label">{{ _("Sous-catégorie") }}</span>
-            {% with parent = none, subcategories = [], selected_category_id = none, field_name = "category_id", element_id = "new-check-subcategory", allow_empty = false %}
-            {% include "transactions/_subcategory_select.html" %}
-            {% endwith %}
-          </div>
+      <div class="form-group">
+        <span class="form-label" id="check-method-label">{{ _("Moyen de paiement (si pas de chèque)") }}</span>
+        <input type="hidden" name="payment_method" :value="method" />
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-method-label">
+          {% for code, meta in payment_methods.items() %}
+          <button
+            type="button"
+            role="radio"
+            @click="method = method === '{{ code }}' ? '' : '{{ code }}'"
+            :aria-checked="method === '{{ code }}'"
+            class="chip inline-flex items-center gap-2"
+          >{{ icon(get_payment_method_icon_name(code), size=18) }} {{ meta.label }}</button>
+          {% endfor %}
+        </div>
+        <span class="input-hint">{{ _("Renseigne au moins l'un des deux champs ci-dessus : numéro de chèque, ou moyen de paiement (Wero, PayPal...).") }}</span>
+      </div>
+
+      <div class="form-group">
+        <span class="form-label" id="check-account-label">{{ _("Compte débité...") }}</span>
+        <input type="hidden" name="account_id" :value="account" />
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-account-label">
+          {% for account in accounts %}
+          <button type="button" role="radio" @click="account = '{{ account.id }}'" :aria-checked="account === '{{ account.id }}'" class="chip">{{ account.name }}</button>
+          {% endfor %}
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary w-full lg:w-auto lg:self-start lg:px-8">
+      <div class="form-group">
+        <span class="form-label" id="check-category-label">{{ _("Catégorie...") }}</span>
+        <input type="hidden" name="category_id" :value="child || parent" />
+        <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-category-label">
+          {% for category in parent_categories %}
+          <button type="button" role="radio" @click="parent = '{{ category.id }}'; child = ''" :aria-checked="parent === '{{ category.id }}'" class="chip">{{ category.icon or "" }} {{ category.name | category_display }}</button>
+          {% endfor %}
+        </div>
+        {% for category in parent_categories if category.children %}
+        <div class="flex flex-col gap-2 pt-2" x-show="parent === '{{ category.id }}'" style="display: none;">
+          <span class="form-label" id="check-sub-label-{{ category.id }}">{{ _("Sous-catégorie") }}</span>
+          <div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="check-sub-label-{{ category.id }}">
+            {% for sub in category.children %}
+            <button type="button" role="radio" @click="child = child === '{{ sub.id }}' ? '' : '{{ sub.id }}'" :aria-checked="child === '{{ sub.id }}'" class="chip">{{ sub.icon or "" }} {{ sub.name | category_display }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button
+        type="submit"
+        :disabled="!(account && (child || parent) && (number.trim() || method))"
+        class="btn btn-primary w-full lg:w-auto lg:self-start lg:px-8 disabled:opacity-60"
+      >
         {{ _("Enregistrer le paiement") }}
       </button>
     </form>

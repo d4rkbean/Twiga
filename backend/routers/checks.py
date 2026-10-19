@@ -26,6 +26,7 @@ def _form_context(db: Session) -> dict:
         "parent_categories": crud.get_top_level_categories(db),
         "accounts": crud.list_accounts(db),
         "payment_methods": crud.get_payment_methods_dict(db),
+        "today": date.today().isoformat(),
     }
 
 
