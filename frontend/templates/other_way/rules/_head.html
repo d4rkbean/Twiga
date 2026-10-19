@@ -1,0 +1,20 @@
+{#- The sentence of Règles: what waits for an opinion comes first. "Tout créer" turns
+    every proposal into a rule at once. Refreshes itself when the list changes. -#}
+{% from "other_way/_ui.html" import answer_head %}
+{% set write = can_edit("/rules/create") %}
+<div id="rules-head" hx-get="/rules/head" hx-trigger="rules-changed from:window" hx-swap="outerHTML">
+  {% call answer_head(answer.title, answer.detail) %}
+    {% if write and pending_suggestions %}
+    <form hx-post="/rules/create-all" hx-target="#rules-content" hx-swap="outerHTML" x-show="!adding" class="contents"
+          hx-confirm="{{ _("Créer les %(n)s règles proposées ?", n=pending_suggestions | length) }}">
+      <button type="submit" class="btn btn-primary">{{ icon('check', size=18) }} {{ _("Tout créer (%(n)s)", n=pending_suggestions | length) }}</button>
+    </form>
+    {% endif %}
+    {% if write %}
+    <button type="button" @click="adding = true; $nextTick(() => document.getElementById('new-rule-keyword').focus())"
+            class="btn {{ 'btn-secondary border-border-strong' if pending_suggestions else 'btn-primary' }}" {% if not pending_suggestions %}x-show="!adding"{% endif %}>
+      {{ icon('plus', size=18) }} {{ _("Ajouter une règle") }}
+    </button>
+    {% endif %}
+  {% endcall %}
+</div>

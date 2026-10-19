@@ -1,0 +1,70 @@
+{#- The recap of a HomeBank history (QIF): it creates the accounts and the
+    categories that are missing, then imports the operations. -#}
+{% from "other_way/_ui.html" import answer_head, fold %}
+<div x-data="{ busy: false, detail: false, cats: false }" class="flex flex-col gap-5">
+  {% set cancel = "" %}
+  {% include "imports/_waiting.html" %}
+
+  <div x-show="!busy" class="flex flex-col gap-5">
+    {% call answer_head(answer.title, answer.detail) %}
+      <form hx-post="/imports/{{ import_id }}/execute" hx-target="#import-wizard" hx-swap="innerHTML" id="import-confirm-form"
+            @htmx:before-request="busy = true" @htmx:after-request="busy = false" class="contents">
+        <input type="hidden" name="format" value="qif" />
+        <button type="submit" class="btn btn-primary" {% if unique_count == 0 %}disabled{% endif %}>
+          <span>{% trans n=unique_count, shown=unique_count | integer %}Importer {{ shown }} opération{% pluralize %}Importer {{ shown }} opérations{% endtrans %}</span>
+        </button>
+      </form>
+      <button type="button" @click="detail = !detail" :aria-expanded="detail" class="btn btn-secondary border-border-strong">
+        <span x-text="detail ? {{ _("Masquer le détail") | tojson }} : {{ _("Voir le détail") | tojson }}">{{ _("Voir le détail") }}</span>
+        <span class="transition-transform" :class="detail ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+      </button>
+    {% endcall %}
+
+    <div class="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] items-start">
+      {% set account_label = _("Tous les comptes") %}
+      {% include "imports/_file_card.html" %}
+
+      <div class="flex flex-col gap-3 min-w-0">
+        <section class="card flex flex-col gap-4">
+          <h2 class="text-section-title">{{ _("Ce que Twiga a lu dans le fichier") }}</h2>
+          <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ (new_account_count + existing_account_count) | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Comptes détectés") }}</dt></div>
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ category_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Catégories, hiérarchie conservée") }}</dt></div>
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ total_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Opérations") }}</dt></div>
+            <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ payee_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Bénéficiaires distincts") }}</dt></div>
+          </dl>
+          <p class="text-sm text-secondary">
+            {% trans n=new_account_count, existing=existing_account_count %}{{ n }} compte sera créé ({{ existing }} déjà existants). Les catégories gardent leur hiérarchie.{% pluralize %}{{ n }} comptes seront créés ({{ existing }} déjà existants). Les catégories gardent leur hiérarchie.{% endtrans %}
+          </p>
+        </section>
+
+        <section x-show="detail" style="display: none" class="card flex flex-col gap-2">
+          <h2 class="text-section-title">{{ _("Comptes détectés") }}</h2>
+          <ul class="flex flex-col">
+            {% for qif_account, existing in qif_accounts %}
+            <li class="flex items-center justify-between gap-3 min-h-[var(--row-static)] py-[var(--row-pad)] border-b border-border last:border-0 text-sm">
+              <span><strong>{{ qif_account.name }}</strong> <span class="text-secondary">· {{ get_account_type_label(qif_account.type) }}</span></span>
+              <span class="badge {{ 'badge-neutral' if existing else 'badge-info' }}">{{ _("existant") if existing else _("sera créé") }}</span>
+            </li>
+            {% else %}
+            <li class="text-sm text-secondary">{{ _("Aucun compte trouvé dans le fichier.") }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+
+        {% if transfer_count %}
+        <p class="card text-sm font-semibold">{% trans n=transfer_count, shown=transfer_count | integer %}{{ shown }} virement entre tes comptes, écarté des dépenses{% pluralize %}{{ shown }} virements entre tes comptes, écartés des dépenses{% endtrans %}</p>
+        {% endif %}
+
+        {% set cats_title %}{% trans n=category_count, shown=category_count | integer %}Voir {{ shown }} catégorie{% pluralize %}Voir les {{ shown }} catégories{% endtrans %}{% endset %}
+        {% call fold("cats", cats_title, _("hiérarchie conservée")) %}
+          <ul class="max-h-[24rem] overflow-y-auto">
+            {% for path in qif_categories %}
+            <li class="min-h-[var(--row-static)] flex items-center px-[var(--space-card)] py-[var(--row-pad)] border-b border-border last:border-0 text-sm">{{ path | replace(":", " → ") }}</li>
+            {% endfor %}
+          </ul>
+        {% endcall %}
+      </div>
+    </div>
+  </div>
+</div>

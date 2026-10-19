@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_macros/brand.html" import mascot %}
+
+{% block title %}{{ _("Connexion — Twiga") }}{% endblock %}
+
+{% block sidebar %}{% endblock %}
+{% block header %}{% endblock %}
+{% block nav %}{% endblock %}
+{% block tour %}{% endblock %}
+{% block body_chrome %}{% endblock %}
+{% block body_offset %}{% endblock %}
+
+{% block content %}
+{#- Connexion, the other way. Two halves from the desktop up: what Twiga promises on the
+    left, the way in on the right. By default the way in is the classic form (a user name,
+    then a password). When the administrator turned on "Afficher les comptes sur la page de
+    connexion" (Paramètres, off by default), the household appears as tiles first: one tap
+    on a name and only the password is left; "Un autre compte" opens the user name field.
+    The refusals (wrong password, five tries) are the messages of the application. -#}
+{% set tiles = login_accounts | length > 0 %}
+<main class="min-h-screen grid grid-cols-1 lg:grid-cols-2"
+      x-data="{ username: '', other: {{ 'false' if tiles else 'true' }}, picked: null, name: '' }">
+  <section class="flex flex-col items-center justify-end px-4 pt-10 pb-4 lg:bg-sunken lg:items-start lg:justify-center lg:px-16 lg:py-16 lg:border-r lg:border-border">
+    <div class="flex flex-col items-center gap-2 lg:items-start lg:gap-3">
+      <span class="block w-[96px] h-[70px] overflow-hidden">{{ mascot(size=96, label=true, cls="-mt-1") }}</span>
+      <h1 class="font-display text-4xl lg:text-6xl font-extrabold tracking-tight text-primary leading-none text-center lg:text-left">{{ login_title }}</h1>
+      <p class="text-lg text-secondary">{{ _("Voir loin. Voir juste.") }}</p>
+    </div>
+    <ul class="hidden lg:flex flex-col gap-5 mt-12 border-t border-border pt-8">
+      <li class="flex items-start gap-3"><span class="mt-0.5 text-accent-ink">{{ icon('home', size=20) }}</span><span class="flex flex-col"><strong class="text-sm font-semibold">{{ _("100 %% local") }}</strong><span class="text-sm text-secondary">{{ _("Twiga tourne sur ton serveur, chez toi. Aucun service tiers, aucune télémétrie.") }}</span></span></li>
+      <li class="flex items-start gap-3"><span class="mt-0.5 text-accent-ink">{{ icon('lock', size=20) }}</span><span class="flex flex-col"><strong class="text-sm font-semibold">{{ _("Pas de connexion bancaire") }}</strong><span class="text-sm text-secondary">{{ _("Tu importes tes relevés toi-même : personne d'autre n'a accès à tes comptes.") }}</span></span></li>
+      <li class="flex items-start gap-3"><span class="mt-0.5 text-accent-ink">{{ icon('users', size=20) }}</span><span class="flex flex-col"><strong class="text-sm font-semibold">{{ _("Pour le foyer") }}</strong><span class="text-sm text-secondary">{{ _("Un compte par personne, avec ses droits : administrateur, éditeur ou lecteur.") }}</span></span></li>
+    </ul>
+  </section>
+
+  <section class="flex flex-col items-center justify-start lg:justify-center gap-4 px-4 pb-10 lg:p-16">
+    <div class="w-full flex flex-col gap-4 {{ '' if tiles else 'max-w-sm card border border-border p-6 lg:p-8' }}">
+      {% if tiles %}
+      <h2 class="text-section-title" x-show="!picked && !other">{{ _("Choisir son compte") }}</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" x-show="!picked && !other">
+        {% for account in login_accounts %}
+        <button type="button" @click="picked = true; other = false; username = {{ account.username | tojson | forceescape }}; name = {{ account.name | tojson | forceescape }}; $nextTick(() => document.getElementById('password-field-password').focus())"
+                class="min-h-[160px] rounded-xl border-2 border-border bg-container p-4 flex flex-col items-center justify-center gap-2 text-center">
+          <span class="grid place-items-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink text-xl font-bold">{{ account.initials }}</span>
+          <span class="font-semibold text-lg">{{ account.name }}</span>
+          <span class="text-xs text-secondary">{{ account.role }}</span>
+        </button>
+        {% endfor %}
+        <button type="button" @click="other = true; picked = null; username = ''; $nextTick(() => document.getElementById('login-username').focus())"
+                class="min-h-[160px] rounded-xl border-2 border-border bg-container p-4 flex flex-col items-center justify-center gap-2 text-center">
+          <span class="grid place-items-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink">{{ icon('user', size=24) }}</span>
+          <span class="font-semibold text-lg">{{ _("Un autre compte") }}</span>
+          <span class="text-xs text-secondary">{{ _("Saisir un nom d'utilisateur") }}</span>
+        </button>
+      </div>
+      {% endif %}
+
+      <div x-show="picked || other" {% if tiles %}style="display: none"{% endif %} class="flex flex-col gap-4 {{ 'card border border-border p-6 lg:p-8 max-w-sm w-full self-center' if tiles else '' }}">
+        {% if not tiles %}<h2 class="text-page-title">{{ _("Connexion") }}</h2>{% endif %}
+        <div x-show="picked" style="display: none" class="flex items-center gap-3">
+          <span class="text-lg font-semibold" x-text="name"></span>
+          <button type="button" @click="picked = null; username = ''" class="ml-auto min-h-[50px] px-2 text-sm font-medium text-accent-ink">{{ _("Changer") }}</button>
+        </div>
+        <form hx-post="/login" hx-target="#login-error" hx-swap="innerHTML" class="w-full flex flex-col gap-4">
+          <label class="form-group" x-show="other">
+            <span class="form-label">{{ _("Nom d'utilisateur") }}</span>
+            <input id="login-username" type="text" name="username" x-model="username" autocomplete="username" x-bind:required="other" {% if not tiles %}autofocus{% endif %} class="input-base" />
+          </label>
+          <div class="form-group">
+            <span class="form-label">{{ _("Mot de passe") }}</span>
+            {% with field_name = "password", field_label = _("Mot de passe"), field_autocomplete = "current-password" %}{% include "_password_field.html" %}{% endwith %}
+          </div>
+          <button type="submit" class="btn btn-primary">{{ _("Se connecter") }}</button>
+          <div id="login-error" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
+    <p class="flex flex-col items-center gap-1 text-xs text-secondary text-center max-w-sm">
+      <span class="shrink-0">{{ icon('lock', size=14) }}</span>
+      <span>{{ _("Instance privée, hébergée chez toi. Aucune donnée ne quitte ton réseau.") }}</span>
+    </p>
+  </section>
+</main>
+{% endblock %}

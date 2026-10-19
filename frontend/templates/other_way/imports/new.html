@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import section_tabs %}
+
+{% block title %}{{ _("Importer un fichier — Twiga") }}{% endblock %}
+
+{% block content %}
+{#- One file, one confirmation. Everything below the tabs is #import-wizard:
+    the drop screen, then the recap of the file, then the result, or the
+    error, each a fragment that replaces the previous one. -#}
+<main class="flex flex-col gap-5 px-4 pb-8 lg:px-8">
+  {{ section_tabs([
+    {"label": _("Opérations"), "href": "/transactions/list", "active": false},
+    {"label": _("Import"), "href": "/imports/new", "active": true},
+    {"label": _("Rapports"), "href": "/reports", "active": false},
+    {"label": _("Paramètres"), "href": "/settings", "active": false},
+  ]) }}
+  <div id="import-wizard" class="flex flex-col gap-5 min-w-0">
+    {% include "imports/_step1_file.html" %}
+  </div>
+</main>
+{% endblock %}

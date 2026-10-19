@@ -1,0 +1,55 @@
+{#- « Twiga a tout avalé ! »: what was imported, then the way on (La Savane) or
+    another file. The details (transfers, matched checks...) are one tap away. -#}
+{% from "_macros/brand.html" import mascot %}
+<div x-data="{ more: false }" class="flex flex-col gap-5">
+  <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center">
+    <div class="rounded-xl bg-accent-soft grid place-items-center py-8 lg:py-10">{{ mascot("swallowed", 150, label=true) }}</div>
+    <div class="flex flex-col gap-4 min-w-0">
+      <h1 id="answer" class="text-page-title">{{ _("Twiga a tout avalé !") }}</h1>
+      <p class="text-secondary max-w-[70ch]">{{ result_detail }}</p>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <a href="/transactions/inbox" class="btn btn-primary">{{ _("Aller à La Savane") }} {{ icon('arrow-narrow-right', size=18) }}</a>
+        <a href="/imports/new" class="btn btn-secondary border-border-strong">{{ _("Importer un autre fichier") }}</a>
+      </div>
+      <button type="button" @click="more = !more" :aria-expanded="more" class="min-h-[50px] self-start inline-flex items-center gap-2 text-accent-ink font-semibold">
+        {{ _("Détails") }} <span class="transition-transform" :class="more ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+      </button>
+    </div>
+  </section>
+
+  <section x-show="more" style="display: none" class="card flex flex-col gap-3" aria-label="{{ _("Détails") }}">
+    <ul class="flex flex-col gap-1 text-sm">
+      <li class="flex items-center gap-2">{{ icon('circle-check', size=16) }} {% trans n=imported_count %}{{ n }} opération importée.{% pluralize %}{{ n }} opérations importées.{% endtrans %}</li>
+      {% if duplicate_count %}<li class="text-secondary">{% trans n=duplicate_count %}{{ n }} doublon ignoré.{% pluralize %}{{ n }} doublons ignorés.{% endtrans %}</li>{% endif %}
+      {% if excluded_count %}<li class="text-secondary">{% trans n=excluded_count %}{{ n }} opération exclue volontairement.{% pluralize %}{{ n }} opérations exclues volontairement.{% endtrans %}</li>{% endif %}
+      {% if relinked_count %}<li class="text-secondary">{% trans n=relinked_count %}{{ n }} opération existante recatégorisée.{% pluralize %}{{ n }} opérations existantes recatégorisées.{% endtrans %}</li>{% endif %}
+      {% if to_categorize_count %}<li class="text-secondary">{% trans n=to_categorize_count %}{{ n }} opération dans La Savane à catégoriser.{% pluralize %}{{ n }} opérations dans La Savane à catégoriser.{% endtrans %}</li>{% endif %}
+    </ul>
+
+    {% if transfer_summary %}
+    {% set transfer_total = transfer_summary | sum(attribute="count") %}
+    <div class="rounded-xl bg-sunken p-3 flex flex-col gap-1">
+      <p class="text-sm font-semibold">{% trans n=transfer_total %}{{ n }} virement interne détecté et exclu automatiquement :{% pluralize %}{{ n }} virements internes détectés et exclus automatiquement :{% endtrans %}</p>
+      <ul class="text-sm text-secondary list-disc pl-5">
+        {% for g in transfer_summary %}
+        <li>{% trans n=g.count, source=g.account_from, target=g.account_to, dates=g.dates | map("short_date") | join(", ") %}{{ source }} → {{ target }} : {{ n }} virement ({{ dates }}){% pluralize %}{{ source }} → {{ target }} : {{ n }} virements ({{ dates }}){% endtrans %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if check_match_summary %}
+    <div class="rounded-xl bg-sunken p-3 flex flex-col gap-1">
+      <p class="text-sm font-semibold">{% trans n=check_match_summary | length %}{{ n }} paiement en attente rapproché automatiquement :{% pluralize %}{{ n }} paiements en attente rapprochés automatiquement :{% endtrans %}</p>
+      <ul class="text-sm text-secondary list-disc pl-5">
+        {% for c in check_match_summary %}
+        <li>
+          {% if c.check_number %}N° {{ c.check_number }}{% else %}{{ c.payment_method | pm_label }}{% endif %}
+          — <span class="amount-blur tabular-nums">{{ c.amount | eur }}</span> → {{ c.category_name }}{% if c.recipient %} ({{ c.recipient }}){% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </section>
+</div>

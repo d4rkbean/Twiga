@@ -34,6 +34,7 @@ PAGES = [
     Page("/settings"),
     Page("/profile"),
     Page("/payment-methods"),
+    Page("/payment-methods/head", htmx=True),
     # Inbox (La Savane) and operations
     Page("/transactions/inbox"),
     Page("/transactions/{transaction_id}/categories", htmx=True),
@@ -63,6 +64,7 @@ PAGES = [
     Page("/accounts"),
     Page("/accounts/content", htmx=True),
     Page("/accounts/suspicious", htmx=True),
+    Page("/accounts/head", htmx=True),
     Page("/accounts/{account_id}/row", htmx=True),
     Page("/accounts/{account_id}/edit", htmx=True),
     Page("/accounts/{account_id}/delete-confirm", htmx=True),
@@ -71,6 +73,8 @@ PAGES = [
     # Categories
     Page("/categories"),
     Page("/categories/content", htmx=True),
+    Page("/categories/head", htmx=True),
+    Page("/categories/pillars", htmx=True),
     Page("/categories/{category_id}/row", htmx=True),
     Page("/categories/{category_id}/edit", htmx=True),
     Page("/categories/{category_id}/delete-confirm", htmx=True),
@@ -91,6 +95,7 @@ PAGES = [
     Page("/checks/list", htmx=True),
     Page("/rules"),
     Page("/rules/list", htmx=True),
+    Page("/rules/head", htmx=True),
     Page("/rules/{rule_id}/row", htmx=True),
     Page("/rules/{rule_id}/edit", htmx=True),
     # Reports

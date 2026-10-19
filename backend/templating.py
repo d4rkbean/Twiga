@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from fastapi.templating import Jinja2Templates
-from jinja2 import ChoiceLoader, Environment, FileSystemLoader
+from jinja2 import ChoiceLoader, Environment, FileSystemLoader, pass_context
 from markupsafe import Markup
 from sqlalchemy import select
 from sqlalchemy.orm import object_session
@@ -20,6 +20,8 @@ from backend.formatting import (
     format_amount_as,
     format_date,
     format_date_as,
+    format_integer,
+    format_kilobytes,
     format_plain_amount,
     format_short_date,
 )
@@ -215,6 +217,23 @@ def format_preview(number_format: str) -> str:
     return f"{format_date_as(date(2026, 12, 31), number_format)} · {format_amount_as(Decimal('1234.56'), number_format)}"
 
 
+@pass_context
+def can_edit(context, path: str) -> bool:
+    """Whether the signed-in role may write to `path` (the same rule as the middleware).
+
+    The other way hides the gestures a role cannot use instead of answering
+    "forbidden" after the tap: a reader sees "Tu peux consulter, pas modifier."
+    and no write action. Without authentication everything is allowed.
+    """
+    from backend.auth import AUTH_ENABLED, check_role_access
+
+    if not AUTH_ENABLED:
+        return True
+    request = context.get("request")
+    user = getattr(getattr(request, "state", None), "user", None)
+    return user is not None and check_role_access(user.role, "POST", path)
+
+
 def tour_context(request) -> dict:
     # État de la visite guidée pour _tour.html. tracked : un compte connecté
     # mémorise l'avancement côté serveur (users.tour_seen_at) ; sans
@@ -248,6 +267,8 @@ def configure_environment(env: Environment) -> Environment:
     env.filters["fr_date"] = format_date
     env.filters["short_date"] = format_short_date
     env.filters["plain_amount"] = format_plain_amount
+    env.filters["integer"] = format_integer
+    env.filters["kilobytes"] = format_kilobytes
     env.filters["long_date"] = format_date_long
     env.filters["month_year"] = lambda value: month_label(value.year, value.month)
     env.filters["tojson"] = tojson_filter
@@ -261,6 +282,7 @@ def configure_environment(env: Environment) -> Environment:
     env.globals["get_category_icon_name"] = get_category_icon_name
     env.globals["get_payment_method_icon_name"] = get_payment_method_icon_name
     env.globals["account_types"] = ACCOUNT_TYPES
+    env.globals["account_palette"] = _ACCOUNT_COLOR_PALETTE
     env.globals["get_current_user"] = get_current_user
 
     # Traduction : jinja2.ext.i18n + gettext/ngettext lus dans la langue de la
@@ -282,6 +304,7 @@ def configure_environment(env: Environment) -> Environment:
     env.globals["current_density"] = preferences.current_density
     env.globals["other_way_enabled"] = preferences.other_way_enabled
     env.globals["tour_context"] = tour_context
+    env.globals["can_edit"] = can_edit
     env.globals["get_account_type_icon"] = get_account_type_icon
     env.globals["get_account_type_label"] = get_account_type_label
     env.globals["user_display_name"] = user_display_name

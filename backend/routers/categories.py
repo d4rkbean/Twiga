@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, categories_view, crud
 from backend.database import get_db
 from backend.models import Category
 from backend.templating import templates
@@ -15,10 +15,34 @@ def _content_context(db: Session) -> dict:
     return {"categories": crud.get_categories_tree(db)}
 
 
+def _summary_context(db: Session) -> dict:
+    """The sentence and the pillars summary of the other way's page; Classic ignores them."""
+    categories = crud.get_categories_tree(db)
+    answer = answers.categories_answer(
+        len(categories),
+        len(categories_view.unset_roots(categories)),
+        len(categories_view.overrides(categories)),
+        sum(1 for c in categories if c.excluded_from_budget),
+    )
+    return {"categories": categories, "answer": answer, "pillars": categories_view.pillar_summary(categories)}
+
+
 @router.get("", response_class=HTMLResponse)
 def categories_page(request: Request, db: Session = Depends(get_db)):
-    context = {"request": request, **_content_context(db)}
+    context = {"request": request, **_content_context(db), **_summary_context(db)}
     return templates.TemplateResponse("categories/index.html", context)
+
+
+# The two pieces of the other way's page that follow a gesture (the sentence, the
+# pillars). Named with their folder so both interfaces find them.
+@router.get("/head", response_class=HTMLResponse)
+def categories_head(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("other_way/categories/_head.html", {"request": request, **_summary_context(db)})
+
+
+@router.get("/pillars", response_class=HTMLResponse)
+def categories_pillars(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("other_way/categories/_pillars.html", {"request": request, **_summary_context(db)})
 
 
 @router.get("/content", response_class=HTMLResponse)
@@ -94,6 +118,7 @@ def update_category_pillar(
     category_id: int,
     pillar: str = Form(""),
     is_child: bool = False,
+    panel: bool = False,
     db: Session = Depends(get_db),
 ):
     category = db.get(Category, category_id)
@@ -103,7 +128,8 @@ def update_category_pillar(
     # chaîne vide stockée en base (voir Category.pillar / resolve_category_pillar).
     crud.update_category_pillar(db, category, pillar or None)
     context = {"request": request, "category": category, "is_child": is_child}
-    return templates.TemplateResponse("categories/_row.html", context)
+    # `panel`: the other way edits in a panel that must stay open after a pillar is picked.
+    return templates.TemplateResponse("categories/_row_edit.html" if panel else "categories/_row.html", context)
 
 
 @router.post("/{category_id}/update-budget-exclusion", response_class=HTMLResponse)
@@ -112,6 +138,7 @@ def update_category_budget_exclusion(
     category_id: int,
     excluded: bool = Form(False),
     is_child: bool = False,
+    panel: bool = False,
     db: Session = Depends(get_db),
 ):
     category = db.get(Category, category_id)
@@ -119,7 +146,7 @@ def update_category_budget_exclusion(
         raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
     crud.update_category_budget_exclusion(db, category, excluded)
     context = {"request": request, "category": category, "is_child": is_child}
-    return templates.TemplateResponse("categories/_row.html", context)
+    return templates.TemplateResponse("categories/_row_edit.html" if panel else "categories/_row.html", context)
 
 
 @router.post("/reset-pillar-overrides", response_class=HTMLResponse)

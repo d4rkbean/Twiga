@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "other_way/_ui.html" import answer_head %}
+
+{% block title %}{{ _("La Savane — Twiga") }}{% endblock %}
+
+{% block content %}
+{#- La Savane for a reader (role "Lecture seule"): nothing is asked of them. The sentence
+    says what they can do and who can file the rest, the lot that waits is a list they
+    can read (what Twiga would file where, how sure it is), and a card lists, from the
+    rules of the application, what their role allows. No write action is on the page. -#}
+<main class="flex flex-col gap-[var(--space-block)] px-4 pb-6 pt-4 lg:px-8 lg:pt-6">
+  {{ answer_head(answer.title, answer.detail, id="inbox-reader-answer") }}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+    <section class="card !p-0 overflow-hidden min-w-0" aria-labelledby="lot-title">
+      <h2 id="lot-title" class="text-section-title px-[var(--space-card)] pt-[var(--space-card)] pb-3">{{ lot_title }}</h2>
+      <ul>
+        {% for item in lot %}
+        {% set tx = item.transaction %}
+        <li class="flex items-center gap-4 min-h-[var(--row-static)] px-[var(--space-card)] py-[var(--row-pad)] border-t border-border">
+          <div class="flex-1 min-w-0 flex flex-col">
+            <span class="font-semibold truncate">{{ tx.label }}</span>
+            <span class="text-xs text-secondary truncate">{{ item.path }}{% if item.payment_method %} · {{ item.payment_method | pm_label }}{% endif %} · {{ tx.date | short_date }}</span>
+          </div>
+          <span class="text-sm text-secondary tabular-nums">{{ item.confidence }} %</span>
+          <span class="amount-blur font-bold tabular-nums whitespace-nowrap w-24 text-right">{{ tx.amount | eur }}</span>
+        </li>
+        {% else %}
+        <li class="px-[var(--space-card)] pb-[var(--space-card)] text-sm text-secondary">{{ _("Aucune opération reconnue à coup sûr pour l'instant.") }}</li>
+        {% endfor %}
+      </ul>
+      {% if questions_count %}
+      <p class="px-[var(--space-card)] py-3 border-t border-border text-sm text-secondary">{% trans n=questions_count %}Et {{ n }} autre à décider : un éditeur s'en charge.{% pluralize %}Et {{ n }} autres à décider : un éditeur s'en charge.{% endtrans %}</p>
+      {% endif %}
+    </section>
+
+    <aside class="card flex flex-col gap-2 min-w-0" aria-labelledby="rights-title">
+      <h2 id="rights-title" class="text-section-title">{{ _("Ce que ce rôle permet") }}</h2>
+      <p class="text-sm text-secondary">{{ _("D'après les droits de l'application.") }}</p>
+      <ul class="border-t border-border">
+        {% for label, allowed in rights %}
+        <li class="flex items-center justify-between gap-4 py-3 border-b border-border last:border-0 text-sm">
+          <span>{{ label }}</span>
+          <span class="badge {{ 'badge-positive' if allowed else 'badge-neutral' }} shrink-0">{{ _("Oui") if allowed else _("Non") }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </aside>
+  </div>
+</main>
+{% endblock %}
