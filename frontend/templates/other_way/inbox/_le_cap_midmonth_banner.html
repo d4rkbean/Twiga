@@ -1,0 +1,16 @@
+{% if show_le_cap_midmonth_banner %}
+{#- « Mi-mois — Le cap tient-il ? » : on the 15th day of the budget month. Dismissed
+    for the month in localStorage (same key as Classic), by static/js/savane-b.js. -#}
+<div
+  id="le-cap-midmonth-banner"
+  data-dismiss-key="dismissed_le_cap_midmonth_banner_{{ current_month_key }}"
+  class="flex min-w-0 items-center rounded-xl border border-border bg-container shadow-sm max-lg:w-[85%] max-lg:flex-none lg:min-w-[320px]"
+>
+  <p class="flex min-h-[50px] min-w-0 flex-1 items-center gap-3 px-4 font-medium text-primary">
+    {{ icon('calendar-event', size=18) }}
+    <span class="min-w-0 truncate">{{ _("Mi-mois — Le cap tient-il ?") }}</span>
+  </p>
+  <a href="/cap/mid" class="inline-flex min-h-[50px] flex-none items-center gap-1.5 px-3 text-sm font-semibold text-accent-ink">{{ _("Vérifier") }} {{ icon('arrow-narrow-right', size=16) }}</a>
+  <button type="button" id="le-cap-midmonth-banner-close" data-dismiss aria-label="{{ _("Fermer le bandeau de mi-mois") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-secondary">{{ icon('x', size=18) }}</button>
+</div>
+{% endif %}

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud, preferences, savane
 from backend.database import get_db
 from backend.budget_month import period_containing
 from backend.models import Account, Category, Transaction
@@ -18,6 +18,12 @@ from imports.common import ImportParseError, parse_decimal_amount
 from backend.i18n import gettext as _t, ngettext
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+
+def _other_way(request: Request) -> bool:
+    """Whether this request is served in the other way: the extra figures it needs are only computed then."""
+    variant = getattr(request.state, "ui_variant", None) or preferences.current_ui_variant()
+    return variant == "other_way"
 
 
 def _parse_history(history: str | None) -> list[int]:
@@ -72,6 +78,9 @@ def _build_session_context(db: Session, history: list[int], pending_count: int) 
         "session_journal": journal,
         "session_breakdown": sorted(breakdown.values(), key=lambda e: (-e["count"], e["name"])),
         "session_unexpected": sum(1 for i in filed_ids if rows[i].is_unexpected),
+        # What this visit filed, for the other way's panel and its review.
+        "session_amount": sum((rows[i].amount for i in filed_ids), Decimal("0.00")),
+        "session_filed_rows": [rows[i] for i in filed_ids],
     }
 
 
@@ -91,6 +100,7 @@ def _build_card_context(db: Session, transaction: Transaction | None) -> dict:
         "suggested_category": suggested_category,
         "suggestion_confidence": suggestion["confidence"] if suggestion else None,
         "suggestion_based_on": suggestion["based_on_label"] if suggestion else None,
+        "suggestion_rule_keyword": suggestion.get("rule_keyword") if suggestion else None,
         "possible_transfer": (
             not transaction.is_transfer and crud.looks_like_transfer(transaction.raw_label)
         ),
@@ -135,6 +145,79 @@ def _build_upcoming_context(db: Session, current: Transaction | None) -> dict:
     }
 
 
+def _build_board_context(
+    db: Session,
+    history: list[int],
+    *,
+    focus: Transaction | None = None,
+    q_done: int = 0,
+    rule_suggestion: dict | None = None,
+    note: dict | None = None,
+) -> dict:
+    """Everything the other way's La Savane draws: the lot, the current question, the visit.
+
+    `focus` forces the operation shown as the question (one that was just taken
+    out of the lot, or just undone); otherwise it is the first of the
+    questions. `q_done` is how many questions this visit has answered, carried
+    by the page, so that « 3 sur 6 » can be told without any state on the server.
+    """
+    split = savane.pending_split(db)
+    lot = split["lot"]
+    questions = list(split["questions"])
+    if focus is not None:
+        lot = [item for item in lot if item["transaction"].id != focus.id]
+        questions = [q for q in questions if q.id != focus.id]
+        question_count = len(questions) + 1
+        current = focus
+    else:
+        question_count = len(questions)
+        current = questions[0] if questions else None
+    lot_count = len(lot)
+    pending_count = lot_count + question_count
+    session = _build_session_context(db, history, pending_count)
+
+    context = {
+        "history": _history_csv(history),
+        "pending_count": pending_count,
+        **session,
+        "lot": lot,
+        "lot_count": lot_count,
+        "lot_total": sum((item["transaction"].amount for item in lot), Decimal("0.00")),
+        "lot_min_confidence": min((item["confidence"] for item in lot), default=None),
+        "question_count": question_count,
+        "q_done": q_done,
+        "q_total": q_done + question_count,
+        "q_position": q_done + 1,
+        "q_percent": round(100 * q_done / (q_done + question_count)) if q_done + question_count else 100,
+        "stage": "lot" if lot_count else ("decision" if current is not None else "bilan"),
+        "answer": answers.savane_answer(lot=lot_count, questions=question_count, filed=session["session_filed"]),
+        "next_text": answers.next_text(lot=lot_count, questions=question_count),
+        "rule_suggestion": rule_suggestion,
+        "board_note": note,
+        **_build_card_context(db, current),
+    }
+    if current is not None:
+        suggested = context["suggested_category"]
+        in_category, total = savane.history_counts(
+            savane.history_index(db), current, suggested.id if suggested else None
+        )
+        context["reason"] = answers.suggestion_reason(
+            in_category=in_category,
+            total=total,
+            rule_keyword=context["suggestion_rule_keyword"],
+            based_on_label=context["suggestion_based_on"],
+            confidence=context["suggestion_confidence"],
+        ) if suggested else None
+        context["label_proposals"] = savane.label_proposals(current, context["suggestion_based_on"])
+        context["payment_methods"] = crud.get_payment_methods_dict(db)
+        alerts = _build_budget_alerts_context(db) if suggested else {"budget_alerts": [], "current_month_key": ""}
+        context["card_budget_alert"] = savane.budget_alert_for(alerts["budget_alerts"], suggested)
+        context["budget_month_key"] = alerts["current_month_key"]
+    if pending_count == 0:
+        context["review"] = savane.pillar_review(db, session["session_filed_rows"])
+    return context
+
+
 def _render_next_card(
     request: Request,
     db: Session,
@@ -142,7 +225,24 @@ def _render_next_card(
     history: list[int],
     just_categorized_id: int | None = None,
     rule_suggestion: dict | None = None,
+    focus: bool = False,
+    q_done: int = 0,
+    note: dict | None = None,
 ):
+    if _other_way(request):
+        context = {
+            "request": request,
+            "oob": True,
+            **_build_board_context(
+                db,
+                history,
+                focus=transaction if focus else None,
+                q_done=q_done,
+                rule_suggestion=rule_suggestion,
+                note=note,
+            ),
+        }
+        return templates.TemplateResponse("inbox/_card_with_counter.html", context)
     pending_count = crud.count_pending_transactions(db)
     context = {
         "request": request,
@@ -219,6 +319,19 @@ def _build_budget_alerts_context(db: Session) -> dict:
 
 @router.get("/inbox", response_class=HTMLResponse)
 def inbox(request: Request, db: Session = Depends(get_db)):
+    if _other_way(request):
+        today = date.today()
+        context = {
+            "request": request,
+            "oob": False,
+            **_build_board_context(db, []),
+            "show_le_cap_midmonth_banner": (
+                today - period_containing(today, crud.get_budget_start_day(db)).start
+            ).days == 14,
+            **_build_routine_banner_context(db),
+            **_build_budget_alerts_context(db),
+        }
+        return templates.TemplateResponse("inbox/index.html", context)
     transaction = crud.get_next_pending_transaction(db)
     pending_count = crud.count_pending_transactions(db)
     today = date.today()
@@ -259,6 +372,7 @@ def _categorize_and_advance(
     history: str | None,
     payment_method: str | None = None,
     is_unexpected: bool | None = None,
+    q_done: int = 0,
 ):
     crud.categorize_transaction(
         db, transaction, category, label=label, payment_method=payment_method,
@@ -274,6 +388,7 @@ def _categorize_and_advance(
         new_history,
         just_categorized_id=transaction.id,
         rule_suggestion=rule_suggestion,
+        q_done=q_done + 1,
     )
 
 
@@ -362,6 +477,7 @@ def finalize_categorization(
     label: str | None = Form(None),
     history: str | None = Form(None),
     unexpected: str | None = Form(None),
+    qdone: int = Form(0),
     db: Session = Depends(get_db),
 ):
     # Étape terminale de l'étape mode de paiement (facultative) : tap sur un
@@ -380,6 +496,7 @@ def finalize_categorization(
     return _categorize_and_advance(
         request, db, transaction, category, label, history, payment,
         is_unexpected=None if unexpected is None else bool(unexpected),
+        q_done=qdone,
     )
 
 
@@ -389,6 +506,7 @@ def skip(
     transaction_id: int,
     label: str | None = Form(None),
     history: str | None = Form(None),
+    qdone: int = Form(0),
     db: Session = Depends(get_db),
 ):
     transaction = db.get(Transaction, transaction_id)
@@ -399,7 +517,7 @@ def skip(
 
     new_history = _parse_history(history) + [transaction_id]
     next_transaction = crud.get_next_pending_transaction(db)
-    return _render_next_card(request, db, next_transaction, new_history)
+    return _render_next_card(request, db, next_transaction, new_history, q_done=qdone)
 
 
 @router.post("/{transaction_id}/mark-transfer", response_class=HTMLResponse)
@@ -408,6 +526,7 @@ def mark_transfer(
     transaction_id: int,
     label: str | None = Form(None),
     history: str | None = Form(None),
+    qdone: int = Form(0),
     db: Session = Depends(get_db),
 ):
     transaction = db.get(Transaction, transaction_id)
@@ -418,24 +537,68 @@ def mark_transfer(
 
     new_history = _parse_history(history) + [transaction_id]
     next_transaction = crud.get_next_pending_transaction(db)
-    return _render_next_card(request, db, next_transaction, new_history)
+    return _render_next_card(request, db, next_transaction, new_history, q_done=qdone + 1)
 
 
 @router.post("/undo", response_class=HTMLResponse)
-def undo(request: Request, history: str | None = Form(None), db: Session = Depends(get_db)):
+def undo(
+    request: Request,
+    history: str | None = Form(None),
+    qdone: int = Form(0),
+    db: Session = Depends(get_db),
+):
     remaining_history = _parse_history(history)
     if not remaining_history:
         current = crud.get_next_pending_transaction(db)
-        return _render_next_card(request, db, current, [])
+        return _render_next_card(request, db, current, [], q_done=qdone)
 
     previous_id = remaining_history.pop()
     transaction = db.get(Transaction, previous_id)
     if transaction is None:
         current = crud.get_next_pending_transaction(db)
-        return _render_next_card(request, db, current, remaining_history)
+        return _render_next_card(request, db, current, remaining_history, q_done=qdone)
 
     crud.undo_transaction(db, transaction)
-    return _render_next_card(request, db, transaction, remaining_history)
+    return _render_next_card(
+        request, db, transaction, remaining_history, focus=True, q_done=max(qdone - 1, 0)
+    )
+
+
+@router.post("/lot/file", response_class=HTMLResponse)
+def file_the_lot(
+    request: Request,
+    ids: list[int] | None = Form(None),
+    history: str | None = Form(None),
+    qdone: int = Form(0),
+    db: Session = Depends(get_db),
+):
+    """« Ranger les N » (the other way): file the operations of the lot in one gesture.
+
+    Each one goes into the category Twiga recognized (and the payment method a
+    rule proposes for it); only operations still in the lot are filed.
+    """
+    filed, rule_suggestions = savane.file_lot(db, ids or [])
+    new_history = _parse_history(history) + [t.id for t in filed]
+    note = {"kind": "lot", "count": len(filed), "rules": len(rule_suggestions)} if filed else None
+    return _render_next_card(request, db, None, new_history, q_done=qdone, note=note)
+
+
+@router.post("/{transaction_id}/leave-lot", response_class=HTMLResponse)
+def leave_the_lot(
+    request: Request,
+    transaction_id: int,
+    history: str | None = Form(None),
+    qdone: int = Form(0),
+    db: Session = Depends(get_db),
+):
+    """Touch a line of the lot (the other way): it leaves the lot and becomes the question to decide."""
+    transaction = db.get(Transaction, transaction_id)
+    if transaction is None or transaction.validated:
+        raise HTTPException(status_code=404, detail=_t("Transaction introuvable"))
+    savane.leave_lot(db, transaction)
+    return _render_next_card(
+        request, db, transaction, _parse_history(history), focus=True, q_done=qdone
+    )
 
 
 @router.get("/{transaction_id}/categories", response_class=HTMLResponse)
