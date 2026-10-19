@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend import crud
 from backend.database import get_db
-from backend.dates import month_label, month_range, shift_month
+from backend.dates import format_date_short, month_label, month_range, shift_month
 from backend.pillars import get_pillar_label
 from backend.templating import templates
 from backend.i18n import gettext as _t
@@ -348,47 +348,91 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
     sommes_budgets = crud.get_pillar_budget_sums(db, current_month_start)
     detail = crud.get_month_detail_by_pillar(db, start, today)
 
+    # What the sorting would add: the expenses still waiting in La Savane that it
+    # would put in each budgeted category (same rules as the Panorama envelopes).
+    pending_by_category = {
+        item["category"].id: item["pending"] for item in crud.get_budget_envelopes(db, start, end)
+    }
+    for group in detail.values():
+        for line in group["categories"]:
+            pending = pending_by_category.get(line["category"].id, Decimal("0.00"))
+            line["pending"] = pending
+            line["projected"] = (
+                (line["spent"] + pending) / line["budget"] * 100 if line["budget"] else Decimal("0.00")
+            )
+
     pillars = []
     worst_ratio = Decimal("0.00")
-    worst_label = None
+    worst_code = None
     for key, name, planned in [
         ("essentiel", _t("Essentiel"), sommes_budgets["essentiel"] or None),
         ("choix", _t("Choix"), sommes_budgets["choix"] or None),
         ("imprevu", _t("Imprévus"), entry.planned_imprevu if entry else None),
     ]:
         actual = pillar_actuals[key]
-        ratio = (actual / planned * 100) if planned else Decimal("0.00")
+        group = None if key == "imprevu" else detail.get(key)
+        pending = sum((line["pending"] for line in group["categories"]), Decimal("0.00")) if group else Decimal("0.00")
+        ratio = ((actual + pending) / planned * 100) if planned else Decimal("0.00")
+        spent_ratio = (actual / planned * 100) if planned else Decimal("0.00")
         pillars.append(
             {
                 "name": name,
                 "actual": actual,
+                "pending": pending,
                 "planned": planned,
                 "ratio": round(ratio),
-                "bar_width": min(round(ratio), 100),
+                "bar_width": min(round(spent_ratio), 100),
+                "pending_width": max(0, min(round(ratio), 100) - min(round(spent_ratio), 100)),
                 "code": key,
                 # L'Imprévu n'a pas de détail par catégorie : c'est une
                 # réserve, pas une enveloppe répartie.
-                "detail": None if key == "imprevu" else detail.get(key),
+                "detail": group,
             }
         )
         if ratio > worst_ratio:
             worst_ratio = ratio
-            worst_label = name
+            worst_code = key
 
     # Mêmes seuils que les jauges (≥ 75 % à surveiller, > 90 % presque
     # atteint), pour que la phrase et les barres disent la même chose.
+    labels = {"essentiel": _t("Essentiel"), "choix": _t("Choix"), "imprevu": _t("Imprévus")}
+    warnings = {
+        "essentiel": _t("L'Essentiel est à %(percentage)s %% avec le tri : à surveiller."),
+        "choix": _t("Le Choix est à %(percentage)s %% avec le tri : à surveiller."),
+        "imprevu": _t("Les Imprévus sont à %(percentage)s %% avec le tri : à surveiller."),
+    }
     if worst_ratio > 100:
         status = "danger"
-        status_message = _t("%(label)s dépassé !") % {"label": worst_label}
+        status_message = _t("%(label)s dépassé !") % {"label": labels[worst_code]}
     elif worst_ratio > 90:
         status = "danger"
-        status_message = _t("%(label)s presque épuisé !") % {"label": worst_label}
+        status_message = _t("%(label)s presque épuisé !") % {"label": labels[worst_code]}
     elif worst_ratio >= 75:
         status = "warning"
-        status_message = _t("Surveille %(label)s dans les prochaines semaines.") % {"label": worst_label}
+        status_message = warnings[worst_code] % {"percentage": round(worst_ratio)}
     else:
         status = "success"
         status_message = _t("Le cap tient ! Continue comme ça.")
+
+    # The fourth pillar, savings: measured against what the cap set aside.
+    if entry is not None:
+        savings_target = (
+            entry.planned_income - entry.planned_essentiel - entry.planned_choix - entry.planned_imprevu
+        )
+        savings_ratio = round(savings_so_far / savings_target * 100) if savings_target > 0 else 0
+        pillars.append(
+            {
+                "name": _t("Épargne"),
+                "actual": savings_so_far,
+                "pending": Decimal("0.00"),
+                "planned": savings_target,
+                "ratio": savings_ratio,
+                "bar_width": max(0, min(savings_ratio, 100)),
+                "pending_width": 0,
+                "code": "savings",
+                "detail": None,
+            }
+        )
 
     # Le rythme du mois : la part du mois écoulée, repère des jauges.
     days_in_month = end.day
@@ -411,6 +455,8 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
         "days_in_month": days_in_month,
         "days_left": days_in_month - today.day,
         "rhythm": rhythm,
+        "pace_date": format_date_short(today),
+        "pending_total": crud.get_pending_expense_total(db),
         "planned_total": planned_total,
         "spent_total": spent_total,
     }
