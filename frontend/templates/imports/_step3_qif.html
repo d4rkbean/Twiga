@@ -1,16 +1,22 @@
-{% from "imports/_stepper.html" import stepper, scene %}
-{{ stepper(3, _("Aperçu")) }}
+{% from "imports/_stepper.html" import stepper, scene, step_nav %}
+{{ stepper(3, _("Aperçu QIF"), _("Importer")) }}
 <div class="card flex flex-col gap-4" x-data="{ busy: false }">
-  {% set summary %}{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} nouvelle(s), {{ duplicate_count }} doublon(s) ignoré(s){% endtrans %}{% endset %}
+  {% set summary %}{% trans unique_count=unique_count, duplicate_count=duplicate_count %}{{ unique_count }} opérations à importer, {{ duplicate_count }} doublons écartés.{% endtrans %}{% endset %}
   {{ scene(_("Tout est prêt."), summary) }}
 
-  <div class="flex flex-col gap-1 text-sm">
-    <p class="text-primary">
-      {% trans new_account_count=new_account_count %}{{ new_account_count }} compte(s) seront créés{% endtrans %}
-      {% if existing_account_count %}{% trans existing_account_count=existing_account_count %}({{ existing_account_count }} déjà existant(s)){% endtrans %}{% endif %}
-    </p>
-    <p class="text-primary">{% trans category_count=category_count %}{{ category_count }} catégorie(s) détectée(s) (hiérarchie conservée){% endtrans %}</p>
-    <p class="text-primary">{% trans total_count=total_count %}{{ total_count }} opération(s) détectée(s){% endtrans %}</p>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div class="rounded-xl bg-sunken p-3">
+      <p class="text-xs text-secondary">{{ _("Comptes à créer") }}</p>
+      <p class="text-xl font-semibold tabular-nums">{{ new_account_count }}{% if existing_account_count %} <span class="text-sm font-normal text-secondary">{% trans existing_account_count=existing_account_count %}({{ existing_account_count }} existants){% endtrans %}</span>{% endif %}</p>
+    </div>
+    <div class="rounded-xl bg-sunken p-3">
+      <p class="text-xs text-secondary">{{ _("Catégories détectées") }}</p>
+      <p class="text-xl font-semibold tabular-nums">{{ category_count }}</p>
+    </div>
+    <div class="rounded-xl bg-sunken p-3">
+      <p class="text-xs text-secondary">{{ _("Opérations") }}</p>
+      <p class="text-xl font-semibold tabular-nums">{{ total_count }}</p>
+    </div>
   </div>
 
   <form
@@ -26,14 +32,8 @@
       :disabled="busy"
       {% if unique_count == 0 %}disabled{% endif %}
     >
-      {% trans unique_count=unique_count %}Importer {{ unique_count }} opération(s){% endtrans %}
+      {% trans unique_count=unique_count %}Importer {{ unique_count }} opérations{% endtrans %}
     </button>
   </form>
-
-  <!-- Filet de sécurité, surtout quand unique_count == 0 (le bouton
-       ci-dessus est alors désactivé, sans autre issue) : repartir sur un
-       autre fichier sans devoir retourner par Paramètres. -->
-  <a href="/imports/new" class="btn btn-secondary border-border-strong">
-    {{ icon('file-import', size=18) }} {{ _("Importer un autre fichier") }}
-  </a>
 </div>
+{{ step_nav("/imports/back?import_id=" ~ import_id ~ "&format=qif") }}

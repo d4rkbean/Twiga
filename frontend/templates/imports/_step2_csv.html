@@ -1,33 +1,23 @@
-{% from "imports/_stepper.html" import stepper %}
+{% from "imports/_stepper.html" import stepper, step_nav %}
 {{ stepper(2) }}
+{% set first_row = preview.sample_rows[0] if preview.sample_rows else [] %}
+{% set delimiters = {";": _("points-virgules"), ",": _("virgules"), "\t": _("tabulations"), "|": _("barres verticales")} %}
+{% macro column_options(selected) %}
+{% for name in preview.header %}
+<option value="{{ loop.index0 }}" {% if loop.index0 == selected %}selected{% endif %}>{{ _("Colonne") }} {{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[loop.index0] if loop.index0 < 26 else loop.index }} · {{ (first_row[loop.index0] if loop.index0 < first_row | length else name) | truncate(26, True) }}</option>
+{% endfor %}
+{% endmacro %}
 <div class="card flex flex-col gap-4">
   <div class="flex flex-col gap-1">
     <h2 class="text-section-title">{{ _("Confirmer les colonnes") }}</h2>
-    <p class="text-sm text-secondary">{% trans delimiter=preview.delimiter %}Séparateur détecté : « {{ delimiter }} »{% endtrans %}</p>
-  </div>
-
-  <div class="overflow-x-auto rounded-xl border border-border">
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="bg-sunken">
-          {% for name in preview.header %}
-          <th scope="col" class="text-left text-secondary text-xs font-medium px-3 py-2 whitespace-nowrap">{{ name }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in preview.sample_rows %}
-        <tr class="border-t border-border">
-          {% for cell in row %}
-          <td class="text-primary px-3 py-2 whitespace-nowrap">{{ cell }}</td>
-          {% endfor %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <p class="text-sm text-secondary">
+      {% if preview.delimiter in delimiters %}{% trans delimiter=delimiters[preview.delimiter] %}Twiga a reconnu un CSV séparé par des {{ delimiter }}. Contrôle sur la première ligne :{% endtrans %}
+      {% else %}{% trans delimiter=preview.delimiter %}Séparateur détecté : « {{ delimiter }} ». Contrôle sur la première ligne :{% endtrans %}{% endif %}
+    </p>
   </div>
 
   <form
+    id="import-step2-form"
     hx-post="/imports/{{ import_id }}/confirm"
     hx-target="#import-wizard"
     hx-swap="innerHTML"
@@ -39,43 +29,37 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <label class="form-group">
         <span class="form-label">{{ _("Colonne Date") }}</span>
-        <select name="date_column" class="input-base">
-          {% for name in preview.header %}
-          <option value="{{ loop.index0 }}" {% if loop.index0 == preview.guessed_mapping.date_column %}selected{% endif %}>{{ name }}</option>
-          {% endfor %}
-        </select>
+        <span class="select-field"><select name="date_column" class="input-base">{{ column_options(preview.guessed_mapping.date_column) }}</select></span>
       </label>
 
       <label class="form-group">
         <span class="form-label">{{ _("Colonne Libellé") }}</span>
-        <select name="label_column" class="input-base">
-          {% for name in preview.header %}
-          <option value="{{ loop.index0 }}" {% if loop.index0 == preview.guessed_mapping.label_column %}selected{% endif %}>{{ name }}</option>
-          {% endfor %}
-        </select>
+        <span class="select-field"><select name="label_column" class="input-base">{{ column_options(preview.guessed_mapping.label_column) }}</select></span>
       </label>
 
       <label class="form-group">
         <span class="form-label">{{ _("Colonne Montant") }}</span>
-        <select name="amount_column" class="input-base">
-          {% for name in preview.header %}
-          <option value="{{ loop.index0 }}" {% if loop.index0 == preview.guessed_mapping.amount_column %}selected{% endif %}>{{ name }}</option>
-          {% endfor %}
-        </select>
+        <span class="select-field"><select name="amount_column" class="input-base">{{ column_options(preview.guessed_mapping.amount_column) }}</select></span>
       </label>
 
       <label class="form-group">
         <span class="form-label">{{ _("Format de date") }}</span>
-        <select name="date_format" class="input-base">
-          {% for fmt in date_format_choices %}
-          <option value="{{ fmt }}" {% if fmt == preview.detected_date_format %}selected{% endif %}>{{ fmt }}</option>
-          {% endfor %}
-        </select>
+        <span class="select-field">
+          <select name="date_format" class="input-base">
+            {% for fmt in date_format_choices %}
+            <option value="{{ fmt }}" {% if fmt == preview.detected_date_format %}selected{% endif %}>{{ fmt | replace("%d", _("JJ")) | replace("%m", _("MM")) | replace("%Y", _("AAAA")) | replace("%y", _("AA")) }}{% if fmt == preview.detected_date_format %} ({{ _("détecté") }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </span>
       </label>
     </div>
-
-    <button type="submit" class="btn btn-primary w-full lg:w-auto lg:self-end lg:px-8">
-      {{ _("Continuer") }} {{ icon('arrow-narrow-right', size=18) }}
-    </button>
   </form>
+
+  {% if first_row %}
+  <div class="rounded-xl bg-sunken p-3 flex flex-col gap-1">
+    <p class="text-xs font-medium text-secondary">{{ _("Première ligne lue") }}</p>
+    <p class="text-sm tabular-nums break-words">{{ first_row | join(" · ") }}</p>
+  </div>
+  {% endif %}
 </div>
+{{ step_nav("/imports/step1", "import-step2-form") }}
