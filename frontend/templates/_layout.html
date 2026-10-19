@@ -2,6 +2,14 @@
     (confirmation, aide, à propos). Chaque interface l'étend par son base.html et
     y pose sa coque (blocs sidebar, header, nav, tour) et ses dégagements. -#}
 {% from "_macros/brand.html" import mascot %}
+{#- La visite de l'écran ouvert : chaque gabarit d'écran remplit le bloc
+    tour_steps avec screen_tour(...) (voir backend/tours.py). Lue ici, une fois,
+    pour la visite elle-même (_tour.html) et pour le bouton « Visite de cet
+    écran » de l'aide. Vide : l'écran n'a pas de visite. Le bloc n'est jamais
+    rendu dans la page (le « if » le tient à l'écart) : seul self.tour_steps()
+    le lit. -#}
+{% if false %}{% block tour_steps %}{% endblock %}{% endif %}
+{% set screen_tour_data = self.tour_steps() | fromjson %}
 <!doctype html>
 {# Thème, densité et interface sont rendus par le serveur (compte, puis cookie,
    puis défaut : voir backend/preferences.py) : la classe .dark est déjà sur
@@ -197,12 +205,22 @@
 
       <div class="flex flex-col gap-2">
         <p class="text-sm font-semibold text-primary">{{ _("Liens utiles") }}</p>
+        {% if screen_tour_data %}
+        <button
+          type="button"
+          data-help-screen-tour
+          onclick="document.getElementById('twiga-help-dialog').close(); window.startScreenTour();"
+          class="min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium flex items-center justify-center gap-2"
+        >
+          {{ icon('compass') }}{{ _("Visite de cet écran") }}
+        </button>
+        {% endif %}
         <button
           type="button"
           onclick="document.getElementById('twiga-help-dialog').close(); window.startTwigaTour();"
           class="min-h-[50px] rounded-xl bg-container border border-border-strong text-primary font-medium flex items-center justify-center gap-2"
         >
-          {{ icon('book') }}{{ _("Revoir la visite guidée") }}
+          {{ icon('book') }}{{ _("Revoir la visite de bienvenue") }}
         </button>
         <button
           type="button"

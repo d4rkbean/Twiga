@@ -31,6 +31,7 @@ from backend.models import Account
 from backend.payment_methods import get_payment_method_icon_name, get_payment_method_label
 from backend.pillars import PILLAR_ORDER, PILLARS, get_pillar_label
 from backend.receipt_families import receipt_family_display
+from backend.tours import from_json_filter, screen_tour, screens_seen, tour_step
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -238,11 +239,13 @@ def tour_context(request) -> dict:
     # État de la visite guidée pour _tour.html. tracked : un compte connecté
     # mémorise l'avancement côté serveur (users.tour_seen_at) ; sans
     # authentification, tour.js garde l'ancien repli localStorage.
+    # screens_seen : les écrans dont la visite a déjà été proposée à ce compte
+    # (users.tours_seen, voir backend/tours.py).
     # skip_import : l'étape Importer n'a de sens que pour un admin (seul rôle
     # autorisé) et sur une base encore vide.
     user = get_current_user(request)
     if user is None:
-        return {"tracked": False, "pending": False, "skip_import": False}
+        return {"tracked": False, "pending": False, "skip_import": False, "screens_seen": []}
     pending = user.tour_seen_at is None
     skip_import = False
     if pending:
@@ -253,7 +256,12 @@ def tour_context(request) -> dict:
 
             with SessionLocal() as db:
                 skip_import = db.query(Transaction.id).first() is not None
-    return {"tracked": True, "pending": pending, "skip_import": skip_import}
+    return {
+        "tracked": True,
+        "pending": pending,
+        "skip_import": skip_import,
+        "screens_seen": sorted(screens_seen(user)),
+    }
 
 
 def configure_environment(env: Environment) -> Environment:
@@ -304,6 +312,9 @@ def configure_environment(env: Environment) -> Environment:
     env.globals["current_density"] = preferences.current_density
     env.globals["other_way_enabled"] = preferences.other_way_enabled
     env.globals["tour_context"] = tour_context
+    env.globals["tour_step"] = tour_step
+    env.globals["screen_tour"] = screen_tour
+    env.filters["fromjson"] = from_json_filter
     env.globals["can_edit"] = can_edit
     env.globals["get_account_type_icon"] = get_account_type_icon
     env.globals["get_account_type_label"] = get_account_type_label

@@ -27,8 +27,13 @@
     </div>
   </div>
   <div class="overflow-y-auto flex flex-col gap-2 p-4" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
-    <button type="button" onclick="window.startTwigaTour()" class="{{ row_class }}">
-      <span class="text-secondary">{{ shell_icon("tour") }}</span><span class="flex-1">{{ _("Revoir la visite guidée") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>
+    {% if screen_tour_data %}
+    <button type="button" data-help-screen-tour @click="closeShell()" onclick="window.startScreenTour()" class="{{ row_class }}">
+      <span class="text-secondary">{{ shell_icon("tour") }}</span><span class="flex-1">{{ _("Visite de cet écran") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>
+    </button>
+    {% endif %}
+    <button type="button" @click="closeShell()" onclick="window.startTwigaTour()" class="{{ row_class }}">
+      <span class="text-secondary">{{ shell_icon("help") }}</span><span class="flex-1">{{ _("Revoir la visite de bienvenue") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>
     </button>
     <button type="button" @click="closeShell()" onclick="document.getElementById('twiga-help-dialog').showModal()" class="{{ row_class }}">
       <span class="text-secondary">{{ shell_icon("keyboard") }}</span><span class="flex-1">{{ _("Raccourcis clavier") }}</span><span class="text-secondary">{{ shell_icon("chevron-right", size=18) }}</span>

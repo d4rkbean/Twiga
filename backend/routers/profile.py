@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from backend import answers, auth, crud, i18n, preferences
 from backend.database import get_db
 from backend.templating import flash_html, templates
+from backend.tours import SCREEN_TOURS, mark_screen_seen
 from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -71,6 +72,22 @@ def mark_tour_seen(request: Request, db: Session = Depends(get_db)):
         user = db.get(type(current_user), current_user.id)
         if user is not None and user.tour_seen_at is None:
             user.tour_seen_at = datetime.utcnow()
+            db.commit()
+    return Response(status_code=204)
+
+
+@router.post("/screen-tour-seen", status_code=204)
+def mark_screen_tour_seen(request: Request, screen: str = Form(...), db: Session = Depends(get_db)):
+    # Called by tour.js when the tour of a screen is offered for the first time
+    # (or played from Aide): the account is not invited again on that screen.
+    # Without authentication there is nothing to keep on the server, tour.js
+    # falls back on localStorage.
+    if screen not in SCREEN_TOURS:
+        return Response(status_code=422)
+    current_user = auth.get_current_user(request)
+    if auth.AUTH_ENABLED and current_user is not None:
+        user = db.get(type(current_user), current_user.id)
+        if user is not None and mark_screen_seen(user, screen):
             db.commit()
     return Response(status_code=204)
 

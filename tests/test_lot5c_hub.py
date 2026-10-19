@@ -49,7 +49,7 @@ def test_the_hub_is_arranged_by_use_and_keeps_every_gesture(clients, other_way):
         "Chercher un réglage", "Modes de paiement", "Abonnements récurrents", "Catégorisation en masse", "Budgets",
         "Importer un relevé", "Nouvelle catégorie", "Langue et formats", "Exporter en CSV", "Exporter en JSON complet",
         "Sauvegarder maintenant", "Restaurer depuis une sauvegarde JSON", "Début du mois budgétaire",
-        "Revoir la visite guidée", "Tout supprimer", "Afficher les comptes sur la page de connexion",
+        "Revoir la visite de bienvenue", "Tout supprimer", "Afficher les comptes sur la page de connexion",
     ):
         assert gesture in body, gesture
     for endpoint in ("/settings/cap-income-source", "/settings/budget-start-day", "/profile/preferences",

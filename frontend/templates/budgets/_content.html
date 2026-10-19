@@ -102,7 +102,7 @@
         {% endfor %}
       </div>
 
-      <div class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5">
+      <div data-tour="budgets-groups" class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5">
         {% for group in groups %}
         <section aria-labelledby="group-{{ group.code }}" class="flex flex-col">
           <h2 id="group-{{ group.code }}" class="text-section-title pb-1">{{ group.label }}</h2>
@@ -169,7 +169,7 @@
           {{ icon('alert-triangle', size=16) }}
           <span>{% trans period_label=period_label %}Le total dépasse les ressources de {{ period_label }}{% endtrans %}<span x-show="savingsWithdrawal" style="display: none;"> {{ _("+ le prélèvement sur épargne") }}</span>.</span>
         </p>
-        <button type="submit" class="btn btn-primary w-full">{{ _("Enregistrer") }}</button>
+        <button type="submit" data-tour="budgets-save" class="btn btn-primary w-full">{{ _("Enregistrer") }}</button>
       </div>
       <a href="/cap/mid" class="btn btn-secondary w-full justify-start">{{ _("Revenir à Mon mois") }}</a>
     </aside>
