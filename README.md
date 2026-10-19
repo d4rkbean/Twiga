@@ -63,8 +63,10 @@ no effect: change the password from the app (*Settings → Security → Change t
 once logged in; as an admin, *Settings → Security → Users* resets another
 account's password).
 
-**Change this password on your first login**, especially before exposing the
-app beyond your local network (`AUTH_ENABLED=true`, the default, protects
+**Change this password on your first login**: as long as an account signs in
+with `changeme`, every page leads to *My profile* until a new password is
+saved there, and the start logs a warning while `AUTH_PASSWORD` is `changeme`.
+Do it especially before exposing the app beyond your local network (`AUTH_ENABLED=true`, the default, protects
 every page with a signed session cookie valid for 30 days).
 
 ## Security settings (all optional)

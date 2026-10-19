@@ -760,6 +760,9 @@ msgstr ""
 msgid "Ces %(group)s entrées semblent être le même abonnement :"
 msgstr ""
 
+msgid "Change d'abord ton mot de passe dans Mon profil."
+msgstr ""
+
 msgid "Changer"
 msgstr ""
 
@@ -2296,6 +2299,11 @@ msgid ""
 msgstr ""
 
 msgid "Thème"
+msgstr ""
+
+msgid ""
+"Ton mot de passe est encore celui par défaut. Choisis-en un nouveau ci-"
+"dessous pour continuer."
 msgstr ""
 
 msgid "Top dépenses :"
