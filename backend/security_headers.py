@@ -5,11 +5,38 @@ import os
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
+# Content-Security-Policy: everything comes from Twiga itself (no CDN, no
+# external font). 'unsafe-eval' is required by the standard Alpine.js build
+# (x-data, @click... are evaluated) and by htmx's hx-on attributes;
+# 'unsafe-inline' by the inline scripts and styles of the templates. data: and
+# blob: cover the inline SVG images and the canvases of Chart.js.
+_CSP = "; ".join([
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+])
+
+# Device features Twiga never uses.
+_PERMISSIONS = ", ".join(
+    f"{feature}=()"
+    for feature in ("camera", "microphone", "geolocation", "payment", "usb", "accelerometer", "gyroscope", "magnetometer")
+)
+
 _HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "X-XSS-Protection": "1; mode=block",
+    # The old XSS filter of browsers is gone or harmful: explicitly off.
+    "X-XSS-Protection": "0",
     "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Content-Security-Policy": _CSP,
+    "Permissions-Policy": _PERMISSIONS,
 }
 
 # Only sent over HTTPS: browsers ignore it over plain HTTP, and sending it
