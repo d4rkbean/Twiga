@@ -1883,6 +1883,7 @@ def save_cap_entry(
     planned_essentiel: Decimal,
     planned_choix: Decimal,
     planned_imprevu: Decimal,
+    savings_goal: Decimal | None = None,
     intention: str | None = None,
     reflection_unexpected: str | None = None,
     reflection_regret: str | None = None,
@@ -1899,6 +1900,7 @@ def save_cap_entry(
     entry.planned_essentiel = planned_essentiel
     entry.planned_choix = planned_choix
     entry.planned_imprevu = planned_imprevu
+    entry.savings_goal = savings_goal
     entry.intention = intention
     entry.reflection_unexpected = reflection_unexpected
     entry.reflection_regret = reflection_regret
