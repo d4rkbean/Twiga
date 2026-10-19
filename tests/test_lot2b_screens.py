@@ -31,8 +31,8 @@ def test_panorama_fragment_refreshes_the_shift_label(clients):
 def test_importer_stays_amber_except_on_screens_with_their_own_primary_action(clients):
     admin = clients["admin"]
     assert AMBER_IMPORT in admin.get("/dashboard").text
-    assert AMBER_IMPORT in admin.get("/reports").text
-    for path in ("/budgets", "/cap"):
+    # Rapports has no primary action of its own: the mockup keeps Importer quiet there too.
+    for path in ("/budgets", "/cap", "/reports", "/cap/mid"):
         html = admin.get(path).text
         assert AMBER_IMPORT not in html, path
         assert QUIET_IMPORT in html, path
