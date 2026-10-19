@@ -486,3 +486,49 @@ def test_removing_the_ticket_detail_keeps_the_operation(clients):
         with SessionLocal() as db:
             assert crud.get_receipt_items(db, row) == []
             assert db.get(Transaction, row) is not None
+
+
+# --- La Savane --------------------------------------------------------------
+
+
+def test_savane_shows_the_progress_rail_the_grid_and_the_session_panel(clients):
+    html = clients["admin"].get("/transactions/inbox").text
+    for marker in ('id="inbox-progress"', 'id="inbox-session"', 'id="inbox-counter"', 'id="transaction-card"',
+                   'id="inbox-skip-btn"', 'id="inbox-previous-btn"', 'id="inbox-unexpected-btn"'):
+        assert marker in html, marker
+    for text in ("Journal", "Rangées", "Passées", "Restantes", "Raccourcis clavier", "À suivre"):
+        assert text in html, text
+    assert "Ou une autre catégorie" in html or "Choisis une catégorie" in html
+    assert 'name="history"' in html  # the history really travels with every request
+
+
+def test_the_history_accumulates_and_feeds_the_session_counters(clients):
+    with pending("Quokka one", "Quokka two") as (one, two):
+        client = clients["admin"]
+        first = client.post(f"/transactions/{one}/skip", data={"history": ""}, headers=HTMX)
+        assert f'name="history" value="{one}"' in first.text
+        second = client.post(f"/transactions/{two}/skip", data={"history": str(one)}, headers=HTMX)
+        assert f'value="{one},{two}"' in second.text
+        assert 'id="inbox-session" hx-swap-oob="true"' in second.text
+        assert 'id="inbox-progress"' in second.text and 'hx-swap-oob="true"' in second.text.split('id="inbox-progress"')[1][:60]
+        session = second.text.split('id="inbox-session"')[1]
+        assert ">2</dd>" in session  # two put aside
+
+
+def test_filing_from_the_card_lists_the_operation_in_the_journal(clients, demo):
+    with pending("Quokka journal") as (row,):
+        response = clients["admin"].post(
+            f"/transactions/{row}/finalize/{demo['subcategory_id']}", data={"history": ""}, headers=HTMX
+        )
+        journal = response.text.split('id="inbox-session"')[1]
+        assert "Quokka journal" in journal
+        assert "Test food › Test groceries" in journal
+        assert "rangée sur" in response.text  # the sentence under the title
+
+
+def test_the_card_validates_in_one_gesture_with_the_proposed_category(clients):
+    html = clients["admin"].get("/transactions/inbox").text
+    # « Valider » files straight away (finalize), the grid below is the other way.
+    if 'id="inbox-validate-btn"' in html:
+        tag = html.split('id="inbox-validate-btn"')[1].split(">")[0]
+        assert "/finalize/" in tag

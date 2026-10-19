@@ -42,6 +42,7 @@ PAGES = [
     Page("/transactions/list/content", htmx=True),
     Page("/transactions/new", htmx=True),
     Page("/transactions/{transaction_id}/detail", htmx=True),
+    Page("/transactions/{transaction_id}/edit", htmx=True),
     Page("/transactions/receipts/{transaction_id}/section", htmx=True),
     # Backlog
     Page("/backlog"),

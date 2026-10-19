@@ -70,6 +70,16 @@ def get_next_pending_transaction(db: Session) -> Transaction | None:
     return db.execute(_pending_queue_stmt().limit(1)).scalar_one_or_none()
 
 
+def get_transactions_by_ids(db: Session, ids: list[int]) -> dict[int, Transaction]:
+    # The operations La Savane handled during this visit (the "history" the page
+    # carries for « Précédente »), by id: they feed the session counters and the
+    # journal of the side panel.
+    if not ids:
+        return {}
+    rows = db.execute(select(Transaction).where(Transaction.id.in_(ids))).scalars().all()
+    return {row.id: row for row in rows}
+
+
 def get_upcoming_pending_transactions(db: Session, limit: int = 8) -> list[Transaction]:
     # Le début de la file de La Savane, dans l'ordre exact où les cartes sont
     # présentées (même requête que get_next_pending_transaction) : sert la

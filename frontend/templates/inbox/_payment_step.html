@@ -1,32 +1,33 @@
-{# Mode de paiement, facultatif : une grille de choix, le mode proposé par la
-   règle ou l'historique est cerclé d'ambre (état sélectionné, pas une action
-   principale). « Passer » finalise sans mode de paiement. #}
-<div class="category-suggestion flex flex-col gap-3">
+{# Payment method, optional: a grid of choices; the one proposed by the rule or
+   the history is ringed (a selected state, not a main action). « Passer »
+   files without a payment method. #}
+<div class="category-suggestion flex flex-col gap-3 rounded-xl border border-border bg-container px-5 py-5 lg:px-6">
   <button
     type="button"
     id="inbox-back-to-categories-btn"
-    class="btn btn-ghost self-start px-3 -ml-3 text-secondary"
+    class="btn btn-ghost -ml-2 gap-2 self-start px-3.5 pl-2 font-medium text-secondary"
     hx-get="/transactions/{{ transaction.id }}/categories"
     hx-target=".category-suggestion"
     hx-swap="outerHTML"
   >
     {{ icon('arrow-narrow-left') }} {{ _("Retour aux catégories") }}
+    <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Échap") }}</kbd>
   </button>
   {% set top_level = category.parent if category.parent else category %}
   {% set subcategory_name = category.name if category.parent else none %}
-  <p class="text-sm text-secondary">
+  <p class="flex items-center gap-2 text-secondary">
     {{ _("Catégorie :") }}
-    <span class="text-primary font-medium inline-flex items-center gap-1.5">
-      <span class="inline-block w-2.5 h-2.5 rounded-full" style="background-color: {{ category.id | category_color }}" aria-hidden="true"></span>
+    <span class="inline-flex items-center gap-1.5 font-semibold text-primary">
+      <span class="inline-block h-2.5 w-2.5 rounded-full" style="background-color: {{ category.id | category_color }}" aria-hidden="true"></span>
       {{ top_level.name | category_display }}{% if subcategory_name %} › {{ subcategory_name | category_display }}{% endif %}
     </span>
   </p>
-  <p class="form-label">{{ _("Mode de paiement") }} <span class="italic font-normal">{{ _("(facultatif)") }}</span></p>
+  <p class="text-xs font-medium text-secondary">{{ _("Mode de paiement") }} <span class="italic font-normal">{{ _("(facultatif)") }}</span></p>
   <div class="grid grid-cols-3 gap-2">
     {% for code, meta in payment_methods.items() %}
     <button
       type="button"
-      class="btn flex-col gap-0.5 px-1 text-center text-xs {{ 'border-accent-ink bg-accent-soft text-accent-ink font-semibold' if code == suggested_payment_method else 'btn-secondary' }}"
+      class="btn relative min-h-[66px] flex-col gap-0.5 px-1 text-center text-xs {{ 'border-accent-ink bg-accent-soft text-accent-ink font-semibold' if code == suggested_payment_method else 'btn-secondary border-border-strong' }}"
       {% if code == suggested_payment_method %}style="box-shadow: inset 0 0 0 1px var(--color-accent-ink);"{% endif %}
       hx-post="/transactions/{{ transaction.id }}/finalize/{{ category.id }}"
       hx-vals='{"payment_method": "{{ code }}"}'
@@ -34,13 +35,14 @@
       hx-target="#transaction-card"
       hx-swap="outerHTML"
     >
-      <span class="text-base">{{ meta.icon }}</span>
+      {{ icon(get_payment_method_icon_name(code), size=18) }}
       <span>{{ meta.label }}</span>
+      {% if code == suggested_payment_method %}<span class="min-h-[14px] text-xs font-normal">{{ _("proposé") }}</span>{% endif %}
     </button>
     {% endfor %}
     <button
       type="button"
-      class="btn btn-secondary flex-col gap-0.5 px-1 text-center text-xs text-secondary"
+      class="btn btn-secondary min-h-[66px] flex-col gap-0.5 border-border-strong px-1 text-center text-xs text-secondary"
       hx-post="/transactions/{{ transaction.id }}/finalize/{{ category.id }}"
       hx-include="#simplified-label, #nav-history, #inbox-unexpected"
       hx-target="#transaction-card"
