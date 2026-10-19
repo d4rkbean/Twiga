@@ -175,24 +175,36 @@ def settings_answer(
     return {"phrase": _t("Tout est en place."), "detail": detail, "action": None}
 
 
-def checks_answer(count: int, total: str | None, oldest_days: int | None) -> dict:
-    """The sentence of the Chèques screen: how many wait, for how much, since when."""
+def checks_answer(count: int, total: str | None, oldest: dict | None) -> dict:
+    """The sentence of the Chèques screen: how many payments wait, for how much, and since when.
+
+    `oldest` is {"number", "days"} for the payment that has waited the longest."""
     if count == 0:
         return {
             "phrase": _t("Aucun paiement n'attend son débit."),
-            "detail": _t("Un chèque ou un paiement émis s'enregistre ici, et Twiga le rapproche seul quand il passe sur le compte."),
+            "detail": _t(
+                "Un chèque ou un paiement émis s'enregistre ici, et Twiga le rapproche seul quand il passe sur le compte."
+            ),
         }
     phrase = ngettext(
-        "%(n)s paiement attend son débit : %(total)s.",
-        "%(n)s paiements attendent leur débit : %(total)s.",
+        "%(n)s paiement attend son débit, %(total)s.",
+        "%(n)s paiements attendent leur débit, %(total)s.",
         count,
     ) % {"n": count, "total": total}
-    detail = ngettext(
-        "Le plus ancien attend depuis %(n)s jour : un paiement oublié fausse le reste à dépenser.",
-        "Le plus ancien attend depuis %(n)s jours : un paiement oublié fausse le reste à dépenser.",
-        oldest_days or 0,
-    ) % {"n": oldest_days or 0}
-    return {"phrase": phrase, "detail": detail}
+    tail = _t("Dès qu'il apparaît dans une opération importée, je le range tout seul.")
+    if oldest and oldest.get("number"):
+        waiting = ngettext(
+            "Le chèque n° %(number)s attend depuis %(n)s jour.",
+            "Le chèque n° %(number)s attend depuis %(n)s jours.",
+            oldest["days"],
+        ) % {"number": oldest["number"], "n": oldest["days"]}
+    elif oldest:
+        waiting = ngettext(
+            "Le plus ancien attend depuis %(n)s jour.", "Le plus ancien attend depuis %(n)s jours.", oldest["days"]
+        ) % {"n": oldest["days"]}
+    else:
+        waiting = ""
+    return {"phrase": phrase, "detail": (waiting + " " + tail).strip()}
 
 
 def accounts_answer(accounts: int, pairs: int) -> dict:
