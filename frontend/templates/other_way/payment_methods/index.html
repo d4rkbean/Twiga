@@ -15,6 +15,13 @@
 
 {% block title %}{{ _("Modes de paiement — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("payment_methods", [
+  tour_step('[data-tour="payment-methods-list"]', _("Tes modes de paiement"), _("Carte, virement, chèque, espèces : les modes que Twiga propose sur une opération. Le crayon change le nom et l'icône."), "credit-card", position="bottom"),
+  tour_step('[data-tour="payment-methods-detect"]', _("Détecter les modes manquants"), _("Twiga lit le libellé des opérations sans mode et leur en attribue un. Les opérations déjà renseignées ne bougent pas."), "search", position="bottom", write=True),
+  tour_step('[data-tour="payment-methods-add"]', _("Ajouter un mode"), _("Donne un nom et choisis une icône. Un mode ajouté n'est pas reconnu seul : tu le choisis à la main sur l'opération."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="payment-methods-how"]', _("Comment le mode est reconnu"), _("Il lit le libellé de l'opération, avec quelques exemples. Si deux mots se croisent, le premier de la liste l'emporte."), "help-circle", position="left", alt_position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 {% set write = can_edit("/payment-methods/create") %}
 <main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">
@@ -47,7 +54,7 @@
   {% endif %}
 
   <div class="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
-    <section class="flex flex-col gap-3 min-w-0" aria-labelledby="methods-title">
+    <section data-tour="payment-methods-list" class="flex flex-col gap-3 min-w-0" aria-labelledby="methods-title">
       <h2 id="methods-title" class="text-section-title">{{ _("Tes modes de paiement") }} <span class="font-normal text-secondary">· {{ methods | length }}</span></h2>
       <div class="grid gap-[var(--space-list)] sm:grid-cols-2">
         {% for pm in methods %}
@@ -96,7 +103,7 @@
       </div>
     </section>
 
-    <aside class="card flex flex-col gap-3 min-w-0" aria-labelledby="how-title">
+    <aside data-tour="payment-methods-how" class="card flex flex-col gap-3 min-w-0" aria-labelledby="how-title">
       <h2 id="how-title" class="text-section-title">{{ _("Comment Twiga reconnaît le mode") }}</h2>
       <p class="text-sm text-secondary">{{ _("Il lit le libellé de l'opération. Si deux mots se croisent (VIREMENT SEPA), le premier de la liste l'emporte.") }}</p>
       <ul class="border-t border-border">

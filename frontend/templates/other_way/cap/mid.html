@@ -9,6 +9,13 @@
     L'unique aplat ambre est « Préparer Le Cap ». -#}
 {% set shell_subtitle = month_view.period.label ~ " · " ~ _("jour %(day)s sur %(days)s", day=month_view.day, days=month_view.days) %}
 {% block title %}{{ _("Mon mois — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("month", [
+  tour_step('[data-tour="month-pillars"]', _("Les piliers du mois"), _("Essentiel, Choix, Imprévus, du plus tendu au plus tranquille. Ouvre un pilier pour voir ses catégories."), "scale", position="right", optional=True),
+  tour_step('[data-tour="month-savings"]', _("L'épargne en cours"), _("Ce qui est déjà au rendez-vous, ce qui reste dans les budgets et ce qui attend encore dans La Savane."), "pig-money", position="left", optional=True),
+  tour_step('[data-tour="month-plan"]', _("Ajuster le plan du mois"), _("Ouvre les budgets pour changer le montant d'une catégorie sans refaire tout le Cap."), "pencil", position="left", optional=True, write=True),
+  tour_step('[data-tour="month-fixed"]', _("Les charges fixes"), _("Les prélèvements attendus ce mois-ci et ceux qui sont déjà passés."), "repeat", position="left", optional=True),
+  tour_step('[data-tour="month-cap"]', _("Le Cap du mois"), _("Lance l'assistant pour fixer les ressources, les piliers et l'épargne du mois."), "compass", position="bottom", write=True),
+]) }}{% endblock %}
 
 {% block content %}
 {{ neighbours(_("Panorama, écrans voisins"), [
@@ -24,7 +31,7 @@
       <p class="text-sm text-primary lg:text-base">{{ _("Notre intention pour %(month)s :", month=month_word) }} <strong class="font-semibold">« {{ view.entry.intention }} »</strong></p>
       {% endif %}
     {% endcall %}
-    <a href="/cap" class="btn btn-primary w-full lg:w-auto lg:flex-none">{{ icon('compass', size=18) }} {{ _("Préparer %(cap)s", cap=next_cap_title) if view.entry else _("Fixer le cap") }}</a>
+    <a href="/cap" data-tour="month-cap" class="btn btn-primary w-full lg:w-auto lg:flex-none">{{ icon('compass', size=18) }} {{ _("Préparer %(cap)s", cap=next_cap_title) if view.entry else _("Fixer le cap") }}</a>
   </header>
 
   {% if not view.entry and not view.planned_total %}
@@ -40,7 +47,7 @@
   <div class="grid gap-[var(--space-block)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start">
 
     <div class="lg:col-start-2 lg:row-start-1">
-      <section class="bg-container rounded-xl border border-border shadow-sm overflow-hidden" aria-labelledby="savings-title">
+      <section data-tour="month-savings" class="bg-container rounded-xl border border-border shadow-sm overflow-hidden" aria-labelledby="savings-title">
         <div class="p-[var(--space-card)] flex flex-col gap-1">
           <h2 id="savings-title" class="text-xs font-medium text-secondary">{{ _("Épargne en cours") }}</h2>
           <p class="amount-blur font-display text-[2rem] font-extrabold tabular-nums leading-tight {{ 'text-success' if view.savings_so_far >= 0 else 'text-danger' }}">{{ signed(view.savings_so_far, plus=true) }}</p>
@@ -74,7 +81,7 @@
       </section>
     </div>
 
-    <section aria-labelledby="pillars-title" class="flex flex-col gap-3 min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+    <section aria-labelledby="pillars-title" data-tour="month-pillars" class="flex flex-col gap-3 min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
       <h2 id="pillars-title" class="text-section-title lg:text-[1.0625rem]">{{ _("Les piliers, du plus tendu au plus tranquille") }}</h2>
 
       {% for pillar in view.pillars %}
@@ -191,7 +198,7 @@
     </section>
 
     <aside aria-label="{{ _("Plan, cap et charges fixes") }}" class="flex flex-col gap-[var(--space-block)] lg:col-start-2 lg:row-start-2">
-      <a href="/budgets" class="btn btn-secondary w-full">{{ icon('pencil', size=18) }} {{ _("Ajuster le plan du mois") }}</a>
+      <a href="/budgets" data-tour="month-plan" class="btn btn-secondary w-full">{{ icon('pencil', size=18) }} {{ _("Ajuster le plan du mois") }}</a>
 
       {% if view.entry %}
       <section class="bg-container rounded-xl border border-border shadow-sm" x-data="{ open: false }">
@@ -210,7 +217,7 @@
       {% endif %}
 
       {% if view.fixed['items'] %}
-      <section class="bg-container rounded-xl border border-border shadow-sm" x-data="{ open: false }" aria-labelledby="fixed-title">
+      <section data-tour="month-fixed" class="bg-container rounded-xl border border-border shadow-sm" x-data="{ open: false }" aria-labelledby="fixed-title">
         <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" class="w-full min-h-[62px] px-[var(--space-card)] py-3 flex items-start justify-between gap-3 text-left">
           <span class="flex flex-col gap-0.5">
             <span id="fixed-title" class="text-section-title">{{ _("Charges fixes") }}</span>

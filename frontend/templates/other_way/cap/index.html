@@ -9,6 +9,17 @@
 {% set shell_focus = true %}
 {% set shell_page_title = cap_title %}
 {% block title %}{{ _("Le Cap — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("cap", [
+  tour_step('[data-tour="cap-frise"]', _("Les six étapes du rituel"), _("Bilan, Un mot, Ressources, Les piliers, Épargne, Intention. Touche une étape déjà vue pour y revenir."), "list-details", position="bottom", alt_target='[data-tour="cap-counter"]', optional=True),
+  tour_step('[data-tour="cap-bilan"]', _("Le bilan du mois écoulé"), _("Recettes, dépenses et reste du mois passé. Voir le détail ouvre le prévu, le réel et l'écart. Continuer passe à la suite."), "chart-bar", position="bottom", optional=True),
+  tour_step('[data-tour="cap-word"]', _("Un mot sur le mois"), _("Quatre questions facultatives : les imprévus, les regrets, les fiertés, ce qui a bien marché."), "writing", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-income"]', _("Les ressources du mois"), _("Vérifie ce qui doit rentrer ce mois-ci : tout le reste du plan s'en déduit."), "coins", position="bottom", optional=True, write=True),
+  tour_step('[data-tour="cap-pillar-essentiel"]', _("Les montants d'un pilier"), _("Pour Essentiel puis Choix, règle chaque catégorie. Pars du plan du mois passé ou de ce qu'il a coûté."), "adjustments", position="top", alt_target='[data-tour="cap-pillar-choix"]', optional=True, write=True),
+  tour_step('[data-tour="cap-savings"]', _("L'épargne du mois"), _("Fixe ce que tu veux mettre de côté. Une alerte te prévient si le plan ne tient pas."), "pig-money", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-intent"]', _("L'intention du mois"), _("Une phrase pour te donner un cap. Les idées tirées du mois passé aident à démarrer."), "flag", position="top", optional=True, write=True),
+  tour_step('[data-tour="cap-recap"]', _("Le cap est fixé"), _("Le récapitulatif de ce que tu viens de décider : ressources, piliers, épargne visée et intention."), "circle-check", position="bottom", optional=True),
+  tour_step('[data-tour="cap-after"]', _("Et maintenant"), _("Va au Panorama, suis le mois dans Mon mois, ou reprends le cap si tu veux le corriger."), "arrow-right", position="top", optional=True),
+]) }}{% endblock %}
 {% block shell_head %}{{ super() }}
   <script src="{{ static_url('/static/js/cap-flow.js') }}" defer></script>
 {% endblock %}

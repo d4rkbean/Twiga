@@ -3,6 +3,13 @@
 
 {% block title %}{{ _("Chèques & paiements en attente — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("checks", [
+  tour_step('[data-tour="checks-waiting"]', _("Les paiements en attente"), _("Chèques et paiements émis, pas encore débités, du plus ancien au plus récent. Le badge dit depuis combien de jours ils attendent."), "receipt", position="bottom"),
+  tour_step('[data-tour="checks-add"]', _("Enregistrer un paiement émis"), _("Note le numéro du chèque ou le moyen de paiement, le montant, le compte et la catégorie, le jour où tu le fais."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="checks-matched"]', _("Les derniers rapprochés"), _("Les paiements que Twiga a retrouvés dans un relevé importé, déjà rangés dans leur catégorie."), "circle-check", position="top", optional=True),
+  tour_step('[data-tour="checks-how"]', _("Le rapprochement automatique"), _("Quand l'opération arrive par un import, Twiga retrouve le montant et le numéro, puis la range tout seul sans passer par La Savane."), "refresh", position="left", alt_position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 {% set write = can_edit("/checks/create") %}
 <main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">

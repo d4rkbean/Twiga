@@ -2,6 +2,11 @@
 {% from "other_way/_ui.html" import answer_head %}
 
 {% block title %}{{ _("La Savane — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("savane", [
+  tour_step("#inbox-reader-answer", _("La réponse de Twiga"), _("En une phrase, Twiga te dit ce qui attend dans la Savane et qui peut s'en charger."), "bulb", position="bottom"),
+  tour_step('[data-tour="savane-lot"]', _("Ce qui attend dans le lot"), _("Voici ce que Twiga rangerait, dans quelle catégorie et avec quelle assurance. Tu lis, un éditeur range."), "inbox", position="bottom"),
+  tour_step('[data-tour="savane-rights"]', _("Ce que ton rôle permet"), _("La liste des droits de ton compte : Oui veut dire que tu peux le faire, Non qu'il faut demander à un éditeur."), "shield", position="top"),
+]) }}{% endblock %}
 
 {% block content %}
 {#- La Savane for a reader (role "Lecture seule"): nothing is asked of them. The sentence
@@ -12,7 +17,7 @@
   {{ answer_head(answer.title, answer.detail, id="inbox-reader-answer") }}
 
   <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
-    <section class="card !p-0 overflow-hidden min-w-0" aria-labelledby="lot-title">
+    <section data-tour="savane-lot" class="card !p-0 overflow-hidden min-w-0" aria-labelledby="lot-title">
       <h2 id="lot-title" class="text-section-title px-[var(--space-card)] pt-[var(--space-card)] pb-3">{{ lot_title }}</h2>
       <ul>
         {% for item in lot %}
@@ -34,7 +39,7 @@
       {% endif %}
     </section>
 
-    <aside class="card flex flex-col gap-2 min-w-0" aria-labelledby="rights-title">
+    <aside data-tour="savane-rights" class="card flex flex-col gap-2 min-w-0" aria-labelledby="rights-title">
       <h2 id="rights-title" class="text-section-title">{{ _("Ce que ce rôle permet") }}</h2>
       <p class="text-sm text-secondary">{{ _("D'après les droits de l'application.") }}</p>
       <ul class="border-t border-border">

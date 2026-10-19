@@ -3,6 +3,14 @@
 
 {% block title %}{{ _("Paramètres — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("settings", [
+  tour_step('[data-tour="settings-search"]', _("Chercher un réglage"), _("Tape un mot, par exemple loyer, sauvegarde ou une langue : les cartes qui ne correspondent pas se cachent."), "search", position="bottom"),
+  tour_step('[data-tour="settings-subjects"]', _("Les sujets à portée de main"), _("Modes de paiement, abonnements, chèques, budgets : chaque carte ouvre l'écran du sujet, avec un résumé de ce qui s'y trouve."), "settings", position="bottom"),
+  tour_step("#s-preferences", _("Langue et formats"), _("Choisis la langue, le format des dates et des montants. Chaque choix s'applique tout seul et recharge la page."), "adjustments", position="top"),
+  tour_step("#s-cap", _("D'où viennent tes ressources"), _("Indique quels virements comptent comme ressources du mois, sur quel compte ils arrivent et à quel jour ton budget démarre."), "wallet", position="top", write=True),
+  tour_step("#s-donnees", _("Sauvegarde et export"), _("Exporte tes opérations en CSV ou tout Twiga en JSON. Rien ne se sauvegarde tout seul : fais une copie quand tu veux."), "file-download", position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 {#- Paramètres, the other way: settings arranged by use. What changes often comes
     first (the subjects that have a page of their own, then summaries of
@@ -34,7 +42,7 @@
       {% endif %}
     </div>
     <div class="flex flex-col gap-3 min-w-0">
-      <label class="relative block">
+      <label data-tour="settings-search" class="relative block">
         <span class="sr-only">{{ _("Chercher un réglage") }}</span>
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">{{ icon('search', size=18) }}</span>
         <input type="search" x-model="q" autocomplete="off" placeholder="{{ _("Chercher un réglage : loyer, sauvegarde, Sam…") }}" class="input-base pl-10" />
@@ -57,7 +65,7 @@
       <p class="text-sm text-secondary">{{ _("Paiements, abonnements, catégories, règles de rangement et comptes.") }}</p>
     </div>
 
-    <div class="grid gap-[var(--space-list)] sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+    <div data-tour="settings-subjects" class="grid gap-[var(--space-list)] sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
       {% set t = tiles %}
       {% set tile_list = [
         ("/payment-methods", "credit-card", _("Modes de paiement"), none),

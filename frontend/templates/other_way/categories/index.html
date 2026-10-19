@@ -4,6 +4,13 @@
 
 {% block title %}{{ _("Catégories — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("categories", [
+  tour_step("#categories-content", _("L'arbre des catégories"), _("Déplie une catégorie pour voir ses sous-catégories. Le crayon ouvre le nom, le pilier et les budgets de la ligne."), "folders", position="bottom"),
+  tour_step("#categories-head", _("Créer une catégorie"), _("Ajoute une catégorie de premier niveau ou une sous-catégorie, en choisissant son emplacement."), "plus", position="bottom", write=True),
+  tour_step("#categories-pillars", _("Les piliers du Cap"), _("Chaque catégorie compte dans un pilier, et une sous-catégorie suit sa catégorie sauf si elle a le sien. L'Épargne, elle, est ce qui reste."), "scale", position="left", alt_position="top"),
+  tour_step('[data-tour="categories-reset"]', _("Remettre les piliers à plat"), _("Les sous-catégories reprennent le pilier de leur catégorie. Pratique après des réglages au cas par cas."), "refresh", position="top", optional=True, write=True),
+]) }}{% endblock %}
+
 {% block content %}
 {% set write = can_edit("/categories/create") %}
 <main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">

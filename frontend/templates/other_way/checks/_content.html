@@ -12,7 +12,7 @@
 <div id="checks-content" class="flex flex-col gap-5">
   {% call answer_head(answer.title, answer.detail, blur_phrase=true) %}
     {% if write %}
-    <button type="button" x-show="!adding" @click="adding = true; $nextTick(() => document.getElementById('check-number').focus())" class="btn btn-primary">
+    <button type="button" x-show="!adding" data-tour="checks-add" @click="adding = true; $nextTick(() => document.getElementById('check-number').focus())" class="btn btn-primary">
       {{ icon('plus', size=18) }} {{ _("Enregistrer un paiement émis") }}
     </button>
     {% endif %}
@@ -20,7 +20,7 @@
 
   <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
     <div class="flex flex-col gap-5 min-w-0">
-      <section class="flex flex-col gap-3" aria-labelledby="waiting-title">
+      <section data-tour="checks-waiting" class="flex flex-col gap-3" aria-labelledby="waiting-title">
         <h2 id="waiting-title" class="text-section-title">{{ _("En attente") }} <span class="font-normal text-secondary">· {{ outstanding_checks | length }}</span></h2>
         {% for pending_check in outstanding_checks | sort(attribute="issued_date") %}
         {% set age = ages[pending_check.id] %}
@@ -47,7 +47,7 @@
       </section>
 
       {% if matched_checks %}
-      <section class="flex flex-col gap-3" aria-labelledby="matched-title">
+      <section data-tour="checks-matched" class="flex flex-col gap-3" aria-labelledby="matched-title">
         <h2 id="matched-title" class="text-section-title">{{ _("Récemment rapprochés") }}</h2>
         {% for pending_check in matched_checks %}
         <div class="card !p-4 flex items-start gap-3 bg-page border border-border">
@@ -66,7 +66,7 @@
       {% endif %}
     </div>
 
-    <aside class="card flex flex-col gap-3 min-w-0" aria-labelledby="how-title">
+    <aside data-tour="checks-how" class="card flex flex-col gap-3 min-w-0" aria-labelledby="how-title">
       <h2 id="how-title" class="text-section-title">{{ _("Comment il se rapproche tout seul") }}</h2>
       <p class="text-sm text-secondary">{{ _("Dès que ce paiement sera débité (montant retrouvé, ET numéro de chèque ou moyen de paiement identifié dans le libellé d'une opération importée), il sera automatiquement catégorisé — sans passer par La Savane.") }}</p>
       <p class="text-sm text-secondary">{{ _("Utile aussi pour les paiements via un intermédiaire (Wero, PayPal...) dont le libellé bancaire ne dit jamais à qui/pourquoi.") }}</p>

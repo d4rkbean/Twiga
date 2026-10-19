@@ -3,6 +3,13 @@
 
 {% block title %}{{ _("Utilisateurs — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("users", [
+  tour_step('[data-tour="users-list"]', _("Les personnes qui ont accès"), _("Chaque ligne donne le rôle et la dernière connexion. Touche une personne pour afficher sa fiche à côté."), "users", position="bottom"),
+  tour_step('[data-tour="users-card"]', _("La fiche de la personne"), _("Change son rôle, désactive son accès, réinitialise son mot de passe ou supprime-la. Chaque geste s'applique tout de suite."), "user", position="left", alt_position="top", write=True),
+  tour_step('[data-tour="users-roles"]', _("Ce que chaque rôle peut faire"), _("Administrateur, Éditeur ou Lecture seule : un rappel de ce que permet chaque rôle avant d'en choisir un."), "shield-lock", position="top"),
+  tour_step('[data-tour="users-add"]', _("Ajouter un utilisateur"), _("Un nom d'utilisateur, un mot de passe de huit caractères au moins et un rôle. Donne-lui ensuite ses identifiants."), "plus", position="bottom", write=True),
+]) }}{% endblock %}
+
 {% block content %}
 {% set role_labels = {"admin": _("Administrateur"), "editor": _("Éditeur"), "viewer": _("Lecture seule")} %}
 <main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">

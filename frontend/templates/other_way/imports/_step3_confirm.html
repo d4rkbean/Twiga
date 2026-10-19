@@ -9,10 +9,10 @@
 
   <div x-show="!busy" class="flex flex-col gap-5">
     {% call answer_head(answer.title, answer.detail) %}
-      <button type="submit" form="import-confirm-form" class="btn btn-primary" :disabled="count === 0 || busy">
+      <button type="submit" form="import-confirm-form" data-tour="import-confirm" class="btn btn-primary" :disabled="count === 0 || busy">
         <span>{% trans n=unique_count %}Importer <span x-text="count">{{ n }}</span> opération{% pluralize %}Importer <span x-text="count">{{ n }}</span> opérations{% endtrans %}</span>
       </button>
-      <button type="button" @click="adjust = !adjust" :aria-expanded="adjust" class="btn btn-secondary border-border-strong">
+      <button type="button" data-tour="import-adjust" @click="adjust = !adjust" :aria-expanded="adjust" class="btn btn-secondary border-border-strong">
         <span x-text="adjust ? {{ _("Masquer les réglages") | tojson }} : {{ _("Ajuster") | tojson }}">{{ _("Ajuster") }}</span>
         <span class="transition-transform" :class="adjust ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
       </button>
@@ -23,7 +23,7 @@
       {% include "imports/_file_card.html" %}
 
       <div class="flex flex-col gap-3 min-w-0">
-        <section class="card flex flex-col gap-4">
+        <section data-tour="import-read" class="card flex flex-col gap-4">
           <h2 class="text-section-title">{{ _("Ce que Twiga a lu dans le fichier") }}</h2>
           <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div><dd class="font-display font-extrabold text-[32px] leading-none tabular-nums">{{ total_count | integer }}</dd><dt class="text-sm text-secondary mt-1">{{ _("Lignes lues") }}</dt></div>

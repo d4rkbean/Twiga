@@ -28,7 +28,7 @@
   {% set path = item.path %}
   {% set tone = item.verdict_tone %}
   <section id="project-card-{{ project.id }}" aria-labelledby="project-name-{{ project.id }}" class="card flex flex-col gap-5 transition-shadow">
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+    <div {% if loop.first %}data-tour="projects-card" {% endif %}class="grid gap-5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
       <div class="flex items-start gap-3 min-w-0">
         <span class="shrink-0 grid place-items-center w-[50px] h-[50px] rounded-full bg-sunken text-secondary">{{ icon(project_icons[loop.index0 % 8], size=22) }}</span>
         <div class="flex flex-col min-w-0">
@@ -70,7 +70,7 @@
 
     {#- The track: today on the left, the month the rhythm reaches the target (a
         dot), the deadline (a bar). Positions are percentages computed in Python. -#}
-    <div role="img" aria-label="{% trans reach=(item.rhythm.reach_label if item.rhythm.reach else _('—')), deadline=item.deadline_label %}Au rythme actuel : {{ reach }}. Échéance : {{ deadline }}.{% endtrans %}">
+    <div {% if loop.first %}data-tour="projects-track" {% endif %}role="img" aria-label="{% trans reach=(item.rhythm.reach_label if item.rhythm.reach else _('—')), deadline=item.deadline_label %}Au rythme actuel : {{ reach }}. Échéance : {{ deadline }}.{% endtrans %}">
       <div class="relative h-[84px]">
         {% if item.rhythm.reach %}
         <p class="absolute top-0 -translate-x-1/2 text-sm font-semibold whitespace-nowrap {{ tone_text(tone) }}" style="left: {{ path.reach }}%">{{ item.rhythm.reach_label }}</p>
@@ -98,7 +98,7 @@
     </div>
 
     {% if write %}
-    <div x-show="panel !== 'add-{{ project.id }}' && panel !== 'spend-{{ project.id }}' && panel !== 'edit-{{ project.id }}'" class="flex flex-wrap justify-end gap-2">
+    <div {% if loop.first %}data-tour="projects-actions" {% endif %}x-show="panel !== 'add-{{ project.id }}' && panel !== 'spend-{{ project.id }}' && panel !== 'edit-{{ project.id }}'" class="flex flex-wrap justify-end gap-2">
       <button type="button" @click="panel = 'add-{{ project.id }}'" aria-label="{% trans name=project.name %}Ajouter de l'argent à {{ name }}{% endtrans %}" class="btn btn-secondary border-border-strong flex-[1_1_110px] sm:flex-none">
         {{ icon('plus', size=18) }} {{ _("Ajouter") }}
       </button>
@@ -189,7 +189,7 @@
 
   {% if write %}
   {#- New project: a dashed tile that opens its form in place. -#}
-  <div class="rounded-xl border border-dashed border-border-strong">
+  <div data-tour="projects-new" class="rounded-xl border border-dashed border-border-strong">
     <button type="button" x-show="panel !== 'new'" @click="panel = 'new'" class="w-full min-h-[80px] text-accent-ink flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-4 text-center">
       <span class="inline-flex items-center gap-2 font-semibold">{{ icon('plus', size=20) }} {{ _("Nouveau projet") }}</span>
       <span class="text-sm text-secondary">{{ _("Fonds d'urgence, travaux, cadeau...") }}</span>
@@ -215,7 +215,7 @@
     {% endfor %}
   {% endfor %}
   {% if ns.all %}
-  <section class="card flex flex-col gap-3" x-data="{ only: null }" aria-labelledby="project-history">
+  <section data-tour="projects-history" class="card flex flex-col gap-3" x-data="{ only: null }" aria-labelledby="project-history">
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex flex-wrap items-baseline gap-x-3">
         <h2 id="project-history" class="text-section-title">{{ _("Historique") }}</h2>

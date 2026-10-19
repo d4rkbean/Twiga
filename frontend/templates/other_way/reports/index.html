@@ -9,6 +9,14 @@
     questions (mobile) vivent ici, sur <main>, qui survit à l'échange. -#}
 {% set shell_page_title = _("Rapports") %}
 {% block title %}{{ _("Rapport complet — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("reports", [
+  tour_step('[data-tour="reports-answer"]', _("La phrase de la question"), _("Chaque question a sa phrase de réponse. Elle change quand tu changes de question ou de période."), "bulb", position="bottom"),
+  tour_step('[data-tour="reports-questions"]', _("Choisis ta question"), _("Plutôt que des onglets, une liste de questions. Touche-en une : la phrase et le panneau s'adaptent."), "help-circle", position="right", alt_target='[data-tour="reports-question-sheet"]', alt_position="bottom"),
+  tour_step('[data-tour="reports-period"]', _("Le type de période"), _("Choisis la période (mois, trimestre, année ou dates libres), puis avance ou recule avec les flèches voisines."), "calendar", position="bottom"),
+  tour_step('[data-tour="reports-criteria"]', _("Compte et décalage"), _("Plus de critères : limite le rapport à un compte, ou décale les recettes pour que le salaire de la veille finance le mois."), "adjustments", position="bottom"),
+  tour_step('[data-tour="reports-panel"]', _("Le panneau de la question"), _("Les chiffres et les graphiques de la question choisie, pour la période et le compte retenus."), "chart-bar", position="top"),
+  tour_step('[data-tour="reports-export"]', _("Imprimer ou exporter"), _("Imprime le rapport ou exporte-le en CSV, un fichier que lit n'importe quel tableur."), "printer", position="left"),
+]) }}{% endblock %}
 {% block shell_head %}{{ super() }}
   <script src="{{ static_url('/static/js/reports-plan.js') }}" defer></script>
 {% endblock %}

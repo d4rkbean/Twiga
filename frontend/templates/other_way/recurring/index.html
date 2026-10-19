@@ -3,6 +3,14 @@
 
 {% block title %}{{ _("Abonnements récurrents — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("recurring", [
+  tour_step('[data-tour="recurring-list"]', _("Tes abonnements, par état"), _("Attendus ce mois, inactifs, déjà prélevés ou ignorés. Touche une ligne pour voir la dernière date et la prochaine attendue."), "repeat", position="top", optional=True),
+  tour_step('[data-tour="recurring-filters"]', _("Filtrer la liste"), _("Les pastilles isolent les abonnements attendus, inactifs ou ignorés. Le nombre à côté dit combien il y en a."), "filter", position="bottom", optional=True),
+  tour_step('[data-tour="recurring-total"]', _("Le total mensuel"), _("Ce que tes abonnements coûtent en moyenne par mois. Un abonnement annuel compte pour un douzième."), "currency-euro", position="left", alt_position="top", optional=True),
+  tour_step('[data-tour="recurring-help"]', _("Confirmer ou ignorer"), _("Confirmer dit à Twiga que c'est bien un abonnement. Ignorer le sort du total sans le supprimer."), "circle-check", position="top", optional=True, write=True),
+  tour_step('[data-tour="recurring-duplicates"]', _("Fusionner les doublons"), _("Quand deux entrées semblent être le même abonnement, Fusionner les regroupe en une seule."), "transfer", position="bottom", optional=True, write=True),
+]) }}{% endblock %}
+
 {% block content %}
 <main class="flex flex-col gap-5 px-4 pb-8 lg:px-8">
   {{ section_tabs([

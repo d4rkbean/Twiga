@@ -3,7 +3,7 @@
 {% set write = can_edit("/rules/create") %}
 <div id="rules-content" class="flex flex-col gap-5 min-w-0">
   {% if pending_suggestions %}
-  <section class="card flex flex-col gap-2" aria-labelledby="pending-title">
+  <section data-tour="rules-pending" class="card flex flex-col gap-2" aria-labelledby="pending-title">
     <div class="flex items-center gap-2">
       <h2 id="pending-title" class="text-section-title">{{ _("En attente de validation") }}</h2>
       <span class="badge badge-warning">{{ pending_suggestions | length }}</span>

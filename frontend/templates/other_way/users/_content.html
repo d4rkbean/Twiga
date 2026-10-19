@@ -15,7 +15,7 @@
      x-data="{ sel: (window.twigaUserSel && [{% for u in users %}{{ u.id }},{% endfor %}].includes(window.twigaUserSel)) ? window.twigaUserSel : {{ (current.id if current else users[0].id) if users else 0 }} }"
      x-init="$watch('sel', value => { window.twigaUserSel = value; })">
   {% call answer_head(answer.title, answer.detail) %}
-    <button type="button" x-show="!adding" @click="adding = true; $nextTick(() => document.getElementById('new-user-username').focus())" class="btn btn-primary">
+    <button type="button" x-show="!adding" data-tour="users-add" @click="adding = true; $nextTick(() => document.getElementById('new-user-username').focus())" class="btn btn-primary">
       {{ icon('plus', size=18) }} {{ _("Ajouter un utilisateur") }}
     </button>
   {% endcall %}
@@ -25,7 +25,7 @@
 
   <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
     <div class="flex flex-col gap-5 min-w-0">
-      <section class="flex flex-col gap-3" aria-labelledby="people-title">
+      <section data-tour="users-list" class="flex flex-col gap-3" aria-labelledby="people-title">
         <h2 id="people-title" class="text-section-title">{{ _("Utilisateurs existants") }} <span class="font-normal text-secondary">· {{ users | length }}</span></h2>
         <ul class="card !p-0 overflow-hidden">
           {% for user in users %}
@@ -47,7 +47,7 @@
         </ul>
       </section>
 
-      <section class="card flex flex-col gap-3" aria-labelledby="roles-title">
+      <section data-tour="users-roles" class="card flex flex-col gap-3" aria-labelledby="roles-title">
         <h2 id="roles-title" class="text-section-title">{{ _("Ce que chaque rôle peut faire") }}</h2>
         <dl class="flex flex-col text-sm">
           {% for role in ["admin", "editor", "viewer"] %}
@@ -59,7 +59,7 @@
     </div>
 
     {#- The card of the person picked: its own forms, so each gesture is one request. -#}
-    <div class="min-w-0">
+    <div data-tour="users-card" class="min-w-0">
       {% for user in users %}
       <section x-show="sel === {{ user.id }}" {% if not loop.first %}style="display: none"{% endif %} class="card flex flex-col gap-4" aria-label="{{ user.display_name or user.username }}">
         <div class="flex items-center gap-3">

@@ -3,6 +3,14 @@
 
 {% block title %}{{ _("Projets — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("projects", [
+  tour_step('[data-tour="projects-card"]', _("Un projet, d'un coup d'œil"), _("Ce qui est de côté, la date où ton rythme actuel atteint la cible, ce qu'il manque et l'effort mensuel pour tenir l'échéance."), "pig-money", position="bottom", optional=True),
+  tour_step('[data-tour="projects-track"]', _("Le chemin jusqu'à la date"), _("D'aujourd'hui à l'échéance : le point coloré marque le mois où tu atteins la cible, la barre fine l'échéance."), "target", position="top", optional=True),
+  tour_step('[data-tour="projects-actions"]', _("Ajouter, dépenser, modifier"), _("Ajouter verse de l'argent depuis un compte, Dépenser le sort du projet, Modifier change la cible, la date ou supprime."), "plus", position="top", optional=True, write=True),
+  tour_step('[data-tour="projects-new"]', _("Créer un nouveau projet"), _("Donne un nom, un montant cible et une échéance : Twiga calcule tout de suite l'effort mensuel."), "star", position="top", write=True),
+  tour_step('[data-tour="projects-history"]', _("L'historique des mouvements"), _("Les entrées et sorties de tes projets, les plus récentes d'abord. Filtre par projet avec les pastilles."), "list-details", position="top", optional=True),
+]) }}{% endblock %}
+
 {% block content %}
 {#- Everything below the tabs lives in #projects-list: each action returns
     projects/_list.html, and the sentence of Twiga must follow. -#}

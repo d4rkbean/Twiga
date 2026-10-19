@@ -145,7 +145,7 @@
     </section>
 
     {# --- Trois choses à regarder --- #}
-    <section aria-labelledby="things-title" class="rounded-xl border border-border bg-container shadow-sm">
+    <section aria-labelledby="things-title" data-tour="dashboard-things" class="rounded-xl border border-border bg-container shadow-sm">
       <h2 id="things-title" class="border-b border-border px-[var(--space-card)] py-4 text-section-title">{{ _("Trois choses à regarder") }}</h2>
       <ol class="flex flex-col">
         {% for thing in things %}
@@ -217,7 +217,7 @@
     </section>
 
     {# --- Évolution sur 12 mois --- #}
-    <section aria-labelledby="trend-title" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+    <section aria-labelledby="trend-title" data-tour="dashboard-trend" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div class="flex flex-col gap-1">
           <h2 id="trend-title" class="text-section-title">{{ trend_title }}</h2>
@@ -258,7 +258,7 @@
       ("in", income_rows, income_total, _("Recettes par catégorie — %(period)s", period=period_label), income_top_sentence, _("Aucune recette sur cette période."), _("Total recettes"), true),
       ("out", expense_rows, expense_total, _("Dépenses par catégorie — %(period)s", period=period_label), expense_top_sentence, _("Aucune dépense sur cette période."), _("Total dépenses"), false)
     ) %}
-    <section data-share aria-labelledby="share-{{ kind }}-title" :class="kind === '{{ 'in' if kind == 'out' else 'out' }}' ? 'max-lg:hidden' : ''" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+    <section data-share data-tour="dashboard-share-{{ kind }}" aria-labelledby="share-{{ kind }}-title" :class="kind === '{{ 'in' if kind == 'out' else 'out' }}' ? 'max-lg:hidden' : ''" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
       <div class="flex flex-col gap-1">
         <h2 id="share-{{ kind }}-title" class="text-section-title">{{ title }}</h2>
         <p class="text-sm text-secondary">{{ sentence }}</p>

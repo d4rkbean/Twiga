@@ -2,7 +2,7 @@
     each time. Shared by the recap of a statement and by the one of a HomeBank
     history. Expects: file_name, file_size, span, account_label, balance_after. -#}
 <div class="flex flex-col gap-5 min-w-0">
-  <section class="card flex flex-wrap items-center gap-3">
+  <section data-tour="import-file" class="card flex flex-wrap items-center gap-3">
     <span class="shrink-0 text-secondary">{{ icon('file-text', size=28) }}</span>
     <div class="min-w-[12rem] flex-1">
       <p class="font-semibold [overflow-wrap:anywhere]">{{ file_name }}</p>
@@ -15,7 +15,7 @@
     <button type="button" hx-get="/imports/step1" hx-target="#import-wizard" hx-swap="innerHTML" class="btn btn-secondary border-border-strong shrink-0">{{ _("Changer de fichier") }}</button>
   </section>
 
-  <section class="card flex flex-col gap-3">
+  <section data-tour="import-checks" class="card flex flex-col gap-3">
     <h2 class="text-section-title">{{ _("Ce que Twiga vérifie à chaque import") }}</h2>
     <ul class="flex flex-col gap-2 text-sm">
       <li class="flex items-start gap-3"><span class="mt-0.5 text-success">{{ icon('check', size=18) }}</span><span>{{ _("Doublons repérés : même date, même montant, même libellé") }}</span></li>

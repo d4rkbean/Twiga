@@ -3,6 +3,13 @@
 
 {% block title %}{{ _("Règles — Twiga") }}{% endblock %}
 
+{% block tour_steps %}{{ screen_tour("rules", [
+  tour_step("#rules-content", _("Tes règles de rangement"), _("Quand un libellé contient le mot-clé, l'opération prend la catégorie de la règle. Les plus utilisées sont en haut."), "tag", position="bottom"),
+  tour_step('[data-tour="rules-pending"]', _("Les règles proposées"), _("Twiga propose une règle quand tu ranges souvent le même libellé. Crée-la, ou ignore-la."), "bulb", position="bottom", optional=True, write=True),
+  tour_step("#rules-head", _("Ajouter une règle"), _("Un mot-clé, une catégorie, et au besoin un mode de paiement. Le formulaire te dit combien d'opérations le mot-clé attrape."), "plus", position="bottom", write=True),
+  tour_step('[data-tour="rules-test"]', _("Tester un libellé"), _("Colle un libellé de ton relevé : Twiga dit quelle règle s'appliquerait, sans rien modifier."), "zoom-in", position="left", alt_position="top"),
+]) }}{% endblock %}
+
 {% block content %}
 {% set write = can_edit("/rules/create") %}
 <main class="flex flex-col gap-5 px-4 pb-8 lg:px-8" x-data="{ adding: false }">
@@ -67,7 +74,7 @@
 
   <div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
     {% include "rules/_content.html" %}
-    <aside class="card flex flex-col gap-3 min-w-0" aria-labelledby="test-title">
+    <aside data-tour="rules-test" class="card flex flex-col gap-3 min-w-0" aria-labelledby="test-title">
       <h2 id="test-title" class="text-section-title">{{ _("Tester une règle") }}</h2>
       <p class="text-sm text-secondary">{{ _("Colle un libellé : je dis quelle règle s'appliquerait.") }}</p>
       <form hx-post="/rules/test" hx-target="#rule-test-result" hx-swap="innerHTML" class="flex flex-col gap-2 sm:flex-row">

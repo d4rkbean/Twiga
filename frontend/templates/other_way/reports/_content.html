@@ -18,7 +18,7 @@
 
   {# --- La phrase de la question choisie, et l'impression / l'export --- #}
   <header class="print:hidden flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-    <section aria-label="{{ _("La réponse de Twiga") }}" class="flex items-start gap-3 lg:gap-5">
+    <section aria-label="{{ _("La réponse de Twiga") }}" data-tour="reports-answer" class="flex items-start gap-3 lg:gap-5">
       <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
       <div class="min-w-0 flex flex-col gap-2">
         {% for key, label in report_questions %}
@@ -29,7 +29,7 @@
         {% endfor %}
       </div>
     </section>
-    <div class="max-lg:hidden flex flex-none gap-2">
+    <div data-tour="reports-export" class="max-lg:hidden flex flex-none gap-2">
       <button type="button" @click="window.print()" class="btn btn-secondary">{{ icon('printer', size=18) }} {{ _("Imprimer") }}</button>
       <a x-data href="/reports/export.csv?{{ report_qs }}" @click="$el.href = '/reports/export.csv?' + new URLSearchParams(new FormData(document.getElementById('reports-account-filter'))).toString()" class="btn btn-secondary">{{ icon('download', size=18) }} {{ _("Exporter en CSV") }}</a>
     </div>
@@ -56,7 +56,7 @@
       <div class="flex items-center justify-between gap-3 lg:hidden"><h2 class="text-section-title">{{ _("Période et compte") }}</h2><button type="button" @click="psheet = false" class="min-h-[50px] px-2 text-sm font-medium text-accent-ink underline">{{ _("Fermer") }}</button></div>
 
       <div class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-5 lg:gap-y-3">
-        <nav aria-label="{{ _("Type de période") }}" class="flex flex-wrap gap-1 rounded-xl bg-accent-soft p-1">
+        <nav aria-label="{{ _("Type de période") }}" data-tour="reports-period" class="flex flex-wrap gap-1 rounded-xl bg-accent-soft p-1">
           {% for code, label in type_choices %}
           <a
             :href="'/reports?period_type={{ code }}{{ tail }}&q=' + q"
@@ -83,7 +83,7 @@
         {% endif %}
 
         <div class="flex items-center gap-3">
-          <button type="button" @click="crit = !crit" :aria-expanded="crit ? 'true' : 'false'" class="inline-flex min-h-[50px] items-center gap-2 rounded-xl border border-border-strong bg-container px-4 text-sm font-medium text-primary">
+          <button type="button" data-tour="reports-criteria" @click="crit = !crit" :aria-expanded="crit ? 'true' : 'false'" class="inline-flex min-h-[50px] items-center gap-2 rounded-xl border border-border-strong bg-container px-4 text-sm font-medium text-primary">
             {{ _("Plus de critères") }}
             {% if criteria_count %}<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-soft px-1 text-xs font-semibold text-accent-ink">{{ criteria_count }}</span>{% endif %}
             <span class="transition-transform" :class="crit ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span>
@@ -126,12 +126,12 @@
   <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,3.2fr)] lg:items-start lg:gap-8">
 
     <div class="print:hidden flex flex-col gap-2">
-      <button type="button" @click="qopen = !qopen" :aria-expanded="qopen ? 'true' : 'false'" class="flex min-h-[62px] w-full items-center justify-between gap-3 rounded-xl border border-accent-ink bg-accent-soft px-4 text-left lg:hidden">
+      <button type="button" data-tour="reports-question-sheet" @click="qopen = !qopen" :aria-expanded="qopen ? 'true' : 'false'" class="flex min-h-[62px] w-full items-center justify-between gap-3 rounded-xl border border-accent-ink bg-accent-soft px-4 text-left lg:hidden">
         <span class="flex flex-col"><span class="text-xs text-secondary">{{ _("Ta question") }}</span>{% for key, label in report_questions %}<span x-show="q === '{{ key }}'" {% if key != question %}style="display: none;"{% endif %} class="text-sm font-semibold text-accent-ink">{{ label }}</span>{% endfor %}</span>
         <span class="text-secondary transition-transform" :class="qopen ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
       </button>
       <p class="hidden text-xs font-medium text-secondary lg:block">{{ _("Ta question") }}</p>
-      <div role="group" aria-label="{{ _("Choisir une question") }}" :class="qopen ? '' : 'max-lg:hidden'" class="flex flex-col gap-2">
+      <div role="group" data-tour="reports-questions" aria-label="{{ _("Choisir une question") }}" :class="qopen ? '' : 'max-lg:hidden'" class="flex flex-col gap-2">
         {% for key, label in report_questions %}
         <button type="button" @click="q = '{{ key }}'; qopen = false" :aria-pressed="q === '{{ key }}' ? 'true' : 'false'" class="min-h-[50px] rounded-xl border border-border-strong bg-container px-4 text-left text-sm font-medium text-primary aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink">{{ label }}</button>
         {% endfor %}
@@ -139,7 +139,7 @@
     </div>
 
     <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start">
-      <section class="flex min-w-0 flex-1 flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" aria-live="polite">
+      <section data-tour="reports-panel" class="flex min-w-0 flex-1 flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" aria-live="polite">
         {% for key, label in report_questions %}
         <h2 x-show="q === '{{ key }}'" {% if key != question %}style="display: none;"{% endif %} class="font-display text-lg font-extrabold tracking-tight text-primary">{{ report_titles[key] }}</h2>
         {% endfor %}

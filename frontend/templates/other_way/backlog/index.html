@@ -9,6 +9,14 @@
     le lot », où restent les réglages fins : confiance, compte, catégorie, regroupement
     des libellés, rejet des suggestions peu sûres, sélection des lignes. -#}
 {% block title %}{{ _("Traitement en masse — Twiga") }}{% endblock %}
+{% block tour_steps %}{{ screen_tour("backlog", [
+  tour_step("#backlog-search-input", _("Retrouver une ligne"), _("Tape un bout de libellé, par exemple ORANGE, pour ne garder que les lignes qui correspondent."), "search", position="bottom"),
+  tour_step("#backlog-chips", _("Les trois vues de la file"), _("Tout, Sans suggestion ou Sûrs : choisis ce que la file te montre. Les chiffres disent combien de lignes chaque vue contient."), "filter", position="bottom"),
+  tour_step("#backlog-adjust-btn", _("Ajuster le lot"), _("Filtre par compte ou par catégorie, regroupe les libellés, écarte les suggestions peu sûres ou choisis des lignes à la main."), "adjustments", position="bottom", alt_target='[data-tour="backlog-adjust-mobile"]'),
+  tour_step("#backlog-list", _("Les lignes par catégorie"), _("Touche une ligne sûre pour la laisser de côté. La flèche ouvre la ligne pour changer sa catégorie ou son mode de paiement."), "tag", position="top", write=True),
+  tour_step("#backlog-file-all", _("Tout ranger d'un coup"), _("Range d'un coup les lignes cochées du lot. Une ligne laissée de côté reste en question."), "check", position="bottom", optional=True, write=True),
+  tour_step("#backlog-summary", _("Le résumé du lot"), _("Le montant encore à ranger, sa répartition par catégorie et par mode de paiement, et ce qui reste à décider."), "chart-bar", position="left", optional=True),
+]) }}{% endblock %}
 
 {% block extra_scripts %}
 <script src="{{ static_url('/static/js/masse-b.js') }}"></script>
@@ -92,6 +100,7 @@
       type="button"
       @click="adjust = !adjust"
       :aria-expanded="adjust"
+      data-tour="backlog-adjust-mobile"
       class="flex min-h-[50px] items-center gap-1.5 text-sm font-semibold text-accent-ink lg:hidden"
     >{{ _("Ajuster le lot") }} <span :class="adjust ? 'rotate-180' : ''" class="transition-transform">{{ icon('chevron-down', size=18) }}</span></button>
   </div>
