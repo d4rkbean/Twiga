@@ -31,7 +31,7 @@ def page_of(clients, role: str, path: str) -> str:
 
 def shell_of(html: str) -> str:
     """The top bar and the menus it opens (everything before the content), plus the bottom bar."""
-    return html[: html.index("<main")] + html[html.rindex('<nav id="tour-b-bottom-nav"'):][:3000]
+    return html[: html.index("<main")] + html[html.rindex('<nav id="tour-b-bottom-nav"'):][:5000]
 
 
 def top_nav(html: str) -> str:
@@ -160,12 +160,27 @@ def test_the_top_bar_has_four_destinations_and_what_goes_with_them(clients, othe
     html = page_of(clients, "admin", "/dashboard")
     nav = top_nav(html)
 
-    assert [label for label in re.findall(r"<a[^>]*>(.*?)</a>", nav, re.S)] == ["La Savane", "Panorama", "Le Cap"]
+    # La Savane also carries the number of operations to sort, in a span of its own.
+    assert [re.sub(r"<span.*?</span>", "", label, flags=re.S) for label in re.findall(r"<a[^>]*>(.*?)</a>", nav, re.S)] == ["La Savane", "Panorama", "Le Cap"]
     assert 'href="/transactions/inbox"' in nav and 'href="/dashboard"' in nav and 'href="/cap"' in nav
     assert 'id="tour-b-plus"' in nav and "Plus" in nav
     for marker in ('id="tour-b-search"', 'id="tour-b-help"', 'id="tour-b-avatar"', "Masquer les montants"):
         assert marker in html, marker
     assert "bg-accent " not in shell_of(html)
+
+
+def test_la_savane_carries_the_number_of_operations_to_sort(clients, other_way):
+    html = page_of(clients, "admin", "/dashboard")
+    top = top_nav(html)
+    bottom = html[html.rindex('<nav id="tour-b-bottom-nav"'):][:5000]
+
+    # Both bars ask the route the Classic sidebar uses, at load and after any POST of the page.
+    for bar, counter in ((top, "savane-count-top"), (bottom, "savane-count-bottom")):
+        assert f'id="{counter}"' in bar
+        assert 'hx-get="/dashboard/sidebar-pending"' in bar and "htmx:afterRequest" in bar and "from:body" in bar
+        assert "empty:hidden" in bar  # nothing shown when there is nothing left to sort
+    # Only La Savane has it.
+    assert top.count("sidebar-pending") == 1 and bottom.count("sidebar-pending") == 1
 
 
 @pytest.mark.parametrize(
@@ -188,7 +203,7 @@ def test_the_active_destination_follows_the_route(clients, other_way, path, dest
     html = page_of(clients, "admin", path)
 
     assert current_in(top_nav(html)) == destination
-    bottom = html[html.rindex('<nav id="tour-b-bottom-nav"'):][:3000]
+    bottom = html[html.rindex('<nav id="tour-b-bottom-nav"'):][:5000]
     assert current_in(bottom) == destination
 
 
@@ -299,7 +314,7 @@ def test_the_sheets_have_a_veil_and_a_close_button(clients, other_way):
 
     assert 'class="print:hidden fixed inset-0 z-[8999] bg-scrim"' in html
     for label in ("Plus", "Aide &amp; raccourcis", "Recherche"):
-        sheet = html[html.index(f'aria-label="{label}"', html.index("</header>")):][:3000]
+        sheet = html[html.index(f'aria-label="{label}"', html.index("</header>")):][:5000]
         assert "closeShell()" in sheet and "Fermer" in sheet, label
 
 
