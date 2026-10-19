@@ -301,8 +301,51 @@
         }).catch(function () {});
       }
 
+      // Point de départ du changement de thème : le dernier endroit touché ou
+      // cliqué (bouton de la barre, du menu, carte du profil). Sans clic (appel
+      // au clavier), le cercle part du centre de l'écran.
+      var themeOrigin = null;
+      document.addEventListener(
+        "pointerdown",
+        function (event) {
+          themeOrigin = { x: event.clientX, y: event.clientY };
+        },
+        true
+      );
+
+      // Le nouveau thème se propage en cercle depuis le bouton (View
+      // Transitions). Changement instantané si le navigateur ne connaît pas
+      // l'API, si l'utilisateur a demandé moins d'animations, ou si le thème
+      // affiché ne change pas (« Système » qui retombe sur le même).
+      function revealTheme(mode) {
+        var wasDark = root.classList.contains("dark");
+        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!document.startViewTransition || reduced) {
+          window.twigaApplyTheme(mode);
+          return;
+        }
+        var x = themeOrigin ? themeOrigin.x : window.innerWidth / 2;
+        var y = themeOrigin ? themeOrigin.y : window.innerHeight / 2;
+        themeOrigin = null;
+        var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+        var transition = document.startViewTransition(function () {
+          window.twigaApplyTheme(mode);
+        });
+        transition.ready.then(function () {
+          if (root.classList.contains("dark") === wasDark) return;
+          root.animate(
+            { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + radius + "px at " + x + "px " + y + "px)"] },
+            { duration: 550, easing: "cubic-bezier(.16, 1, .3, 1)", pseudoElement: "::view-transition-new(root)" }
+          );
+        });
+      }
+
+      // Pour les cartes de thème du profil : le formulaire enregistre déjà le
+      // choix (htmx), on ne fait que l'animer.
+      window.twigaRevealTheme = revealTheme;
+
       window.twigaSetTheme = function (mode) {
-        window.twigaApplyTheme(mode);
+        revealTheme(mode);
         saveTheme(mode);
       };
 
