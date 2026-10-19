@@ -1,0 +1,84 @@
+{% from "_macros/menu.html" import dropdown, date_field, category_fields %}
+{#
+  The edit form of an operation, in the panel where its read view (_detail.html)
+  was. Saving shows the read view again with the new values; "Annuler" goes
+  back to it without saving.
+#}
+{% set pm_options = [("", _("— (non défini)"))] %}
+{% for code, meta in payment_methods.items() %}{% if pm_options.append((code, meta.label)) %}{% endif %}{% endfor %}
+{% set account_options = [] %}
+{% for account in accounts %}{% if account_options.append((account.id | string, account.name)) %}{% endif %}{% endfor %}
+<form
+  hx-post="/transactions/{{ transaction.id }}/update?{{ filter_qs }}"
+  hx-target="#transactions-content"
+  hx-swap="innerHTML"
+  class="flex flex-col gap-3.5 p-5 pt-2 lg:pt-5"
+  x-data="{ negative: {{ 'true' if transaction.amount < 0 else 'false' }}, amount: '{{ transaction.amount | abs | plain_amount }}' }"
+>
+  <div class="-mr-3 flex justify-end lg:hidden">
+    <button type="button" onclick="window.closeTransactionDetail()" aria-label="{{ _("Fermer") }}" class="flex h-[50px] w-[50px] items-center justify-center text-primary">{{ icon('x') }}</button>
+  </div>
+  <h2 class="-mt-1 font-display text-[26px] font-extrabold leading-[1.15] tracking-tight text-primary">{{ _("Modifier l'opération") }}</h2>
+
+  <div class="form-group">
+    <label for="detail-label" class="form-label text-primary">{{ _("Libellé") }}</label>
+    <input type="text" id="detail-label" name="label" required value="{{ transaction.label }}" class="input-base" />
+    {% if transaction.raw_label != transaction.label %}
+    <p class="input-hint break-words font-mono">{% trans raw_label=transaction.raw_label %}Libellé brut : {{ raw_label }}{% endtrans %}</p>
+    {% endif %}
+  </div>
+
+  {{ category_fields(parent_categories, transaction.category, none_label=_("Non catégorisé"), self_label=_("(catégorie seule)")) }}
+
+  <div class="form-group">
+    <span class="form-label text-primary">{{ _("Mode de paiement") }}</span>
+    {{ dropdown("payment_method", pm_options, selected=transaction.payment_method or "") }}
+  </div>
+
+  <div class="form-group">
+    <span class="form-label text-primary">{{ _("Compte") }}</span>
+    {{ dropdown("account_id", account_options, selected=transaction.account_id) }}
+  </div>
+
+  <div class="flex flex-col">
+    <label class="flex min-h-[50px] cursor-pointer items-center gap-3 text-sm text-primary">
+      <input type="checkbox" name="is_transfer" class="check-box" {% if transaction.is_transfer %}checked{% endif %} />
+      {{ _("Virement interne entre comptes") }}
+    </label>
+    <label class="flex min-h-[50px] cursor-pointer items-center gap-3 text-sm text-primary">
+      <input type="checkbox" name="is_unexpected" class="check-box" {% if transaction.is_unexpected %}checked{% endif %} />
+      {{ _("Dépense imprévue") }}
+    </label>
+  </div>
+
+  <div class="form-group">
+    <label for="detail-amount" class="form-label text-primary">{{ _("Montant") }}</label>
+    <input type="hidden" name="amount" :value="(negative ? '-' : '') + amount" />
+    <input type="text" id="detail-amount" inputmode="decimal" x-model="amount" required class="input-base tabular-nums" />
+    <button type="button" @click="negative = !negative" aria-label="{{ _("Inverser le signe (dépense / recette)") }}" class="btn btn-secondary mt-2 w-full border-border-strong">
+      {{ _("Inverser le signe :") }}
+      <span class="font-semibold" x-text="negative ? '{{ _("Dépense (−)") | jsq }}' : '{{ _("Recette (+)") | jsq }}'">{{ _("Dépense (−)") if transaction.amount < 0 else _("Recette (+)") }}</span>
+    </button>
+  </div>
+
+  <div class="form-group">
+    <span class="form-label text-primary">{{ _("Date") }}</span>
+    {{ date_field("date", transaction.date.isoformat(), empty=_("Choisir une date")) }}
+  </div>
+
+  <div class="form-group">
+    <label for="edit-note" class="form-label text-primary">{{ _("Note") }}</label>
+    <textarea id="edit-note" name="note" rows="3" placeholder="{{ _("Remboursement Pierre...") }}" class="input-base py-2">{{ transaction.note or "" }}</textarea>
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <button type="submit" class="btn btn-primary w-full">{{ _("Enregistrer") }}</button>
+    <button
+      type="button"
+      hx-get="/transactions/{{ transaction.id }}/detail?{{ filter_qs }}"
+      hx-target="#transaction-detail-content"
+      hx-swap="innerHTML"
+      class="btn btn-ghost w-full"
+    >{{ _("Annuler") }}</button>
+  </div>
+</form>

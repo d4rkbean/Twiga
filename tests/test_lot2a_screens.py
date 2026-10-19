@@ -51,7 +51,10 @@ def test_operations_amounts_are_ink_with_a_minus_sign(clients):
 
 def test_operations_type_filter_is_a_segmented_control_that_filters(clients):
     page = clients["admin"].get("/transactions/list").text
-    assert page.count('name="f_type"') == 4
+    # The four tabs of the mock-up; "Virements" moved to the "Tous types" menu.
+    for tab in ("Toutes", "Dépenses", "Recettes", "À trier"):
+        assert f">{tab}</button>" in page
+    assert page.count('name="f_type"') == 1
     income = clients["admin"].get(
         "/transactions/list/content?f_type=income", headers={"HX-Request": "true"}
     ).text
@@ -68,5 +71,5 @@ def test_operations_keeps_the_ids_read_by_the_scripts(clients):
 def test_bulk_processing_page_renders_filters_and_rows(clients):
     html = clients["admin"].get("/backlog").text
     assert 'id="backlog-search-input"' in html
-    assert 'id="backlog-suggestion-filter"' in html
-    assert 'name="selected_ids"' in html
+    assert 'id="backlog-chips"' in html
+    assert 'data-row-ids=' in html

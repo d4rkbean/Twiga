@@ -1,0 +1,31 @@
+{# Side panel of the visit: the three counters and the journal of the last
+   filings. Refreshed out of band after each card. #}
+<div id="inbox-session" {% if oob %}hx-swap-oob="true"{% endif %} class="flex flex-col gap-4">
+  <dl class="grid grid-cols-3 gap-2 border-t border-border pt-4">
+    <div>
+      <dt class="text-xs font-medium text-secondary">{{ _("Rangées") }}</dt>
+      <dd class="mt-1 text-[28px] font-extrabold leading-none tabular-nums text-primary">{{ session_filed }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-secondary">{{ _("Passées") }}</dt>
+      <dd class="mt-1 text-[28px] font-extrabold leading-none tabular-nums text-primary">{{ session_skipped }}</dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-secondary">{{ _("Restantes") }}</dt>
+      <dd class="mt-1 text-[28px] font-extrabold leading-none tabular-nums text-primary">{{ session_left }}</dd>
+    </div>
+  </dl>
+  <div class="flex flex-col gap-1 border-t border-border pt-4">
+    <h2 class="text-base font-semibold text-primary">{{ _("Journal") }}</h2>
+    {% for entry in session_journal %}
+    <div class="flex flex-col border-b border-border py-2.5 last:border-b-0">
+      <span class="text-sm font-semibold text-primary">{{ entry.label or entry.raw_label }}</span>
+      <span class="text-xs text-secondary">
+        {{ (entry.category.parent.name ~ " › " ~ entry.category.name) if entry.category and entry.category.parent else (entry.category.name if entry.category else _("Virement")) }}{% if entry.payment_method %} · {{ entry.payment_method | pm_label }}{% endif %}
+      </span>
+    </div>
+    {% else %}
+    <p class="py-2 text-sm text-secondary">{{ _("Rien n'est encore rangé dans cette séance.") }}</p>
+    {% endfor %}
+  </div>
+</div>

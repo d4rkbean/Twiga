@@ -42,12 +42,11 @@ PAGES = [
     Page("/transactions/list/content", htmx=True),
     Page("/transactions/new", htmx=True),
     Page("/transactions/{transaction_id}/detail", htmx=True),
+    Page("/transactions/{transaction_id}/edit", htmx=True),
     Page("/transactions/receipts/{transaction_id}/section", htmx=True),
     # Backlog
     Page("/backlog"),
     Page("/backlog/content", htmx=True),
-    Page("/backlog/{transaction_id}/category-select", htmx=True),
-    Page("/backlog/{transaction_id}/category-confirm", {"category_id": "{category_id}"}, htmx=True),
     # Dashboard
     Page("/dashboard"),
     Page("/dashboard/content", htmx=True),

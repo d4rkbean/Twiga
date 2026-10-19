@@ -1,48 +1,49 @@
-{# Même grille que _categories_grid.html : le chiffre à gauche est le raccourci
-   clavier (« 1 » = la catégorie elle-même, puis les sous-catégories). #}
-<div class="category-suggestion flex flex-col gap-[var(--space-list)]">
+{# Same card and same numbers as _categories_grid.html: « 1 » is the category
+   itself, then its sub-categories. #}
+<div class="category-suggestion flex flex-col gap-3 rounded-xl border border-border bg-container px-5 py-5 lg:px-6">
   <button
     type="button"
     id="inbox-back-to-categories-btn"
-    class="btn btn-ghost self-start px-3 -ml-3 text-secondary"
+    class="btn btn-ghost -ml-2 gap-2 self-start px-3.5 pl-2 font-medium text-secondary"
     hx-get="/transactions/{{ transaction.id }}/categories"
     hx-target=".category-suggestion"
     hx-swap="outerHTML"
   >
     {{ icon('arrow-narrow-left') }} {{ _("Retour aux catégories") }}
+    <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Échap") }}</kbd>
   </button>
-  <p class="text-sm text-secondary">
+  <p class="flex items-center gap-2 text-secondary">
     {{ _("Sous-catégorie de") }}
-    <span class="text-primary font-medium inline-flex items-center gap-1.5">
-      <span class="inline-block w-2.5 h-2.5 rounded-full" style="background-color: {{ category.id | category_color }}" aria-hidden="true"></span>
+    <span class="inline-flex items-center gap-1.5 font-semibold text-primary">
+      <span class="inline-block h-2.5 w-2.5 rounded-full" style="background-color: {{ category.id | category_color }}" aria-hidden="true"></span>
       {{ category.name }}
     </span> :
   </p>
-  <div class="grid grid-cols-2 lg:grid-cols-3 gap-[var(--space-list)]">
+  <div class="grid grid-cols-2 gap-2 lg:grid-cols-3">
     <button
       type="button"
-      class="shortcut-category-btn btn btn-secondary justify-start px-3 text-left min-w-0"
+      class="shortcut-category-btn btn btn-secondary min-w-0 justify-start gap-2 border-border-strong px-2.5 text-left"
       hx-post="/transactions/{{ transaction.id }}/categorize/{{ category.id }}"
       hx-include="#simplified-label, #nav-history"
       hx-target=".category-suggestion"
       hx-swap="outerHTML"
     >
-      <span class="kbd-hint hidden sm:inline-flex" aria-hidden="true">1</span>
-      <span class="truncate">{% trans name=category.name %}{{ name }} (général){% endtrans %}</span>
+      <span class="hidden h-5 w-5 flex-none items-center justify-center rounded-full bg-sunken text-xs font-semibold text-secondary sm:flex" aria-hidden="true">1</span>
+      <span class="min-w-0 flex-1 truncate">{% trans name=category.name %}{{ name }} (général){% endtrans %}</span>
     </button>
     {% for subcategory in subcategories %}
     <button
       type="button"
-      class="shortcut-category-btn btn btn-secondary justify-start px-3 text-left min-w-0"
+      class="shortcut-category-btn btn btn-secondary min-w-0 justify-start gap-2 border-border-strong px-2.5 text-left"
       hx-post="/transactions/{{ transaction.id }}/categorize/{{ subcategory.id }}"
       hx-include="#simplified-label, #nav-history"
       hx-target=".category-suggestion"
       hx-swap="outerHTML"
     >
       {% if loop.index + 1 <= 9 %}
-      <span class="kbd-hint hidden sm:inline-flex" aria-hidden="true">{{ loop.index + 1 }}</span>
+      <span class="hidden h-5 w-5 flex-none items-center justify-center rounded-full bg-sunken text-xs font-semibold text-secondary sm:flex" aria-hidden="true">{{ loop.index + 1 }}</span>
       {% endif %}
-      <span class="truncate">{{ subcategory.name }}</span>
+      <span class="min-w-0 flex-1 truncate">{{ subcategory.name }}</span>
     </button>
     {% endfor %}
   </div>

@@ -1,15 +1,12 @@
-{% from "_macros/brand.html" import mascot %}
+{# The sentence under the title: how far this visit has got. Refreshed out of
+   band after each card (see _card_with_counter.html). #}
 <p
   id="inbox-counter"
   {% if oob %}hx-swap-oob="true"{% endif %}
-  class="text-sm text-secondary flex items-center gap-2"
+  class="mt-1.5 text-secondary"
 >
-  <span
-    aria-hidden="true"
-    style="display: inline-block; transform: scale({{ giraffe_scale }}); transition: transform 0.4s ease;"
-  >{{ mascot(size=16) }}</span>
-  {% if pending_count > 0 %}
-    {% trans pending_count=pending_count, v="s" if pending_count != 1 else "" %}{{ pending_count }} transaction{{ v }} restante{{ v }}{% endtrans %}
+  {% if session_left > 0 %}
+    {% trans count=session_filed, total=session_total, left=session_left %}{{ count }} rangée sur {{ total }}, encore {{ left }} à brouter.{% pluralize %}{{ count }} rangées sur {{ total }}, encore {{ left }} à brouter.{% endtrans %}
   {% else %}
     {{ _("La Savane vide") }}
   {% endif %}
