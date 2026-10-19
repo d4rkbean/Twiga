@@ -145,5 +145,17 @@ def format_date_long(value: date) -> str:
     return f"{weekday} {value.day} {month} {value.year}"
 
 
+MONTH_ABBR_FR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+MONTH_ABBR_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def format_date_short(value: date) -> str:
+    # "26 sept." / "26 Sep" / "Sep 26" : a day and an abbreviated month.
+    if current_language() == "en":
+        month = MONTH_ABBR_EN[value.month - 1]
+        return f"{month} {value.day}" if current_format() == "en-US" else f"{value.day} {month}"
+    return f"{value.day} {MONTH_ABBR_FR[value.month - 1]}"
+
+
 # Ancien nom conservé pour les appelants existants.
 format_date_long_fr = format_date_long

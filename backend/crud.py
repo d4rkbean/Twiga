@@ -962,6 +962,28 @@ def get_expense_total(
     return -db.execute(stmt).scalar_one()
 
 
+def get_pending_expense_total(
+    db: Session,
+    start: date | None = None,
+    end: date | None = None,
+    account_id: int | None = None,
+) -> Decimal:
+    """Sum of the expenses still waiting in La Savane (not yet validated)."""
+    conditions = [
+        Transaction.validated.is_(False),
+        Transaction.is_transfer.is_(False),
+        Transaction.amount < 0,
+    ]
+    if start is not None:
+        conditions.append(Transaction.date >= start)
+    if end is not None:
+        conditions.append(Transaction.date <= end)
+    if account_id is not None:
+        conditions.append(Transaction.account_id == account_id)
+    stmt = select(func.coalesce(func.sum(Transaction.amount), 0)).where(*conditions)
+    return -db.execute(stmt).scalar_one()
+
+
 def _resolve_top_level_category(db: Session) -> Callable[[int | None], tuple[int | None, str]]:
     categories = {c.id: c for c in db.execute(select(Category)).scalars().all()}
 
