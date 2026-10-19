@@ -39,6 +39,42 @@ def _giraffe_scale(pending_count: int) -> float:
     return round(0.6 + progress * 0.8, 2)
 
 
+def _build_session_context(db: Session, history: list[int], pending_count: int) -> dict:
+    """What this visit to La Savane did so far, from the ids the page carries.
+
+    "Filed" are the operations of the history that are now validated, "skipped"
+    the ones put aside; the journal lists the last filings, newest first. The
+    total is what was filed plus what is still waiting: it grows only when an
+    import brings new operations.
+    """
+    rows = crud.get_transactions_by_ids(db, list(dict.fromkeys(history)))
+    filed_ids = [i for i in dict.fromkeys(history) if i in rows and rows[i].validated]
+    skipped_ids = [i for i in dict.fromkeys(history) if i in rows and not rows[i].validated]
+    journal = [rows[i] for i in reversed(history) if i in rows and rows[i].validated]
+    journal = list(dict.fromkeys(journal))[:3]
+
+    breakdown: dict[int, dict] = {}
+    for i in filed_ids:
+        top = crud.resolve_top_level_category(rows[i].category)
+        if top is None:
+            continue
+        entry = breakdown.setdefault(top.id, {"id": top.id, "name": top.name, "count": 0})
+        entry["count"] += 1
+    return {
+        "session_filed": len(filed_ids),
+        "session_skipped": len(skipped_ids),
+        "session_left": pending_count,
+        "session_total": pending_count + len(filed_ids),
+        "session_position": len(filed_ids) + 1,
+        "session_percent": round(100 * len(filed_ids) / (pending_count + len(filed_ids)))
+        if pending_count + len(filed_ids)
+        else 100,
+        "session_journal": journal,
+        "session_breakdown": sorted(breakdown.values(), key=lambda e: (-e["count"], e["name"])),
+        "session_unexpected": sum(1 for i in filed_ids if rows[i].is_unexpected),
+    }
+
+
 def _build_card_context(db: Session, transaction: Transaction | None) -> dict:
     if transaction is None:
         return {"transaction": None}
@@ -59,8 +95,18 @@ def _build_card_context(db: Session, transaction: Transaction | None) -> dict:
             not transaction.is_transfer and crud.looks_like_transfer(transaction.raw_label)
         ),
     }
-    if suggested_category is None:
-        context["categories"] = crud.get_top_level_categories(db)
+    # The mock-up shows the payment method next to « Valider »: the one a rule
+    # proposes for this very category (see _render_payment_step).
+    matched_rule = crud.find_matching_rule(db, transaction.raw_label)
+    context["suggested_payment_method"] = (
+        matched_rule.payment_method
+        if matched_rule is not None
+        and suggested_category is not None
+        and matched_rule.category_id == suggested_category.id
+        else None
+    )
+    # The grid « Ou une autre catégorie » is always on the screen.
+    context["categories"] = crud.get_top_level_categories(db)
     return context
 
 
@@ -104,6 +150,7 @@ def _render_next_card(
         "history": _history_csv(history),
         "pending_count": pending_count,
         "giraffe_scale": _giraffe_scale(pending_count),
+        **_build_session_context(db, history, pending_count),
         "oob": True,
         # Transaction qui vient d'être enregistrée (pas transaction, qui est
         # déjà la SUIVANTE ci-dessous) : cible du toast "🆘 Marquer comme
@@ -181,6 +228,7 @@ def inbox(request: Request, db: Session = Depends(get_db)):
         "history": "",
         "pending_count": pending_count,
         "giraffe_scale": _giraffe_scale(pending_count),
+        **_build_session_context(db, [], pending_count),
         # Bannière mi-mois "Le Cap" : localStorage uniquement (comme
         # _budget_alerts.html, qui fournit déjà current_month_key ci-dessous),
         # jamais l'AppState de _build_routine_banner_context — voir
