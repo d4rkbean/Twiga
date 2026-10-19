@@ -270,6 +270,9 @@ class CapEntry(Base):
     planned_choix: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     planned_imprevu: Mapped[Decimal] = mapped_column(Numeric(15, 2))
     intention: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Monthly savings goal set in the ritual (optional): the live panel says whether
+    # the planned savings reach it.
+    savings_goal: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
     reflection_unexpected: Mapped[str | None] = mapped_column(Text, nullable=True)
     reflection_regret: Mapped[str | None] = mapped_column(Text, nullable=True)
     reflection_proud: Mapped[str | None] = mapped_column(Text, nullable=True)

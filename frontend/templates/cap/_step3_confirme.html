@@ -1,34 +1,39 @@
 {% from "_macros/brand.html" import mascot, mascot_line %}
 {% from "_macros/signed_amount.html" import signed %}
-{% from "_macros/pillar_icon.html" import pillar_icon %}
-<div class="flex flex-col gap-5 lg:max-w-3xl">
+{% from "cap/_panel_state.html" import panel_state with context %}
+<div x-data="{{ panel_state() }}" class="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+<div class="flex flex-col gap-5 min-w-0">
 {% include "cap/_progress_dots.html" %}
 
-<section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5">
+<section class="bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-5" aria-live="polite">
   <div class="flex items-center gap-4">
     {{ mascot("cap", size=88) }}
-    <h2 class="text-replique">{{ mascot_line("cap") }}</h2>
+    <div class="flex flex-col gap-1">
+      <h2 class="text-replique">{{ mascot_line("cap") }}</h2>
+      <p class="text-sm text-secondary">{{ _("La girafe veille sur ta route.") }}</p>
+    </div>
+  </div>
+
+  <div class="flex flex-col text-sm">
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="text-primary">{{ _("Essentiel") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_essentiel | eur }}</span></p>
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="text-primary">{{ _("Choix") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_choix | eur }}</span></p>
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="text-primary">{{ _("Imprévus") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_imprevu | eur }}</span></p>
+    <p class="flex items-center justify-between min-h-[50px] border-t border-border">
+      <span class="text-primary font-semibold">{{ _("Épargne visée") }}</span>
+      <span class="amount-blur text-amount tabular-nums text-primary">{{ signed(entry.planned_income - entry.planned_essentiel - entry.planned_choix - entry.planned_imprevu, plus=true) }}</span>
+    </p>
   </div>
 
   {% if entry.intention %}
   <p class="text-primary italic text-lg">« {{ entry.intention }} »</p>
   {% endif %}
 
-  <div class="flex flex-col text-sm">
-    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="flex items-center gap-2 text-primary">{{ pillar_icon("essentiel", size=16) }} {{ _("Essentiel") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_essentiel | eur }}</span></p>
-    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="flex items-center gap-2 text-primary">{{ pillar_icon("choix", size=16) }} {{ _("Choix") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_choix | eur }}</span></p>
-    <p class="flex items-center justify-between min-h-[50px] border-t border-border"><span class="flex items-center gap-2 text-primary">{{ pillar_icon("imprevu", size=16) }} {{ _("Imprévus") }}</span> <span class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_imprevu | eur }}</span></p>
-    <p class="flex items-center justify-between min-h-[50px] border-t border-border">
-      <span class="flex items-center gap-2 text-primary font-semibold">{{ icon('pig-money', size=16) }} {{ _("Épargne visée") }}</span>
-      <span class="amount-blur text-amount tabular-nums text-primary">{{ signed(entry.planned_income - entry.planned_essentiel - entry.planned_choix - entry.planned_imprevu, plus=true) }}</span>
-    </p>
-  </div>
-
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <p class="text-sm text-secondary">{{ _("La girafe veille sur ta route.") }}</p>
-    <a href="/dashboard" class="btn btn-primary">
-      {{ _("Aller au Panorama") }} {{ icon('arrow-narrow-right') }}
-    </a>
+  <div class="flex flex-wrap items-center gap-2">
+    <a href="/dashboard" class="btn btn-primary">{{ _("Aller au Panorama") }} {{ icon('arrow-narrow-right') }}</a>
+    <a href="/cap/mid" class="btn btn-secondary">{{ _("Voir Mon mois") }}</a>
+    <button type="button" hx-get="/cap/reopen" hx-target="#cap-wizard" hx-swap="innerHTML" class="btn btn-secondary">{{ _("Reprendre le cap") }}</button>
   </div>
 </section>
+</div>
+{% include "cap/_aside.html" %}
 </div>
