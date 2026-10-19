@@ -8,7 +8,7 @@
 
 {% block content %}
 {% set since = current.created_at | month_year %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {# Phone title bar (mockup A-M-profil): the way back to Paramètres and the page name. #}
   <div class="-mx-2 -mb-2 flex items-center gap-2.5 lg:hidden">
     <a href="/settings" aria-label="{{ _("Retour") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('chevron-left', size=22) }}</a>
