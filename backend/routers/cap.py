@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud, month_view
 from backend.budget_month import BudgetPeriod, period_containing, period_of_month
 from backend.database import get_db
 from backend.dates import format_date_short, month_label, month_names, shift_month
@@ -675,5 +675,38 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
         "pending_total": crud.get_pending_expense_total(db),
         "planned_total": planned_total,
         "spent_total": spent_total,
+        **_month_other_way_context(db, today, entry),
     }
     return templates.TemplateResponse("cap/mid.html", context)
+
+
+def _month_other_way_context(db: Session, today: date, entry) -> dict:
+    """What only the other way's "Mon mois" reads: the pillars split between what
+    is sorted and what still waits in La Savane, the sentence, the fixed charges."""
+    view = month_view.build_month_view(db, today)
+    lowercase = current_language() != "en"
+
+    def month_word(value: date) -> str:
+        name = _month_name(value)
+        return name.lower() if lowercase else name
+
+    pillar_names = {"essentiel": _t("Essentiel"), "choix": _t("Choix"), "imprevu": _t("Imprévus")}
+    loosest = max(view.pillars, key=lambda p: p.loose_total)
+    headline, sub = answers.month_answer(
+        has_plan=entry is not None,
+        month_name=month_word(view.period.month),
+        pillars=[{"code": p.code, "percent": p.percent, "verdict": p.verdict.key} for p in view.pillars],
+        day=view.day,
+        days=view.days,
+        loose=(pillar_names[loosest.code], loosest.loose_total) if loosest.loose_total else None,
+        next_cap_title=_title_for(shift_month(view.period.month, 1)),
+    )
+    return {
+        "month_view": view,
+        "pillar_names": pillar_names,
+        "answer_headline": headline,
+        "answer_sub": sub,
+        "month_word": month_word(view.period.month),
+        "next_cap_title": _title_for(shift_month(view.period.month, 1)),
+        "previous_month_word": month_word(shift_month(view.period.month, -1)),
+    }
