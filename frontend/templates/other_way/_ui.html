@@ -18,12 +18,12 @@
 -#}
 {% from "_macros/brand.html" import mascot %}
 
-{% macro answer_head(phrase, detail=none, state="default", id="answer", blur_phrase=false, blur_detail=false) -%}
+{% macro answer_head(phrase, detail=none, state="default", id="answer", blur_phrase=false, blur_detail=false, title_x=none) -%}
 <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
   <div class="flex items-start gap-3 lg:gap-4 min-w-0">
     <span class="shrink-0 mt-1 block w-[52px] h-[38px] overflow-hidden">{{ mascot(state, 52, cls="-mt-1") if state == "default" else mascot(state, 52) }}</span>
     <div class="flex flex-col gap-1.5 min-w-0">
-      <h1 id="{{ id }}" class="text-page-title{{ ' amount-blur' if blur_phrase }}">{{ phrase }}</h1>
+      <h1 id="{{ id }}" class="text-page-title{{ ' amount-blur' if blur_phrase }}"{% if title_x %} x-text="{{ title_x }}"{% endif %}>{{ phrase }}</h1>
       {% if detail %}<p class="text-secondary max-w-[70ch]{{ ' amount-blur' if blur_detail }}">{{ detail }}</p>{% endif %}
     </div>
   </div>

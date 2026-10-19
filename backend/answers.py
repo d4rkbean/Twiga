@@ -566,6 +566,42 @@ def users_answer(roles: dict, never_logged: list[str], admins: list[str]) -> Ans
     return Answer(phrase, f"{counts}. {keep}")
 
 
+# --- Mon profil -----------------------------------------------------------------
+
+
+def profile_words() -> dict:
+    """The words of the display sentence, by choice: the page rewrites the sentence from
+    them while the user picks, with no request."""
+    return {
+        "theme": {"light": _t("Thème clair"), "system": _t("Thème automatique"), "dark": _t("Thème sombre")},
+        "density": {
+            "compact": _t("affichage compact"),
+            "normal": _t("affichage normal"),
+            "comfortable": _t("affichage aéré"),
+        },
+        "privacy": {"hidden": _t("montants masqués"), "visible": _t("montants visibles")},
+    }
+
+
+def profile_answer(theme: str, density: str, hidden: bool) -> Answer:
+    """The sentence of Mon profil: what the user will see, in three choices."""
+    words = profile_words()
+    title = "%s, %s, %s." % (
+        words["theme"].get(theme, words["theme"]["system"]),
+        words["density"].get(density, words["density"]["normal"]),
+        words["privacy"]["hidden" if hidden else "visible"],
+    )
+    return Answer(title, "")
+
+
+# --- Connexion ------------------------------------------------------------------
+
+
+def login_title(with_accounts: bool) -> str:
+    """The greeting of the login page: it asks who is there only when the accounts are shown as tiles."""
+    return _t("Bonjour ! Qui est là ?") if with_accounts else _t("Bonjour !")
+
+
 # --- Import -----------------------------------------------------------------
 
 
