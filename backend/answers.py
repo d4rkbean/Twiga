@@ -404,6 +404,63 @@ def month_answer(
     )
 
 
+# --- Le Cap ------------------------------------------------------------------
+
+
+def cap_review_answers(
+    *,
+    month_name: str,  # the month under review, capitalised ("Septembre")
+    next_month_name: str,  # the month being planned, lowercase ("octobre")
+    has_plan: bool,
+    result: Decimal,  # income - expenses of the reviewed month
+    pillars: list[dict],  # {"name", "planned", "real", "ratio", "unbudgeted"}
+) -> dict:
+    """The sentences of the review (Bilan, Un mot): one per group of the desktop
+    frise and one per step of the mobile flow, with the line that says why."""
+    held = [p for p in pillars if p["planned"] and p["real"] <= p["planned"]]
+    tightest = max(pillars, key=lambda p: p["ratio"] or 0) if pillars else None
+    signed_result = ("+" if result > 0 else "") + format_amount(result)
+    if has_plan and len(held) == len(pillars):
+        bilan = _t("%(month)s s'est bien tenu : %(result)s de reste.") % {"month": month_name, "result": signed_result}
+        detail = _t("Les trois piliers sont sous leur prévu.")
+    elif has_plan:
+        over = next(p for p in pillars if p["planned"] and p["real"] > p["planned"])
+        bilan = _t("%(month)s a débordé : %(pillar)s a dépassé son prévu.") % {"month": month_name, "pillar": over["name"]}
+        detail = _t("%(pillar)s : %(real)s sur %(planned)s prévus.") % {
+            "pillar": over["name"],
+            "real": format_amount(over["real"]),
+            "planned": format_amount(over["planned"]),
+        }
+    else:
+        bilan = _t("%(month)s : %(result)s de reste.") % {"month": month_name, "result": signed_result}
+        detail = _t("Aucun cap n'était fixé : voici ce que le mois a donné.")
+    short_detail = detail
+    if has_plan and tightest and tightest["ratio"] and tightest["ratio"] >= WATCH_AT and tightest["planned"]:
+        near = _t("%(pillar)s a frôlé son plafond : %(real)s sur %(planned)s") % {
+            "pillar": tightest["name"],
+            "real": format_amount(tightest["real"]),
+            "planned": format_amount(tightest["planned"]),
+        }
+        if tightest["unbudgeted"] > 0:
+            near += ", " + _t("dont %(amount)s encore sans catégorie") % {"amount": format_amount(tightest["unbudgeted"])}
+        detail += " " + near + "."
+        short_detail += " " + _t("%(pillar)s a frôlé son plafond.") % {"pillar": tightest["name"]}
+    word = _t("Un mot sur %(month)s, pour garder le fil.") % {"month": month_name.lower()}
+    word_detail = _t("Quatre questions, toutes facultatives. Tes réponses sont enregistrées avec le cap de %(month)s.") % {
+        "month": next_month_name
+    }
+    step_word = _t("Un mot sur %(month)s.") % {"month": month_name.lower()}
+    return {
+        # the desktop frise: Bilan, Un mot
+        "group": [bilan, word],
+        "groupDetail": [detail, word_detail],
+        # the mobile flow: Bilan, then the four questions
+        "step": [bilan, step_word, step_word, step_word, step_word],
+        "stepDetail": [short_detail]
+        + [_t("Question %(n)s sur 4. Facultatif : tu peux passer.") % {"n": n} for n in (1, 2, 3, 4)],
+    }
+
+
 # --- Budgets -----------------------------------------------------------------
 
 

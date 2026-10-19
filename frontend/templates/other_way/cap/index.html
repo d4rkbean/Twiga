@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "other_way/_plan_kit.html" import neighbours %}
+
+{#- Le Cap de L'autre voie : un rituel guidé, six étapes sur ordinateur et une chose
+    à la fois sur mobile. La page n'est que la coque ; tout le rituel vit dans
+    #cap-wizard, que les trois échanges du serveur (/cap/step1, /cap/step2, /cap/save)
+    remplacent. Sur mobile le rituel prend tout l'écran : sa barre du haut remplace
+    celle de la coque (`shell_focus`) et son pied remplace la barre du bas. -#}
+{% set shell_focus = true %}
+{% set shell_page_title = cap_title %}
+{% block title %}{{ _("Le Cap — Twiga") }}{% endblock %}
+{% block shell_head %}{{ super() }}
+  <script src="{{ static_url('/static/js/cap-flow.js') }}" defer></script>
+{% endblock %}
+{% block body_chrome %}pt-[64px] pb-[120px] lg:pb-0{% endblock %}
+{% block nav %}{% endblock %}
+
+{% block content %}
+{{ neighbours(_("Le Cap, écrans voisins"), [
+  {"href": "/cap", "label": _("Le Cap"), "current": true},
+  {"href": "/projects", "label": _("Projets"), "current": false},
+]) }}
+<main class="flex flex-col gap-5 px-4 pt-5 pb-6 lg:px-10 lg:pt-8 lg:pb-10">
+  <div id="cap-wizard">
+    {% include step_template %}
+  </div>
+</main>
+{% endblock %}
