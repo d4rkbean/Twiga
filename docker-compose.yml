@@ -38,6 +38,7 @@ services:
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-auto}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
       # Living style guide at /design-system. Off by default: the route
       # returns 404 unless this variable is true.
       SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}
