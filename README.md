@@ -94,6 +94,11 @@ and the app behaves as before. Set them in `.env`, then
   `X-Forwarded-Proto: https`; HTTPS responses also carry
   `Strict-Transport-Security`. `true` forces `Secure` (the session then only
   works over HTTPS), `false` never sets it.
+- `TRUSTED_PROXIES`: addresses of your reverse proxies (comma-separated, e.g.
+  `TRUSTED_PROXIES=172.18.0.1`). Failed sign-ins are limited per client address
+  and username (5 per 15 minutes) and per username from all addresses (20 per
+  15 minutes); behind a proxy, list it here so that the client address is read
+  from `X-Forwarded-For`. Empty: the address of the direct connection.
 
 ## Backing up your data
 
