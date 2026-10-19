@@ -1,11 +1,13 @@
+import math
 from datetime import date, timedelta
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud
 from backend.budget_month import period_containing, period_spanning
 from backend.database import get_db
 from backend.dates import (
@@ -121,6 +123,7 @@ def _build_period_context(
     account_id: int | None,
     shift_income: bool = False,
     today: date | None = None,
+    include_pending: bool = True,
 ) -> dict:
     today = today or date.today()
     start_day = crud.get_budget_start_day(db)
@@ -255,6 +258,247 @@ def _build_period_context(
         "pace_date": format_date_short(today),
         "today_long": format_date_long(today),
         **_build_month_overview(db, today, raw_shift_income),
+        **_build_other_way_context(
+            db,
+            today=today,
+            period_key=period_key,
+            period_start=period_start,
+            period_end=period_end,
+            period_label=period_label,
+            is_calendar_month=is_calendar_month,
+            current_period=current_period,
+            account_id=account_id,
+            income_total=income_total,
+            expense_total=expense_total,
+            shift_on=shift_income,
+            envelopes=envelopes,
+            category_spending=category_spending,
+            income_spending=income_spending,
+            include_pending=include_pending,
+            trend_months=months,
+            trend_income=trend_income_values,
+            trend_expense=trend_expense_values,
+        ),
+    }
+
+
+def _period_pill(period_key: str, period_start: date, period_end: date) -> str:
+    """What the period pill of the other way's Panorama says ("Septembre", "90 jours")."""
+    if period_key in ("mois", "mois-dernier"):
+        return month_names()[period_start.month - 1]
+    if period_key == "90j":
+        return _t("90 jours")
+    if period_key == "1an":
+        return _t("12 mois")
+    return f"{format_date_short(period_start)} → {format_date_short(period_end)}"
+
+
+def _trend_sentences(months: list, incomes: list, expenses: list, month_word) -> dict:
+    """The line under the title of the evolution chart, for each series shown."""
+    end = month_word(months[-1][0])
+    covered = sum(1 for income, expense in zip(incomes, expenses) if income >= expense)
+    if covered == len(months):
+        both = _t("Chaque mois, les recettes ont couvert les dépenses.")
+    else:
+        both = _t("Les recettes ont couvert les dépenses %(n)s mois sur %(total)s.") % {"n": covered, "total": len(months)}
+    return {
+        "exp": _t("Tes dépenses mois par mois, jusqu'à %(month)s.") % {"month": end},
+        "inc": _t("Tes recettes mois par mois, jusqu'à %(month)s.") % {"month": end},
+        "both": both,
+    }
+
+
+_DONUT_CIRCUMFERENCE = 2 * math.pi * 52
+
+
+def _share_rows(spending: list) -> list[dict]:
+    """One row per category with its share of the total and the arc of its donut.
+
+    `spending` is the (category id, name, amount) list of crud, biggest first.
+    The arc is the stroke-dasharray / dashoffset of a circle of radius 52: the
+    template draws the donut, no script is needed to read it.
+    """
+    total = sum((amount for _, _, amount in spending), Decimal("0.00"))
+    rows, cumulative = [], 0.0
+    for index, (category_id, name, amount) in enumerate(spending):
+        fraction = float(amount / total) if total else 0.0
+        length = max(0.0, fraction * _DONUT_CIRCUMFERENCE - (2 if len(spending) > 1 else 0))
+        rows.append(
+            {
+                "category_id": category_id if category_id is not None else "none",
+                "name": name,
+                "amount": amount,
+                "percent": round(fraction * 100),
+                "color": index % 8 + 1,
+                "dash": f"{length:.2f} {_DONUT_CIRCUMFERENCE - length:.2f}",
+                "offset": f"{-cumulative * _DONUT_CIRCUMFERENCE:.2f}",
+            }
+        )
+        cumulative += fraction
+    return rows
+
+
+def _build_other_way_context(
+    db: Session,
+    *,
+    today: date,
+    period_key: str,
+    period_start: date,
+    period_end: date,
+    period_label: str,
+    is_calendar_month: bool,
+    current_period,
+    account_id: int | None,
+    income_total: Decimal,
+    expense_total: Decimal,
+    shift_on: bool,
+    envelopes: list,
+    category_spending: list,
+    income_spending: list,
+    include_pending: bool,
+    trend_months: list,
+    trend_income: list,
+    trend_expense: list,
+) -> dict:
+    """What only the other way's Panorama reads: the sentence, the three things
+    worth a look, the envelopes as they would stand, the shares and the pills."""
+    from backend.routers.cap import _title_for
+
+    accounts = crud.list_accounts(db)
+    account = next((a for a in accounts if a.id == account_id), None)
+    account_name = account.name if account else None
+    pending_count = crud.count_pending_transactions(db, account_id)
+    pending_total = crud.get_pending_expense_total(db, None, None, account_id)
+
+    # The envelopes as they stand, or as they would with what waits in La Savane.
+    rows = []
+    budget_sum = rest_sum = shown_sum = Decimal("0.00")
+    for item in envelopes:
+        shown = item["spent"] + (item["pending"] if include_pending else Decimal("0.00"))
+        percent = shown / item["budget"] * 100 if item["budget"] else Decimal("0.00")
+        rows.append(
+            {
+                **item,
+                "shown": shown,
+                "shown_percent": percent,
+                "rest": item["budget"] - shown,
+                "verdict": answers.verdict(percent),
+                "pending_width": item["pending_width"] if include_pending else 0,
+            }
+        )
+        budget_sum += item["budget"]
+        rest_sum += item["budget"] - shown
+        shown_sum += shown
+    envelopes_percent = shown_sum / budget_sum * 100 if budget_sum else Decimal("0.00")
+    top = max(rows, key=lambda r: r["shown_percent"]) if rows else None
+    watched = [r["category"].name for r in rows if r["shown_percent"] >= answers.WATCH_AT]
+
+    days_in_month = (current_period.end - current_period.start).days
+    month_pace = round(((today - current_period.start).days + 1) / days_in_month * 100)
+    days_left = (current_period.last_day - today).days
+    lowercase = current_language() != "en"
+
+    def month_word(value: date) -> str:
+        name = month_names()[value.month - 1]
+        return name.lower() if lowercase else name
+
+    if period_key == "mois":
+        kind = "month"
+    elif period_key == "mois-dernier" or (period_key == "perso" and is_calendar_month):
+        kind = "last_month"
+    else:
+        kind = "other"
+    lead = _period_lead(period_key, period_start, period_end, today, crud.get_budget_start_day(db)).rstrip(",")
+    answer = answers.panorama_answer(
+        kind=kind,
+        month_name=month_word(period_start),
+        lead=lead,
+        income=income_total,
+        expense=expense_total,
+        envelopes_rest=rest_sum if rows else None,
+        envelopes_count=len(rows),
+        envelopes_percent=envelopes_percent,
+        month_pace=month_pace,
+        pending_count=pending_count,
+        include_pending=include_pending,
+        account_name=account_name,
+        shift_on=shift_on,
+        last_day=current_period.last_day.day,
+        start_label=format_date_short(period_start),
+        end_label=format_date_short(period_end),
+    )
+
+    # The cap: open (nothing fixed for this month yet), upcoming (the month ends
+    # soon and the next one has none), or fixed.
+    current_cap = crud.get_cap_entry_for_month(db, current_period.month)
+    next_month = shift_month(current_period.month, 1)
+    if current_cap is None:
+        cap = {
+            "state": "open",
+            "title": _title_for(current_period.month),
+            "previous": month_word(shift_month(current_period.month, -1)),
+        }
+    elif days_left <= 7 and crud.get_cap_entry_for_month(db, next_month) is None:
+        cap = {"state": "upcoming", "title": _title_for(next_month), "previous": month_word(current_period.month)}
+    else:
+        cap = {"state": "set", "title": _title_for(current_period.month), "previous": ""}
+    things = answers.panorama_things(
+        pending_count=pending_count,
+        pending_total=pending_total,
+        account_name=account_name,
+        top_envelope=(
+            {
+                "name": top["category"].name,
+                "rest": top["rest"],
+                "percent": top["shown_percent"],
+                "with_pending": include_pending and bool(top["pending"]),
+            }
+            if top
+            else None
+        ),
+        days_left=days_left,
+        last_day=current_period.last_day.day,
+        cap=cap,
+    )
+    if len(watched) == 0:
+        envelopes_sentence = _t("Toutes les enveloppes sont dans les clous.")
+    elif len(watched) == 1:
+        envelopes_sentence = _t("Le budget %(name)s est à surveiller, les autres sont dans les clous.") % {"name": watched[0]}
+    else:
+        envelopes_sentence = _t("Les budgets %(names)s sont à surveiller.") % {"names": f" {_t('et')} ".join(watched)}
+
+    expense_rows = _share_rows(category_spending)
+    income_rows = _share_rows(income_spending)
+    return {
+        "answer": answer,
+        "things": things,
+        "include_pending": include_pending,
+        "envelope_rows": rows,
+        "envelopes_rest": rest_sum,
+        "envelopes_percent": envelopes_percent,
+        "envelopes_sentence": envelopes_sentence,
+        "envelopes_pending_total": sum((r["pending"] for r in rows), Decimal("0.00")),
+        "period_pill": _period_pill(period_key, period_start, period_end),
+        "account_pill": account_name or _t("Tous les comptes"),
+        "account_name": account_name,
+        "accounts": accounts,
+        "pending_count_account": pending_count,
+        "expense_rows": expense_rows,
+        "income_rows": income_rows,
+        "expense_top_sentence": (
+            _t("%(name)s pèse %(percent)s des dépenses.")
+            % {"name": expense_rows[0]["name"], "percent": answers.percent(expense_rows[0]["percent"])}
+            if expense_rows
+            else _t("Rien à répartir.")
+        ),
+        "income_top_sentence": (
+            _t("%(name)s fait %(percent)s des recettes.")
+            % {"name": income_rows[0]["name"], "percent": answers.percent(income_rows[0]["percent"])}
+            if income_rows
+            else _t("Rien à répartir.")
+        ),
+        "trend_title": _t("Évolution — 12 mois jusqu'à %(period)s") % {"period": period_label},
+        "trend_sentences": _trend_sentences(trend_months, trend_income, trend_expense, month_word),
     }
 
 
@@ -396,6 +640,7 @@ def dashboard(
     end: str | None = None,
     account_id: str | None = None,
     shift_income: str | None = None,
+    tri: str | None = None,
     db: Session = Depends(get_db),
 ):
     today = date.today()
@@ -420,6 +665,7 @@ def dashboard(
     content = _build_period_context(
         db, period_key, period_start, period_end, period_label,
         is_calendar_month, parsed_account_id, parsed_shift_income, today,
+        include_pending=tri != "0",
     )
 
     context = {
@@ -445,20 +691,33 @@ def dashboard_content(
     end: str | None = None,
     account_id: str | None = None,
     shift_income: str | None = None,
+    tri: str | None = None,
     db: Session = Depends(get_db),
 ):
     today = date.today()
     parsed_shift_income = shift_income == "1"
+    start_day = crud.get_budget_start_day(db)
     period_key, period_start, period_end, period_label, is_calendar_month = _resolve_period(
-        period, start, end, today, crud.get_budget_start_day(db)
+        period, start, end, today, start_day
     )
     content = _build_period_context(
         db, period_key, period_start, period_end, period_label,
         is_calendar_month, _parse_account_id(account_id), parsed_shift_income, today,
+        include_pending=tri != "0",
     )
+    # The other way's fragment holds the whole body of the page (accounts and
+    # projects follow the account filter), so it needs what the page adds.
+    current_period = period_containing(today, start_day)
+    project_summaries, project_summaries_total = _build_project_summaries(db, today)
     context = {
         "request": request,
         "row1_oob": True,
+        "account_balances": crud.get_account_balances_with_monthly_evolution(
+            db, current_period.start, current_period.last_day
+        ),
+        "project_summaries": project_summaries,
+        "project_summaries_total": project_summaries_total,
+        "current_month_key": current_period.month.strftime("%Y-%m"),
         **content,
     }
     return templates.TemplateResponse("dashboard/_content.html", context)
@@ -473,6 +732,7 @@ def category_transactions(
     label: str,
     type: str,
     account_id: str | None = None,
+    name: str = "",
     db: Session = Depends(get_db),
 ):
     # Le donut transmet désormais l'intervalle exact affiché (et son libellé)
@@ -489,10 +749,24 @@ def category_transactions(
         positive=(type == "income"),
         account_id=_parse_account_id(account_id),
     )
+    # The other way shows the operations in a panel of the page: it names the
+    # category and links to the same operations in the full list.
+    link = {"f_date_from": period_start.isoformat(), "f_date_to": period_end.isoformat()}
+    if parsed_category_id is not None:
+        link["f_category"] = str(parsed_category_id)
+    else:
+        link["f_category"] = "uncategorized"
+    if account_id:
+        link["f_account"] = account_id
+    link["f_type"] = "income" if type == "income" else "expense"
     context = {
         "request": request,
         "transactions": transactions,
         "period_label": label,
+        "category_name": name,
+        "is_income": type == "income",
+        "is_pending": parsed_category_id is None,
+        "operations_href": "/transactions/list?" + urlencode(link),
     }
     return templates.TemplateResponse("dashboard/_category_transactions.html", context)
 

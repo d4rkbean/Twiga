@@ -1,0 +1,388 @@
+{% from "_macros/brand.html" import mascot %}
+{% from "_macros/signed_amount.html" import signed %}
+{% from "other_way/_plan_kit.html" import gauge %}
+{#- Le Panorama de L'autre voie. Tout le corps de la page est ce fragment : un
+    changement de période, de compte ou du compteur de « à ranger » relance
+    /dashboard/content et remplace #dashboard-content, la phrase de Twiga avec.
+    Les feuilles de choix (période, compte) vivent dans le formulaire du
+    fragment ; leur état ouvert/fermé (`panel`), le mode des anneaux (`kind`) et la
+    série de la courbe (`trend`) vivent sur <main>, qui survit à l'échange. -#}
+{% set tone_fill = {"success": "progress-green", "warning": "progress-orange", "danger": "progress-red"} %}
+{% set answer_view = answer %}
+{% set expense_label = _("Dépenses") %}
+
+<div
+  id="panorama-data"
+  hidden
+  data-is-month="{{ 'true' if is_calendar_month else 'false' }}"
+  data-shift="{{ 'true' if shift_income else 'false' }}"
+  data-trend="{{ {
+    'labels': trend_labels, 'short': trend_short_labels, 'expense': trend_expense_values, 'income': trend_income_values,
+    'incomeLabel': trend_income_label, 'periodLabel': period_label, 'periodIncome': income_total, 'periodExpense': expense_total,
+    'periodIsMonth': is_calendar_month,
+    't': {'expenses': _('dépenses'), 'incomes': _('recettes'), 'ongoing': _('(en cours)')},
+  } | tojson | forceescape }}"
+  data-flow="{{ {
+    'incomeLabels': income_labels, 'incomeValues': income_values, 'expenseLabels': category_labels, 'expenseValues': category_values,
+    't': {'total': _('Total'), 'title': _('Flux financier'), 'income': _('Recette · '), 'expense': _('Dépense · ')},
+  } | tojson | forceescape }}"
+></div>
+
+<div class="flex flex-col gap-[var(--space-block)] lg:gap-8">
+
+  <div class="grid gap-[var(--space-block)] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+
+    {# --- La phrase, les chiffres, les deux pastilles --- #}
+    <section aria-label="{{ _("La réponse de Twiga") }}" class="flex flex-col gap-4">
+      <div class="flex items-start gap-3 lg:gap-5">
+        <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
+        <div class="min-w-0 flex flex-col gap-2">
+          <h1 id="answer" class="amount-blur font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ answer.headline }}</h1>
+          <p id="answer-sub" class="amount-blur max-w-[70ch] text-sm text-secondary lg:text-base">{{ answer.sub }}</p>
+        </div>
+      </div>
+
+      {% if answer.bars %}
+      <div class="flex flex-col gap-2 text-sm lg:ml-[84px]">
+        {% for bar in answer.bars %}
+        <div class="flex items-center gap-3">
+          <span class="w-28 flex-none text-primary">{{ bar.label }}</span>
+          <div class="progress-base h-2.5" role="img" aria-label="{{ _("%(label)s : %(percent)s pour cent", label=bar.label, percent=bar.pct) }}">
+            <div class="progress-fill {{ 'bg-secondary' if bar.kind != 'envelopes' else tone_fill[answer.bars_tone] }}" style="width: {{ [bar.pct, 100] | min }}%"></div>
+          </div>
+          <span class="w-12 flex-none text-right tabular-nums text-secondary">{{ bar.pct }}&nbsp;%</span>
+        </div>
+        {% endfor %}
+        {% if answer.bars_note %}
+        <p class="text-xs font-semibold {{ {'success': 'text-success', 'warning': 'text-warning', 'danger': 'text-danger'}[answer.bars_tone] if answer.bars[-1].kind == 'envelopes' else 'text-secondary' }}">{{ answer.bars_note }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <dl role="group" aria-label="{{ _("Les chiffres de la période") }}" class="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4 lg:ml-[84px] lg:grid-cols-4">
+        {% set savings_rate = ((income_total - expense_total) / income_total * 100) | round | int if income_total else none %}
+        <div class="flex flex-col gap-0.5"><dt class="text-xs text-secondary">{{ _("Recettes période") }}</dt><dd class="amount-blur text-lg font-bold tabular-nums text-primary">{{ signed(income_total, plus=true) }}</dd></div>
+        <div class="flex flex-col gap-0.5"><dt class="text-xs text-secondary">{{ _("Dépenses période") }}</dt><dd class="amount-blur text-lg font-bold tabular-nums text-primary">{{ signed(-expense_total) }}</dd></div>
+        <div class="flex flex-col gap-0.5"><dt class="text-xs text-secondary">{{ _("Résultat période") }}</dt><dd class="amount-blur text-lg font-bold tabular-nums {{ 'text-success' if result_total > 0 else ('text-danger' if result_total < 0 else 'text-primary') }}">{{ signed(result_total, plus=true) }}</dd></div>
+        <div class="flex flex-col gap-0.5"><dt class="text-xs text-secondary">{{ _("Taux d'épargne") }}</dt><dd class="text-lg font-bold tabular-nums {{ 'text-secondary' if savings_rate is none else ('text-success' if savings_rate >= 0 else 'text-danger') }}">{% if savings_rate is none %}—{% else %}{{ (savings_rate | string | replace("-", "−")) }}&nbsp;%{% endif %}</dd></div>
+      </dl>
+
+      {% if period_key != "mois" %}
+      <p class="amount-blur text-sm text-secondary lg:ml-[84px]">{{ _("Ce mois : recettes %(income)s · dépenses %(expense)s · résultat %(result)s", income=signed(row1_income, plus=true), expense=signed(-row1_expense), result=signed(row1_result, plus=true)) }}</p>
+      {% endif %}
+
+      {# La période et le compte : deux pastilles, une feuille de choix chacune. #}
+      <form
+        id="dashboard-filters"
+        hx-get="/dashboard/content"
+        hx-trigger="change"
+        hx-target="#dashboard-content"
+        hx-swap="innerHTML"
+        class="flex flex-col gap-3 lg:ml-[84px]"
+        x-data="{ periode: '{{ period_key }}', get mensuel() { return ['mois', 'mois-dernier'].includes(this.periode) } }"
+        @change="if (($event.target.name === 'period' && $event.target.value !== 'perso') || $event.target.name === 'account_id') panel = null"
+      >
+        <input type="hidden" name="tri" id="panorama-tri" value="{{ '1' if include_pending else '0' }}" />
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="panorama-period-pill" :aria-expanded="panel === 'period' ? 'true' : 'false'" aria-haspopup="dialog" aria-controls="panorama-period-panel" aria-label="{{ _("Période : %(period)s. Changer", period=period_pill) }}" @click="panel = panel === 'period' ? null : 'period'" :class="panel === 'period' ? 'bg-accent-soft border-accent-ink' : 'bg-container border-border-strong'" class="min-h-[50px] inline-flex items-center gap-2 rounded-full border px-4 text-sm font-medium text-primary">
+            {{ icon('calendar', size=18) }}<span>{{ period_pill }}</span>{{ icon('chevron-down', size=16) }}
+          </button>
+          <button type="button" id="panorama-account-pill" :aria-expanded="panel === 'account' ? 'true' : 'false'" aria-haspopup="dialog" aria-controls="panorama-account-panel" aria-label="{{ _("Compte : %(account)s. Changer", account=account_pill) }}" @click="panel = panel === 'account' ? null : 'account'" :class="panel === 'account' ? 'bg-accent-soft border-accent-ink' : 'bg-container border-border-strong'" class="min-h-[50px] inline-flex items-center gap-2 rounded-full border px-4 text-sm font-medium text-primary">
+            {{ icon('wallet', size=18) }}<span>{{ account_pill }}</span>{{ icon('chevron-down', size=16) }}
+          </button>
+        </div>
+        {% if shift_label %}<p id="panorama-period-label" class="text-xs text-secondary">{{ icon('adjustments', size=14) }} {{ shift_label }}</p>{% endif %}
+
+        {# Voile de la feuille, sur mobile seulement : sur ordinateur le panneau se déplie sous les pastilles. #}
+        <div x-show="panel !== null" style="display: none;" @click="panel = null" class="lg:hidden fixed inset-0 z-[9000] bg-scrim" aria-hidden="true"></div>
+
+        <div id="panorama-period-panel" x-show="panel === 'period'" style="display: none;" role="group" aria-label="{{ _("Période") }}" class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[9001] max-lg:max-h-[85vh] max-lg:overflow-y-auto max-lg:rounded-b-none max-lg:shadow-lg flex flex-col gap-4 rounded-xl border border-border bg-container p-4">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-section-title">{{ _("Période") }}</h3>
+            <button type="button" @click="panel = null" class="min-h-[50px] px-2 text-sm font-medium text-accent-ink underline">{{ _("Fermer") }}</button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            {% for key, label in period_choices %}
+            <label class="min-h-[50px] inline-flex cursor-pointer items-center rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary has-[:checked]:border-accent-ink has-[:checked]:bg-accent-soft has-[:checked]:font-semibold has-[:checked]:text-accent-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent-ink">
+              <input type="radio" name="period" value="{{ key }}" x-model="periode" class="sr-only" {% if key == period_key %}checked{% endif %} />
+              {{ label }}
+            </label>
+            {% endfor %}
+          </div>
+          <div x-show="periode === 'perso'" style="display: none;" class="flex flex-wrap gap-3">
+            <label class="flex flex-1 basis-40 flex-col gap-1.5"><span class="form-label">{{ _("Date de début") }}</span><input type="date" name="start" value="{{ period_start.isoformat() }}" class="input-base" /></label>
+            <label class="flex flex-1 basis-40 flex-col gap-1.5"><span class="form-label">{{ _("Date de fin") }}</span><input type="date" name="end" value="{{ period_end.isoformat() }}" class="input-base" /></label>
+          </div>
+          <label class="flex min-h-[50px] cursor-pointer items-start gap-3" :class="mensuel ? '' : 'opacity-50 cursor-not-allowed'">
+            <input type="checkbox" name="shift_income" value="1" class="peer sr-only" {% if shift_income %}checked{% endif %} :disabled="!mensuel" @change="window.twigaRememberShift($event.target.checked)" />
+            <span aria-hidden="true" class="switch mt-0.5"></span>
+            <span class="flex flex-col gap-0.5">
+              <span class="text-sm font-medium text-primary">{{ _("Décaler recettes") }}</span>
+              <span class="text-xs text-secondary" x-text="mensuel ? '{{ _("Le salaire de fin de mois précédent finance le mois courant : les recettes du mois d'avant sont comptées avec les dépenses de celui-ci.") | jsq }}' : '{{ _("Disponible seulement sur « Mois en cours » ou « Mois dernier »") | jsq }}'">{{ _("Le salaire de fin de mois précédent finance le mois courant : les recettes du mois d'avant sont comptées avec les dépenses de celui-ci.") if is_calendar_month else _("Disponible seulement sur « Mois en cours » ou « Mois dernier »") }}</span>
+            </span>
+          </label>
+        </div>
+
+        <div id="panorama-account-panel" x-show="panel === 'account'" style="display: none;" role="group" aria-label="{{ _("Compte") }}" class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[9001] max-lg:max-h-[85vh] max-lg:overflow-y-auto max-lg:rounded-b-none max-lg:shadow-lg flex flex-col gap-4 rounded-xl border border-border bg-container p-4">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-section-title">{{ _("Compte") }}</h3>
+            <button type="button" @click="panel = null" class="min-h-[50px] px-2 text-sm font-medium text-accent-ink underline">{{ _("Fermer") }}</button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <label class="min-h-[50px] inline-flex cursor-pointer items-center gap-2 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary has-[:checked]:border-accent-ink has-[:checked]:bg-accent-soft has-[:checked]:font-semibold has-[:checked]:text-accent-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent-ink">
+              <input type="radio" name="account_id" value="" class="sr-only" {% if not account_id %}checked{% endif %} />
+              <span aria-hidden="true" class="w-2.5 h-2.5 rounded-full bg-secondary"></span>{{ _("Tous les comptes") }}
+            </label>
+            {% for account in accounts %}
+            <label class="min-h-[50px] inline-flex cursor-pointer items-center gap-2 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary has-[:checked]:border-accent-ink has-[:checked]:bg-accent-soft has-[:checked]:font-semibold has-[:checked]:text-accent-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent-ink">
+              <input type="radio" name="account_id" value="{{ account.id }}" class="sr-only" {% if account.id == account_id %}checked{% endif %} />
+              <span aria-hidden="true" class="w-2.5 h-2.5 rounded-full" style="background-color: {{ account | account_color }}"></span>{{ account.name }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </form>
+    </section>
+
+    {# --- Trois choses à regarder --- #}
+    <section aria-labelledby="things-title" class="rounded-xl border border-border bg-container shadow-sm">
+      <h2 id="things-title" class="border-b border-border px-[var(--space-card)] py-4 text-section-title">{{ _("Trois choses à regarder") }}</h2>
+      <ol class="flex flex-col">
+        {% for thing in things %}
+        <li class="flex flex-col gap-3 px-[var(--space-card)] py-4 lg:flex-row lg:items-center lg:gap-4 {{ 'border-t border-border' if not loop.first else '' }}">
+          <div class="flex min-w-0 flex-1 items-start gap-3">
+            <span aria-hidden="true" class="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-sunken text-xs font-semibold tabular-nums text-primary">{{ loop.index }}</span>
+            <div class="flex min-w-0 flex-col gap-1">
+              <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-primary">
+                <span class="amount-blur">{{ thing.title }}</span>
+                {% if thing.pill %}<span class="badge {{ {'ok': 'badge-positive', 'watch': 'badge-warning', 'almost': 'badge-negative', 'exceeded': 'badge-negative'}[thing.pill.key] }}">{{ thing.pill.word }}</span>{% endif %}
+              </p>
+              <p class="amount-blur text-sm text-secondary">{{ thing.text }}</p>
+              <p class="text-xs text-secondary">{{ thing.when }}</p>
+            </div>
+          </div>
+          <a href="{{ thing.href }}" class="btn {{ 'btn-primary' if thing.primary else 'btn-secondary' }} w-full flex-none lg:w-auto lg:min-w-48">{{ thing.cta }}</a>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  <h2 class="text-section-title lg:text-xl">{{ _("Le détail en chiffres") }}</h2>
+
+  <div class="grid gap-[var(--space-block)] lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
+
+    {# --- Enveloppes --- #}
+    <section id="enveloppes" aria-labelledby="envelopes-title" class="flex flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+      <div class="flex flex-col gap-1">
+        <h2 id="envelopes-title" class="text-section-title">{{ _("Enveloppes") }}</h2>
+        <p class="text-sm text-secondary">{{ envelopes_sentence if envelope_rows else _("Aucun budget n'est fixé pour ce mois.") }}</p>
+        {% if period_key != "mois" and envelope_rows %}<p class="text-xs text-secondary">{{ _("Toujours les enveloppes du mois en cours, quelle que soit la période.") }}</p>{% endif %}
+      </div>
+
+      {% if envelope_rows %}
+      <button type="button" role="switch" aria-checked="{{ 'true' if include_pending else 'false' }}" {% if not pending_count_account %}disabled{% endif %} @click="window.twigaToggleTri()" class="flex min-h-[50px] w-full items-center gap-3 text-left text-sm text-primary disabled:opacity-60">
+        <span aria-hidden="true" class="switch"></span>
+        <span>{{ ngettext("Compter l'opération à ranger", "Compter les %(n)s opérations à ranger", pending_count_account, n=pending_count_account) if pending_count_account else _("Aucune opération à ranger") }}</span>
+      </button>
+      {% if not include_pending and pending_count_account %}
+      <p class="text-xs text-secondary">{{ _("Sans les opérations à ranger, il resterait %(rest)s : un chiffre trop optimiste.", rest=(envelopes_rest) | eur) }}</p>
+      {% endif %}
+
+      <div class="flex flex-col gap-4">
+        {% for row in envelope_rows[:4] %}
+        {% set v = row.verdict %}
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-baseline justify-between gap-3 text-sm">
+            <span class="min-w-0 truncate font-semibold text-primary">{{ row.category.name | category_display }}</span>
+            <span class="flex-none text-xs font-semibold {{ v.text }}">{{ v.word }}, {{ row.shown_percent | round | int }}&nbsp;%</span>
+          </div>
+          {{ gauge(row.bar_width, row.pending_width, v.fill, row.category.name ~ " : " ~ (row.shown_percent | round | int) ~ " %", pace=month_pace) }}
+          <p class="amount-blur flex justify-between gap-3 text-xs tabular-nums text-secondary"><span>{{ _("%(spent)s sur %(budget)s", spent=row.shown | eur, budget=row.budget | eur) }}</span><span>{{ _("Reste %(rest)s", rest=row.rest | eur) }}</span></p>
+        </div>
+        {% endfor %}
+      </div>
+      {% if envelope_rows | length > 4 %}
+      <a href="/cap/mid" class="inline-flex min-h-[50px] items-center gap-1 text-sm font-medium text-accent-ink underline">{{ ngettext("Voir l'autre enveloppe", "Voir les %(n)s autres enveloppes", envelope_rows | length - 4, n=envelope_rows | length - 4) }} {{ icon('arrow-right', size=16) }}</a>
+      {% endif %}
+      <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary">
+        <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="h-2 w-3.5 rounded-full bg-secondary"></span>{{ _("Dépensé") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="h-2 w-3.5 rounded-full bg-border-strong"></span>{{ _("À ranger") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="h-3 w-0.5 rounded-full bg-primary"></span>{{ _("Rythme du mois, %(pace)s %%", pace=month_pace) }}</span>
+      </p>
+      <a href="/cap/mid" class="mt-1 flex min-h-[50px] items-center justify-between border-t border-border pt-2 text-sm font-semibold text-accent-ink">{{ _("Voir tout le mois") }} {{ icon('chevron-right', size=16) }}</a>
+      {% else %}
+      <a href="/budgets" class="inline-flex min-h-[50px] items-center gap-1 text-sm font-medium text-accent-ink underline">{{ _("Fixer les budgets") }} {{ icon('arrow-right', size=16) }}</a>
+      {% endif %}
+    </section>
+
+    {# --- Évolution sur 12 mois --- #}
+    <section aria-labelledby="trend-title" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex flex-col gap-1">
+          <h2 id="trend-title" class="text-section-title">{{ trend_title }}</h2>
+          {% for mode, sentence in trend_sentences.items() %}
+          <p x-show="trend === '{{ mode }}'" {% if mode != 'both' %}style="display: none;"{% endif %} class="text-sm text-secondary">{{ sentence }}</p>
+          {% endfor %}
+        </div>
+        <div role="group" aria-label="{{ _("Quelle série montrer") }}" class="flex gap-2">
+          {% for mode, label in (("exp", _("Dépenses")), ("inc", _("Recettes")), ("both", _("Les deux"))) %}
+          <button type="button" @click="trend = '{{ mode }}'; window.dispatchEvent(new CustomEvent('panorama-trend', { detail: '{{ mode }}' }))" :aria-pressed="trend === '{{ mode }}' ? 'true' : 'false'" class="min-h-[50px] flex-1 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink lg:flex-none">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <p id="trend-readout" role="status" aria-live="polite" class="amount-blur text-sm font-medium text-primary"></p>
+      <div class="h-56 lg:h-72"><canvas id="trend-line-chart" role="img" aria-label="{{ _("Recettes et dépenses sur les douze derniers mois") }}"></canvas></div>
+      <div id="trend-months" role="group" aria-label="{{ _("Choisir un mois") }}" class="-mt-1 grid grid-cols-12">
+        {% for label in trend_labels %}
+        <button type="button" data-month="{{ loop.index0 }}" aria-pressed="false" aria-label="{{ label }}" class="min-h-[50px] truncate rounded-lg px-0.5 text-xs text-secondary aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink"><span class="sm:hidden">{{ trend_short_labels[loop.index0][:1] }}</span><span class="hidden sm:inline">{{ trend_short_labels[loop.index0] }}</span></button>
+        {% endfor %}
+      </div>
+      <p class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-secondary">
+        <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="h-0.5 w-4 rounded-full bg-chart-2"></span>{{ trend_income_label }}</span>
+        <span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="h-0.5 w-4 rounded-full bg-chart-1"></span>{{ _("Dépenses") }}</span>
+        <span>{{ _("Touche un mois pour lire ses montants.") }}</span>
+      </p>
+    </section>
+  </div>
+
+  {# --- Répartitions : les recettes avant les dépenses --- #}
+  <div role="group" aria-label="{{ _("Mode d'affichage des répartitions") }}" class="flex gap-2 lg:hidden">
+    {% for k, label in (("out", _("Dépenses")), ("in", _("Recettes"))) %}
+    <button type="button" @click="kind = '{{ k }}'" :aria-pressed="kind === '{{ k }}' ? 'true' : 'false'" class="min-h-[50px] flex-1 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink">{{ label }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="grid gap-[var(--space-block)] lg:grid-cols-2">
+    {% for kind, rows, total, title, sentence, empty, home_label, positive in (
+      ("in", income_rows, income_total, _("Recettes par catégorie — %(period)s", period=period_label), income_top_sentence, _("Aucune recette sur cette période."), _("Total recettes"), true),
+      ("out", expense_rows, expense_total, _("Dépenses par catégorie — %(period)s", period=period_label), expense_top_sentence, _("Aucune dépense sur cette période."), _("Total dépenses"), false)
+    ) %}
+    <section data-share aria-labelledby="share-{{ kind }}-title" :class="kind === '{{ 'in' if kind == 'out' else 'out' }}' ? 'max-lg:hidden' : ''" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+      <div class="flex flex-col gap-1">
+        <h2 id="share-{{ kind }}-title" class="text-section-title">{{ title }}</h2>
+        <p class="text-sm text-secondary">{{ sentence }}</p>
+      </div>
+      {% if rows %}
+      <div class="flex flex-col items-center gap-4 lg:flex-row lg:items-start lg:gap-6">
+        <div class="relative h-36 w-36 flex-none">
+          <svg viewBox="0 0 120 120" class="h-full w-full -rotate-90" role="img" aria-label="{{ _("Répartition par catégorie") }}">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--color-sunken)" stroke-width="14" />
+            {% for row in rows %}
+            <circle data-arc cx="60" cy="60" r="52" fill="none" stroke="var(--color-chart-{{ row.color }})" stroke-width="14" stroke-dasharray="{{ row.dash }}" stroke-dashoffset="{{ row.offset }}" style="transition: opacity 0.2s" />
+            {% endfor %}
+          </svg>
+          <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+            <span data-share-label class="max-w-full truncate text-xs text-secondary">{{ home_label }}</span>
+            <span data-share-total class="amount-blur text-sm font-bold tabular-nums text-primary">{{ total | eur }}</span>
+            <span data-share-percent class="text-xs text-secondary"></span>
+          </div>
+        </div>
+        <ul class="flex w-full min-w-0 flex-1 flex-col lg:max-h-72 lg:overflow-y-auto">
+          {% for row in rows %}
+          {% set query = {"category_id": row.category_id, "start": period_start.isoformat(), "end": period_end.isoformat(), "label": period_label, "type": "income" if positive else "expense", "name": row.name} %}
+          {% if account_id %}{% set _ignored = query.update({"account_id": account_id}) %}{% endif %}
+          <li class="border-t border-border first:border-t-0">
+            <button
+              type="button"
+              data-share-row
+              data-name="{{ row.name }}"
+              data-amount="{{ row.amount | eur }}"
+              data-percent="{{ row.percent }} %"
+              aria-pressed="false"
+              aria-label="{{ _("Voir les opérations de %(name)s", name=row.name) }}"
+              hx-get="/dashboard/category-transactions?{{ query | urlencode }}"
+              hx-target="#category-detail"
+              hx-swap="innerHTML"
+              class="flex min-h-[var(--row-list)] w-full items-center gap-3 rounded-lg px-2 text-left aria-pressed:bg-accent-soft"
+            >
+              <span aria-hidden="true" class="h-2.5 w-2.5 flex-none rounded-full" style="background: var(--color-chart-{{ row.color }})"></span>
+              <span class="min-w-0 flex-1 truncate text-sm text-primary">{{ row.name }}</span>
+              <span class="amount-blur flex-none text-sm font-semibold tabular-nums text-primary">{{ signed(row.amount if positive else -row.amount, plus=positive) }}</span>
+              <span class="w-10 flex-none text-right text-xs tabular-nums text-secondary">{{ row.percent }}&nbsp;%</span>
+              <span class="flex-none text-secondary">{{ icon('chevron-right', size=16) }}</span>
+            </button>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% else %}
+      <p class="py-6 text-center text-sm text-secondary">{{ empty }}</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </div>
+
+  {# Les opérations de la catégorie choisie : un clic sur une ligne d'un anneau. #}
+  <div id="category-detail" aria-live="polite"></div>
+
+  {# --- Flux financier : mobile seulement, les deux anneaux disent déjà la même chose sur ordinateur --- #}
+  <section class="rounded-xl border border-border bg-container shadow-sm lg:hidden" x-data="{ open: false }" aria-labelledby="flow-title">
+    <button type="button" @click="open = !open" :aria-expanded="open ? 'true' : 'false'" class="flex min-h-[62px] w-full items-center justify-between gap-3 px-[var(--space-card)] py-3 text-left">
+      <span class="flex flex-col"><span id="flow-title" class="text-section-title">{{ _("Flux financier — %(period)s", period=period_label) }}</span><span class="text-xs text-secondary">{{ _("Des recettes aux dépenses, d'un coup d'œil.") }}</span></span>
+      <span class="text-secondary transition-transform" :class="open ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+    </button>
+    <div x-show="open" style="display: none;" class="px-[var(--space-card)] pb-[var(--space-card)]">
+      {% if category_spending and income_spending %}
+      <div class="h-80"><canvas id="cashflow-sankey-chart" role="img" aria-label="{{ _("Flux financier") }}"></canvas></div>
+      {% else %}
+      <p class="py-6 text-center text-sm text-secondary">{{ _("Pas assez de données pour afficher le flux financier sur cette période.") }}</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# --- Comptes et projets --- #}
+  <div class="grid gap-[var(--space-block)] lg:grid-cols-2 lg:items-start">
+    <section aria-labelledby="accounts-title" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex flex-col gap-1">
+          <h2 id="accounts-title" class="text-section-title">{{ _("Comptes") }}</h2>
+          {% set shown_accounts = account_balances | selectattr("account.id", "equalto", account_id) | list if account_id else account_balances %}
+          {% set shown_total = shown_accounts | sum(attribute="balance") %}
+          <p class="amount-blur text-sm text-secondary">{% if account_id %}{{ _("%(total)s sur le compte %(name)s.", total=shown_total | eur, name=account_name) }}{% else %}{{ ngettext("%(total)s sur %(n)s compte.", "%(total)s sur %(n)s comptes.", shown_accounts | length, total=shown_total | eur, n=shown_accounts | length) }}{% endif %}</p>
+        </div>
+        <a href="/transactions/list" class="inline-flex min-h-[50px] items-center gap-1 text-sm font-medium text-accent-ink underline">{{ _("Opérations") }}</a>
+      </div>
+      <ul class="flex flex-col">
+        {% for item in shown_accounts %}
+        <li class="flex min-h-[56px] items-center gap-3 border-t border-border">
+          <span aria-hidden="true" class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ item.account | account_color }}"></span>
+          <span class="flex min-w-0 flex-1 flex-col"><span class="truncate text-sm text-primary">{{ item.account.name }}</span><span class="truncate text-xs text-secondary">{{ get_account_type_label(item.account.type) }}</span></span>
+          <span class="flex flex-none flex-col items-end"><span class="amount-blur text-base font-bold tabular-nums text-primary">{{ signed(item.balance) }}</span><span class="amount-blur text-xs tabular-nums text-secondary">{{ _("%(evolution)s ce mois-ci", evolution=signed(item.monthly_evolution, plus=true)) }}</span></span>
+        </li>
+        {% else %}
+        <li class="py-6 text-center text-sm text-secondary">{{ _("Aucun compte pour l'instant.") }}</li>
+        {% endfor %}
+        {% if not account_id and shown_accounts %}
+        <li class="flex min-h-[50px] items-center justify-between gap-3 border-t border-border font-semibold text-primary"><span>{{ _("Total") }}</span><span class="amount-blur tabular-nums">{{ signed(total_balance) }}</span></li>
+        {% endif %}
+      </ul>
+    </section>
+
+    <section aria-labelledby="projects-title" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex flex-col gap-1">
+          <h2 id="projects-title" class="text-section-title">{{ _("Projets") }}</h2>
+          {% set saved = project_summaries | sum(attribute="project.current_amount") %}
+          {% if project_summaries %}<p class="amount-blur text-sm text-secondary">{{ ngettext("Un projet en cours, %(saved)s déjà mis de côté.", "%(n)s projets en cours, %(saved)s déjà mis de côté.", project_summaries | length, n=project_summaries | length, saved=saved | eur) }}</p>{% endif %}
+        </div>
+        <a href="/projects" class="inline-flex min-h-[50px] items-center gap-1 text-sm font-medium text-accent-ink underline">{{ _("Tous") }}</a>
+      </div>
+      {% for item in project_summaries %}
+      <div class="flex flex-col gap-2 border-t border-border pt-3">
+        <div class="flex items-center justify-between gap-3"><span class="min-w-0 truncate text-sm font-semibold text-primary">{{ item.project.name }}</span><span class="text-sm tabular-nums text-secondary">{{ item.percentage_display }}&nbsp;%</span></div>
+        <div class="progress-base" role="img" aria-label="{{ _("%(name)s : %(percentage)s %% atteint", name=item.project.name, percentage=item.percentage_display) }}"><div class="progress-fill bg-chart-2" style="width: {{ item.bar_width }}%"></div></div>
+        <p class="amount-blur flex flex-wrap justify-between gap-x-3 text-xs tabular-nums text-secondary"><span>{{ _("%(current)s sur %(target)s", current=item.project.current_amount | eur, target=item.project.target_amount | eur) }}</span><span>{% if item.deadline_label %}{{ _("échéance %(deadline)s", deadline=item.deadline_label) }} · {% endif %}{{ _("%(effort)s / mois", effort=item.monthly_effort | eur) }}</span></p>
+      </div>
+      {% else %}
+      <p class="py-6 text-center text-sm text-secondary">{{ _("Aucun projet pour l'instant.") }}</p>
+      {% endfor %}
+      {% if project_summaries_total > project_summaries | length %}
+      <a href="/projects" class="inline-flex min-h-[50px] items-center text-sm font-medium text-accent-ink underline">{{ _("Voir tous les projets →") }}</a>
+      {% endif %}
+    </section>
+  </div>
+
+  <a href="/reports" class="btn btn-secondary w-full">{{ _("Voir le rapport complet") }} {{ icon('chevron-right', size=16) }}</a>
+  <p class="font-display text-base font-extrabold tracking-tight text-secondary">{{ _("Voir loin. Voir juste.") }}</p>
+</div>

@@ -1,0 +1,59 @@
+{#-
+  Petits éléments communs aux écrans « plan » de L'autre voie (Panorama, Mon mois,
+  Budgets, Le Cap, Rapports) :
+
+    {% from "other_way/_plan_kit.html" import voice, neighbours, verdict_word, gauge %}
+
+  voice(headline, sub)   La phrase de Twiga : la girafe, la réponse en grand, puis
+                         une ligne qui dit pourquoi. Le bloc du `call` se pose
+                         sous la ligne (intention, barres, actions).
+  neighbours(label, items)  La bande d'écrans voisins sous la barre du haut
+                         (ordinateur) : Panorama | Mon mois, Le Cap | Projets...
+  verdict_word(v)        Le mot d'un verdict, toujours doublé de sa couleur.
+  gauge(...)             Une jauge : le dépensé, ce qui attend dans La Savane, et
+                         le trait du rythme du mois.
+
+  L'ambre n'apparaît ici que sous la bande d'écrans voisins (un filet fin sous
+  l'écran courant), jamais en aplat : l'aplat est l'action principale de la page.
+-#}
+{% from "_macros/brand.html" import mascot %}
+
+{% macro voice(headline, sub=none, label=none) -%}
+<section aria-label="{{ label or _("La réponse de Twiga") }}" class="flex items-start gap-3 lg:gap-5">
+  <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
+  <div class="min-w-0 flex flex-col gap-2">
+    <h1 id="answer" class="amount-blur font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ headline }}</h1>
+    {% if sub %}<p id="answer-sub" class="amount-blur max-w-[70ch] text-sm text-secondary lg:text-base">{{ sub }}</p>{% endif %}
+    {% if caller %}{{ caller() }}{% endif %}
+  </div>
+</section>
+{%- endmacro %}
+
+{% macro neighbours(label, items) -%}
+<nav aria-label="{{ label }}" class="print:hidden hidden lg:block border-b border-border bg-page">
+  <div class="flex items-stretch gap-2 px-10 overflow-x-auto">
+    {% for item in items %}
+    <a
+      href="{{ item.href }}"
+      {% if item.current %}aria-current="page"{% endif %}
+      class="min-h-[50px] px-3 inline-flex items-center whitespace-nowrap border-b-2 -mb-px text-sm {{ 'border-accent font-semibold text-primary' if item.current else 'border-transparent font-medium text-secondary hover:text-primary' }}"
+    >{{ item.label }}</a>
+    {% endfor %}
+  </div>
+</nav>
+{%- endmacro %}
+
+{% macro verdict_word(v) -%}
+<span class="font-semibold {{ v.text }}">{{ v.word }}</span>
+{%- endmacro %}
+
+{#- Une jauge. `spent` et `pending` sont des largeurs en %, `pace` le rythme du mois
+    en % (le trait), `fill` la classe de couleur du verdict, `label` le texte lu
+    par un lecteur d'écran. -#}
+{% macro gauge(spent, pending, fill, label, pace=none, height="h-2.5") -%}
+<div class="progress-base {{ height }} relative overflow-visible flex" role="img" aria-label="{{ label }}">
+  <div class="progress-fill {{ fill }}" style="width: {{ spent }}%"></div>
+  {% if pending %}<div class="h-full opacity-45 {{ fill }}" style="width: {{ pending }}%"></div>{% endif %}
+  {% if pace is not none %}<span aria-hidden="true" class="absolute -top-0.5 -bottom-0.5 w-0.5 rounded-full bg-primary" style="left: {{ pace }}%"></span>{% endif %}
+</div>
+{%- endmacro %}

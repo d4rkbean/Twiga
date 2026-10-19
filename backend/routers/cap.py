@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud, month_view
 from backend.budget_month import BudgetPeriod, period_containing, period_of_month
 from backend.database import get_db
 from backend.dates import format_date_short, month_label, month_names, shift_month
@@ -29,6 +29,12 @@ def _period_of(db: Session, month_start: date) -> BudgetPeriod:
 def _month_name(month_start: date) -> str:
     """Month name alone ("Octobre"), as the side panel titles use it."""
     return month_names()[month_start.month - 1]
+
+
+def month_name_lower(month_start: date) -> str:
+    """The month name as a sentence wants it: "octobre", but "October" in English."""
+    name = _month_name(month_start)
+    return name if current_language() == "en" else name.lower()
 
 
 def _title_for(month_start: date) -> str:
@@ -218,7 +224,29 @@ def _bilan_context(db: Session, month_start: date) -> dict:
             "over": worst["projected_percentage"] > 100,
         }
 
+    pending_by_pillar = _pending_by_pillar(db, start, end)
+    month_name = _month_name(month_start)
+    review_answers = answers.cap_review_answers(
+        month_name=month_name,
+        next_month_name=month_name_lower(shift_month(month_start, 1)),
+        has_plan=prev_entry is not None,
+        result=real_income - expense_total,
+        pillars=[
+            {
+                "name": line["name"],
+                "planned": line["planned"],
+                "real": line["real"],
+                "ratio": (line["real"] + pending_by_pillar[line["code"]]) / line["planned"] * 100
+                if line["planned"]
+                else None,
+                "unbudgeted": line["detail"]["unbudgeted"] if line["detail"] else Decimal("0.00"),
+            }
+            for line in lines
+            if line["code"] in ("essentiel", "choix", "imprevu")
+        ],
+    )
     return {
+        "review_answers": review_answers,
         "bilan_lines": lines,
         "has_previous_cap": prev_entry is not None,
         "unexpected_transactions": crud.get_unexpected_transactions(db, start, end),
@@ -318,7 +346,56 @@ def _fixer_context(db: Session, current_month_start: date) -> dict:
             {"code": code, "label": get_pillar_label(code), **allocation[code]}
             for code in ("essentiel", "choix")
         ],
+        # What only the other way's plan steps read: what each category cost last
+        # month (the "au rythme de septembre" hint), the sources of the month's
+        # resources, and a few ideas for the intention, each with its reason.
+        "previous_spent": {
+            line["category"].id: line["spent"]
+            for group in crud.get_month_detail_by_pillar(db, previous_start, previous_end).values()
+            for line in group["categories"]
+        },
+        "income_sources_view": [
+            {"code": code, "label": label, "help": help_text} for code, label, help_text in crud.INCOME_SOURCES
+        ],
+        "previous_events": crud.get_unexpected_transactions(db, previous_start, previous_end),
+        "income_fixed_amount": settings.income_fixed_amount,
+        "income_account_set": settings.income_account_id is not None,
+        "intention_ideas": _intention_ideas(
+            previous_actuals,
+            previous_pending,
+            {"essentiel": essentiel_total, "choix": choix_total, "imprevu": prefill_imprevu},
+        ),
     }
+
+
+def _intention_ideas(actuals: dict, pending: dict, plan: dict) -> dict:
+    """Three ideas for the month's intention, picked from the pillar that was tightest
+    last month. The page says why the idea is offered: the pillar and how near its
+    ceiling it came."""
+    plans = {code: float(amount) for code, amount in plan.items()}
+    ratios = {
+        code: (float(actuals.get(code, 0)) + float(pending.get(code, 0))) / plans[code] if plans[code] else 0
+        for code in plans
+    }
+    worst = max(ratios, key=ratios.get)
+    ideas = {
+        "essentiel": [
+            _t("Comparer les prix avant chaque grosse course"),
+            _t("Cuisiner pour deux repas à la fois"),
+            _t("Garder une semaine sans achat imprévu"),
+        ],
+        "choix": [
+            _t("Un seul restaurant par semaine"),
+            _t("Vélo pour les petits trajets"),
+            _t("Ranger La Savane chaque dimanche"),
+        ],
+        "imprevu": [
+            _t("Mettre de côté dès le début du mois pour les imprévus"),
+            _t("Vérifier la voiture avant l'hiver"),
+            _t("Ranger La Savane chaque dimanche"),
+        ],
+    }
+    return {"pillar": worst, "ratio": round(ratios[worst] * 100), "ideas": ideas[worst]}
 
 
 @router.get("", response_class=HTMLResponse)
@@ -415,11 +492,20 @@ def cap_step2(
     reflection_regret: str = Form(""),
     reflection_proud: str = Form(""),
     reflection_worked_well: str = Form(""),
+    income_source: str = Form(""),
+    first: str = Form(""),
     db: Session = Depends(get_db),
 ):
     current_month_start = _current_month(db)
+    # The other way's "Modifier la source" (Ressources step) and "C'est notre premier
+    # Cap" come back here: the source is saved as the household setting, then the
+    # step is drawn again with the proposal it gives. Nothing else changes.
+    if income_source in crud.INCOME_SOURCE_CODES:
+        crud.get_cap_settings(db).income_source = income_source
+        db.commit()
     context = {
         "request": request,
+        "first_use": first == "1",
         "current_step": 2,
         "reflection_unexpected": reflection_unexpected,
         "reflection_regret": reflection_regret,
@@ -431,12 +517,25 @@ def cap_step2(
 
 
 @router.post("/step1", response_class=HTMLResponse)
-def cap_back_to_step1(request: Request, db: Session = Depends(get_db)):
+def cap_back_to_step1(
+    request: Request,
+    reflection_unexpected: str = Form(""),
+    reflection_regret: str = Form(""),
+    reflection_proud: str = Form(""),
+    reflection_worked_well: str = Form(""),
+    db: Session = Depends(get_db),
+):
     current_month_start = _current_month(db)
     previous_month_start = shift_month(current_month_start, -1)
     context = {
         "request": request,
         "current_step": 1,
+        # The words written before moving on come back with the step (the other
+        # way posts them along; Classic posts nothing and finds the fields empty).
+        "reflection_unexpected": reflection_unexpected,
+        "reflection_regret": reflection_regret,
+        "reflection_proud": reflection_proud,
+        "reflection_worked_well": reflection_worked_well,
         **_fixer_context(db, current_month_start),
         "previous_month_label": month_label(previous_month_start.year, previous_month_start.month),
         **_bilan_context(db, previous_month_start),
@@ -679,5 +778,38 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
         "pending_total": crud.get_pending_expense_total(db),
         "planned_total": planned_total,
         "spent_total": spent_total,
+        **_month_other_way_context(db, today, entry),
     }
     return templates.TemplateResponse("cap/mid.html", context)
+
+
+def _month_other_way_context(db: Session, today: date, entry) -> dict:
+    """What only the other way's "Mon mois" reads: the pillars split between what
+    is sorted and what still waits in La Savane, the sentence, the fixed charges."""
+    view = month_view.build_month_view(db, today)
+    lowercase = current_language() != "en"
+
+    def month_word(value: date) -> str:
+        name = _month_name(value)
+        return name.lower() if lowercase else name
+
+    pillar_names = {"essentiel": _t("Essentiel"), "choix": _t("Choix"), "imprevu": _t("Imprévus")}
+    loosest = max(view.pillars, key=lambda p: p.loose_total)
+    headline, sub = answers.month_answer(
+        has_plan=entry is not None,
+        month_name=month_word(view.period.month),
+        pillars=[{"code": p.code, "percent": p.percent, "verdict": p.verdict.key} for p in view.pillars],
+        day=view.day,
+        days=view.days,
+        loose=(pillar_names[loosest.code], loosest.loose_total) if loosest.loose_total else None,
+        next_cap_title=_title_for(shift_month(view.period.month, 1)),
+    )
+    return {
+        "month_view": view,
+        "pillar_names": pillar_names,
+        "answer_headline": headline,
+        "answer_sub": sub,
+        "month_word": month_word(view.period.month),
+        "next_cap_title": _title_for(shift_month(view.period.month, 1)),
+        "previous_month_word": month_word(shift_month(view.period.month, -1)),
+    }

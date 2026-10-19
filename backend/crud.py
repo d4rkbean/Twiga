@@ -255,7 +255,7 @@ def undo_transaction(db: Session, transaction: Transaction) -> Transaction:
     return transaction
 
 
-def count_pending_transactions(db: Session) -> int:
+def count_pending_transactions(db: Session, account_id: int | None = None) -> int:
     # is_transfer.is_(False) : doit rester cohérent avec
     # get_next_pending_transaction (même filtre) pour que ce compte reflète
     # exactement le nombre d'opérations réellement enterables dans La
@@ -265,6 +265,8 @@ def count_pending_transactions(db: Session) -> int:
         .select_from(Transaction)
         .where(Transaction.validated.is_(False), Transaction.is_transfer.is_(False))
     )
+    if account_id is not None:
+        stmt = stmt.where(Transaction.account_id == account_id)
     return db.execute(stmt).scalar_one()
 
 
@@ -4188,6 +4190,10 @@ def detect_recurring_patterns(db: Session, today: date | None = None) -> list[di
                 "frequency_label": _RECURRING_FREQUENCY_LABELS_FR[frequency],
                 "frequency_days": _RECURRING_FREQUENCY_CANONICAL_DAYS[frequency],
                 "last_date": last_tx.date,
+                # What the other way's "Mon mois" prints for a fixed charge: the
+                # label as written on the last occurrence and the account it hit.
+                "last_label": last_tx.label or last_tx.raw_label,
+                "last_account": last_tx.account.name if last_tx.account else "",
                 "next_expected": _next_expected_recurring_date(last_tx.date, frequency, today),
                 "seen_this_month": any(
                     t.date.year == today.year and t.date.month == today.month for t in txs

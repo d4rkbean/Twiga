@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{#- Le Panorama de L'autre voie : la phrase de Twiga, puis le détail en chiffres.
+    Tout le corps de la page est le fragment #dashboard-content (dashboard/_content.html,
+    celui de L'autre voie) : changer de période ou de compte le remplace en entier.
+    L'état qui doit survivre à l'échange vit ici, sur <main> : la feuille ouverte
+    (`panel`), le mode des anneaux sur mobile (`kind`) et la série de la courbe (`trend`). -#}
+{% block title %}{{ _("Panorama — Twiga") }}{% endblock %}
+
+{% block shell_head %}{{ super() }}
+  <script src="{{ static_url('/static/js/panorama.js') }}" defer></script>
+{% endblock %}
+{% block extra_head %}
+  <script src="{{ static_url('/static/vendor/chart.min.js') }}" defer></script>
+  <script src="{{ static_url('/static/vendor/chartjs-chart-sankey.min.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<main
+  x-data="{ panel: null, kind: 'out', trend: 'both' }"
+  @keydown.escape.window="panel = null"
+  class="flex flex-col px-4 pt-5 pb-8 lg:px-10 lg:pt-8 lg:pb-12"
+>
+  <div id="dashboard-content">
+    {% include "dashboard/_content.html" %}
+  </div>
+</main>
+{% endblock %}
