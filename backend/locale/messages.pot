@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 08:28+0000\n"
+"POT-Creation-Date: 2026-10-19 09:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1708,6 +1708,9 @@ msgstr ""
 msgid "Aperçu des opérations"
 msgstr ""
 
+msgid "Appareil inconnu"
+msgstr ""
+
 msgid ""
 "Applique une catégorie aux lignes cochées, ou valide d'un coup toutes les"
 " suggestions sûres."
@@ -1924,6 +1927,9 @@ msgid "Aucune : le schéma l'empêche structurellement."
 msgstr ""
 
 msgid "Aucune alerte"
+msgstr ""
+
+msgid "Aucune autre session ouverte."
 msgstr ""
 
 msgid "Aucune catégorie disponible."
@@ -2497,6 +2503,9 @@ msgstr ""
 
 #, python-format
 msgid "Ces piliers dépassent tes ressources de %(amount)s."
+msgstr ""
+
+msgid "Cet appareil"
 msgstr ""
 
 msgid ""
@@ -3232,6 +3241,10 @@ msgstr ""
 msgid "Derniers imports"
 msgstr ""
 
+#, python-format
+msgid "Dernière activité %(when)s"
+msgstr ""
+
 msgid "Dernière fois :"
 msgstr ""
 
@@ -3830,16 +3843,25 @@ msgstr ""
 msgid "Fais le bilan de %(previous)s et fixe les enveloppes du mois."
 msgstr ""
 
-msgid "Ferme ta session sur cet appareil. Tu retrouveras tout en te reconnectant."
+msgid ""
+"Ferme ta session sur cet appareil, ou celles des autres appareils "
+"connectés à ton compte. Tu retrouveras tout en te reconnectant."
 msgstr ""
 
 msgid "Fermer"
+msgstr ""
+
+msgid "Fermer cette session ? L'appareil sera déconnecté."
 msgstr ""
 
 msgid "Fermer la liste des catégories"
 msgstr ""
 
 msgid "Fermer la recherche"
+msgstr ""
+
+#, python-format
+msgid "Fermer la session de %(device)s"
 msgstr ""
 
 msgid "Fermer le bandeau Bonjour"
@@ -3849,6 +3871,12 @@ msgid "Fermer le bandeau de mi-mois"
 msgstr ""
 
 msgid "Fermer le détail"
+msgstr ""
+
+msgid "Fermer les autres sessions"
+msgstr ""
+
+msgid "Fermer toutes les autres sessions ? Ces appareils seront déconnectés."
 msgstr ""
 
 msgid "Fichier"
@@ -5043,6 +5071,14 @@ msgid ""
 msgstr ""
 
 msgid ""
+"Les appareils connectés à ton compte. Ferme celui que tu ne reconnais "
+"pas, ou tous les autres d'un coup."
+msgstr ""
+
+msgid "Les autres sessions sont fermées."
+msgstr ""
+
+msgid ""
 "Les boutons Dépenses, Recettes et Les deux changent la courbe. Touche un "
 "mois pour lire son détail."
 msgstr ""
@@ -5764,6 +5800,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "Même montant, le même jour."
+msgstr ""
+
+msgid "Navigateur inconnu"
 msgstr ""
 
 msgid "Navigation principale"
@@ -7284,7 +7323,10 @@ msgstr ""
 msgid "Services en ligne"
 msgstr ""
 
-msgid "Session"
+msgid "Session fermée."
+msgstr ""
+
+msgid "Sessions ouvertes"
 msgstr ""
 
 msgid "Seul un administrateur voit cette page."
@@ -7617,9 +7659,6 @@ msgstr ""
 msgid "Taxi et VTC"
 msgstr ""
 
-msgid "Te déconnecter"
-msgstr ""
-
 msgid "Tenu"
 msgstr ""
 
@@ -7668,6 +7707,12 @@ msgid "Tes règles de rangement, appliquées d'office"
 msgstr ""
 
 msgid "Tes réponses sont conservées jusqu'à « Fixer le cap »."
+msgstr ""
+
+msgid "Tes sessions"
+msgstr ""
+
+msgid "Tes sessions et la sortie"
 msgstr ""
 
 msgid "Tester"
@@ -8712,6 +8757,9 @@ msgstr ""
 msgid "abonnement"
 msgstr ""
 
+msgid "active maintenant"
+msgstr ""
+
 msgid "affichage aéré"
 msgstr ""
 
@@ -8912,6 +8960,20 @@ msgstr ""
 msgid "il manque"
 msgstr ""
 
+#, python-format
+msgid "il y a %(n)s h"
+msgstr ""
+
+#, python-format
+msgid "il y a %(n)s jour"
+msgid_plural "il y a %(n)s jours"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "il y a %(n)s min"
+msgstr ""
+
 msgid "incertaine"
 msgstr ""
 
@@ -9001,6 +9063,10 @@ msgid "opération(s)"
 msgstr ""
 
 msgid "ou choisis-le sur cet ordinateur"
+msgstr ""
+
+#, python-format
+msgid "ouverte le %(date)s"
 msgstr ""
 
 msgid "override"
@@ -9397,6 +9463,9 @@ msgid "à %(n)s jour de la fin du mois."
 msgid_plural "à %(n)s jours de la fin du mois."
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "à l'instant"
+msgstr ""
 
 msgid "à surveiller"
 msgstr ""

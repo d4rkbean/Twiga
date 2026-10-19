@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 08:28+0000\n"
+"POT-Creation-Date: 2026-10-19 09:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1631,6 +1631,9 @@ msgstr "QIF import preview"
 msgid "Aperçu des opérations"
 msgstr "Transaction preview"
 
+msgid "Appareil inconnu"
+msgstr "Unknown device"
+
 msgid "Applique une catégorie aux lignes cochées, ou valide d'un coup toutes les suggestions sûres."
 msgstr "Apply a category to the ticked rows, or accept all the sure suggestions at once."
 
@@ -1834,6 +1837,9 @@ msgstr "None: the schema prevents it."
 
 msgid "Aucune alerte"
 msgstr "No alerts"
+
+msgid "Aucune autre session ouverte."
+msgstr "No other open session."
 
 msgid "Aucune catégorie disponible."
 msgstr "No category available."
@@ -2362,6 +2368,9 @@ msgstr "These pairs look like transfers between your accounts: opposite amount, 
 #, python-format
 msgid "Ces piliers dépassent tes ressources de %(amount)s."
 msgstr "These pillars exceed your resources by %(amount)s."
+
+msgid "Cet appareil"
+msgstr "This device"
 
 msgid "Cette carte résume le plan du mois en cours. Le lien en haut à droite ouvre Mon mois, ou Le Cap s'il reste à fixer."
 msgstr "This card sums up the plan for the current month. The link at the top right opens My month, or Le Cap if it is still to be set."
@@ -3013,6 +3022,10 @@ msgstr "Last import: %(file)s, on %(date)s"
 msgid "Derniers imports"
 msgstr "Latest imports"
 
+#, python-format
+msgid "Dernière activité %(when)s"
+msgstr "Last active %(when)s"
+
 msgid "Dernière fois :"
 msgstr "Last time:"
 
@@ -3557,17 +3570,24 @@ msgstr "Review %(previous)s and set next month's envelopes."
 msgid "Fais le bilan de %(previous)s et fixe les enveloppes du mois."
 msgstr "Review %(previous)s and set this month's envelopes."
 
-msgid "Ferme ta session sur cet appareil. Tu retrouveras tout en te reconnectant."
-msgstr "Closes your session on this device. You will find everything again when you sign back in."
+msgid "Ferme ta session sur cet appareil, ou celles des autres appareils connectés à ton compte. Tu retrouveras tout en te reconnectant."
+msgstr "Closes your session on this device, or the ones on the other devices signed in to your account. You will find everything again when you sign back in."
 
 msgid "Fermer"
 msgstr "Close"
+
+msgid "Fermer cette session ? L'appareil sera déconnecté."
+msgstr "Close this session? The device will be signed out."
 
 msgid "Fermer la liste des catégories"
 msgstr "Close the category list"
 
 msgid "Fermer la recherche"
 msgstr "Close the search"
+
+#, python-format
+msgid "Fermer la session de %(device)s"
+msgstr "Close the session of %(device)s"
 
 msgid "Fermer le bandeau Bonjour"
 msgstr "Close the good morning notice"
@@ -3577,6 +3597,12 @@ msgstr "Close the mid-month notice"
 
 msgid "Fermer le détail"
 msgstr "Close the detail"
+
+msgid "Fermer les autres sessions"
+msgstr "Close the other sessions"
+
+msgid "Fermer toutes les autres sessions ? Ces appareils seront déconnectés."
+msgstr "Close all the other sessions? Those devices will be signed out."
 
 msgid "Fichier"
 msgstr "File"
@@ -4643,6 +4669,12 @@ msgstr "Unexpected is at %(percentage)s %% with sorting: keep an eye on it."
 msgid "Les anneaux répartissent dépenses et recettes par catégorie. Touche une ligne pour voir ses opérations."
 msgstr "The rings split expenses and income by category. Tap a line to see its operations."
 
+msgid "Les appareils connectés à ton compte. Ferme celui que tu ne reconnais pas, ou tous les autres d'un coup."
+msgstr "The devices signed in to your account. Close the one you do not recognize, or all the others at once."
+
+msgid "Les autres sessions sont fermées."
+msgstr "The other sessions are closed."
+
 msgid "Les boutons Dépenses, Recettes et Les deux changent la courbe. Touche un mois pour lire son détail."
 msgstr "The Expenses, Income and Both buttons change the curve. Tap a month to read its details."
 
@@ -5308,6 +5340,9 @@ msgstr[1] "Same amount, %(n)s days apart."
 
 msgid "Même montant, le même jour."
 msgstr "Same amount, same day."
+
+msgid "Navigateur inconnu"
+msgstr "Unknown browser"
 
 msgid "Navigation principale"
 msgstr "Main navigation"
@@ -6732,8 +6767,11 @@ msgstr "Seven ways to read it"
 msgid "Services en ligne"
 msgstr "Online services"
 
-msgid "Session"
-msgstr "Session"
+msgid "Session fermée."
+msgstr "Session closed."
+
+msgid "Sessions ouvertes"
+msgstr "Open sessions"
 
 msgid "Seul un administrateur voit cette page."
 msgstr "Only an administrator sees this page."
@@ -7034,9 +7072,6 @@ msgstr "Property tax"
 msgid "Taxi et VTC"
 msgstr "Taxi and ride-hailing"
 
-msgid "Te déconnecter"
-msgstr "Sign out"
-
 msgid "Tenu"
 msgstr "Held"
 
@@ -7086,6 +7121,12 @@ msgstr "Your sorting rules, applied automatically"
 
 msgid "Tes réponses sont conservées jusqu'à « Fixer le cap »."
 msgstr "Your answers are kept until \"Set the course\"."
+
+msgid "Tes sessions"
+msgstr "Your sessions"
+
+msgid "Tes sessions et la sortie"
+msgstr "Your sessions and signing out"
 
 msgid "Tester"
 msgstr "Test"
@@ -8007,6 +8048,9 @@ msgstr "Sensitive zone"
 msgid "abonnement"
 msgstr "subscription"
 
+msgid "active maintenant"
+msgstr "active now"
+
 msgid "affichage aéré"
 msgstr "airy display"
 
@@ -8207,6 +8251,20 @@ msgstr "hierarchy kept"
 msgid "il manque"
 msgstr "short by"
 
+#, python-format
+msgid "il y a %(n)s h"
+msgstr "%(n)s h ago"
+
+#, python-format
+msgid "il y a %(n)s jour"
+msgid_plural "il y a %(n)s jours"
+msgstr[0] "%(n)s day ago"
+msgstr[1] "%(n)s days ago"
+
+#, python-format
+msgid "il y a %(n)s min"
+msgstr "%(n)s min ago"
+
 msgid "incertaine"
 msgstr "uncertain"
 
@@ -8297,6 +8355,10 @@ msgstr "transaction(s)"
 
 msgid "ou choisis-le sur cet ordinateur"
 msgstr "or pick it on this computer"
+
+#, python-format
+msgid "ouverte le %(date)s"
+msgstr "opened on %(date)s"
 
 msgid "override"
 msgstr "override"
@@ -8682,6 +8744,9 @@ msgid_plural "à %(n)s jours de la fin du mois."
 msgstr[0] "%(n)s day before the end of the month."
 msgstr[1] "%(n)s days before the end of the month."
 
+msgid "à l'instant"
+msgstr "just now"
+
 msgid "à surveiller"
 msgstr "watch"
 
@@ -8754,4 +8819,13 @@ msgstr "≥ 90 %%"
 
 #~ msgid "Revoir la visite guidée"
 #~ msgstr "Replay the guided tour"
+
+#~ msgid "Ferme ta session sur cet appareil. Tu retrouveras tout en te reconnectant."
+#~ msgstr "Closes your session on this device. You will find everything again when you sign back in."
+
+#~ msgid "Session"
+#~ msgstr "Session"
+
+#~ msgid "Te déconnecter"
+#~ msgstr "Sign out"
 
