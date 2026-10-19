@@ -6,13 +6,24 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from backend import crud
+from backend.budget_month import BudgetPeriod, period_containing, period_of_month
 from backend.database import get_db
-from backend.dates import format_date_short, month_label, month_names, month_range, shift_month
+from backend.dates import format_date_short, month_label, month_names, shift_month
 from backend.pillars import get_pillar_label
 from backend.templating import templates
 from backend.i18n import current_language, gettext as _t
 
 router = APIRouter(prefix="/cap", tags=["cap"])
+
+
+def _current_month(db: Session) -> date:
+    """The budget month we are in, as the first day of its month (the key of the plan)."""
+    return period_containing(date.today(), crud.get_budget_start_day(db)).month
+
+
+def _period_of(db: Session, month_start: date) -> BudgetPeriod:
+    """The days of the budget month named by `month_start`."""
+    return period_of_month(month_start.year, month_start.month, crud.get_budget_start_day(db))
 
 
 def _month_name(month_start: date) -> str:
@@ -73,7 +84,8 @@ def _pending_by_pillar(db: Session, start: date, end: date) -> dict[str, Decimal
 def _pillar_review(db: Session, previous_month_start: date, planned: dict[str, Decimal]) -> list[dict]:
     """The reviewed month, pillar by pillar, against a plan: spent, still waiting in
     La Savane, and the share of the plan "with the sorting"."""
-    start, end = month_range(previous_month_start.year, previous_month_start.month)
+    reviewed = _period_of(db, previous_month_start)
+    start, end = reviewed.start, reviewed.last_day
     actuals = crud.get_pillar_actuals(db, start, end)
     pending = _pending_by_pillar(db, start, end)
     rows = []
@@ -116,7 +128,8 @@ def _wizard_context(db: Session, current_month_start: date) -> dict:
 
 
 def _bilan_context(db: Session, month_start: date) -> dict:
-    start, end = month_range(month_start.year, month_start.month)
+    reviewed = _period_of(db, month_start)
+    start, end = reviewed.start, reviewed.last_day
     real_income = crud.get_income_total(db, start, end)
     real_pillars = crud.get_pillar_actuals(db, start, end)
     real_savings = real_income - sum(real_pillars.values(), Decimal("0.00"))
@@ -258,7 +271,8 @@ def _fixer_context(db: Session, current_month_start: date) -> dict:
     # Le réel du mois écoulé par pilier : sert la comparaison du panneau « en
     # direct » (cap/_step2_fixer.html), calculée dans le navigateur. En float
     # pour passer en JSON : ces montants n'y servent qu'à l'affichage.
-    previous_start, previous_end = month_range(previous_month_start.year, previous_month_start.month)
+    previous_period = _period_of(db, previous_month_start)
+    previous_start, previous_end = previous_period.start, previous_period.last_day
     previous_actuals = {
         code: float(amount)
         for code, amount in crud.get_pillar_actuals(db, previous_start, previous_end).items()
@@ -309,8 +323,7 @@ def _fixer_context(db: Session, current_month_start: date) -> dict:
 
 @router.get("", response_class=HTMLResponse)
 def cap_page(request: Request, db: Session = Depends(get_db)):
-    today = date.today()
-    current_month_start = date(today.year, today.month, 1)
+    current_month_start = _current_month(db)
     previous_month_start = shift_month(current_month_start, -1)
 
     first_use = not crud.has_any_cap_entry(db)
@@ -375,8 +388,7 @@ def _confirmed_context(db: Session, current_month_start: date, entry) -> dict:
 @router.get("/reopen", response_class=HTMLResponse)
 def cap_reopen(request: Request, db: Session = Depends(get_db)):
     """"Reprendre le cap": the plan editor again, filled with what was fixed."""
-    today = date.today()
-    current_month_start = date(today.year, today.month, 1)
+    current_month_start = _current_month(db)
     entry = crud.get_cap_entry_for_month(db, current_month_start)
     context = {
         "request": request,
@@ -405,8 +417,7 @@ def cap_step2(
     reflection_worked_well: str = Form(""),
     db: Session = Depends(get_db),
 ):
-    today = date.today()
-    current_month_start = date(today.year, today.month, 1)
+    current_month_start = _current_month(db)
     context = {
         "request": request,
         "current_step": 2,
@@ -421,12 +432,12 @@ def cap_step2(
 
 @router.post("/step1", response_class=HTMLResponse)
 def cap_back_to_step1(request: Request, db: Session = Depends(get_db)):
-    today = date.today()
-    previous_month_start = shift_month(date(today.year, today.month, 1), -1)
+    current_month_start = _current_month(db)
+    previous_month_start = shift_month(current_month_start, -1)
     context = {
         "request": request,
         "current_step": 1,
-        **_fixer_context(db, date(today.year, today.month, 1)),
+        **_fixer_context(db, current_month_start),
         "previous_month_label": month_label(previous_month_start.year, previous_month_start.month),
         **_bilan_context(db, previous_month_start),
     }
@@ -455,8 +466,7 @@ async def cap_save(
     reflection_worked_well: str = Form(""),
     db: Session = Depends(get_db),
 ):
-    today = date.today()
-    current_month_start = date(today.year, today.month, 1)
+    current_month_start = _current_month(db)
 
     # Le plan du mois est écrit dans budgets, catégorie par catégorie : c'est
     # la seule source modifiable. Les champs arrivent en amount_<id>, comme
@@ -514,8 +524,9 @@ async def cap_save(
 @router.get("/mid", response_class=HTMLResponse)
 def cap_mid(request: Request, db: Session = Depends(get_db)):
     today = date.today()
-    current_month_start = date(today.year, today.month, 1)
-    start, end = month_range(today.year, today.month)
+    current_period = period_containing(today, crud.get_budget_start_day(db))
+    current_month_start = current_period.month
+    start, end = current_period.start, current_period.last_day
 
     entry = crud.get_cap_entry_for_month(db, current_month_start)
     pillar_actuals = crud.get_pillar_actuals(db, start, today)
@@ -639,14 +650,15 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
         )
 
     # Le rythme du mois : la part du mois écoulée, repère des jauges.
-    days_in_month = end.day
-    rhythm = round(today.day / days_in_month * 100)
+    days_in_month = (current_period.end - current_period.start).days
+    day_of_month = (today - current_period.start).days + 1
+    rhythm = round(day_of_month / days_in_month * 100)
     planned_total = sum((p["planned"] or Decimal("0.00") for p in pillars), Decimal("0.00"))
     spent_total = sum((p["actual"] for p in pillars), Decimal("0.00"))
 
     context = {
         "request": request,
-        "current_month_label": month_label(today.year, today.month),
+        "current_month_label": current_period.label,
         "entry": entry,
         "pillars": pillars,
         "savings_so_far": savings_so_far,
@@ -655,9 +667,9 @@ def cap_mid(request: Request, db: Session = Depends(get_db)):
         "income_is_planned": entry is not None,
         "status": status,
         "status_message": status_message,
-        "day_of_month": today.day,
+        "day_of_month": day_of_month,
         "days_in_month": days_in_month,
-        "days_left": days_in_month - today.day,
+        "days_left": days_in_month - day_of_month,
         "rhythm": rhythm,
         "pace_date": format_date_short(today),
         "pending_total": crud.get_pending_expense_total(db),
