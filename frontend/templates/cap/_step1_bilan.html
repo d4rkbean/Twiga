@@ -41,7 +41,7 @@
       <thead>
         <tr class="text-xs text-secondary bg-sunken">
           <th class="text-left font-medium py-3 px-2 lg:px-4">{{ _("Pilier") }}</th>
-          <th class="text-right font-medium py-3 px-2 lg:px-3">{{ _("Prévu") }}</th>
+          <th class="hidden text-right font-medium py-3 px-2 sm:table-cell lg:px-3">{{ _("Prévu") }}</th>
           <th class="text-right font-medium py-3 px-2 lg:px-3">{{ _("Réel") }}</th>
           <th class="text-right font-medium py-3 px-2 lg:px-4">{{ _("Écart") }}</th>
         </tr>
@@ -60,7 +60,7 @@
             <span class="flex items-center min-h-[50px]">{{ line.name }}</span>
             {% endif %}
           </td>
-          <td class="px-2 lg:px-3 whitespace-nowrap text-right text-secondary amount-blur tabular-nums">{% if has_previous_cap %}{{ line.planned | eur }}{% else %}—{% endif %}</td>
+          <td class="hidden px-2 lg:px-3 whitespace-nowrap text-right text-secondary amount-blur tabular-nums sm:table-cell">{% if has_previous_cap %}{{ line.planned | eur }}{% else %}—{% endif %}</td>
           <td class="px-2 lg:px-3 whitespace-nowrap text-right text-primary amount-blur tabular-nums">{{ line.real | eur }}</td>
           {# L'écart se lit en couleur ET en mot : « économisé » ou « dépassé »
              pour un pilier de dépense. #}
@@ -75,7 +75,7 @@
         {% for ligne in line.detail.categories %}
         <tr x-show="ouverts['{{ line.code }}']" style="display: none;" class="border-t border-border">
           <td class="py-2.5 px-2 pl-8 lg:px-4 lg:pl-10 text-secondary">{{ ligne.category.name | category_display }}</td>
-          <td class="py-2.5 px-2 lg:px-3 whitespace-nowrap text-right text-secondary amount-blur tabular-nums">{% if has_previous_cap %}{{ ligne.budget | eur }}{% else %}—{% endif %}</td>
+          <td class="hidden py-2.5 px-2 lg:px-3 whitespace-nowrap text-right text-secondary amount-blur tabular-nums sm:table-cell">{% if has_previous_cap %}{{ ligne.budget | eur }}{% else %}—{% endif %}</td>
           <td class="py-2.5 px-2 lg:px-3 whitespace-nowrap text-right text-primary amount-blur tabular-nums">{{ ligne.spent | eur }}</td>
           {% set ecart_categorie = ligne.budget - ligne.spent %}
           <td class="py-2.5 px-2 lg:px-4 whitespace-nowrap text-right amount-blur tabular-nums {{ 'text-success' if ecart_categorie >= 0 else 'text-danger' }}">{% if has_previous_cap %}{{ signed(ecart_categorie, plus=true) }}{% else %}—{% endif %}</td>
@@ -88,7 +88,7 @@
         {% if bilan_unbudgeted %}
         <tr class="border-t border-border">
           <td class="px-2 lg:px-4 min-h-[50px] py-3 text-primary italic">{{ _("Hors budget") }}</td>
-          <td class="px-2 lg:px-3 whitespace-nowrap text-right text-secondary">—</td>
+          <td class="hidden px-2 lg:px-3 whitespace-nowrap text-right text-secondary sm:table-cell">—</td>
           <td class="px-2 lg:px-3 whitespace-nowrap text-right text-primary amount-blur tabular-nums italic">{{ bilan_unbudgeted | eur }}</td>
           <td class="px-4 text-right text-danger amount-blur tabular-nums font-semibold italic">{{ signed(-bilan_unbudgeted) }}</td>
         </tr>
