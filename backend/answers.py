@@ -195,6 +195,25 @@ def checks_answer(count: int, total: str | None, oldest_days: int | None) -> dic
     return {"phrase": phrase, "detail": detail}
 
 
+def accounts_answer(accounts: int, pairs: int) -> dict:
+    """The sentence of the Comptes screen: how many accounts, and what waits to be confirmed."""
+    count = ngettext("%(n)s compte", "%(n)s comptes", accounts) % {"n": accounts}
+    if pairs:
+        phrase = count + ", " + ngettext(
+            "%(n)s virement interne à confirmer.", "%(n)s virements internes à confirmer.", pairs
+        ) % {"n": pairs}
+        detail = _t(
+            "Ces paires ressemblent à des virements entre tes comptes : montant opposé, quelques jours d'écart. "
+            "Confirmées, elles ne comptent plus comme dépenses."
+        )
+    else:
+        phrase = count + ", " + _t("aucun virement interne à confirmer.")
+        detail = _t(
+            "Le solde de chaque compte vient du solde initial et des opérations importées : le détail se déplie sur le compte."
+        )
+    return {"phrase": phrase, "detail": detail}
+
+
 # --- Import -----------------------------------------------------------------
 
 

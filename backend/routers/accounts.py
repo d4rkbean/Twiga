@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud
 from backend.database import get_db
 from backend.models import Account
 from backend.templating import templates
@@ -25,14 +25,32 @@ def _content_context(db: Session) -> dict:
     return {"items": crud.get_accounts_overview(db)}
 
 
+def _head_context(db: Session) -> dict:
+    """What the other way's header needs: the sentence, and the pairs that wait."""
+    pairs = _detect_transfers_context(db)["pairs"]
+    items = crud.get_accounts_overview(db)
+    return {"pairs": pairs, "answer": answers.accounts_answer(len(items), len(pairs)), "items": items}
+
+
 @router.get("", response_class=HTMLResponse)
 def accounts_page(request: Request, db: Session = Depends(get_db)):
     context = {
         "request": request,
         "suspicious": crud.get_suspicious_transactions(db),
         **_content_context(db),
+        # The other way's page shows the pairs to confirm and the sentence; Classic ignores them.
+        **_head_context(db),
     }
     return templates.TemplateResponse("accounts/index.html", context)
+
+
+@router.get("/head", response_class=HTMLResponse)
+def accounts_head(request: Request, db: Session = Depends(get_db)):
+    """The sentence and the main action of the other way's page, refreshed after a gesture.
+
+    The template is named with its folder ("other_way/...") so both interfaces
+    find it; the Classic screen never asks for it."""
+    return templates.TemplateResponse("other_way/accounts/_head.html", {"request": request, **_head_context(db)})
 
 
 @router.get("/suspicious", response_class=HTMLResponse)

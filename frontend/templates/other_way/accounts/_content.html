@@ -1,0 +1,23 @@
+{#- The list of accounts: dot, name, type and number of operations, balance, then the
+    gestures (edit, diagnostic of the balance). Replaced as a whole by every
+    action of the screen (#accounts-content). -#}
+<section id="accounts-content" class="card flex flex-col gap-1" aria-labelledby="accounts-title">
+  <h2 id="accounts-title" class="text-section-title mb-2">{{ _("Comptes") }} <span class="font-normal text-secondary">· {{ items | length }}</span></h2>
+  <ul>
+    {% for item in items %}
+    <li class="border-t border-border first:border-t-0">{% include "accounts/_row.html" %}</li>
+    {% else %}
+    <li class="text-sm text-secondary py-3">{{ _("Aucun compte pour l'instant.") }}</li>
+    {% endfor %}
+  </ul>
+  {% if items %}
+  <div class="flex items-center justify-between gap-3 min-h-[var(--row-static)] pt-3 border-t border-border font-semibold">
+    <span>{{ _("Total") }}</span>
+    <span class="flex items-center gap-3">
+      <span class="amount-blur tabular-nums">{{ items | sum(attribute="balance") | eur }}</span>
+      <span class="shrink-0 {{ 'w-[112px]' if can_edit('/accounts/create') else 'w-[50px]' }}" aria-hidden="true"></span>
+    </span>
+  </div>
+  {% endif %}
+  {% if request.headers.get("HX-Request") %}<span hidden x-init="window.dispatchEvent(new CustomEvent('accounts-changed'))"></span>{% endif %}
+</section>

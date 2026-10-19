@@ -41,6 +41,11 @@
 </nav>
 {%- endmacro %}
 
+{#- The way back to the parent screen ("‹ Paramètres"), above the sentence. -#}
+{% macro back_link(href, label) -%}
+<a href="{{ href }}" class="-my-2 min-h-[50px] inline-flex items-center gap-1 self-start text-sm font-medium text-accent-ink">{{ icon('chevron-left', size=16) }} {{ label }}</a>
+{%- endmacro %}
+
 {#- A drawer: a 50 px bar that opens its content in place. `open_var` is an Alpine
     boolean of the enclosing component. The content goes in the `call` block. -#}
 {% macro fold(open_var, title, hint=none) -%}

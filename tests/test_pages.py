@@ -63,6 +63,7 @@ PAGES = [
     Page("/accounts"),
     Page("/accounts/content", htmx=True),
     Page("/accounts/suspicious", htmx=True),
+    Page("/accounts/head", htmx=True),
     Page("/accounts/{account_id}/row", htmx=True),
     Page("/accounts/{account_id}/edit", htmx=True),
     Page("/accounts/{account_id}/delete-confirm", htmx=True),

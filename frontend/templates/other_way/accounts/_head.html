@@ -1,0 +1,20 @@
+{#- The sentence of Comptes and its actions. It refreshes itself when an account
+    or a transfer pair changes (the fragments announce `accounts-changed`). -#}
+{% from "other_way/_ui.html" import answer_head %}
+{% set write = can_edit("/accounts/create") %}
+<div id="accounts-head" hx-get="/accounts/head" hx-trigger="accounts-changed from:window" hx-swap="outerHTML">
+  {% call answer_head(answer.phrase, answer.detail) %}
+    {% if write and pairs %}
+    <form hx-post="/accounts/detect-transfers/confirm-all" hx-target="#detect-transfers-content" hx-swap="outerHTML"
+          hx-confirm="{{ _("Confirmer les %(n)s virement(s) détecté(s) ?", n=pairs | length) }}" x-show="!adding" class="contents">
+      <button type="submit" class="btn btn-primary">{{ icon('check', size=18) }} {{ _("Tout confirmer (%(n)s)", n=pairs | length) }}</button>
+    </form>
+    {% endif %}
+    {% if write %}
+    <button type="button" @click="adding = true; $nextTick(() => document.getElementById('new-account-name').focus())"
+            class="btn {{ 'btn-secondary border-border-strong' if pairs else 'btn-primary' }}" {% if not pairs %}x-show="!adding"{% endif %}>
+      {{ icon('plus', size=18) }} {{ _("Ajouter un compte") }}
+    </button>
+    {% endif %}
+  {% endcall %}
+</div>

@@ -1,0 +1,40 @@
+{#- The fields of an account, for the creation panel and for the edit panel of a row.
+    `account` is none when creating. Expects `id_prefix` to keep ids unique. -#}
+{% set prefix = id_prefix or "new" %}
+<div class="grid gap-4 lg:grid-cols-2">
+  <label class="form-group">
+    <span class="form-label">{{ _("Nom du compte") }}</span>
+    <input id="{{ prefix }}-account-name" type="text" name="name" value="{{ account.name if account else '' }}" required autocomplete="off" class="input-base" />
+  </label>
+  <label class="form-group">
+    <span class="form-label">{{ _("Solde initial (avant la 1ère opération importée)") }}</span>
+    <input type="text" inputmode="decimal" name="initial_balance" value="{{ account.balance if account else '0' }}" autocomplete="off" class="input-base tabular-nums" />
+  </label>
+</div>
+<fieldset class="flex flex-col gap-2">
+  <legend class="form-label mb-1">{{ _("Type") }}</legend>
+  <div class="flex flex-wrap gap-2">
+    {% for code, meta in account_types.items() %}
+    <label class="choice-card !min-h-[50px] px-4 justify-center">
+      <input type="radio" name="type" value="{{ code }}" class="sr-only" {% if (account and account.type == code) or (not account and code == "courant") %}checked{% endif %} />
+      <span class="text-sm font-medium">{{ meta.label }}</span>
+    </label>
+    {% endfor %}
+  </div>
+</fieldset>
+<fieldset class="flex flex-col gap-2">
+  <legend class="form-label mb-1">{{ _("Couleur") }}</legend>
+  <div class="flex flex-wrap gap-2">
+    {% set current_color = (account | account_color) if account else "" %}
+    {% for swatch in account_palette %}
+    <label class="relative w-[50px] h-[50px] grid place-items-center cursor-pointer rounded-xl border border-border has-[:checked]:border-2 has-[:checked]:border-primary has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent-ink">
+      <input type="radio" name="color" value="{{ swatch }}" class="sr-only" {% if swatch == current_color %}checked{% endif %} aria-label="{{ swatch }}" />
+      <span class="w-6 h-6 rounded-full" style="background-color: {{ swatch }}"></span>
+    </label>
+    {% endfor %}
+  </div>
+</fieldset>
+<label class="form-group">
+  <span class="form-label">{{ _("Notes (optionnel)") }}</span>
+  <textarea name="notes" rows="2" class="input-base py-3">{{ account.notes if account and account.notes else "" }}</textarea>
+</label>

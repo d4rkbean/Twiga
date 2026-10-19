@@ -282,6 +282,7 @@ def configure_environment(env: Environment) -> Environment:
     env.globals["get_category_icon_name"] = get_category_icon_name
     env.globals["get_payment_method_icon_name"] = get_payment_method_icon_name
     env.globals["account_types"] = ACCOUNT_TYPES
+    env.globals["account_palette"] = _ACCOUNT_COLOR_PALETTE
     env.globals["get_current_user"] = get_current_user
 
     # Traduction : jinja2.ext.i18n + gettext/ngettext lus dans la langue de la
