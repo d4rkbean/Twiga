@@ -312,6 +312,18 @@
         window.twigaSetTheme(root.classList.contains("dark") ? "light" : "dark");
       };
 
+      // Densité (sélecteur Compact / Normal / Aéré de la barre du haut) :
+      // appliquée tout de suite sur <html>, puis enregistrée comme le thème.
+      window.twigaSetDensity = function (mode) {
+        root.setAttribute("data-density", mode);
+        fetch("/profile/preferences", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "HX-Request": "true" },
+          body: new URLSearchParams({ density: mode }),
+        }).catch(function () {});
+      };
+
       // Ancien choix mémorisé sur cet appareil : repris une fois sur le compte.
       if (window.twigaMigratedTheme) saveTheme(window.twigaMigratedTheme);
     })();

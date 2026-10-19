@@ -20,16 +20,42 @@
   l'état « actif » de la marque, plutôt qu'un aplat ambre réservé à l'action
   principale. Jamais de couleur brute (voir DESIGN.md).
 #}
+{% from "_macros/brand.html" import nav_icon %}
 <div class="flex items-center gap-3 px-4 py-3">
   <span class="w-10 h-10 rounded-full bg-accent-soft text-accent-ink flex items-center justify-center text-sm font-semibold flex-shrink-0">
     {{ user_initials(current) }}
   </span>
-  <div class="flex flex-col min-w-0">
+  <div class="flex flex-col min-w-0 flex-1">
     <span class="text-sm font-semibold text-primary truncate">{{ user_display_name(current) }}</span>
     <span class="text-xs text-secondary">{{ user_role_label(current.role) }}</span>
   </div>
+  {% if sheet %}
+  <button
+    type="button"
+    @click="userSheetOpen = false"
+    aria-label="{{ _("Fermer") }}"
+    class="-mr-3 w-[50px] h-[50px] flex items-center justify-center rounded-xl text-secondary flex-shrink-0"
+  >{{ icon('x') }}</button>
+  {% endif %}
 </div>
 <div class="border-t border-border"></div>
+{% if sheet %}
+{# Feuille mobile (maquette A-M) : Le Cap, Budgets et Rapports, absents de la
+   barre du bas, s'y atteignent ici. #}
+<a href="/cap" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-sunken">
+  <span class="flex-shrink-0 text-secondary">{{ icon('compass') }}</span>
+  <span>{{ _("Le Cap") }}</span>
+</a>
+<a href="/budgets" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-sunken">
+  <span class="flex-shrink-0 text-secondary">{{ nav_icon('month') }}</span>
+  <span>{{ _("Budgets") }}</span>
+</a>
+<a href="/reports" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-sunken">
+  <span class="flex-shrink-0 text-secondary">{{ icon('chart-line') }}</span>
+  <span>{{ _("Rapports") }}</span>
+</a>
+<div class="border-t border-border"></div>
+{% endif %}
 <a href="/profile" class="min-h-[50px] px-4 flex items-center gap-3 text-sm text-primary hover:bg-sunken">
   {{ icon('user', cls='flex-shrink-0') }}
   <span>{{ _("Mon profil") }}</span>
@@ -38,6 +64,7 @@
   {{ icon('settings', cls='flex-shrink-0') }}
   <span>{{ _("Paramètres") }}</span>
 </a>
+{% if sheet %}<div class="border-t border-border"></div>{% endif %}
 <button
   type="button"
   onclick="document.getElementById('twiga-help-dialog').showModal()"
@@ -46,6 +73,17 @@
   {{ icon('help-circle', cls='flex-shrink-0') }}
   <span>{{ _("Aide &amp; raccourcis") }}</span>
 </button>
+{% if sheet %}
+<button
+  type="button"
+  onclick="window.startTwigaTour()"
+  @click="userSheetOpen = false"
+  class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-sunken text-left"
+>
+  {{ icon('book', cls='flex-shrink-0') }}
+  <span>{{ _("Revoir la visite guidée") }}</span>
+</button>
+{% endif %}
 {% if show_theme_row %}
 <button
   type="button"
@@ -53,7 +91,11 @@
   class="min-h-[50px] px-4 w-full flex items-center gap-3 text-sm text-primary hover:bg-sunken text-left"
 >
   <span class="flex-shrink-0">{{ icon('sun', cls='icon-theme-light') }}{{ icon('moon', cls='icon-theme-dark') }}</span>
-  <span>{{ _("Thème") }}</span>
+  <span class="flex-1">{{ _("Thème") }}</span>
+  {# Valeur actuelle, comme sur la maquette : les deux libellés sont rendus
+     et le CSS n'affiche que le bon (mêmes classes que les icônes). #}
+  <span class="icon-theme-light text-xs text-secondary">{{ _("Clair") }}</span>
+  <span class="icon-theme-dark text-xs text-secondary">{{ _("Sombre") }}</span>
 </button>
 {% endif %}
 <div class="border-t border-border"></div>
