@@ -602,6 +602,30 @@ def login_title(with_accounts: bool) -> str:
     return _t("Bonjour ! Qui est là ?") if with_accounts else _t("Bonjour !")
 
 
+# --- Rôles: the reader's La Savane --------------------------------------------------
+
+
+def reader_answer(waiting: int, helper: str | None) -> Answer:
+    """The sentence of La Savane for someone who may read but not write: no decision is
+    asked of them, so the sentence says what they can do and who can file the rest."""
+    title = _t("Tu peux consulter, pas modifier.")
+    if waiting <= 0:
+        return Answer(title, _t("Rien n'attend d'être rangé pour l'instant."))
+    count = ngettext(
+        "%(n)s opération attend d'être rangée.", "%(n)s opérations attendent d'être rangées.", waiting
+    ) % {"n": waiting}
+    who = _t("%(name)s ou un éditeur peut s'en charger.") % {"name": helper} if helper else _t("Un éditeur peut s'en charger.")
+    return Answer(title, f"{count} {who}")
+
+
+def reader_lot_title(value: date) -> str:
+    """"Le lot de septembre" / "Le lot d'octobre": the French elision is decided here."""
+    name = month_in_sentence(value)
+    if current_language() == "fr" and name[0] in "aeiouyéèêâôû":
+        return _t("Le lot d'%(month)s") % {"month": name}
+    return _t("Le lot de %(month)s") % {"month": name}
+
+
 # --- Import -----------------------------------------------------------------
 
 
