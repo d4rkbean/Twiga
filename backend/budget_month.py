@@ -66,3 +66,15 @@ def period_spanning(start: date, end: date, start_day: int = 1) -> BudgetPeriod 
     """The budget month running exactly from start to end (both included), or None."""
     period = period_containing(start, start_day)
     return period if (period.start, period.last_day) == (start, end) else None
+
+
+def budget_months_within(start: date, end: date, start_day: int = 1) -> tuple[date, date]:
+    """First and last budget month (named by their first day) that START between two dates.
+
+    Budgets are stored by named month, so summing the budgets of a period (one
+    budget month, a quarter, a year) means picking the months whose first day
+    falls in it. With the 1st, that is every month from `start` to `end`.
+    """
+    first = start.replace(day=1) if start.day <= start_day else shift_month(start, 1)
+    last = end.replace(day=1) if end.day >= start_day else shift_month(end, -1)
+    return first, last

@@ -13,8 +13,8 @@ import bcrypt
 from sqlalchemy import and_, case, delete, func, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
-from backend.budget_month import period_containing, period_of_month
-from backend.dates import format_date_long, month_range, months_between, shift_month
+from backend.budget_month import budget_months_within, period_containing, period_of_month
+from backend.dates import format_date_long, months_between, shift_month
 from backend.models import (
     Account,
     AppState,
@@ -1265,9 +1265,10 @@ def get_period_monthly_breakdown(
 def get_budget_progress(
     db: Session, start: date, end: date, account_id: int | None = None
 ) -> list[dict]:
+    first_budget_month, last_budget_month = budget_months_within(start, end, get_budget_start_day(db))
     budget_stmt = (
         select(Budget.category_id, func.sum(Budget.amount))
-        .where(Budget.month >= start, Budget.month <= end)
+        .where(Budget.month >= first_budget_month, Budget.month <= last_budget_month)
         .group_by(Budget.category_id)
     )
     budget_totals = {category_id: total for category_id, total in db.execute(budget_stmt).all()}

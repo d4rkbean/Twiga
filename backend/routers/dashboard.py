@@ -1,4 +1,3 @@
-from calendar import monthrange
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -15,8 +14,6 @@ from backend.dates import (
     MONTH_ABBR_EN,
     MONTH_ABBR_FR,
     format_date_short,
-    month_label,
-    month_range,
     shift_month,
     trailing_months_ending,
 )
@@ -29,10 +26,6 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 def _parse_account_id(raw: str | None) -> int | None:
     return int(raw) if raw else None
-
-
-def _prev_month_year(month: int, year: int) -> tuple[int, int]:
-    return (12, year - 1) if month == 1 else (month - 1, year)
 
 
 # Raccourcis de période proposés dans le Panorama, dans l'ordre d'affichage.
@@ -176,7 +169,10 @@ def _build_period_context(
     # une courbe lisible ; on garde donc la maille mensuelle et on situe la
     # période choisie dedans, plutôt que de faire varier l'échelle du
     # graphique avec le sélecteur.
-    months = trailing_months_ending(period_end.year, period_end.month)
+    # Un mois budgétaire se nomme d'après le mois où il commence : on ancre
+    # la courbe sur ce mois-là, pas sur celui où il se termine.
+    trend_anchor = period_start if is_calendar_month else period_end
+    months = trailing_months_ending(trend_anchor.year, trend_anchor.month)
     monthly_expense_totals = crud.get_monthly_expense_totals(db, months[0][0], months[-1][1], account_id)
     # La tendance des recettes suit le décalage, exactement comme
     # crud.get_period_monthly_breakdown(shift_income=True) le fait pour le

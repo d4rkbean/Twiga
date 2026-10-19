@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 04:45+0000\n"
+"POT-Creation-Date: 2026-10-19 05:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,6 +42,10 @@ msgstr ""
 
 #, python-format
 msgid "%(amount)s à trier"
+msgstr ""
+
+#, python-format
+msgid "%(amount)s €"
 msgstr ""
 
 #, python-format
@@ -940,6 +944,9 @@ msgid "Authentification désactivée."
 msgstr ""
 
 msgid "Autre"
+msgstr ""
+
+msgid "Autre montant…"
 msgstr ""
 
 msgid "Autres"
