@@ -1,15 +1,15 @@
 {% set sub_count = namespace(total=0) %}
 {% for parent in categories %}{% set sub_count.total = sub_count.total + (parent.children | length) %}{% endfor %}
-<section id="categories-content" class="card p-0 overflow-hidden flex flex-col">
-  <div class="flex items-baseline justify-between gap-2 px-4 pt-4 lg:px-6 lg:pt-6 pb-3">
+<section id="categories-content" class="card p-0 overflow-hidden flex flex-col max-lg:bg-transparent max-lg:shadow-none max-lg:overflow-visible max-lg:gap-3">
+  <div class="flex items-baseline justify-between gap-2 lg:px-6 lg:pt-6 lg:pb-3">
     <h2 class="text-section-title">{{ _("Catégories existantes") }}</h2>
     {% if categories %}
-    <p class="text-xs text-secondary">{% trans count=categories | length, subs=sub_count.total %}{{ count }} catégories · {{ subs }} sous-catégories{% endtrans %}</p>
+    <p class="hidden lg:block text-xs text-secondary">{% trans count=categories | length, subs=sub_count.total %}{{ count }} catégories · {{ subs }} sous-catégories{% endtrans %}</p>
     {% endif %}
   </div>
 
   {% if categories %}
-  <div class="hidden lg:grid grid-cols-[minmax(0,1fr)_360px_210px_110px] gap-x-4 bg-sunken px-6 py-2 text-xs font-medium text-secondary">
+  <div class="hidden lg:grid grid-cols-[minmax(0,2fr)_minmax(300px,2.5fr)_minmax(0,1.5fr)_110px] gap-x-4 bg-sunken px-6 py-2 text-xs font-medium text-secondary">
     <span>{{ _("Catégorie") }}</span>
     <span>{{ _("Pilier du Cap") }}</span>
     <span>{{ _("Budgets") }}</span>
@@ -18,7 +18,7 @@
   {% endif %}
 
   {% for parent in categories %}
-  <div x-data="{ expanded: false }">
+  <div x-data="{ expanded: false }" class="max-lg:bg-container max-lg:rounded-xl max-lg:shadow-sm max-lg:overflow-hidden">
     {% with category = parent, is_child = false %}
     {% include "categories/_row.html" %}
     {% endwith %}
