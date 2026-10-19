@@ -10,6 +10,10 @@
 
   var DESKTOP = "(min-width: 1024px)";
 
+  // The steps offered by the "Montant min" and "Montant max" menus; anything
+  // else is typed in the field that « Autre montant… » opens.
+  var AMOUNT_STEPS = ["10", "20", "50", "100", "200", "500"];
+
   function dialog() {
     return document.getElementById("transaction-detail-dialog");
   }
@@ -49,6 +53,8 @@
         size: init.size,
         amin: init.amin,
         amax: init.amax,
+        aminOther: init.amin !== "" && AMOUNT_STEPS.indexOf(init.amin) < 0,
+        amaxOther: init.amax !== "" && AMOUNT_STEPS.indexOf(init.amax) < 0,
         tree: init.tree,
         adv: false,
         openId: init.openId,
@@ -69,6 +75,26 @@
         },
         get subOptions() {
           return [{ id: "", name: init.labels.allSubs }].concat(this.subs);
+        },
+
+        // The amount menus read and write "" (no limit), a step, or "other"
+        // (the typed amount); the hidden field f_amount_min / f_amount_max
+        // always carries the amount itself.
+        get aminPick() { return this.aminOther ? "other" : this.amin; },
+        set aminPick(value) { this.pickAmount("amin", value); },
+        get amaxPick() { return this.amaxOther ? "other" : this.amax; },
+        set amaxPick(value) { this.pickAmount("amax", value); },
+        pickAmount: function (field, value) {
+          var other = field + "Other";
+          if (value === "other") {
+            this[other] = true;
+            var self = this;
+            this.$nextTick(function () { var input = self.$refs[field + "Input"]; if (input) input.focus(); });
+            return;
+          }
+          this[other] = false;
+          this[field] = value;
+          this.submit();
         },
 
         submit: function () {

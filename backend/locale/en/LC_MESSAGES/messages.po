@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 04:45+0000\n"
+"POT-Creation-Date: 2026-10-19 05:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -12,7 +12,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.16.0\n"
+"Generated-By: Babel 2.18.0\n"
 
 msgid " du total"
 msgstr " of total"
@@ -36,6 +36,10 @@ msgstr "%(account_from)s %(size)s %(account_to)s: %(count)s transfer%(v)s ("
 #, python-format
 msgid "%(amount)s à trier"
 msgstr "%(amount)s to sort"
+
+#, python-format
+msgid "%(amount)s €"
+msgstr "€%(amount)s"
 
 #, python-format
 msgid "%(budget_danger_count)s budget%(v)s dépassé%(v)s"
@@ -901,6 +905,9 @@ msgstr "Authentication disabled."
 
 msgid "Autre"
 msgstr "Other"
+
+msgid "Autre montant…"
+msgstr "Other amount…"
 
 msgid "Autres"
 msgstr "Others"

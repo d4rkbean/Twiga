@@ -129,16 +129,43 @@
       </div>
     </div>
 
-    {# Dates, amounts, category: always shown; account, payment, type and sort behind « + de critères ». #}
-    <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap">
-      <div class="lg:w-[200px]">{{ date_field("f_date_from", date_from, prefix=_("Du :"), empty=_("toutes"), aria=_("Du")) }}</div>
-      <div class="lg:w-[200px]">{{ date_field("f_date_to", date_to, prefix=_("Au :"), empty=_("toutes"), aria=_("Au")) }}</div>
-      <input type="text" inputmode="decimal" name="f_amount_min" x-model="amin" data-live placeholder="{{ _("Montant min") }}" aria-label="{{ _("Montant min") }}" class="input-base lg:w-[200px]" />
-      <input type="text" inputmode="decimal" name="f_amount_max" x-model="amax" data-live placeholder="{{ _("Montant max") }}" aria-label="{{ _("Montant max") }}" class="input-base lg:w-[200px]" />
-      <div class="col-span-2 lg:col-span-1 lg:w-[240px]">
+    {# One line: dates, amounts (steps, or « Autre montant… » to type one),
+       category, then « Réinitialiser » on the right. Account, payment, type and
+       sort stay behind « + de critères ». #}
+    {% set amount_steps = ["10", "20", "50", "100", "200", "500"] %}
+    {% set amin_options = [("", _("Montant min"))] %}
+    {% set amax_options = [("", _("Montant max"))] %}
+    {% for step in amount_steps %}
+      {% if amin_options.append((step, _("%(amount)s €", amount=step))) %}{% endif %}
+      {% if amax_options.append((step, _("%(amount)s €", amount=step))) %}{% endif %}
+    {% endfor %}
+    {% if amin_options.append(("other", _("Autre montant…"))) %}{% endif %}
+    {% if amax_options.append(("other", _("Autre montant…"))) %}{% endif %}
+    <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-nowrap lg:items-start">
+      <div class="lg:min-w-0 lg:flex-[0_1_200px]">{{ date_field("f_date_from", date_from, prefix=_("Du :"), empty=_("toutes"), aria=_("Du")) }}</div>
+      <div class="lg:min-w-0 lg:flex-[0_1_200px]">{{ date_field("f_date_to", date_to, prefix=_("Au :"), empty=_("toutes"), aria=_("Au")) }}</div>
+      {% for field, options, label in [("amin", amin_options, _("Montant min")), ("amax", amax_options, _("Montant max"))] %}
+      <div class="flex min-w-0 gap-2" :class="{{ field }}Other ? 'lg:flex-[0_1_240px]' : 'lg:flex-[0_1_160px]'">
+        <input type="hidden" name="f_amount_{{ 'min' if field == 'amin' else 'max' }}" :value="{{ field }}" />
+        <div class="min-w-0 flex-1">{{ dropdown(none, options, model=field ~ "Pick", popover=true, aria=label) }}</div>
+        <input
+          type="text"
+          inputmode="decimal"
+          x-ref="{{ field }}Input"
+          x-model="{{ field }}"
+          x-show="{{ field }}Other"
+          style="display: none;"
+          data-live
+          placeholder="€"
+          aria-label="{{ label }}"
+          class="input-base w-20 flex-none"
+        />
+      </div>
+      {% endfor %}
+      <div class="col-span-2 lg:col-span-1 lg:min-w-0 lg:flex-[0_1_220px]">
         {{ dropdown(none, category_options, model="category", change="setCategory(category)", popover=true, aria=_("Catégorie")) }}
       </div>
-      <div class="col-span-2 lg:col-span-1 lg:w-[240px]" x-show="subs.length > 0" style="display: none;" x-data="{ open: false }" @click.outside="open = false">
+      <div class="col-span-2 lg:col-span-1 lg:min-w-0 lg:flex-[0_1_220px]" x-show="subs.length > 0" style="display: none;" x-data="{ open: false }" @click.outside="open = false">
         <div class="relative">
           <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="listbox" aria-label="{{ _("Sous-catégorie") }}" class="input-base flex items-center justify-between gap-2 text-left">
             <span class="truncate" x-text="subLabel">{{ _("Toutes les sous-catégories") }}</span>{{ icon('chevron-down', size=18) }}
@@ -150,6 +177,7 @@
           </div>
         </div>
       </div>
+      <a href="/transactions/list" class="col-span-2 flex min-h-[50px] flex-none items-center justify-center px-3 text-sm font-medium text-accent-ink lg:col-span-1 lg:ml-auto">{{ _("Réinitialiser") }}</a>
     </div>
 
     <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap" x-show="adv" style="display: none;">
@@ -157,10 +185,6 @@
       <div class="lg:w-[240px]">{{ dropdown(none, pm_options, model="pay", change="submit()", popover=true, aria=_("Mode de paiement")) }}</div>
       <div class="lg:w-[200px]">{{ dropdown(none, type_options, model="type", change="submit()", popover=true, aria=_("Type")) }}</div>
       <div class="col-span-2 lg:col-span-1 lg:w-[260px]">{{ dropdown(none, sort_options, model="sort", change="submit()", popover=true, aria=_("Tri")) }}</div>
-    </div>
-
-    <div class="flex justify-center lg:justify-start">
-      <a href="/transactions/list" class="flex min-h-[50px] items-center px-1 text-sm font-medium text-accent-ink">{{ _("Réinitialiser les filtres") }}</a>
     </div>
   </form>
 

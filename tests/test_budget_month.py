@@ -8,7 +8,7 @@ from decimal import Decimal
 import pytest
 
 from backend import crud
-from backend.budget_month import BUDGET_START_DAYS, period_containing, period_of_month, period_spanning
+from backend.budget_month import BUDGET_START_DAYS, budget_months_within, period_containing, period_of_month, period_spanning
 from backend.dates import month_label, month_range
 from backend.database import SessionLocal
 from backend.models import Transaction
@@ -85,6 +85,15 @@ def test_period_spanning_recognises_only_whole_budget_months():
     assert period_spanning(date(2026, 2, 1), date(2026, 2, 28), 10) is None
     assert period_spanning(date(2026, 2, 1), date(2026, 2, 28), 1) is not None
     assert period_spanning(date(2026, 2, 1), date(2026, 2, 27), 1) is None
+
+
+def test_budget_months_within_picks_the_months_starting_in_the_range():
+    # With the 1st: every month from the range start to its end, as before.
+    assert budget_months_within(date(2026, 1, 1), date(2026, 3, 31), 1) == (date(2026, 1, 1), date(2026, 3, 1))
+    assert budget_months_within(date(2026, 1, 15), date(2026, 3, 31), 1) == (date(2026, 2, 1), date(2026, 3, 1))
+    # With the 10th: one budget month runs 10 March to 9 April and is named March.
+    assert budget_months_within(date(2026, 3, 10), date(2026, 4, 9), 10) == (date(2026, 3, 1), date(2026, 3, 1))
+    assert budget_months_within(date(2026, 1, 1), date(2026, 3, 31), 10) == (date(2026, 1, 1), date(2026, 3, 1))
 
 
 # --- Screens ------------------------------------------------------------------
@@ -179,3 +188,23 @@ def test_budgets_page_opens_on_the_budget_month(clients, start_day):
     current = period_containing(today, 15)
     html = clients["admin"].get("/budgets").text
     assert current.label in html
+
+
+def test_budget_progress_reads_the_budget_of_the_named_month(start_day):
+    from backend.models import Budget, Category
+
+    start_day(10)
+    with SessionLocal() as db:
+        category = db.query(Category).filter(Category.name == "Test housing").one()
+        db.add_all([
+            Budget(category_id=category.id, month=date(2031, 3, 1), amount=Decimal("111.00")),
+            Budget(category_id=category.id, month=date(2031, 4, 1), amount=Decimal("222.00")),
+        ])
+        db.commit()
+        try:
+            march = period_of_month(2031, 3, 10)
+            rows = crud.get_budget_progress(db, march.start, march.last_day)
+            assert [row["budget"] for row in rows if row["category"].id == category.id] == [Decimal("111.00")]
+        finally:
+            db.query(Budget).filter(Budget.month.in_([date(2031, 3, 1), date(2031, 4, 1)])).delete()
+            db.commit()
