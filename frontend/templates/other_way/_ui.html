@@ -41,6 +41,22 @@
 </nav>
 {%- endmacro %}
 
+{#- A drawer: a 50 px bar that opens its content in place. `open_var` is an Alpine
+    boolean of the enclosing component. The content goes in the `call` block. -#}
+{% macro fold(open_var, title, hint=none) -%}
+<section class="card !p-0 overflow-hidden">
+  <button type="button" @click="{{ open_var }} = !{{ open_var }}" :aria-expanded="{{ open_var }}"
+          class="w-full min-h-[50px] px-[var(--space-card)] py-2 flex items-center justify-between gap-3 text-left">
+    <span class="font-semibold">{{ title }}</span>
+    <span class="flex items-center gap-3 text-sm text-secondary">
+      {% if hint %}<span>{{ hint }}</span>{% endif %}
+      <span class="transition-transform" :class="{{ open_var }} ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+    </span>
+  </button>
+  <div x-show="{{ open_var }}" style="display: none" class="border-t border-border">{{ caller() }}</div>
+</section>
+{%- endmacro %}
+
 {% macro tone_text(tone) -%}
 {{ {"success": "text-success", "warning": "text-warning", "danger": "text-danger", "neutral": "text-secondary"}.get(tone, "text-primary") }}
 {%- endmacro %}

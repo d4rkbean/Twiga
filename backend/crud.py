@@ -405,6 +405,50 @@ def detect_transfer_matches(
     return pairs
 
 
+def preview_transfer_matches(
+    db: Session, account_id: int, parsed: list[ParsedTransaction]
+) -> dict[int, str]:
+    """The lines of a statement that look like one leg of a transfer between two of
+    the user's own accounts, before anything is imported.
+
+    The same rule as `detect_transfer_matches` (opposite signs, amounts within a
+    euro, three days apart), read-only: it answers with the position of the line
+    in `parsed` and the name of the other account, so the recap can say "2
+    virements entre tes comptes" before the user confirms.
+    """
+    if not parsed:
+        return {}
+    first = min(tx.date for tx in parsed) - timedelta(days=_TRANSFER_DATE_TOLERANCE_DAYS)
+    last = max(tx.date for tx in parsed) + timedelta(days=_TRANSFER_DATE_TOLERANCE_DAYS)
+    pool = list(
+        db.execute(
+            select(Transaction)
+            .options(selectinload(Transaction.account))
+            .where(
+                Transaction.is_transfer.is_(False),
+                Transaction.account_id != account_id,
+                Transaction.date.between(first, last),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    used: set[int] = set()
+    matches: dict[int, str] = {}
+    for position, tx in enumerate(parsed):
+        for other in pool:
+            if other.id in used:
+                continue
+            if not _amounts_match_as_transfer(tx.amount, other.amount):
+                continue
+            if abs((other.date - tx.date).days) > _TRANSFER_DATE_TOLERANCE_DAYS:
+                continue
+            used.add(other.id)
+            matches[position] = other.account.name
+            break
+    return matches
+
+
 def _tag_as_transfer(transaction: Transaction) -> None:
     transaction.is_transfer = True
     # Un virement n'a pas de catégorie de dépense à assigner : exclu de La
