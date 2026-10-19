@@ -1,128 +1,67 @@
+{% from "_macros/menu.html" import dropdown, date_field, category_fields %}
+{% set pm_options = [("", _("— (non défini)"))] %}
+{% for code, meta in payment_methods.items() %}{% if pm_options.append((code, meta.label)) %}{% endif %}{% endfor %}
+{% set account_options = [] %}
+{% for account in accounts %}{% if account_options.append((account.id | string, account.name)) %}{% endif %}{% endfor %}
 <form
   hx-post="/transactions/create?{{ filter_qs }}"
   hx-target="#transactions-content"
   hx-swap="innerHTML"
-  hx-on:htmx:after-request="if(event.target === this && event.detail.successful) document.getElementById('transaction-detail-dialog').close()"
-  class="flex flex-col gap-4 p-6"
+  class="flex flex-col gap-3.5 p-5 pt-2 lg:pt-5"
+  x-data="{ negative: true, amount: '' }"
 >
+  <div class="-mr-3 flex justify-end lg:hidden">
+    <button type="button" onclick="window.closeTransactionDetail()" aria-label="{{ _("Fermer") }}" class="flex h-[50px] w-[50px] items-center justify-center text-primary">{{ icon('x') }}</button>
+  </div>
   <div class="flex flex-col gap-1">
-    <h2 class="text-section-title">{{ _("Nouvelle opération") }}</h2>
-    <p class="text-sm text-secondary">
-      {{ _("Pour une saisie manuelle : régularisation, achat en espèces, etc.") }}
-    </p>
+    <h2 class="font-display text-[26px] font-extrabold leading-[1.15] tracking-tight text-primary">{{ _("Nouvelle opération") }}</h2>
+    <p class="text-sm text-secondary">{{ _("Pour une saisie manuelle : régularisation, achat en espèces, etc.") }}</p>
   </div>
 
-  <label class="form-group">
-    <span class="form-label">{{ _("Libellé") }}</span>
-    <input
-      type="text"
-      name="label"
-      required
-      autofocus
-      placeholder="{{ _("Ex : Régularisation, Achat en espèces...") }}"
-      class="input-base text-base font-medium"
-    />
+  <div class="form-group">
+    <label for="new-label" class="form-label text-primary">{{ _("Libellé") }}</label>
+    <input type="text" id="new-label" name="label" required autofocus placeholder="{{ _("Ex : Régularisation, Achat en espèces...") }}" class="input-base" />
+  </div>
+
+  {{ category_fields(parent_categories, none, none_label=_("Non catégorisé"), self_label=_("(catégorie seule)")) }}
+
+  <div class="form-group">
+    <span class="form-label text-primary">{{ _("Mode de paiement") }}</span>
+    {{ dropdown("payment_method", pm_options, selected="") }}
+  </div>
+
+  <div class="form-group">
+    <span class="form-label text-primary">{{ _("Compte") }}</span>
+    {{ dropdown("account_id", account_options, selected=accounts[0].id if accounts else "") }}
+  </div>
+
+  <label class="flex min-h-[50px] cursor-pointer items-center gap-3 text-sm text-primary">
+    <input type="checkbox" name="is_transfer" class="check-box" />
+    {{ _("Virement interne entre comptes") }}
   </label>
 
-  <label class="form-group">
-    <span class="form-label">{{ _("Montant") }}</span>
-    <div class="flex gap-2">
-      <button
-        type="button"
-        aria-label="{{ _("Inverser le signe (dépense / recette)") }}"
-        onclick="var i=this.nextElementSibling; var v=i.value.trim(); i.value = v.startsWith('-') ? v.slice(1) : ('-' + v); i.focus();"
-        class="btn btn-secondary w-14 flex-shrink-0 px-0 text-xl font-semibold"
-      >
-        ±
-      </button>
-      <input
-        type="text"
-        inputmode="decimal"
-        name="amount"
-        required
-        placeholder="42.50"
-        class="input-base flex-1 min-w-0 tabular-nums"
-      />
-    </div>
-  </label>
+  <div class="form-group">
+    <label for="new-amount" class="form-label text-primary">{{ _("Montant") }}</label>
+    <input type="hidden" name="amount" :value="(negative ? '-' : '') + amount" />
+    <input type="text" id="new-amount" inputmode="decimal" x-model="amount" required placeholder="0,00" class="input-base tabular-nums" />
+    <button type="button" @click="negative = !negative" aria-label="{{ _("Inverser le signe (dépense / recette)") }}" class="btn btn-secondary mt-2 w-full border-border-strong">
+      {{ _("Inverser le signe :") }}
+      <span class="font-semibold" x-text="negative ? '{{ _("Dépense (−)") | jsq }}' : '{{ _("Recette (+)") | jsq }}'">{{ _("Dépense (−)") }}</span>
+    </button>
+  </div>
 
-  <label class="form-group">
-    <span class="form-label">{{ _("Date") }}</span>
-    <input
-      type="date"
-      name="date"
-      required
-      value="{{ today }}"
-      class="input-base"
-    />
-  </label>
+  <div class="form-group">
+    <span class="form-label text-primary">{{ _("Date") }}</span>
+    {{ date_field("date", today, empty=_("Choisir une date")) }}
+  </div>
 
-  <label class="form-group">
-    <span class="form-label">{{ _("Catégorie") }}</span>
-    <select
-      name="parent_category_id"
-      hx-get="/transactions/subcategories"
-      hx-target="#subcategory-select"
-      hx-swap="outerHTML"
-      hx-trigger="change"
-      class="input-base"
-    >
-      <option value="" selected>{{ _("Non catégorisé") }}</option>
-      {% for category in parent_categories %}
-      <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
-      {% endfor %}
-    </select>
-  </label>
-
-  <label class="form-group">
-    <span class="form-label">{{ _("Sous-catégorie") }}</span>
-    {% include "transactions/_subcategory_select.html" %}
-  </label>
-
-  <label class="form-group">
-    <span class="form-label">{{ _("Mode de paiement") }}</span>
-    <select name="payment_method" class="input-base">
-      <option value="" selected>{{ _("— (non défini)") }}</option>
-      {% for code, meta in payment_methods.items() %}
-      <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
-      {% endfor %}
-    </select>
-  </label>
-
-  <label class="form-group">
-    <span class="form-label">{{ _("Compte") }}</span>
-    <select name="account_id" required class="input-base">
-      {% for account in accounts %}
-      <option value="{{ account.id }}">{{ account.name }}</option>
-      {% endfor %}
-    </select>
-  </label>
-
-  <label class="flex items-center gap-3 min-h-[50px] cursor-pointer">
-    <input type="checkbox" name="is_transfer" class="w-5 h-5" />
-    <span class="text-sm text-primary flex items-center gap-1.5">{{ icon('repeat', size=16) }}{{ _("Virement interne entre comptes") }}</span>
-  </label>
-
-  <label class="form-group">
-    <span class="form-label flex items-center gap-1">{{ icon('note', size=14) }}{{ _("Note") }}</span>
-    <textarea
-      name="note"
-      rows="2"
-      placeholder="{{ _("Remboursement Pierre...") }}"
-      class="input-base py-2"
-    ></textarea>
-  </label>
+  <div class="form-group">
+    <label for="new-note" class="form-label text-primary">{{ _("Note") }}</label>
+    <textarea id="new-note" name="note" rows="3" placeholder="{{ _("Remboursement Pierre...") }}" class="input-base py-2"></textarea>
+  </div>
 
   <div class="flex flex-col gap-2">
-    <button type="submit" class="btn btn-primary">
-      {{ _("Ajouter l'opération") }}
-    </button>
-    <button
-      type="button"
-      onclick="this.closest('dialog').close()"
-      class="btn btn-secondary"
-    >
-      {{ _("Annuler") }}
-    </button>
+    <button type="submit" class="btn btn-primary w-full">{{ _("Ajouter l'opération") }}</button>
+    <button type="button" onclick="window.resetTransactionDetail()" class="btn btn-ghost w-full">{{ _("Annuler") }}</button>
   </div>
 </form>

@@ -1,211 +1,166 @@
 {% extends "base.html" %}
+{% from "_macros/menu.html" import dropdown, date_field %}
 
-{# Cet écran a sa propre action principale en ambre plein : « Importer », dans
-   l'en-tête de la coque, passe en secondaire (un seul ambre plein par écran). #}
+{# Cet écran n'a plus de bouton ambré dans la page ouverte (les filtres se
+   lancent seuls) : « Appliquer » (barre d'actions groupées) et « Enregistrer »
+   (panneau) l'apparaissent à la demande. « Importer », dans l'en-tête de la
+   coque, passe en secondaire dès qu'un de ces boutons est à l'écran. #}
 {% set demote_import = true %}
 
 {% block title %}{{ _("Opérations — Twiga") }}{% endblock %}
 
 {% block content %}
-{# Mobile : une colonne. Dès lg : titre, barre de filtres sur toute la largeur,
-   puis la liste. Le détail d'une opération s'ouvre dans le tiroir de droite
-   (le <dialog> en bas, même mécanisme HTMX qu'avant) ; la colonne de filtres
-   fixe de droite a disparu : les critères se lisent d'un coup d'œil au-dessus
-   de la liste. Pas de lg:pt- : <body> réserve déjà l'en-tête (voir base.html). #}
-<main class="flex flex-col gap-[var(--space-block)] max-w-lg mx-auto px-4 pb-6 overflow-x-clip lg:max-w-none lg:mx-0 lg:px-8 lg:overflow-x-visible">
-  {# « Exporter » : CSV des opérations qui correspondent aux filtres en
-     cours. L'adresse se complète au clic avec les champs du formulaire de
-     filtres (mêmes noms f_*), comme l'export des Rapports ; secondaire, car
-     l'action principale de l'écran est « Rechercher ». #}
-  <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-    <h1 class="text-page-title">{{ _("Opérations") }}</h1>
-    <div class="flex gap-2">
-      <a
-        id="transactions-export"
-        href="/export/transactions.csv"
-        download
-        onclick="this.href = '/export/transactions.csv?' + new URLSearchParams(new FormData(document.getElementById('transactions-filters'))).toString()"
-        class="btn btn-secondary flex-1 sm:flex-none px-4"
-      >
-        {{ icon('download') }} {{ _("Exporter") }}
-      </a>
-      <button
-        type="button"
-        hx-get="/transactions/new"
-        hx-target="#transaction-detail-content"
-        hx-swap="innerHTML"
-        class="btn btn-secondary flex-1 sm:flex-none px-4"
-      >
-        {{ icon('plus') }} {{ _("Nouvelle opération") }}
-      </button>
+{% set tree = {} %}
+{% for parent in categories %}
+  {% set kids = [] %}
+  {% for child in parent.children %}{% if kids.append({"id": child.id | string, "name": child.name}) %}{% endif %}{% endfor %}
+  {% if tree.update({parent.id | string: {"name": parent.name, "children": kids}}) %}{% endif %}
+{% endfor %}
+{% set category_options = [("", _("Toutes les catégories")), ("uncategorized", _("Non catégorisé"))] %}
+{% for parent in categories %}{% if category_options.append((parent.id | string, parent.name)) %}{% endif %}{% endfor %}
+{% set account_options = [("", _("Tous les comptes"))] %}
+{% for account in accounts %}{% if account_options.append((account.id | string, account.name)) %}{% endif %}{% endfor %}
+{% set pm_options = [("", _("Tout mode de paiement"))] %}
+{% for code, meta in payment_methods.items() %}{% if pm_options.append((code, meta.label)) %}{% endif %}{% endfor %}
+{% set type_options = [("", _("Tous types")), ("income", _("Recettes")), ("expense", _("Dépenses")), ("transfer", _("Virements"))] %}
+{% set sort_options = [("date_desc", _("Date (récent d'abord)")), ("date_asc", _("Date (ancien d'abord)")), ("amount_desc", _("Montant décroissant")), ("amount_asc", _("Montant croissant"))] %}
+{% set first_id = transactions[0].id if transactions else none %}
+{% set board = {
+  "q": search,
+  "type": type_filter,
+  "category": category_filter,
+  "subcategory": subcategory_filter,
+  "account": account_filter,
+  "pay": payment_method_filter,
+  "sort": sort_filter,
+  "size": page_size | string,
+  "amin": amount_min,
+  "amax": amount_max,
+  "tree": tree,
+  "openId": first_id,
+  "labels": {"allSubs": _("Toutes les sous-catégories")},
+} %}
+
+{# Phones: one column, the detail opens as a sheet from the bottom. From lg:
+   title, filters over the full width, then the list with the detail panel
+   next to it (the <dialog> at the bottom, displayed as a panel). #}
+<main
+  class="flex flex-col gap-[var(--space-block)] max-w-lg mx-auto px-4 pb-6 overflow-x-clip lg:max-w-none lg:mx-0 lg:px-8 lg:overflow-x-visible"
+  x-data="opsBoard({{ board | tojson | forceescape }})"
+>
+  <header class="flex items-start justify-between gap-3 pt-2">
+    <div class="flex min-w-0 flex-col gap-1">
+      <h1 class="text-page-title max-lg:!text-xl max-lg:!font-bold">{{ _("Opérations") }}</h1>
+      {% include "transactions/_summary.html" %}
     </div>
-  </div>
+    {# « Exporter » : CSV des opérations qui correspondent aux filtres en cours
+       (même noms f_* que le formulaire de filtres). #}
+    <a
+      id="transactions-export"
+      href="/export/transactions.csv"
+      download
+      aria-label="{{ _("Exporter") }}"
+      onclick="this.href = '/export/transactions.csv?' + new URLSearchParams(new FormData(document.getElementById('transactions-filters'))).toString()"
+      class="btn btn-secondary flex-none border-border-strong px-4 max-lg:w-[50px] max-lg:border-transparent max-lg:bg-transparent max-lg:px-0"
+    >
+      {{ icon('download') }} <span class="max-lg:sr-only">{{ _("Exporter") }}</span>
+    </a>
+  </header>
 
   <form
     id="transactions-filters"
+    x-ref="form"
     hx-get="/transactions/list/content"
     hx-trigger="submit"
     hx-target="#transactions-content"
     hx-swap="innerHTML"
-    x-data="{ advancedOpen: false }"
+    @menu-change="submit()"
+    @input.debounce.400ms="if ($event.target.hasAttribute('data-live')) submit()"
     class="flex flex-col gap-3"
   >
-    {# Ligne 1 : recherche, type (une seule valeur de f_type : le contrôle
-       segmenté remplace l'ancien menu « Tous types »), + de critères. Changer
-       de type relance la recherche tout de suite ; les autres champs partent
-       avec « Rechercher ». #}
-    <div class="flex flex-col gap-2 lg:flex-row lg:items-center">
-      <input
-        type="search"
-        name="f_search"
-        value="{{ search }}"
-        placeholder="{{ _("Rechercher un libellé...") }}"
-        aria-label="{{ _("Rechercher un libellé...") }}"
-        class="input-base lg:flex-1"
-      />
-      <div role="radiogroup" aria-label="{{ _("Type") }}" class="grid grid-cols-4 gap-1 rounded-xl bg-sunken p-1 lg:w-[420px] lg:flex-shrink-0">
-        {% for value, label in [("", _("Toutes")), ("expense", _("Dépenses")), ("income", _("Recettes")), ("transfer", _("Virements"))] %}
-        <label class="relative flex items-center justify-center min-h-[42px] rounded-lg text-sm cursor-pointer text-secondary has-[:checked]:bg-container has-[:checked]:text-accent-ink has-[:checked]:font-semibold has-[:checked]:shadow-sm has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent-ink">
-          <input
-            type="radio"
-            name="f_type"
-            value="{{ value }}"
-            class="sr-only"
-            {% if (type_filter or "") == value %}checked{% endif %}
-            onchange="this.form.requestSubmit()"
-          />
-          {{ label }}
-        </label>
+    <input type="hidden" name="f_type" :value="type" />
+    <input type="hidden" name="f_category" :value="category" />
+    <input type="hidden" name="f_subcategory" :value="subcategory" />
+    <input type="hidden" name="f_account" :value="account" />
+    <input type="hidden" name="f_payment_method" :value="pay" />
+    <input type="hidden" name="f_sort" :value="sort" />
+    <input type="hidden" name="f_page_size" id="f_page_size" :value="size" />
+
+    {# Search, the four tabs, "+ more criteria", "New operation". #}
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div class="relative lg:max-w-[420px] lg:flex-1">
+        <span class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-secondary">{{ icon('search', size=18) }}</span>
+        <input
+          type="text"
+          name="f_search"
+          x-model="q"
+          data-live
+          value="{{ search }}"
+          placeholder="{{ _("Rechercher un libellé...") }}"
+          aria-label="{{ _("Rechercher un libellé...") }}"
+          autocomplete="off"
+          class="input-base pl-[42px]"
+        />
+      </div>
+      <div role="group" aria-label="{{ _("Type d'opération") }}" class="grid grid-cols-4 gap-1 rounded-xl border border-border bg-sunken p-1 lg:w-[320px] lg:flex-none">
+        {% for value, label in [("all", _("Toutes")), ("expense", _("Dépenses")), ("income", _("Recettes")), ("todo", _("À trier"))] %}
+        <button
+          type="button"
+          @click="setTab('{{ value }}')"
+          :aria-pressed="tab === '{{ value }}'"
+          :class="tab === '{{ value }}' ? 'bg-container font-semibold text-accent-ink shadow-sm' : 'text-secondary'"
+          class="min-h-[42px] rounded-lg px-1 text-sm"
+        >{{ label }}</button>
         {% endfor %}
       </div>
-      <button
-        type="button"
-        @click="advancedOpen = !advancedOpen"
-        :aria-expanded="advancedOpen.toString()"
-        class="btn btn-secondary flex-shrink-0 px-4"
-      >
-        {{ icon('adjustments') }}
-        <span x-text="advancedOpen ? '{{ _("− de critères") | jsq }}' : '{{ _("+ de critères") | jsq }}'"></span>
-      </button>
-    </div>
-
-    {# Dates, montants, catégorie : toujours visibles dès lg ; derrière
-       « + de critères » en mobile, pour ne pas repousser la liste sous trois
-       écrans de champs. #}
-    <div
-      class="grid-cols-2 gap-2 lg:grid-cols-5"
-      :class="advancedOpen ? 'grid' : 'hidden lg:grid'"
-    >
-      <label class="form-group">
-        <span class="form-label">{{ _("Du") }}</span>
-        <input type="date" name="f_date_from" value="{{ date_from }}" class="input-base px-2" />
-      </label>
-      <label class="form-group">
-        <span class="form-label">{{ _("Au") }}</span>
-        <input type="date" name="f_date_to" value="{{ date_to }}" class="input-base px-2" />
-      </label>
-      <label class="form-group">
-        <span class="form-label">{{ _("Montant min") }}</span>
-        <input type="text" inputmode="decimal" name="f_amount_min" value="{{ amount_min }}" class="input-base" />
-      </label>
-      <label class="form-group">
-        <span class="form-label">{{ _("Montant max") }}</span>
-        <input type="text" inputmode="decimal" name="f_amount_max" value="{{ amount_max }}" class="input-base" />
-      </label>
-      <label class="form-group col-span-2 lg:col-span-1">
-        <span class="form-label">{{ _("Catégorie") }}</span>
-        <select
-          name="f_category"
-          hx-get="/transactions/subcategories?field_name=f_subcategory&element_id=f_subcategory-select&allow_empty=true"
-          hx-target="#f_subcategory-select"
-          hx-swap="outerHTML"
-          hx-trigger="change"
-          hx-on:change="document.getElementById('f_subcategory-select').value = ''"
-          class="input-base"
-        >
-          <option value="">{{ _("Toutes les catégories") }}</option>
-          <option value="uncategorized" {% if category_filter == "uncategorized" %}selected{% endif %}>
-            {{ _("Non catégorisé") }}
-          </option>
-          {% for category in categories %}
-          <option value="{{ category.id }}" {% if category.id|string == category_filter %}selected{% endif %}>
-            {{ category.icon or "" }} {{ category.name }}
-          </option>
-          {% endfor %}
-        </select>
-      </label>
-    </div>
-
-    <div
-      class="grid-cols-2 gap-2 lg:grid-cols-4"
-      :class="advancedOpen ? 'grid' : 'hidden'"
-    >
-      <label class="form-group col-span-2 lg:col-span-1">
-        <span class="form-label">{{ _("Sous-catégorie") }}</span>
-        {% with parent = filter_parent, subcategories = filter_subcategories, selected_category_id = (subcategory_filter | int if subcategory_filter else none), field_name = "f_subcategory", element_id = "f_subcategory-select", allow_empty = true %}
-        {% include "transactions/_subcategory_select.html" %}
-        {% endwith %}
-      </label>
-      <label class="form-group">
-        <span class="form-label">{{ _("Compte") }}</span>
-        <select name="f_account" class="input-base">
-          <option value="">{{ _("Tous les comptes") }}</option>
-          {% for account in accounts %}
-          <option value="{{ account.id }}" {% if account.id|string == account_filter %}selected{% endif %}>
-            {{ account.name }}
-          </option>
-          {% endfor %}
-        </select>
-      </label>
-      <label class="form-group">
-        <span class="form-label">{{ _("Mode de paiement") }}</span>
-        <select name="f_payment_method" class="input-base">
-          <option value="">{{ _("Tout mode de paiement") }}</option>
-          {% for code, meta in payment_methods.items() %}
-          <option value="{{ code }}" {% if payment_method_filter == code %}selected{% endif %}>
-            {{ meta.icon }} {{ meta.label }}
-          </option>
-          {% endfor %}
-        </select>
-      </label>
-      <label class="form-group col-span-2 lg:col-span-1">
-        <span class="form-label">{{ _("Tri") }}</span>
-        <select name="f_sort" class="input-base">
-          <option value="date_desc" {% if sort_filter == "date_desc" %}selected{% endif %}>{{ _("Date (récent d'abord)") }}</option>
-          <option value="date_asc" {% if sort_filter == "date_asc" %}selected{% endif %}>{{ _("Date (ancien d'abord)") }}</option>
-          <option value="amount_desc" {% if sort_filter == "amount_desc" %}selected{% endif %}>{{ _("Montant décroissant") }}</option>
-          <option value="amount_asc" {% if sort_filter == "amount_asc" %}selected{% endif %}>{{ _("Montant croissant") }}</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center gap-3">
-        <button type="submit" class="btn btn-primary flex-1 sm:flex-none sm:px-8">
-          {{ icon('search') }} {{ _("Rechercher") }}
+      <div class="grid grid-cols-2 gap-2 lg:flex lg:flex-none">
+        <button type="button" @click="adv = !adv" :aria-expanded="adv" class="btn btn-secondary border-border-strong px-4">
+          <span x-text="adv ? '{{ _("− de critères") | jsq }}' : '{{ _("+ de critères") | jsq }}'">{{ _("+ de critères") }}</span>
         </button>
-        <a href="/transactions/list" class="btn btn-ghost px-3 text-secondary flex-shrink-0">{{ _("Réinitialiser les filtres") }}</a>
-      </div>
-
-      {# Nombre de résultats par page : champ du même <form> que le reste des
-         filtres pour que sa valeur soit incluse dans TOUTE requête qui
-         référence déjà #transactions-filters (Rechercher, pagination), sans
-         câblage séparé. Préférence mémorisée en localStorage,
-         restaurée/réappliquée par transactions-selection.js. #}
-      <div class="flex items-center gap-2 sm:justify-end">
-        <label for="f_page_size" class="text-sm text-secondary">{{ _("Afficher :") }}</label>
-        <select
-          id="f_page_size"
-          name="f_page_size"
-          onchange="window.onPageSizeChange(this.value)"
-          class="input-base w-auto min-h-[46px] px-3"
+        <button
+          type="button"
+          hx-get="/transactions/new"
+          hx-target="#transaction-detail-content"
+          hx-swap="innerHTML"
+          class="btn btn-secondary border-border-strong px-4"
         >
-          {% for size in allowed_page_sizes %}
-          <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>{{ size }}</option>
-          {% endfor %}
-        </select>
-        <span class="text-sm text-secondary">{{ _("par page") }}</span>
+          {{ icon('plus') }} {{ _("Nouvelle opération") }}
+        </button>
       </div>
+    </div>
+
+    {# Dates, amounts, category: always shown; account, payment, type and sort behind « + de critères ». #}
+    <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap">
+      <div class="lg:w-[200px]">{{ date_field("f_date_from", date_from, prefix=_("Du :"), empty=_("toutes"), aria=_("Du")) }}</div>
+      <div class="lg:w-[200px]">{{ date_field("f_date_to", date_to, prefix=_("Au :"), empty=_("toutes"), aria=_("Au")) }}</div>
+      <input type="text" inputmode="decimal" name="f_amount_min" x-model="amin" data-live placeholder="{{ _("Montant min") }}" aria-label="{{ _("Montant min") }}" class="input-base lg:w-[200px]" />
+      <input type="text" inputmode="decimal" name="f_amount_max" x-model="amax" data-live placeholder="{{ _("Montant max") }}" aria-label="{{ _("Montant max") }}" class="input-base lg:w-[200px]" />
+      <div class="col-span-2 lg:col-span-1 lg:w-[240px]">
+        {{ dropdown(none, category_options, model="category", change="setCategory(category)", popover=true, aria=_("Catégorie")) }}
+      </div>
+      <div class="col-span-2 lg:col-span-1 lg:w-[240px]" x-show="subs.length > 0" style="display: none;" x-data="{ open: false }" @click.outside="open = false">
+        <div class="relative">
+          <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="listbox" aria-label="{{ _("Sous-catégorie") }}" class="input-base flex items-center justify-between gap-2 text-left">
+            <span class="truncate" x-text="subLabel">{{ _("Toutes les sous-catégories") }}</span>{{ icon('chevron-down', size=18) }}
+          </button>
+          <div x-show="open" style="display: none;" role="listbox" class="absolute inset-x-0 top-full z-30 mt-1 max-h-[320px] overflow-y-auto overflow-hidden rounded-xl border border-border bg-container shadow-lg">
+            <template x-for="option in subOptions" :key="option.id">
+              <button type="button" role="option" @click="subcategory = option.id; open = false; submit()" :class="subcategory === option.id ? 'bg-accent-soft font-semibold text-accent-ink' : ''" class="flex min-h-[50px] w-full items-center border-b border-border px-3.5 text-left text-sm last:border-b-0"><span x-text="option.name"></span></button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap" x-show="adv" style="display: none;">
+      <div class="lg:w-[220px]">{{ dropdown(none, account_options, model="account", change="submit()", popover=true, aria=_("Compte")) }}</div>
+      <div class="lg:w-[240px]">{{ dropdown(none, pm_options, model="pay", change="submit()", popover=true, aria=_("Mode de paiement")) }}</div>
+      <div class="lg:w-[200px]">{{ dropdown(none, type_options, model="type", change="submit()", popover=true, aria=_("Type")) }}</div>
+      <div class="col-span-2 lg:col-span-1 lg:w-[260px]">{{ dropdown(none, sort_options, model="sort", change="submit()", popover=true, aria=_("Tri")) }}</div>
+    </div>
+
+    <div class="flex justify-center lg:justify-start">
+      <a href="/transactions/list" class="flex min-h-[50px] items-center px-1 text-sm font-medium text-accent-ink">{{ _("Réinitialiser les filtres") }}</a>
     </div>
   </form>
 
@@ -215,26 +170,39 @@
        recréé vide à chaque page/filtre/action groupée. -->
   <div id="all-selected-ids-inputs" class="hidden"></div>
 
-  <div id="transactions-content">
-    {% include "transactions/_content.html" %}
-  </div>
+  <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+    <div id="transactions-content" class="min-w-0 lg:max-w-[760px] lg:flex-[3_1_520px]">
+      {% include "transactions/_content.html" %}
+    </div>
 
-  <!-- Desktop (lg:) : même <dialog>/mécanisme HTMX qu'en mobile (aucun
-       changement de câblage), juste repositionné en panneau plein-hauteur
-       collé à droite plutôt que centré — la boîte de dialogue HTML native
-       accepte n'importe quel positionnement CSS une fois ouverte. -->
-  <dialog
-    id="transaction-detail-dialog"
-    class="rounded-xl p-0 border-0 shadow-lg bg-container text-primary backdrop:bg-scrim w-[calc(100%-2rem)] max-w-sm max-h-[calc(100vh-2rem)] overflow-y-auto lg:fixed lg:inset-y-0 lg:right-0 lg:left-auto lg:top-0 lg:m-0 lg:h-screen lg:max-h-none lg:w-[380px] lg:max-w-none lg:rounded-none lg:rounded-l-xl"
-  >
+    {# The detail. On a computer this <dialog> is never opened as a modal: it is
+       displayed as a panel next to the list (lg:block shows it while "closed").
+       On a phone it opens as a bottom sheet once its content arrives. #}
+    <dialog
+      id="transaction-detail-dialog"
+      aria-label="{{ _("Détail de l'opération") }}"
+      class="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[92%] w-full max-w-none overflow-y-auto rounded-t-xl border-0 bg-container p-0 text-primary shadow-lg backdrop:bg-scrim lg:sticky lg:top-[72px] lg:block lg:max-h-[calc(100vh-88px)] lg:w-[380px] lg:flex-none lg:rounded-xl lg:border lg:border-border lg:shadow-sm"
+    >
+      <div
+        id="transaction-detail-content"
+        hx-on:htmx:after-swap="window.showTransactionDetail()"
+      >{% include "transactions/_detail_empty.html" %}</div>
+    </dialog>
+    <template id="transaction-detail-empty">{% include "transactions/_detail_empty.html" %}</template>
+    {% if first_id %}
     <div
-      id="transaction-detail-content"
-      hx-on:htmx:after-swap="document.getElementById('transaction-detail-dialog').showModal()"
+      hidden
+      hx-get="/transactions/{{ first_id }}/detail?{{ filter_qs }}"
+      hx-trigger="load[window.matchMedia('(min-width: 1024px)').matches]"
+      hx-target="#transaction-detail-content"
+      hx-swap="innerHTML"
     ></div>
-  </dialog>
+    {% endif %}
+  </div>
 </main>
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ static_url('/static/js/operations.js') }}"></script>
 <script src="{{ static_url('/static/js/transactions-selection.js') }}" defer></script>
 {% endblock %}

@@ -1,7 +1,96 @@
+{% from "_macros/menu.html" import dropdown %}
+{#
+  The list of operations (what htmx swaps into #transactions-content after each
+  filter change, page change or action), with its selection bar. The filters are
+  in index.html; the detail panel next to the list is filled by the rows.
+
+  Out of the first page load (`initial_page`), the response also carries the
+  summary under the title and, when an action concerns the open operation,
+  its fresh detail panel — both out of band.
+#}
+{% set bulk_category_options = [("", _("Catégorie..."))] %}
+{% for category in categories %}
+  {% if bulk_category_options.append((category.id | string, category.name)) %}{% endif %}
+  {% for child in category.children %}{% if bulk_category_options.append((child.id | string, category.name ~ " › " ~ child.name)) %}{% endif %}{% endfor %}
+{% endfor %}
+{% set bulk_payment_options = [("", _("Paiement..."))] %}
+{% for code, meta in payment_methods.items() %}{% if bulk_payment_options.append((code, meta.label)) %}{% endif %}{% endfor %}
+
+{# The controls of the selection bar, drawn once for the computer (in the list card) and once for the phone (in its sheet). #}
+{% macro bulk_controls(sfx) %}
+<div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+  {{ dropdown("category_id", bulk_category_options, selected="", input_id="bulk-category-" ~ sfx, aria=_("Catégorie...")) }}
+  {{ dropdown("payment_method", bulk_payment_options, selected="", input_id="bulk-payment-" ~ sfx, aria=_("Paiement...")) }}
+</div>
+<div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+  <button
+    type="button"
+    hx-post="/transactions/bulk-apply?{{ filter_qs }}"
+    hx-include="#all-selected-ids-inputs, #bulk-category-{{ sfx }}, #bulk-payment-{{ sfx }}"
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    hx-confirm="{{ _("Appliquer ces modifications aux opérations sélectionnées ?") }}"
+    hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+    class="btn btn-primary px-2"
+  >{{ _("Appliquer") }}</button>
+  <button
+    type="button"
+    hx-post="/transactions/bulk-mark-transfer?{{ filter_qs }}"
+    hx-include="#all-selected-ids-inputs"
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    hx-confirm="{{ _("Marquer ces opérations comme virements internes ? Elles seront exclues de La Savane.") }}"
+    hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+    class="btn btn-secondary border-border-strong px-2"
+  >{{ _("Virement") }}</button>
+  <button
+    type="button"
+    hx-post="/transactions/bulk-unmark-transfer?{{ filter_qs }}"
+    hx-include="#all-selected-ids-inputs"
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    hx-confirm="{{ _("Retirer le marquage virement de ces opérations ?") }}"
+    hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+    class="btn btn-secondary border-border-strong px-2"
+  >{{ _("Retirer virement") }}</button>
+  <button
+    type="button"
+    hx-post="/transactions/bulk-mark-unexpected?{{ filter_qs }}"
+    hx-include="#all-selected-ids-inputs"
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    hx-confirm="{{ _("Marquer ces opérations comme imprévues (« Le Cap ») ?") }}"
+    hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+    class="btn btn-secondary border-border-strong px-2"
+  >{{ _("Imprévus") }}</button>
+  <button
+    type="button"
+    hx-post="/transactions/bulk-unvalidate?{{ filter_qs }}"
+    hx-include="#all-selected-ids-inputs"
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    hx-confirm="{{ _("Remettre ces opérations dans La Savane pour les recatégoriser ?") }}"
+    hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+    class="btn btn-secondary border-border-strong px-2 sm:col-span-2"
+  >{{ _("Savane") }}</button>
+  <button
+    type="button"
+    hx-post="/transactions/bulk-delete?{{ filter_qs }}"
+    hx-include="#all-selected-ids-inputs"
+    hx-target="#transactions-content"
+    hx-swap="innerHTML"
+    hx-confirm="{{ _("Supprimer définitivement les opérations sélectionnées ? Cette action est irréversible.") }}"
+    hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
+    class="btn btn-danger px-2 sm:col-span-2"
+  >{{ _("Supprimer") }}</button>
+</div>
+{% endmacro %}
+
 <div
-  class="flex flex-col"
+  class="flex flex-col gap-3"
   x-data="{
     selected: [],
+    bsheet: false,
     pageIds: [{{ transactions | map(attribute='id') | join(',') }}],
     amountCentsById: { {% for tx in transactions %}{{ tx.id }}: {{ (tx.amount * 100) | int }}{% if not loop.last %}, {% endif %}{% endfor %} },
     globalCount: 0,
@@ -57,6 +146,7 @@
     clearAll() {
       window.selectedTransactionAmounts.clear();
       this.selected = [];
+      this.bsheet = false;
       this.refreshGlobalCounts();
       window.syncSelectedIdsInputs();
     },
@@ -90,20 +180,7 @@
       return sign + formatter.format(absCents / 100);
     },
   }"
-  x-effect="document.getElementById('transactions-filters')?.classList.toggle('hidden', globalCount > 0)"
 >
-
-  <p class="text-sm text-secondary px-1 pb-3">
-    {# "Net" et non "Solde" : cette valeur est la SOMME des montants des
-       opérations listées (get_transactions_total_amount), pas un solde de
-       compte — elle ignore les soldes d'ouverture. Sans filtre elle vaut
-       donc le net de tout l'historique, négatif dès que les dépenses
-       cumulées dépassent les recettes, ce qui se lisait à tort comme un
-       compte à découvert. #}
-    {% trans total=total, v="s" if total != 1 else "", Total="Net" if not type_filter else "Total" %}{{ total }} opération{{ v }} | {{ Total }} :{% endtrans %}
-    <span class="amount-blur font-semibold text-primary tabular-nums">{{ "+" if total_amount > 0 else "" }}{{ total_amount | eur }}</span>
-  </p>
-
   {% if success_message %}
   <!-- Toast plutôt qu'un message inséré dans le flux normal : après une
        action groupée depuis une liste longue, le message apparaissait en
@@ -130,167 +207,53 @@
   {% endif %}
 
   {% if transactions %}
-  <!-- Toute la barre (y compris "Tout sélectionner") n'apparaît qu'en mode
-       sélection (globalCount > 0, PAS selected.length : la sélection
-       survit au changement de page, donc la barre doit rester visible même
-       si la page actuelle n'a elle-même rien coché). Le point d'entrée est
-       la case à cocher TOUJOURS visible sur chaque ligne, pas cette barre
-       elle-même. x-effect sur la racine masque en parallèle
-       #transactions-filters (display:none) tant qu'une sélection est active,
-       pour laisser toute la largeur à cette barre — comportement Gmail /
-       Apple Mail / Bankin. Placée APRÈS la ligne de résumé, jamais avant :
-       cette barre est en position sticky (top-14) — la mettre avant la ligne
-       de résumé dans le flux la faisait recouvrir cette ligne dès qu'elle se
-       fixait au défilement. « Appliquer » est l'unique action principale
-       tant que la barre est là (le formulaire de recherche, et son bouton
-       ambré, est alors masqué). -->
-  <div
-    x-show="globalCount > 0"
-    x-transition
-    style="display: none;"
-    class="sticky top-14 z-30 bg-page pb-3"
-  >
-    <div class="bg-container border border-border rounded-xl shadow-sm p-3 flex flex-col gap-2">
-      <div class="flex items-center justify-between gap-2">
-        <label class="flex items-center gap-2 min-h-[50px] cursor-pointer">
+  <section class="overflow-hidden rounded-xl border border-border bg-container shadow-sm" aria-label="{{ _("Liste des opérations") }}">
+    <div class="flex items-center border-b border-border pr-4">
+      <label class="flex min-h-[50px] cursor-pointer items-center" @click.stop>
+        <span class="flex h-[50px] w-[50px] flex-none items-center justify-center">
           <input
             type="checkbox"
-            class="w-5 h-5 flex-shrink-0"
+            class="check-box"
+            aria-label="{{ _("Tout sélectionner") }}"
             @change="toggleAllOnPage($event.target.checked)"
             :checked="pageIds.length > 0 && selected.length === pageIds.length"
           />
-          <span class="text-sm font-medium text-primary">{{ _("Tout sélectionner") }}</span>
-        </label>
-        <p class="text-xs text-secondary text-right leading-tight min-w-0">
-          <span x-text="globalCountLabel()"></span><br />
-          <span class="amount-blur font-semibold text-primary tabular-nums" x-text="selectedSumLabel()"></span>
-        </p>
-        <button
-          type="button"
-          @click="clearAll()"
-          class="btn btn-ghost px-3 text-secondary flex-shrink-0"
-        >
-          {{ icon('x') }} {{ _("Annuler") }}
-        </button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <select id="bulk-category" name="category_id" aria-label="{{ _("Catégorie...") }}" class="input-base text-sm px-2">
-          <option value="" selected disabled>{{ _("Catégorie...") }}</option>
-          {% for category in categories %}
-          <option value="{{ category.id }}">{{ category.icon or "" }} {{ category.name }}</option>
-          {% for child in category.children %}
-          <option value="{{ child.id }}">— {{ child.icon or "" }} {{ child.name }}</option>
-          {% endfor %}
-          {% endfor %}
-        </select>
-        <select id="bulk-payment-method" name="payment_method" aria-label="{{ _("Paiement...") }}" class="input-base text-sm px-2">
-          <option value="">{{ _("Paiement...") }}</option>
-          {% for code, meta in payment_methods.items() %}
-          <option value="{{ code }}">{{ meta.icon }} {{ meta.label }}</option>
-          {% endfor %}
-        </select>
-        <button
-          type="button"
-          hx-post="/transactions/bulk-apply?{{ filter_qs }}"
-          hx-include="#all-selected-ids-inputs, #bulk-category, #bulk-payment-method"
-          hx-target="#transactions-content"
-          hx-swap="innerHTML"
-          hx-confirm="{{ _("Appliquer ces modifications aux opérations sélectionnées ?") }}"
-          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
-          class="btn btn-primary col-span-2 sm:col-span-1 sm:px-6"
-        >
-          {{ icon('check') }} {{ _("Appliquer") }}
-        </button>
-      </div>
-
-      <div class="grid grid-cols-4 gap-2">
-        <button
-          type="button"
-          hx-post="/transactions/bulk-mark-transfer?{{ filter_qs }}"
-          hx-include="#all-selected-ids-inputs"
-          hx-target="#transactions-content"
-          hx-swap="innerHTML"
-          hx-confirm="{{ _("Marquer ces opérations comme virements internes ? Elles seront exclues de La Savane.") }}"
-          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
-          class="btn btn-secondary flex-col gap-0.5 px-1 text-xs sm:flex-row sm:gap-2 sm:text-sm"
-        >
-          {{ icon('repeat', size=18) }} {{ _("Virement") }}
-        </button>
-        <button
-          type="button"
-          hx-post="/transactions/bulk-mark-unexpected?{{ filter_qs }}"
-          hx-include="#all-selected-ids-inputs"
-          hx-target="#transactions-content"
-          hx-swap="innerHTML"
-          hx-confirm="{{ _("Marquer ces opérations comme imprévues (« Le Cap ») ?") }}"
-          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
-          class="btn btn-secondary flex-col gap-0.5 px-1 text-xs sm:flex-row sm:gap-2 sm:text-sm"
-        >
-          {{ icon('urgent', size=18) }} {{ _("Imprévus") }}
-        </button>
-        <button
-          type="button"
-          hx-post="/transactions/bulk-unvalidate?{{ filter_qs }}"
-          hx-include="#all-selected-ids-inputs"
-          hx-target="#transactions-content"
-          hx-swap="innerHTML"
-          hx-confirm="{{ _("Remettre ces opérations dans La Savane pour les recatégoriser ?") }}"
-          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
-          class="btn btn-secondary flex-col gap-0.5 px-1 text-xs sm:flex-row sm:gap-2 sm:text-sm"
-        >
-          {{ icon('inbox', size=18) }} {{ _("Savane") }}
-        </button>
-        <button
-          type="button"
-          hx-post="/transactions/bulk-delete?{{ filter_qs }}"
-          hx-include="#all-selected-ids-inputs"
-          hx-target="#transactions-content"
-          hx-swap="innerHTML"
-          hx-confirm="{{ _("Supprimer définitivement les opérations sélectionnées ? Cette action est irréversible.") }}"
-          hx-on:htmx:after-swap="window.selectedTransactionAmounts.clear(); window.syncSelectedIdsInputs();"
-          class="btn btn-danger flex-col gap-0.5 px-1 text-xs sm:flex-row sm:gap-2 sm:text-sm"
-        >
-          {{ icon('trash', size=18) }} {{ _("Supprimer") }}
-        </button>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  {# Liste groupée par jour. Une seule surface blanche pour toute la liste ;
-     chaque jour a son en-tête sur fond creux, avec le net du jour à droite
-     (la somme des lignes affichées de ce jour, jamais un solde). Le clic sur
-     la ligne ouvre le détail via hx-get (déclenchement "click" implicite),
-     SAUF si le clic vient de la case à cocher : @click.stop empêche
-     l'événement de remonter jusqu'au hx-get de la ligne. #}
-  {% if transactions %}
-  <div class="bg-container rounded-xl shadow-sm overflow-hidden">
-    <div x-show="globalCount === 0" class="flex items-center gap-1 pl-1 pr-4 border-b border-border">
-      <label class="flex items-center gap-2 min-h-[50px] pl-4 pr-2 cursor-pointer" @click.stop>
-        <input
-          type="checkbox"
-          class="w-5 h-5 flex-shrink-0"
-          @change="toggleAllOnPage($event.target.checked)"
-          :checked="pageIds.length > 0 && selected.length === pageIds.length"
-        />
-        <span class="text-sm font-medium text-primary">{{ _("Tout sélectionner") }}</span>
+        </span>
+        <span class="-ml-1.5 mr-2.5 text-sm text-primary">{{ _("Tout sélectionner") }}</span>
+        <span class="text-xs tabular-nums text-secondary" x-show="globalCount === 0">{% trans total=total, v="s" if total != 1 else "" %}{{ total }} opération{{ v }}{% endtrans %}</span>
+        <span class="text-xs tabular-nums text-secondary" x-show="globalCount > 0" style="display: none;" x-text="globalCountLabel()"></span>
       </label>
     </div>
+
+    {# Selection bar (computer): shown as soon as one operation is ticked, on
+       any page. The sum of the selection stays visible, as before. #}
+    <div x-show="globalCount > 0" x-transition style="display: none;" class="hidden flex-col gap-2.5 border-b border-border bg-accent-soft p-4 lg:flex">
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-sm font-semibold text-primary">
+          <span x-text="globalCountLabel()"></span>
+          <span class="amount-blur ml-2 font-normal tabular-nums text-secondary" x-text="selectedSumLabel()"></span>
+        </p>
+        <button type="button" @click="clearAll()" class="min-h-[50px] px-1 text-sm font-medium text-accent-ink">{{ _("Annuler") }}</button>
+      </div>
+      {{ bulk_controls("d") }}
+    </div>
+
     {% for group in transaction_groups %}
-    <div class="flex items-center justify-between gap-2 px-4 py-[var(--row-pad)] bg-sunken border-b border-border">
-      <p class="text-xs font-semibold text-primary">{{ group.label }}</p>
-      <p class="amount-blur text-xs text-secondary tabular-nums">{% set day_total = group.transactions | sum(attribute='amount') %}{{ "+" if day_total > 0 else "" }}{{ day_total | eur }}</p>
+    <div class="flex items-center justify-between gap-2 border-b border-border bg-sunken px-4 py-[var(--row-pad)]">
+      <p class="text-xs font-semibold text-primary first-letter:uppercase">{{ group.label }}</p>
+      <p class="amount-blur text-xs tabular-nums text-secondary">{% set day_total = group.transactions | sum(attribute='amount') %}{{ "+" if day_total > 0 else "" }}{{ day_total | eur }}</p>
     </div>
     {% for tx in group.transactions %}
+    {% set category = tx.category %}
     <div
-      class="flex items-center gap-1 pl-1 pr-4 min-h-[var(--row-touch)] border-b border-border cursor-pointer active:opacity-80 transition"
-      :class="selected.includes({{ tx.id }}) ? 'bg-accent-soft' : 'lg:hover:bg-sunken'"
+      class="flex min-h-[var(--row-touch)] cursor-pointer items-center gap-1 border-b border-border pl-1 pr-4 transition active:opacity-80"
+      :class="openId === {{ tx.id }} ? 'bg-accent-soft' : 'lg:hover:bg-sunken'"
       hx-get="/transactions/{{ tx.id }}/detail?{{ filter_qs }}"
       hx-target="#transaction-detail-content"
       hx-swap="innerHTML"
+      @click="openId = {{ tx.id }}"
     >
-      <label class="flex items-center justify-center w-[50px] h-[50px] flex-shrink-0 cursor-pointer" @click.stop>
+      <label class="flex h-[50px] w-[50px] flex-shrink-0 cursor-pointer items-center justify-center" @click.stop>
         <input
           type="checkbox"
           value="{{ tx.id }}"
@@ -298,7 +261,7 @@
           :checked="selected.includes({{ tx.id }})"
           @change="toggleId({{ tx.id }})"
           @click.stop
-          class="w-5 h-5"
+          class="check-box"
         />
       </label>
       {# Pastille teintée de la couleur de la catégorie (identité), icône en
@@ -306,80 +269,108 @@
          à la couleur de catégorie elle-même sur fond sombre). Non
          catégorisé : pastille grise, icône estompée. #}
       <span
-        class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mr-2 {{ 'text-primary' if tx.category else 'text-secondary' }}"
-        style="background-color: color-mix(in srgb, {{ tx.category_id | category_color }} 20%, transparent);"
+        class="mr-2 hidden h-10 w-10 flex-shrink-0 items-center justify-center rounded-full lg:flex {{ 'text-primary' if category else 'text-secondary' }}"
+        style="background-color: color-mix(in srgb, {{ (category.parent_id or tx.category_id) | category_color }} 20%, var(--color-sunken));"
         aria-hidden="true"
       >
-        {{ icon(get_category_icon_name(tx.category.name) if tx.category else 'inbox', size=18) }}
+        {{ icon(get_category_icon_name(category.name) if category else 'inbox', size=18) }}
       </span>
-      <div class="flex-1 min-w-0 flex flex-col py-[calc(var(--row-pad)*0.75)]">
-        <span class="text-sm text-primary font-medium truncate flex items-center gap-1.5">
+      <div class="flex min-w-0 flex-1 flex-col py-[calc(var(--row-pad)*0.75)]">
+        <span class="flex items-center gap-1.5 truncate text-sm font-semibold text-primary">
           <span class="truncate">{{ tx.label or _("(sans libellé)") }}</span>
-          {% if tx.payment_method %}
-          <span class="flex-shrink-0 text-secondary" title="{{ tx.payment_method | pm_label }}">{{ icon(get_payment_method_icon_name(tx.payment_method), size=14) }}<span class="sr-only">{{ tx.payment_method | pm_label }}</span></span>
-          {% endif %}
           {% if receipt_item_counts.get(tx.id) %}
-          <span class="flex-shrink-0 text-secondary" title="{% trans id=receipt_item_counts[tx.id] %}{{ id }} art.{% endtrans %}">{{ icon('receipt', size=14) }}<span class="sr-only">{% trans id=receipt_item_counts[tx.id] %}{{ id }} art.{% endtrans %}</span></span>
+          <span class="flex-shrink-0 text-secondary" title="{% trans n=receipt_item_counts[tx.id] %}{{ n }} art.{% endtrans %}">{{ icon('receipt', size=14) }}<span class="sr-only">{% trans n=receipt_item_counts[tx.id] %}{{ n }} art.{% endtrans %}</span></span>
           {% endif %}
         </span>
-        <span class="text-xs text-secondary truncate flex items-center gap-1.5">
-          <span class="inline-block w-2 h-2 rounded-full flex-shrink-0" style="background-color: {{ tx.account | account_color }};" aria-hidden="true"></span>
+        <span class="flex items-center gap-1.5 truncate text-xs text-secondary">
+          <span class="inline-block h-2 w-2 flex-shrink-0 rounded-full" style="background-color: {{ tx.account | account_color }};" aria-hidden="true"></span>
           <span class="truncate">{{ tx.account.name }}</span>
-          {% if tx.category %}
-          <span class="truncate">{{ tx.category.name | category_display }}</span>
+          {% if category %}
+          <span class="truncate">{{ (category.parent.name ~ " › " ~ category.name) if category.parent else category.name }}</span>
           {% else %}
-          <span class="badge badge-neutral flex-shrink-0">{{ _("À trier") }}</span>
+          <span class="badge badge-neutral flex-shrink-0 font-semibold">{{ _("À trier") }}</span>
           {% endif %}
-          {% if tx.is_transfer %}<span class="flex-shrink-0 inline-flex items-center gap-0.5">{{ icon('repeat', size=12) }}{{ _("Virement") }}</span>{% endif %}
-          {% if tx.is_unexpected %}<span class="flex-shrink-0 inline-flex items-center gap-0.5">{{ icon('urgent', size=12) }}{{ _("Imprévu") }}</span>{% endif %}
+          {% if tx.payment_method %}<span class="flex-shrink-0 truncate">· {{ tx.payment_method | pm_label }}</span>{% endif %}
+          {% if tx.is_transfer %}<span class="inline-flex flex-shrink-0 items-center gap-0.5">{{ icon('repeat', size=12) }}{{ _("Virement") }}</span>{% endif %}
+          {% if tx.is_unexpected %}<span class="inline-flex flex-shrink-0 items-center gap-0.5">{{ icon('urgent', size=12) }}{{ _("Imprévu") }}</span>{% endif %}
         </span>
         {% if tx.note %}
-        <span class="text-xs text-secondary truncate hidden lg:block">{{ tx.note }}</span>
+        <span class="hidden truncate text-xs text-secondary lg:block">{{ tx.note }}</span>
         {% endif %}
       </div>
       {# tabular-nums + text-right : les chiffres s'alignent d'une ligne à
          l'autre. Un montant négatif n'est pas un verdict : encre, signe
          moins. #}
-      <span class="amount-blur text-sm font-semibold whitespace-nowrap tabular-nums text-right flex-shrink-0 text-primary lg:w-[120px]">
+      <span class="amount-blur flex-shrink-0 whitespace-nowrap text-right text-sm font-semibold tabular-nums text-primary lg:w-[120px]">
         {{ "+" if tx.amount > 0 else "" }}{{ tx.amount | eur }}
       </span>
     </div>
     {% endfor %}
     {% endfor %}
+
+    <div class="flex items-center justify-between gap-2 p-3">
+      <button
+        type="button"
+        hx-get="/transactions/list/content"
+        hx-include="#transactions-filters"
+        hx-vals='{"f_page": {{ page - 1 }}}'
+        hx-target="#transactions-content"
+        hx-swap="innerHTML"
+        class="btn btn-secondary border-border-strong px-4"
+        {% if page <= 1 %}disabled{% endif %}
+      >
+        {{ _("Précédent") }}
+      </button>
+      <span class="text-sm text-secondary">{% trans page=page, total_pages=total_pages %}Page {{ page }} / {{ total_pages }}{% endtrans %}</span>
+      <button
+        type="button"
+        hx-get="/transactions/list/content"
+        hx-include="#transactions-filters"
+        hx-vals='{"f_page": {{ page + 1 }}}'
+        hx-target="#transactions-content"
+        hx-swap="innerHTML"
+        class="btn btn-secondary border-border-strong px-4"
+        {% if page >= total_pages %}disabled{% endif %}
+      >
+        {{ _("Suivant") }}
+      </button>
+    </div>
+    <div class="border-t border-border p-3">
+      {# How many operations per page: the value sits in #f_page_size (hidden
+         field of the filters form), remembered in localStorage. #}
+      <div class="lg:max-w-[240px]">
+        {{ dropdown(none, [("25", _("Afficher : 25 par page")), ("50", _("Afficher : 50 par page")), ("100", _("Afficher : 100 par page"))], model="size", change="$nextTick(() => window.onPageSizeChange(size))", popover=true, aria=_("Afficher")) }}
+      </div>
+    </div>
+  </section>
+
+  {# Selection bar (phone): the count and « Actions », which opens the sheet of controls. #}
+  <div x-show="globalCount > 0" style="display: none;" class="fixed inset-x-0 bottom-[59px] z-20 flex items-center gap-2 border-t border-border bg-container px-4 py-2 lg:hidden">
+    <span class="min-w-0 flex-1 truncate font-semibold tabular-nums" x-text="globalCountLabel()"></span>
+    <button type="button" @click="bsheet = true" class="btn btn-primary flex-none px-5">{{ _("Actions") }}</button>
+  </div>
+  <div x-show="bsheet" style="display: none;" class="fixed inset-0 z-50 flex flex-col justify-end bg-scrim lg:hidden" @click.self="bsheet = false">
+    <div role="dialog" aria-label="{{ _("Actions groupées") }}" class="flex max-h-[92%] flex-col gap-2.5 overflow-y-auto rounded-t-xl bg-container px-4 pb-5 pt-2 shadow-lg">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-semibold text-primary" x-text="globalCountLabel()"></h2>
+        <button type="button" @click="bsheet = false" aria-label="{{ _("Fermer") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</button>
+      </div>
+      {{ bulk_controls("m") }}
+      <button type="button" @click="clearAll()" class="min-h-[50px] text-sm font-medium text-accent-ink">{{ _("Annuler") }}</button>
+    </div>
   </div>
   {% else %}
-  <div class="bg-container rounded-xl shadow-sm p-6">
-    <p class="text-sm text-secondary text-center">{{ _("Aucune opération ne correspond à ces filtres.") }}</p>
-  </div>
-  {% endif %}
-
-  {% if transactions %}
-  <div class="flex items-center justify-between gap-2 pt-3">
-    <button
-      type="button"
-      hx-get="/transactions/list/content"
-      hx-include="#transactions-filters"
-      hx-vals='{"f_page": {{ page - 1 }}}'
-      hx-target="#transactions-content"
-      hx-swap="innerHTML"
-      class="btn btn-secondary px-4"
-      {% if page <= 1 %}disabled{% endif %}
-    >
-      {{ icon('arrow-narrow-left') }} {{ _("Précédent") }}
-    </button>
-    <span class="text-sm text-secondary">{% trans page=page, total_pages=total_pages %}Page {{ page }} / {{ total_pages }}{% endtrans %}</span>
-    <button
-      type="button"
-      hx-get="/transactions/list/content"
-      hx-include="#transactions-filters"
-      hx-vals='{"f_page": {{ page + 1 }}}'
-      hx-target="#transactions-content"
-      hx-swap="innerHTML"
-      class="btn btn-secondary px-4"
-      {% if page >= total_pages %}disabled{% endif %}
-    >
-      {{ _("Suivant") }} {{ icon('arrow-narrow-right') }}
-    </button>
+  <div class="flex flex-col items-center gap-2 rounded-xl border border-border bg-container px-6 py-10 text-center shadow-sm">
+    <h2 class="font-display text-[26px] font-extrabold tracking-tight text-primary">{{ _("Aucune opération") }}</h2>
+    <p class="text-secondary">{{ _("Aucune opération ne correspond à ces filtres.") }}</p>
+    <a href="/transactions/list" class="btn btn-secondary mt-2 border-border-strong px-5">{{ _("Réinitialiser les filtres") }}</a>
   </div>
   {% endif %}
 </div>
+
+{% if not initial_page %}
+{% include "transactions/_summary.html" %}
+{% if detail_html %}
+<div id="transaction-detail-content" hx-swap-oob="innerHTML">{{ detail_html | safe }}</div>
+{% endif %}
+{% endif %}
