@@ -9,13 +9,14 @@
   tour_step('[data-tour="profile-save"]', _("Enregistrer l'affichage"), _("Rien n'est gardé avant ce bouton. Une fois enregistré, la page prend ton choix tout de suite."), "device-floppy", position="bottom"),
   tour_step('[data-tour="profile-info"]', _("Ton nom et ton identifiant"), _("Le nom affiché apparaît dans Twiga, l'identifiant sert à te connecter."), "user", position="top"),
   tour_step('[data-tour="profile-password"]', _("Changer de mot de passe"), _("Saisis l'ancien, puis le nouveau deux fois. Huit caractères au minimum."), "key", position="top"),
+  tour_step('[data-tour="profile-sessions"]', _("Tes sessions"), _("Les appareils connectés à ton compte. Ferme celui que tu ne reconnais pas, ou tous les autres d'un coup."), "shield-lock", position="top", optional=True),
 ]) }}{% endblock %}
 
 {% block content %}
 {#- Mon profil, the other way: the sentence says what the display will be (theme, density,
     amounts), and follows each choice on a miniature of the real screen. Nothing is kept
     until "Enregistrer mon affichage"; then the page itself takes the choice. Below, the
-    account: name, password, and the way out. The block « Sessions ouvertes » comes later. -#}
+    account: name, password, the open sessions and the way out. -#}
 {% set since = current.created_at | month_year %}
 {% set first_name = current.display_name or current.username %}
 <main class="flex flex-col gap-8 px-4 pt-4 pb-8 lg:px-8"
@@ -183,9 +184,9 @@
       </section>
 
       {% if auth_enabled %}
-      {#- « Sessions ouvertes » comes later; the way out is here. -#}
-      <section aria-labelledby="h-session" class="card flex flex-col gap-4">
-        <h3 id="h-session" class="text-section-title">{{ _("Session") }}</h3>
+      {#- Open sessions (the devices signed in to the account), then the way out of this one. -#}
+      <section data-tour="profile-sessions" aria-labelledby="h-ses" class="card flex flex-col gap-4">
+        {% include "profile/_sessions.html" %}
         <form hx-post="/logout">
           <button type="submit" class="btn btn-danger w-full">{{ icon('logout', size=18) }} {{ _("Se déconnecter") }}</button>
         </form>

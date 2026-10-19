@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
-from backend import answers, auth, crud, i18n, preferences
+from backend import answers, auth, crud, i18n, preferences, sessions
 from backend.database import get_db
 from backend.templating import flash_html, templates
 from backend.tours import SCREEN_TOURS, mark_screen_seen
@@ -34,8 +34,47 @@ def profile_page(request: Request, db: Session = Depends(get_db)):
             "preview_recent": recent,
             "words": answers.profile_words(),
             "answer": answers.profile_answer(preferences.current_theme(), preferences.current_density(), False),
+            **_sessions_context(db, request, current_user),
         },
     )
+
+
+def _sessions_context(db: Session, request: Request, current_user, notice: str = "") -> dict:
+    # "Sessions ouvertes": the devices signed in to THIS account (never another's, even
+    # for an administrator). Without authentication there is no session to list.
+    return {
+        "sessions": sessions.list_sessions(db, current_user.id, getattr(request.state, "session_id", None)),
+        "sessions_notice": notice,
+    }
+
+
+def _sessions_fragment(request: Request, db: Session, current_user, notice: str = "", status_code: int = 200):
+    context = {"request": request, **_sessions_context(db, request, current_user, notice)}
+    return templates.TemplateResponse("profile/_sessions.html", context, status_code=status_code)
+
+
+@router.post("/sessions/close", response_class=HTMLResponse)
+def close_session(request: Request, session_id: int = Form(...), db: Session = Depends(get_db)):
+    # The row number comes in the POST body (never in the URL) and is checked against the
+    # signed-in account: a session of someone else answers exactly like one that does not
+    # exist. The current session is not closed here: signing out is "Se déconnecter".
+    current_user = auth.get_current_user(request)
+    if not auth.AUTH_ENABLED or current_user is None:
+        return HTMLResponse(flash_html("error", _t("Authentification désactivée.")), status_code=400)
+    if session_id == getattr(request.state, "session_id", None):
+        return _sessions_fragment(request, db, current_user, status_code=400)
+    if not sessions.close_session(db, current_user.id, session_id):
+        return _sessions_fragment(request, db, current_user, status_code=404)
+    return _sessions_fragment(request, db, current_user, _t("Session fermée."))
+
+
+@router.post("/sessions/close-others", response_class=HTMLResponse)
+def close_other_sessions(request: Request, db: Session = Depends(get_db)):
+    current_user = auth.get_current_user(request)
+    if not auth.AUTH_ENABLED or current_user is None:
+        return HTMLResponse(flash_html("error", _t("Authentification désactivée.")), status_code=400)
+    sessions.close_other_sessions(db, current_user.id, getattr(request.state, "session_id", None))
+    return _sessions_fragment(request, db, current_user, _t("Les autres sessions sont fermées."))
 
 
 @router.post("/update", response_class=HTMLResponse)
