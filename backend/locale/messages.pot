@@ -362,6 +362,9 @@ msgstr ""
 msgid "Administrateur"
 msgstr ""
 
+msgid "Adresse du serveur non autorisée."
+msgstr ""
+
 msgid "Afficher :"
 msgstr ""
 
@@ -755,6 +758,9 @@ msgstr ""
 
 #, python-format
 msgid "Ces %(group)s entrées semblent être le même abonnement :"
+msgstr ""
+
+msgid "Change d'abord ton mot de passe dans Mon profil."
 msgstr ""
 
 msgid "Changer"
@@ -1158,6 +1164,13 @@ msgstr ""
 msgid "Fichier QIF, CSV ou OFX"
 msgstr ""
 
+#, python-format
+msgid "Fichier trop volumineux (%(size)s Mo maximum)."
+msgstr ""
+
+msgid "Fichier trop volumineux (5 Mo maximum)."
+msgstr ""
+
 msgid "Fixer le cap"
 msgstr ""
 
@@ -1378,6 +1391,11 @@ msgid "Le changement s'applique immédiatement."
 msgstr ""
 
 msgid "Le mot de passe doit faire au moins 8 caractères."
+msgstr ""
+
+msgid ""
+"Le mot de passe est trop long : 72 caractères au plus (moins avec des "
+"accents ou des emoji)."
 msgstr ""
 
 msgid "Le nom d'utilisateur est obligatoire."
@@ -1984,6 +2002,9 @@ msgstr ""
 msgid "Reprendre %(previous_month_label)s"
 msgstr ""
 
+msgid "Requête refusée : elle ne vient pas de Twiga."
+msgstr ""
+
 #, python-format
 msgid "Ressources de %(period_label)s :"
 msgstr ""
@@ -2287,6 +2308,11 @@ msgid ""
 msgstr ""
 
 msgid "Thème"
+msgstr ""
+
+msgid ""
+"Ton mot de passe est encore celui par défaut. Choisis-en un nouveau ci-"
+"dessous pour continuer."
 msgstr ""
 
 msgid "Top dépenses :"

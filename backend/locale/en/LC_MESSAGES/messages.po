@@ -328,6 +328,9 @@ msgstr "On-site activities"
 msgid "Administrateur"
 msgstr "Administrator"
 
+msgid "Adresse du serveur non autorisée."
+msgstr "Server address not allowed."
+
 msgid "Afficher :"
 msgstr "Show:"
 
@@ -707,6 +710,9 @@ msgstr "What you take out of savings to fund this month"
 #, python-format
 msgid "Ces %(group)s entrées semblent être le même abonnement :"
 msgstr "These %(group)s entries look like the same subscription:"
+
+msgid "Change d'abord ton mot de passe dans Mon profil."
+msgstr "Change your password in My profile first."
 
 msgid "Changer"
 msgstr "Change"
@@ -1093,6 +1099,13 @@ msgstr "Empty CSV file."
 msgid "Fichier QIF, CSV ou OFX"
 msgstr "QIF, CSV or OFX file"
 
+#, python-format
+msgid "Fichier trop volumineux (%(size)s Mo maximum)."
+msgstr "File too large (%(size)s MB maximum)."
+
+msgid "Fichier trop volumineux (5 Mo maximum)."
+msgstr "File too large (5 MB maximum)."
+
 msgid "Fixer le cap"
 msgstr "Set the cap"
 
@@ -1309,6 +1322,9 @@ msgstr "The change applies immediately."
 
 msgid "Le mot de passe doit faire au moins 8 caractères."
 msgstr "The password must be at least 8 characters long."
+
+msgid "Le mot de passe est trop long : 72 caractères au plus (moins avec des accents ou des emoji)."
+msgstr "The password is too long: 72 characters at most (fewer with accents or emoji)."
 
 msgid "Le nom d'utilisateur est obligatoire."
 msgstr "The username is required."
@@ -1896,6 +1912,9 @@ msgstr "Fill in at least one of the two fields above: check number, or payment m
 msgid "Reprendre %(previous_month_label)s"
 msgstr "Reuse %(previous_month_label)s"
 
+msgid "Requête refusée : elle ne vient pas de Twiga."
+msgstr "Request refused: it does not come from Twiga."
+
 #, python-format
 msgid "Ressources de %(period_label)s :"
 msgstr "Resources of %(period_label)s:"
@@ -2185,6 +2204,9 @@ msgstr "Raw text extracted from the invoice (it won't reappear afterwards — th
 
 msgid "Thème"
 msgstr "Theme"
+
+msgid "Ton mot de passe est encore celui par défaut. Choisis-en un nouveau ci-dessous pour continuer."
+msgstr "Your password is still the default one. Choose a new one below to continue."
 
 msgid "Top dépenses :"
 msgstr "Top expenses:"

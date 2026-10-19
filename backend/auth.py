@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import hashlib
 import os
 import secrets
@@ -7,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from starlette.requests import Request
+
+from backend.i18n import lazy_gettext
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -69,6 +72,26 @@ def _password_fingerprint(hashed_password: str) -> str:
     return hashlib.sha256(hashed_password.encode("utf-8")).hexdigest()[:16]
 
 
+@functools.lru_cache(maxsize=1)
+def _dummy_hash() -> bytes:
+    # Same cost as the real hashes (bcrypt.gensalt() defaults, see crud.create_user).
+    import bcrypt
+
+    return bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt())
+
+
+# bcrypt only reads the first 72 bytes of a password: a longer one would be
+# accepted with any ending. New passwords are refused beyond that.
+PASSWORD_MAX_BYTES = 72
+PASSWORD_TOO_LONG = lazy_gettext(
+    "Le mot de passe est trop long : 72 caractères au plus (moins avec des accents ou des emoji)."
+)
+
+
+def password_too_long(password: str) -> bool:
+    return len(password.encode("utf-8")) > PASSWORD_MAX_BYTES
+
+
 def verify_password(db: "Session", username: str, password: str) -> "User | None":
     import bcrypt
 
@@ -76,6 +99,9 @@ def verify_password(db: "Session", username: str, password: str) -> "User | None
 
     user = crud.get_user_by_username(db, username)
     if user is None or not user.is_active:
+        # The same bcrypt work as for a real account: the answer time does not
+        # tell whether the username exists.
+        bcrypt.checkpw(password.encode("utf-8"), _dummy_hash())
         return None
     if not bcrypt.checkpw(password.encode("utf-8"), user.hashed_password.encode("utf-8")):
         return None
@@ -168,4 +194,6 @@ def check_role_access(role: str, method: str, path: str) -> bool:
         return False  # suppression toujours réservée à l'admin
     if path.startswith("/settings") or path == "/export/restore":
         return False
+    if path == "/backlog/create-rule":
+        return False  # rules are the administrator's, as on the Rules screen
     return any(path.startswith(prefix) for prefix in _EDITOR_WRITE_PREFIXES)
