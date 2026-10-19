@@ -105,6 +105,8 @@ PAGES = [
     Page("/export/restore/progress", htmx=True),
     Page("/export/backup/status", htmx=True),
     Page("/imports/new"),
+    Page("/imports/step1", htmx=True),
+    Page("/imports/back", {"import_id": "0" * 32, "format": "csv"}, htmx=True),
     Page("/users"),
     Page("/users/list", htmx=True),
 ]
