@@ -70,9 +70,9 @@
         @click="current = '{{ key }}'"
         :aria-current="current === '{{ key }}' ? 'true' : null"
         :class="current === '{{ key }}' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
-        class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
+        class="min-h-[50px] shrink-0 rounded-xl max-lg:rounded-full px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
       >
-        {{ icon(icon_name, size=18) }} {{ label }}
+        <span class="max-lg:hidden">{{ icon(icon_name, size=18) }}</span> {{ label }}
       </a>
       {% endfor %}
       {% if auth_enabled %}
@@ -81,9 +81,9 @@
         @click="current = 'utilisateurs'"
         :aria-current="current === 'utilisateurs' ? 'true' : null"
         :class="current === 'utilisateurs' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
-        class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
+        class="min-h-[50px] shrink-0 rounded-xl max-lg:rounded-full px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
       >
-        {{ icon('users', size=18) }} {{ _("Utilisateurs") }}
+        <span class="max-lg:hidden">{{ icon('users', size=18) }}</span> {{ _("Utilisateurs") }}
       </a>
       {% endif %}
       <a
@@ -91,9 +91,9 @@
         @click="current = 'donnees'"
         :aria-current="current === 'donnees' ? 'true' : null"
         :class="current === 'donnees' ? 'bg-accent-soft text-accent-ink font-semibold' : 'text-primary hover:bg-sunken'"
-        class="min-h-[50px] shrink-0 rounded-xl px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
+        class="min-h-[50px] shrink-0 rounded-xl max-lg:rounded-full px-4 flex items-center gap-3 text-sm font-medium whitespace-nowrap"
       >
-        {{ icon('folder', size=18) }} {{ _("Données") }}
+        <span class="max-lg:hidden">{{ icon('folder', size=18) }}</span> {{ _("Données") }}
       </a>
     </nav>
 
@@ -121,9 +121,9 @@
         {% if auth_enabled and is_admin %}
         {% set places = places + [("/users", "users", _("Utilisateurs"), _("Les comptes du foyer et le rôle de chacun"))] %}
         {% endif %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[var(--space-list)]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-[var(--space-list)] max-sm:gap-0 max-sm:bg-container max-sm:rounded-xl max-sm:shadow-sm max-sm:overflow-hidden">
           {% for href, icon_name, title, hint in places %}
-          <a href="{{ href }}" class="card flex items-center gap-3 min-h-[50px] hover:shadow-lg transition-shadow">
+          <a href="{{ href }}" class="card flex items-center gap-3 min-h-[50px] hover:shadow-lg transition-shadow max-sm:rounded-none max-sm:shadow-none max-sm:border-t max-sm:border-border max-sm:first:border-t-0">
             <span class="shrink-0 w-10 h-10 rounded-full bg-sunken text-primary flex items-center justify-center">{{ icon(icon_name, size=18) }}</span>
             <span class="flex-1 min-w-0 flex flex-col">
               <span class="text-sm font-semibold text-primary">{{ title }}</span>
