@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import difflib
+import math
 import re
 from calendar import monthrange
 from collections.abc import Callable
@@ -21,6 +22,7 @@ from backend.models import (
     CapEntry,
     CapSettings,
     Category,
+    ImportLog,
     PaymentMethod,
     PendingCheck,
     Project,
@@ -273,6 +275,27 @@ def get_payment_methods_dict(db: Session) -> dict[str, dict[str, str]]:
     # colonne "code" séparée.
     methods = db.execute(select(PaymentMethod).order_by(PaymentMethod.display_order)).scalars().all()
     return {m.name: {"icon": m.icon, "label": get_payment_method_label(m.name)} for m in methods}
+
+
+def record_import_log(
+    db: Session, filename: str, account_name: str, lines: int, duplicates: int, imported: int
+) -> ImportLog:
+    log = ImportLog(
+        imported_on=date.today(),
+        filename=filename[:255],
+        account_name=account_name[:255],
+        lines=lines,
+        duplicates=duplicates,
+        imported=imported,
+    )
+    db.add(log)
+    db.commit()
+    return log
+
+
+def list_import_logs(db: Session, limit: int = 10) -> list[ImportLog]:
+    stmt = select(ImportLog).order_by(ImportLog.imported_on.desc(), ImportLog.id.desc()).limit(limit)
+    return list(db.execute(stmt).scalars().all())
 
 
 def get_existing_account_names(db: Session) -> set[str]:
@@ -1652,6 +1675,9 @@ INCOME_SOURCES: list[tuple[str, str, str]] = [
 ]
 INCOME_SOURCE_CODES = {code for code, _, _ in INCOME_SOURCES}
 
+# Days a budget month can start on (Paramètres > Préférences).
+BUDGET_START_DAYS = (1, 5, 10, 15)
+
 
 def get_cap_settings(db: Session) -> CapSettings:
     """Réglages du rituel — ligne unique, créée si absente.
@@ -2355,7 +2381,7 @@ def project_rhythm(
         return {"state": "done", "reach": None, "gap_months": 0}
     if effort <= 0:
         return {"state": "none", "reach": None, "gap_months": 0}
-    months = -int(-remaining // effort)  # ceiling
+    months = math.ceil(remaining / effort)
     index = today.year * 12 + today.month - 1 + months
     reach = date(index // 12, index % 12 + 1, 1)
     gap = (reach.year - target_date.year) * 12 + reach.month - target_date.month
@@ -4230,3 +4256,19 @@ def merge_recurring_patterns(
     return canonical_label
 
 
+
+
+def delete_all_transactions(db: Session) -> int:
+    """"Zone sensible": removes every transaction of the household (and what
+    hangs on them: receipt lines, the match of pending checks). Accounts,
+    categories, rules, budgets and projects stay. Returns how many were
+    removed."""
+    db.execute(
+        update(PendingCheck)
+        .where(PendingCheck.matched_transaction_id.is_not(None))
+        .values(matched_transaction_id=None, matched_at=None)
+    )
+    db.execute(delete(ReceiptItem))
+    count = db.execute(delete(Transaction)).rowcount or 0
+    db.commit()
+    return count

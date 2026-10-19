@@ -591,6 +591,7 @@
     background-color: var(--color-warning-soft);
   }
   .badge-neutral { color: var(--color-secondary); background-color: var(--color-sunken); }
+  .badge-info { color: var(--color-info); background-color: var(--color-info-soft); }
   .badge-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; flex-shrink: 0; }
 
   /* ---------- ALERTES ---------- */

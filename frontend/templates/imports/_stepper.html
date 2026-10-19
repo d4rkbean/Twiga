@@ -4,8 +4,8 @@
 {# Fil des quatre étapes. `current` va de 1 à 4 ; `second` nomme la deuxième
    étape (« Colonnes » pour un CSV, « Aperçu » pour un OFX ou un QIF).
    L'étape en cours est en gras, les étapes faites et en cours en trait ambre. #}
-{% macro stepper(current, second=None) %}
-{% set labels = [_("Fichier"), second or _("Colonnes"), _("Vérification"), _("Terminé")] %}
+{% macro stepper(current, second=None, third=None) %}
+{% set labels = [_("Fichier"), second or _("Colonnes"), third or _("Vérification"), _("Terminé")] %}
 <ol class="grid grid-cols-4 gap-2 sm:gap-3" aria-label="{{ _("Étapes de l'import") }}">
   {% for label in labels %}
   {% set n = loop.index %}
@@ -15,6 +15,29 @@
   </li>
   {% endfor %}
 </ol>
+{% endmacro %}
+
+{# Rangée de navigation sous la carte d'une étape : « Précédent » à gauche
+   (désactivé à la première étape), « Continuer » à droite quand l'étape en a
+   un. `back_url` est une URL htmx ; `next_form` l'id du formulaire que
+   « Continuer » envoie (le bouton vit hors du formulaire, attribut form). #}
+{% macro step_nav(back_url=None, next_form=None, next_disabled=False) %}
+<div class="flex items-center justify-between gap-3">
+  {% if back_url %}
+  <button type="button" hx-get="{{ back_url }}" hx-target="#import-wizard" hx-swap="innerHTML" class="btn btn-secondary border-border-strong">
+    {{ icon('arrow-narrow-left', size=18) }} {{ _("Précédent") }}
+  </button>
+  {% else %}
+  <button type="button" disabled class="btn btn-secondary border-border-strong">
+    {{ icon('arrow-narrow-left', size=18) }} {{ _("Précédent") }}
+  </button>
+  {% endif %}
+  {% if next_form %}
+  <button type="submit" form="{{ next_form }}" id="import-next" class="btn btn-primary px-8" {% if next_disabled %}disabled{% endif %}>
+    {{ _("Continuer") }} {{ icon('arrow-narrow-right', size=18) }}
+  </button>
+  {% endif %}
+</div>
 {% endmacro %}
 
 {# Scène de l'étape de vérification : la girafe attend, puis tend le cou

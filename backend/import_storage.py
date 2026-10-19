@@ -23,3 +23,20 @@ def read_upload(import_id: str, suffix: str) -> str:
 
 def delete_upload(import_id: str, suffix: str) -> None:
     _upload_path(import_id, suffix).unlink(missing_ok=True)
+    _name_path(import_id, suffix).unlink(missing_ok=True)
+
+
+def _name_path(import_id: str, suffix: str) -> Path:
+    return Path(tempfile.gettempdir()) / f"finance-import-{import_id}{suffix}.name"
+
+
+def save_name(import_id: str, suffix: str, filename: str) -> None:
+    """Remembers the uploaded file's own name, for the import history."""
+    _name_path(import_id, suffix).write_text(filename, encoding="utf-8")
+
+
+def read_name(import_id: str, suffix: str) -> str:
+    try:
+        return _name_path(import_id, suffix).read_text(encoding="utf-8")
+    except OSError:
+        return f"import{suffix}"
