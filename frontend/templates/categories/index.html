@@ -9,7 +9,9 @@
 
 {% block content %}
 <main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
-  {{ page_header(_("Catégories"), back_href="/settings", back_label=_("Paramètres")) }}
+  {% set child_total = categories | map(attribute="children") | map("length") | sum %}
+  {% set categories_subtitle %}{% trans count=categories | length %}{{ count }} catégorie{% pluralize %}{{ count }} catégories{% endtrans %} · {% trans count=child_total %}{{ count }} sous-catégorie{% pluralize %}{{ count }} sous-catégories{% endtrans %}{% endset %}
+  {{ page_header(_("Catégories"), subtitle=categories_subtitle, back_href="/settings", back_label=_("Paramètres")) }}
 
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 lg:gap-6 items-start">
     <section class="card flex flex-col gap-3">
@@ -26,12 +28,12 @@
         </label>
         <label class="form-group lg:flex-1">
           <span class="form-label">{{ _("Emplacement") }}</span>
-          <select name="parent_id" class="input-base">
+          <span class="select-field"><select name="parent_id" class="input-base">
             <option value="">{{ _("Catégorie de premier niveau") }}</option>
             {% for parent in categories %}
             <option value="{{ parent.id }}">{% trans v=parent.icon or "", name=parent.name %}Sous-catégorie de {{ v }} {{ name }}{% endtrans %}</option>
             {% endfor %}
-          </select>
+          </select></span>
         </label>
         {# L'ambre va à l'action de départ quand il n'y a encore rien (le jeu de base). #}
         <button type="submit" class="btn {{ 'btn-primary' if categories else 'btn-secondary border-border-strong' }} lg:px-8">
@@ -44,10 +46,11 @@
       <h2 class="text-section-title">{{ _("Pilier du Cap") }}</h2>
       <p class="text-sm text-secondary">{{ _("Chaque catégorie compte dans un pilier du Cap. Une sous-catégorie hérite de sa catégorie, sauf si tu lui en donnes un autre.") }}</p>
       <ul class="flex flex-col gap-2 text-sm">
-        <li class="flex items-center gap-2"><span class="text-accent-ink">{{ icon('home', size=16) }}</span><span><strong class="font-semibold">{{ _("Essentiel") }}</strong> · {{ _("logement, courses, santé") }}</span></li>
-        <li class="flex items-center gap-2"><span class="text-accent-ink">{{ icon('star', size=16) }}</span><span><strong class="font-semibold">{{ _("Choix") }}</strong> · {{ _("sorties, loisirs, plaisirs") }}</span></li>
-        <li class="flex items-center gap-2"><span class="text-accent-ink">{{ icon('urgent', size=16) }}</span><span><strong class="font-semibold">{{ _("Imprévu") }}</strong> · {{ _("une réserve, sans détail") }}</span></li>
+        <li class="flex items-center gap-2"><span class="text-info">{{ icon('home', size=16) }}</span><span><strong class="font-semibold">{{ _("Essentiel") }}</strong> · {{ _("logement, courses, santé") }}</span></li>
+        <li class="flex items-center gap-2"><span class="text-chart-3">{{ icon('star', size=16) }}</span><span><strong class="font-semibold">{{ _("Choix") }}</strong> · {{ _("sorties, loisirs, plaisirs") }}</span></li>
+        <li class="flex items-center gap-2"><span class="text-warning">{{ icon('urgent', size=16) }}</span><span><strong class="font-semibold">{{ _("Imprévus") }}</strong> · {{ _("une réserve, sans détail") }}</span></li>
       </ul>
+      <p class="text-sm text-secondary">{{ _("L'Épargne ne se choisit pas ici : elle se fixe dans Le Cap.") }}</p>
       <div class="flex flex-col gap-1 items-start">
         <a href="/cap" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-accent-ink whitespace-nowrap">{{ _("Ouvrir Le Cap") }} {{ icon('arrow-narrow-right', size=16) }}</a>
         <button
