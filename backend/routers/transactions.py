@@ -8,13 +8,14 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import answers, crud, preferences, savane
+from backend import answers, crud, preferences, role_rights, savane
+from backend.auth import check_role_access
 from backend.database import get_db
 from backend.budget_month import period_containing, period_spanning
 from backend.formatting import format_amount, format_date
 from backend.models import Account, Category, Transaction
 from backend.receipt_families import RECEIPT_FAMILIES, group_items_by_family
-from backend.templating import templates
+from backend.templating import templates, user_display_name
 from imports.common import ImportParseError, parse_decimal_amount
 from backend.i18n import gettext as _t, ngettext
 
@@ -318,8 +319,28 @@ def _build_budget_alerts_context(db: Session) -> dict:
     }
 
 
+def _build_reader_context(request: Request, db: Session, user) -> dict:
+    """The lot as a read-only list, the sentence of the reader and what the role allows."""
+    split = savane.pending_split(db)
+    waiting = len(split["lot"]) + len(split["questions"])
+    admins = [u for u in crud.list_users(db) if u.is_active and u.role == "admin"]
+    helper = user_display_name(admins[0]) if admins else None
+    return {
+        "request": request,
+        "lot": split["lot"],
+        "answer": answers.reader_answer(waiting, helper),
+        "lot_title": answers.reader_lot_title(date.today()),
+        "rights": role_rights.capabilities(user.role),
+        "questions_count": len(split["questions"]),
+    }
+
+
 @router.get("/inbox", response_class=HTMLResponse)
 def inbox(request: Request, db: Session = Depends(get_db)):
+    user = getattr(request.state, "user", None)
+    if _other_way(request) and user is not None and not check_role_access(user.role, "POST", "/transactions/1/update"):
+        # A reader decides nothing here: the other way shows what waits and what the role allows.
+        return templates.TemplateResponse("other_way/inbox/reader.html", _build_reader_context(request, db, user))
     if _other_way(request):
         today = date.today()
         context = {
