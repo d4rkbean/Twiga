@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from backend import answers, crud, preferences, savane
 from backend.database import get_db
-from backend.budget_month import period_containing
+from backend.budget_month import period_containing, period_spanning
+from backend.formatting import format_amount, format_date
 from backend.models import Account, Category, Transaction
 from backend.receipt_families import RECEIPT_FAMILIES, group_items_by_family
 from backend.templating import templates
@@ -639,6 +640,9 @@ class ListFilters:
     sort: str | None
     page: int
     page_size: str | None
+    # The operation open in place (the other way); carried by the query string so
+    # that a list refreshed by an action keeps its row open.
+    open: str | None = None
 
 
 # Options exposées par le sélecteur "Afficher : X par page" — toute valeur en
@@ -662,11 +666,12 @@ def _get_list_filters(
     f_sort: str | None = None,
     f_page: int = 1,
     f_page_size: str | None = None,
+    f_open: str | None = None,
 ) -> ListFilters:
     return ListFilters(
         f_account, f_category, f_subcategory, f_type, f_date_from, f_date_to,
         f_amount_min, f_amount_max, f_payment_method, f_search, f_sort, f_page,
-        f_page_size,
+        f_page_size, f_open or None,
     )
 
 
@@ -713,6 +718,8 @@ def _build_filter_qs(filters: ListFilters) -> str:
         params["f_page"] = filters.page
     if filters.page_size and _parse_int(filters.page_size) != DEFAULT_PAGE_SIZE:
         params["f_page_size"] = filters.page_size
+    if filters.open:
+        params["f_open"] = filters.open
     return urlencode(params)
 
 
@@ -759,7 +766,101 @@ def list_filter_kwargs(filters: ListFilters) -> dict:
     )
 
 
-def _build_list_context(db: Session, filters: ListFilters) -> dict:
+def _signed(amount: Decimal) -> str:
+    return ("+" if amount > 0 else "") + format_amount(amount)
+
+
+def _period_context(db: Session, filters: ListFilters) -> dict:
+    """The dates in view, named, with the neighbouring budget months to step to."""
+    try:
+        start = date.fromisoformat(filters.date_from) if filters.date_from else None
+        end = date.fromisoformat(filters.date_to) if filters.date_to else None
+    except ValueError:
+        start = end = None
+    if start and end:
+        period = period_spanning(start, end, crud.get_budget_start_day(db))
+        if period is not None:
+            before, after = period.shifted(-1), period.shifted(1)
+            return {
+                "label": period.label,
+                "prev": {"from": before.start.isoformat(), "to": before.last_day.isoformat(), "label": before.label},
+                "next": {"from": after.start.isoformat(), "to": after.last_day.isoformat(), "label": after.label},
+            }
+        return {"label": f"{format_date(start)} → {format_date(end)}", "prev": None, "next": None}
+    if start:
+        return {"label": _t("Dès le %(date)s") % {"date": format_date(start)}, "prev": None, "next": None}
+    if end:
+        return {"label": _t("Jusqu'au %(date)s") % {"date": format_date(end)}, "prev": None, "next": None}
+    return {"label": _t("Toutes les dates"), "prev": None, "next": None}
+
+
+def _operations_context(
+    db: Session,
+    filters: ListFilters,
+    kwargs: dict,
+    transactions: list[Transaction],
+    total: int,
+    total_amount: Decimal,
+) -> dict:
+    """What the other way's list draws on top of the rows.
+
+    The counters of the pills (computed on the filters other than the type and
+    the category, which the pills themselves set), the figures of the side panel
+    (expenses, income, where the expenses go), the dates in view, Twiga's
+    sentence, and what the open row needs (its accounts, categories, ticket).
+    """
+    scope = {
+        key: value
+        for key, value in kwargs.items()
+        if key not in ("type_filter", "category_id", "category_exact", "uncategorized_only")
+    }
+    counts = {
+        "all": crud.count_transactions(db, **scope),
+        "expense": crud.count_transactions(db, **scope, type_filter="expense"),
+        "income": crud.count_transactions(db, **scope, type_filter="income"),
+        "transfer": crud.count_transactions(db, **scope, type_filter="transfer"),
+        "todo": crud.count_transactions(db, **scope, uncategorized_only=True),
+    }
+    view = {key: value for key, value in kwargs.items() if key != "type_filter"}
+    expense_total = -crud.get_transactions_total_amount(db, **view, type_filter="expense")
+    income_total = crud.get_transactions_total_amount(db, **view, type_filter="income")
+    breakdown = crud.get_expense_breakdown(db, **view)
+    period = _period_context(db, filters)
+
+    open_id = _parse_int(filters.open)
+    open_detail: dict = {}
+    if open_id and any(t.id == open_id for t in transactions):
+        receipt_items = crud.get_receipt_items(db, open_id)
+        open_detail = {
+            "accounts": crud.list_accounts(db),
+            "parent_categories": crud.get_top_level_categories(db),
+            "receipt_items": receipt_items,
+            "receipt_groups": group_items_by_family(receipt_items),
+            "receipt_families": RECEIPT_FAMILIES,
+            "raw_extracted_text": None,
+        }
+    answer = answers.operations_answer(
+        total=total,
+        net=_signed(total_amount),
+        todo=counts["todo"],
+        period=period["label"],
+        search=filters.search or "",
+    )
+    return {
+        "scope_counts": counts,
+        "expense_total": expense_total,
+        "income_total": income_total,
+        "expense_breakdown": breakdown[:6],
+        "expense_breakdown_max": (breakdown[0]["total"] if breakdown else Decimal("1")) or Decimal("1"),
+        "period": period,
+        "answer": answer,
+        "open_id": open_id if open_detail else None,
+        "open_detail": open_detail,
+        "all_accounts": crud.list_accounts(db),
+    }
+
+
+def _build_list_context(db: Session, filters: ListFilters, request: Request | None = None) -> dict:
     page = max(filters.page or 1, 1)
     sort = (
         filters.sort
@@ -777,7 +878,13 @@ def _build_list_context(db: Session, filters: ListFilters) -> dict:
     total_amount = crud.get_transactions_total_amount(db, **shared_filter_kwargs)
     total_pages = max(1, math.ceil(total / page_size)) if total else 1
 
+    extra = (
+        _operations_context(db, filters, shared_filter_kwargs, transactions, total, total_amount)
+        if request is not None and _other_way(request)
+        else {}
+    )
     return {
+        **extra,
         "transactions": transactions,
         "transaction_groups": crud.group_transactions_by_date(transactions),
         # Badge 🧾 sur les opérations qui ont un détail de ticket (voir
@@ -825,6 +932,11 @@ def transactions_list(
     filters: ListFilters = Depends(_get_list_filters),
     db: Session = Depends(get_db),
 ):
+    if _other_way(request) and not any(key.startswith("f_") for key in request.query_params):
+        # The other way opens on the month: a search or a link with filters keeps its own dates.
+        period = period_containing(date.today(), crud.get_budget_start_day(db))
+        filters.date_from = period.start.isoformat()
+        filters.date_to = period.last_day.isoformat()
     filter_parent_id = _parse_int(filters.category) if filters.category not in (None, "", "uncategorized") else None
     filter_parent = db.get(Category, filter_parent_id) if filter_parent_id else None
     filter_subcategories = crud.get_child_categories(db, filter_parent.id) if filter_parent else []
@@ -835,7 +947,7 @@ def transactions_list(
         "filter_parent": filter_parent,
         "filter_subcategories": filter_subcategories,
         "initial_page": True,
-        **_build_list_context(db, filters),  # inclut déjà "categories" et "payment_methods"
+        **_build_list_context(db, filters, request),  # inclut déjà "categories" et "payment_methods"
     }
     return templates.TemplateResponse("transactions/index.html", context)
 
@@ -846,7 +958,7 @@ def transactions_list_content(
     filters: ListFilters = Depends(_get_list_filters),
     db: Session = Depends(get_db),
 ):
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     return templates.TemplateResponse("transactions/_content.html", context)
 
 
@@ -883,14 +995,14 @@ def _list_response(
     `detail` is the operation whose read view replaces the panel, "empty" for
     the placeholder (the operation is gone), or None to leave the panel alone.
     """
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     if success_message:
         context["success_message"] = success_message
     if detail == "empty":
         context["detail_html"] = templates.get_template("transactions/_detail_empty.html").render(
             {"request": request}
         )
-    elif detail is not None:
+    elif detail is not None and not _other_way(request):
         context["detail_html"] = _render_detail(request, db, detail, filters, "transactions/_detail.html")
     return templates.TemplateResponse("transactions/_content.html", context)
 
@@ -1158,7 +1270,7 @@ def bulk_apply(
     payment = payment_method if payment_method in crud.get_payment_methods_dict(db) else None
     ids = selected_ids or []
 
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     if not ids or (category is None and payment is None):
         # Rien à appliquer (aucune case cochée, ou ni catégorie ni mode de
         # paiement renseigné) : catégorie et mode de paiement sont chacun
@@ -1169,7 +1281,7 @@ def bulk_apply(
     transactions = [t for t in (db.get(Transaction, tid) for tid in ids) if t is not None]
     crud.bulk_update_transactions(db, transactions, category=category, payment_method=payment)
 
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     context["success_message"] = ngettext(
         "%(n)s opération mise à jour", "%(n)s opérations mises à jour", len(transactions)
     ) % {"n": len(transactions)}
@@ -1187,7 +1299,7 @@ def bulk_unvalidate(
     transactions = [t for t in (db.get(Transaction, tid) for tid in ids) if t is not None]
     count = crud.bulk_unvalidate_transactions(db, transactions)
 
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     if count:
         context["success_message"] = ngettext(
             "%(n)s opération remise dans La Savane", "%(n)s opérations remises dans La Savane", count
@@ -1206,7 +1318,7 @@ def bulk_mark_transfer(
     transactions = [t for t in (db.get(Transaction, tid) for tid in ids) if t is not None]
     count = crud.bulk_mark_as_transfer(db, transactions)
 
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     if count:
         context["success_message"] = ngettext(
             "%(n)s opération marquée comme virement", "%(n)s opérations marquées comme virement", count
@@ -1225,7 +1337,7 @@ def bulk_mark_unexpected(
     transactions = [t for t in (db.get(Transaction, tid) for tid in ids) if t is not None]
     count = crud.bulk_mark_as_unexpected(db, transactions)
 
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     if count:
         context["success_message"] = ngettext(
             "%(n)s opération marquée comme imprévu", "%(n)s opérations marquées comme imprévus", count
@@ -1244,7 +1356,7 @@ def bulk_unmark_transfer(
     transactions = [t for t in (db.get(Transaction, tid) for tid in ids) if t is not None]
     count = crud.bulk_unmark_transfer(db, transactions)
 
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     if count:
         context["success_message"] = ngettext(
             "%(n)s opération renvoyée dans La Savane (virement annulé)",
@@ -1265,7 +1377,7 @@ def bulk_delete(
     transactions = [t for t in (db.get(Transaction, tid) for tid in ids) if t is not None]
     count = crud.bulk_delete_transactions(db, transactions)
 
-    context = {"request": request, **_build_list_context(db, filters)}
+    context = {"request": request, **_build_list_context(db, filters, request)}
     if count:
         context["success_message"] = ngettext(
             "%(n)s opération supprimée", "%(n)s opérations supprimées", count

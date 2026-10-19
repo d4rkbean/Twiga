@@ -2667,6 +2667,40 @@ def get_transactions_total_amount(
     return db.execute(stmt).scalar_one()
 
 
+def count_transactions(db: Session, **filters) -> int:
+    """How many operations the list filters designate (same keywords as list_transactions)."""
+    conditions = _build_transaction_filter_conditions(db, **filters)
+    return db.execute(select(func.count()).select_from(Transaction).where(*conditions)).scalar_one()
+
+
+def get_expense_breakdown(db: Session, **filters) -> list[dict]:
+    """Where the expenses of a selection go, by top-level category, biggest first.
+
+    `filters` are the list filters (a `type_filter` among them is ignored: the
+    breakdown is always about expenses). Operations without a category are
+    gathered under `category: None`. Amounts are positive.
+    """
+    filters = {**filters, "type_filter": "expense"}
+    conditions = _build_transaction_filter_conditions(db, **filters)
+    rows = db.execute(
+        select(Transaction.category_id, func.sum(-Transaction.amount))
+        .where(*conditions)
+        .group_by(Transaction.category_id)
+    ).all()
+    categories = {c.id: c for c in db.execute(select(Category)).scalars().all()}
+    totals: dict[int | None, Decimal] = {}
+    for category_id, total in rows:
+        category = categories.get(category_id)
+        top = resolve_top_level_category(category) if category is not None else None
+        key = top.id if top is not None else None
+        totals[key] = totals.get(key, Decimal("0.00")) + total
+    return sorted(
+        ({"category": categories.get(key), "total": total} for key, total in totals.items()),
+        key=lambda entry: entry["total"],
+        reverse=True,
+    )
+
+
 def group_transactions_by_date(transactions: list[Transaction]) -> list[dict]:
     # Regroupe une liste déjà triée en groupes par jour, avec un intitulé
     # long en français ("mercredi 5 août 2026") pour l'en-tête de section de
