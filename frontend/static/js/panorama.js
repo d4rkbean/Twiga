@@ -362,6 +362,16 @@
     window.location.replace(url.toString());
   }
 
+  // Le compteur « Compter les N opérations à ranger » : il retourne le champ caché `tri` du
+  // formulaire des filtres et lui fait envoyer sa requête (la carte des enveloppes est hors
+  // du formulaire : on passe par le champ).
+  window.twigaToggleTri = function () {
+    var field = document.getElementById("panorama-tri");
+    if (!field) return;
+    field.value = field.value === "1" ? "0" : "1";
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
   // Appelée par la case « Décaler recettes » : la préférence reste dans le navigateur.
   window.twigaRememberShift = function (checked) {
     try {

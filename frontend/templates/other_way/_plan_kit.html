@@ -22,8 +22,8 @@
 <section aria-label="{{ label or _("La réponse de Twiga") }}" class="flex items-start gap-3 lg:gap-5">
   <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
   <div class="min-w-0 flex flex-col gap-2">
-    <h1 id="answer" class="font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ headline }}</h1>
-    {% if sub %}<p id="answer-sub" class="max-w-[70ch] text-sm text-secondary lg:text-base">{{ sub }}</p>{% endif %}
+    <h1 id="answer" class="amount-blur font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ headline }}</h1>
+    {% if sub %}<p id="answer-sub" class="amount-blur max-w-[70ch] text-sm text-secondary lg:text-base">{{ sub }}</p>{% endif %}
     {% if caller %}{{ caller() }}{% endif %}
   </div>
 </section>
