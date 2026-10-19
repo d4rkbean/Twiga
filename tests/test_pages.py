@@ -34,6 +34,7 @@ PAGES = [
     Page("/settings"),
     Page("/profile"),
     Page("/payment-methods"),
+    Page("/payment-methods/head", htmx=True),
     # Inbox (La Savane) and operations
     Page("/transactions/inbox"),
     Page("/transactions/{transaction_id}/categories", htmx=True),

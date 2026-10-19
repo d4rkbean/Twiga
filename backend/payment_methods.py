@@ -28,6 +28,15 @@ _DETECTION_RULES: list[tuple[list[str], str]] = [
 ]
 
 
+def detection_examples() -> list[tuple[str, str]]:
+    """The words Twiga reads in a label and the mode each one gives, in priority order:
+    [("CARTE, CB, TPE", "CB"), ...]. Shown by the Modes de paiement screen of the other way."""
+    seen: dict[str, list[str]] = {}
+    for keywords, name in _DETECTION_RULES:
+        seen.setdefault(name, []).extend(keywords)
+    return [(", ".join(words), name) for name, words in seen.items()]
+
+
 def detect_payment_from_label(label: str | None) -> str | None:
     if not label:
         return None

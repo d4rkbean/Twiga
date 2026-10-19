@@ -269,6 +269,22 @@ def rules_answer(suggestions: int, rules: int) -> dict:
     return {"phrase": phrase, "detail": detail}
 
 
+def payments_answer(modes: int, missing: int) -> dict:
+    """The sentence of the Modes de paiement screen: how many modes, and the operations without one."""
+    count = ngettext("%(n)s mode de paiement.", "%(n)s modes de paiement.", modes) % {"n": modes}
+    if missing:
+        phrase = count + " " + ngettext(
+            "Une opération n'a pas encore le sien.", "%(n)s opérations n'ont pas encore le leur.", missing
+        ) % {"n": format_integer(missing)}
+    else:
+        phrase = count + " " + _t("Toutes les opérations ont le leur.")
+    detail = _t(
+        "Je peux lire les libellés pour deviner le mode : « CARTE SUPERMARCHE » devient CB. "
+        "Ces modes servent aux règles, aux chèques et aux filtres."
+    )
+    return {"phrase": phrase, "detail": detail}
+
+
 # --- Import -----------------------------------------------------------------
 
 
