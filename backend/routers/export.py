@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -9,6 +10,8 @@ from sqlalchemy.orm import Session
 from backend import export, restore
 from backend.database import SessionLocal, get_db
 from backend.templating import templates
+from backend import uploads
+from backend.i18n import gettext as _t
 
 router = APIRouter(prefix="/export", tags=["export"])
 
@@ -18,6 +21,18 @@ router = APIRouter(prefix="/export", tags=["export"])
 # fond pendant que ce dict est mis à jour, et un endpoint séparé le relit
 # pour afficher la progression sans bloquer la requête initiale.
 _restore_progress: dict = {"status": "idle", "total": 0, "processed": 0, "error": None, "summary": None}
+
+
+def _megabytes(value: str | None, default: int) -> int:
+    try:
+        return max(1, int(value)) if value else default
+    except ValueError:
+        return default
+
+
+# A backup is read in chunks and refused beyond this size (RESTORE_MAX_MB,
+# optional, 50 MB by default: several hundred thousand operations).
+RESTORE_MAX_MB = _megabytes(os.environ.get("RESTORE_MAX_MB"), 50)
 
 
 def _json_default(value):
@@ -79,7 +94,15 @@ async def start_restore(
             "export/_restore_progress.html", {"request": request, **_restore_progress}
         )
 
-    content = await file.read()
+    content = await uploads.read_limited(file, RESTORE_MAX_MB * uploads.MEGABYTE)
+    if content is None:
+        _restore_progress.update({
+            "status": "error", "total": 0, "processed": 0, "summary": None,
+            "error": _t("Fichier trop volumineux (%(size)s Mo maximum).") % {"size": RESTORE_MAX_MB},
+        })
+        return templates.TemplateResponse(
+            "export/_restore_progress.html", {"request": request, **_restore_progress}
+        )
     try:
         data = json.loads(content)
     except json.JSONDecodeError:

@@ -1099,6 +1099,10 @@ msgstr "Empty CSV file."
 msgid "Fichier QIF, CSV ou OFX"
 msgstr "QIF, CSV or OFX file"
 
+#, python-format
+msgid "Fichier trop volumineux (%(size)s Mo maximum)."
+msgstr "File too large (%(size)s MB maximum)."
+
 msgid "Fichier trop volumineux (5 Mo maximum)."
 msgstr "File too large (5 MB maximum)."
 

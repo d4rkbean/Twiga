@@ -99,6 +99,10 @@ and the app behaves as before. Set them in `.env`, then
   and username (5 per 15 minutes) and per username from all addresses (20 per
   15 minutes); behind a proxy, list it here so that the client address is read
   from `X-Forwarded-For`. Empty: the address of the direct connection.
+- `RESTORE_MAX_MB`: the largest JSON backup the restore accepts, 50 MB by
+  default (several hundred thousand operations). Statements to import and
+  receipt PDFs are limited to 5 MB; a statement waiting in the import wizard is
+  kept readable by the app only and removed after 24 hours.
 
 ## Backing up your data
 

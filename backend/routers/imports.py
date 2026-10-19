@@ -9,6 +9,7 @@ from backend import crud, import_storage
 from backend.database import get_db
 from backend.models import Account
 from backend.templating import templates
+from backend import uploads
 from imports import csv_parser, ofx_parser, qif_parser
 from imports.common import ImportParseError, ParsedTransaction, split_duplicates
 from backend.i18n import gettext as _t
@@ -20,6 +21,8 @@ _ALLOWED_FORMAT_VALUES = set(_SUPPORTED_FORMATS.values())
 # import_id est toujours généré côté serveur par uuid.uuid4().hex
 # (import_storage.save_upload) : 32 caractères hexadécimaux minuscules.
 _IMPORT_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
+# Statements are read in chunks and refused beyond this size.
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 
 def _detect_format(filename: str) -> str:
@@ -118,7 +121,9 @@ async def preview(
     db: Session = Depends(get_db),
 ):
     fmt = _detect_format(file.filename or "")
-    raw_bytes = await file.read()
+    raw_bytes = await uploads.read_limited(file, MAX_UPLOAD_BYTES)
+    if raw_bytes is None:
+        return _error(request, _t("Fichier trop volumineux (5 Mo maximum)."))
     import_id = import_storage.save_upload(raw_bytes, f".{fmt}")
     content = import_storage.read_upload(import_id, f".{fmt}")
 

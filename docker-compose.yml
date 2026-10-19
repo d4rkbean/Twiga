@@ -39,6 +39,7 @@ services:
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-auto}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      RESTORE_MAX_MB: ${RESTORE_MAX_MB:-50}
       # Living style guide at /design-system. Off by default: the route
       # returns 404 unless this variable is true.
       SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}
