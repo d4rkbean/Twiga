@@ -8,8 +8,9 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud, preferences, savane
 from backend.database import get_db
+from backend.formatting import format_amount
 from backend.models import Category, Transaction
 from backend.templating import flash_html, templates
 from backend.i18n import gettext as _t
@@ -46,6 +47,7 @@ def _build_items(db: Session) -> list[dict]:
     # chargé une fois la Session d'origine fermée.
     pending = crud.get_backlog_transactions(db)
     samples = crud.get_categorized_label_samples(db)
+    history = savane.history_index(db)
     categories_by_id = {c.id: c for c in db.execute(select(Category)).scalars().all()}
 
     items = []
@@ -55,7 +57,13 @@ def _build_items(db: Session) -> list[dict]:
         if raw_suggestion is not None:
             category = raw_suggestion["category"]
             parent = categories_by_id.get(category.parent_id) if category.parent_id else None
+            in_category, history_total = savane.history_counts(history, tx, category.id)
             suggestion = {
+                # The lot of the other way: sure, and not contradicted by the history.
+                "history_in": in_category,
+                "history_total": history_total,
+                "sure": raw_suggestion["confidence"] >= savane.SURE_CONFIDENCE
+                and (history_total == 0 or in_category / history_total >= savane.SURE_HISTORY_SHARE),
                 "category_id": category.id,
                 "category_name": category.name,
                 "category_icon": category.icon,
@@ -63,6 +71,7 @@ def _build_items(db: Session) -> list[dict]:
                 "category_path": f"{parent.name} › {category.name}" if parent else category.name,
                 # Colour and "Suggested category" filter follow the top-level category.
                 "category_top_id": parent.id if parent else category.id,
+                "category_top_name": parent.name if parent else category.name,
                 "based_on_label": raw_suggestion["based_on_label"],
                 "confidence": raw_suggestion["confidence"],
             }
@@ -71,6 +80,8 @@ def _build_items(db: Session) -> list[dict]:
                 "transaction_id": tx.id,
                 "date": tx.date,
                 "label": tx.label,
+                "raw_label": tx.raw_label,
+                "payment_method": tx.payment_method,
                 "label_key": _normalize_label(tx.label),
                 "account_id": tx.account_id,
                 "account_name": tx.account.name,
@@ -121,9 +132,10 @@ PAGE_SIZE = 10
 MAX_LIMIT = 1000
 
 # Confidence classes, shared by the filter chips, the counters and the badges.
-HIGH_CONFIDENCE = 90
+HIGH_CONFIDENCE = savane.SURE_CONFIDENCE
 MID_CONFIDENCE = 70
-CONFIDENCE_FILTERS = ("all", "high", "mid", "low", "none")
+# "sure" is the other way's lot: sure and not contradicted by the history.
+CONFIDENCE_FILTERS = ("all", "high", "mid", "low", "none", "sure")
 
 
 def confidence_class(confidence: int | None) -> str:
@@ -186,6 +198,8 @@ def _apply_filters(
     scoped = _scoped_items(items, search, account_id, category_id)
     if suggestion_filter not in CONFIDENCE_FILTERS or suggestion_filter == "all":
         return scoped
+    if suggestion_filter == "sure":
+        return [i for i in scoped if i["suggestion"] and i["suggestion"]["sure"]]
     return [i for i in scoped if _item_class(i) == suggestion_filter]
 
 
@@ -194,6 +208,8 @@ def _confidence_counts(scoped: list[dict]) -> dict[str, int]:
     counts["all"] = len(scoped)
     for item in scoped:
         counts[_item_class(item)] += 1
+        if item["suggestion"] and item["suggestion"]["sure"]:
+            counts["sure"] += 1
     return counts
 
 
@@ -250,6 +266,8 @@ def _build_page_context(
     category: str = "",
     group: str = "",
     limit: int = PAGE_SIZE,
+    page: int = 1,
+    other_way: bool = False,
 ) -> dict:
     state = _filter_state(search, suggestion_filter, account, category, group, limit)
     all_items = _cached_items(db)
@@ -265,7 +283,9 @@ def _build_page_context(
     rows = _group_rows(visible, state["group"])
     accounts = crud.list_accounts(db)
     parent_categories = crud.get_top_level_categories(db)
+    extra = _other_way_context(all_items, scoped, visible, rows, state, page) if other_way else {}
     return {
+        **extra,
         "rows": rows[: state["limit"]],
         "rows_total": len(rows),
         "remaining": max(0, len(rows) - state["limit"]),
@@ -283,8 +303,110 @@ def _build_page_context(
     }
 
 
+# Groups per page on the other way's screen.
+GROUPS_PER_PAGE = 6
+# Rows drawn in a group; the count and the group's action still cover them all.
+GROUP_ROWS_SHOWN = 40
+
+
+def _other_way_context(
+    all_items: list[dict], scoped: list[dict], visible: list[dict], rows: list[dict], state: dict, page: int
+) -> dict:
+    """What the other way draws on top of the rows: the groups, the lot in view, the sentence.
+
+    Groups are the top-level categories the suggestions point to, plus one for
+    the operations without a suggestion (last). The lot is what is sure
+    (HIGH_CONFIDENCE) among the operations in view; « Tout ranger » files it,
+    minus the lines the user leaves aside (kept by the page, not here).
+    """
+    groups: dict[object, dict] = {}
+    for row in rows:
+        suggestion = row["suggestion"]
+        key = suggestion["category_top_id"] if suggestion else None
+        group = groups.setdefault(
+            key,
+            {
+                "key": key,
+                "top_id": key,
+                "name": suggestion["category_top_name"] if suggestion else None,
+                "rows": [],
+                "count": 0,
+                "total": Decimal("0"),
+                "confidences": [],
+                "payments": [],
+                "lot_ids": [],
+            },
+        )
+        row["sure"] = bool(suggestion and suggestion["sure"])
+        group["rows"].append(row)
+        group["count"] += row["count"]
+        group["total"] += row["amount"]
+        if row["confidence"] is not None:
+            group["confidences"].append(row["confidence"])
+        for item in row["items"]:
+            method = item["payment_method"]
+            if method and method not in group["payments"]:
+                group["payments"].append(method)
+            if item["suggestion"] and item["suggestion"]["sure"]:
+                group["lot_ids"].append(item["transaction_id"])
+    ordered = sorted(
+        groups.values(), key=lambda g: (g["key"] is None, -g["count"], g["name"] or "")
+    )
+    for group in ordered:
+        group["min_confidence"] = min(group["confidences"]) if group["confidences"] else None
+        group["hidden_rows"] = max(0, len(group["rows"]) - GROUP_ROWS_SHOWN)
+        group["rows"] = group["rows"][:GROUP_ROWS_SHOWN]
+    pages = max(1, -(-len(ordered) // GROUPS_PER_PAGE))
+    page = min(max(page, 1), pages)
+    shown = ordered[(page - 1) * GROUPS_PER_PAGE : page * GROUPS_PER_PAGE]
+
+    lot = [i for i in visible if i["suggestion"] and i["suggestion"]["sure"]]
+    lot_total = sum((i["amount"] for i in lot), Decimal("0"))
+    by_category: dict[int, dict] = {}
+    payments: dict[str, int] = {}
+    for item in lot:
+        suggestion = item["suggestion"]
+        entry = by_category.setdefault(
+            suggestion["category_top_id"],
+            {"top_id": suggestion["category_top_id"], "name": suggestion["category_top_name"], "total": Decimal("0")},
+        )
+        entry["total"] += item["amount"]
+        payments[item["payment_method"] or ""] = payments.get(item["payment_method"] or "", 0) + 1
+    lot_categories = sorted(by_category.values(), key=lambda e: e["total"])
+    min_confidence = min((i["suggestion"]["confidence"] for i in lot), default=None)
+    answer = answers.masse_answer(
+        count=len(lot),
+        categories=len(lot_categories),
+        amount=format_amount(abs(lot_total)),
+        min_confidence=min_confidence,
+        pending=len(all_items),
+        searching=bool(state["search"].strip()),
+    )
+    return {
+        "groups": shown,
+        "shown_ids": [i for g in shown for r in g["rows"] for i in r["ids"]],
+        "groups_total": len(ordered),
+        "page": page,
+        "pages": pages,
+        "lot_ids": [i["transaction_id"] for i in lot],
+        "lot_count": len(lot),
+        "lot_total": lot_total,
+        "lot_categories": lot_categories,
+        "lot_category_max": max((abs(e["total"]) for e in lot_categories), default=Decimal("1")) or Decimal("1"),
+        "lot_payments": sorted(payments.items(), key=lambda kv: -kv[1]),
+        "doubt_count": max(0, len(all_items) - len(lot)),
+        "answer": answer,
+        "scoped_total": len(scoped),
+    }
+
+
+def _other_way(request: Request) -> bool:
+    variant = getattr(request.state, "ui_variant", None) or preferences.current_ui_variant()
+    return variant == "other_way"
+
+
 def _filters(
-    search: str, suggestion_filter: str, account: str, category: str, group: str, limit: int
+    search: str, suggestion_filter: str, account: str, category: str, group: str, limit: int, page: int = 1
 ) -> dict:
     return {
         "search": search,
@@ -293,6 +415,7 @@ def _filters(
         "category": category,
         "group": group,
         "limit": limit,
+        "page": page,
     }
 
 
@@ -303,7 +426,7 @@ def _content_response(
     rule_suggestions: list[dict] | None = None,
     last: dict | None = None,
 ):
-    context = _build_page_context(db, **filters)
+    context = _build_page_context(db, **filters, other_way=_other_way(request))
     context["request"] = request
     context["rule_suggestions"] = rule_suggestions or []
     context["last"] = last
@@ -340,14 +463,21 @@ def _common_path(categories: list[Category]) -> str:
 def backlog_page(
     request: Request,
     search: str = "",
-    suggestion_filter: str = "all",
+    suggestion_filter: str | None = None,
     account: str = "",
     category: str = "",
     group: str = "",
     limit: int = PAGE_SIZE,
+    page: int = 1,
     db: Session = Depends(get_db),
 ):
-    context = _build_page_context(db, search, suggestion_filter, account, category, group, limit)
+    other_way = _other_way(request)
+    if suggestion_filter is None:
+        # The other way opens on the lot: what is sure.
+        suggestion_filter = "sure" if other_way else "all"
+    context = _build_page_context(
+        db, search, suggestion_filter, account, category, group, limit, page, other_way
+    )
     context["request"] = request
     context["rule_suggestions"] = []
     context["last"] = None
@@ -359,15 +489,18 @@ def backlog_page(
 def backlog_content(
     request: Request,
     search: str = "",
-    suggestion_filter: str = "all",
+    suggestion_filter: str | None = None,
     account: str = "",
     category: str = "",
     group: str = "",
     limit: int = PAGE_SIZE,
+    page: int = 1,
     db: Session = Depends(get_db),
 ):
+    if suggestion_filter is None:
+        suggestion_filter = "sure" if _other_way(request) else "all"
     return _content_response(
-        request, db, _filters(search, suggestion_filter, account, category, group, limit)
+        request, db, _filters(search, suggestion_filter, account, category, group, limit, page)
     )
 
 
@@ -382,6 +515,7 @@ def validate_rows(
     category: str = Form(""),
     group: str = Form(""),
     limit: int = Form(PAGE_SIZE),
+    page: int = Form(1),
     db: Session = Depends(get_db),
 ):
     """File one row (or every operation of a grouped row): in the chosen category,
@@ -419,7 +553,7 @@ def validate_rows(
     return _content_response(
         request,
         db,
-        _filters(search, suggestion_filter, account, category, group, limit),
+        _filters(search, suggestion_filter, account, category, group, limit, page),
         _dedupe_rule_suggestions(rule_suggestions),
         last,
     )
@@ -447,6 +581,7 @@ def reject_rows(
     category: str = Form(""),
     group: str = Form(""),
     limit: int = Form(PAGE_SIZE),
+    page: int = Form(1),
     db: Session = Depends(get_db),
 ):
     """Send a row back to La Savane: it leaves this list, nothing is categorized."""
@@ -454,7 +589,7 @@ def reject_rows(
     return _content_response(
         request,
         db,
-        _filters(search, suggestion_filter, account, category, group, limit),
+        _filters(search, suggestion_filter, account, category, group, limit, page),
         last={"kind": "rejected", "count": len(processed)} if processed else None,
     )
 
@@ -477,6 +612,7 @@ def bulk_validate(
     category: str = Form(""),
     group: str = Form(""),
     limit: int = Form(PAGE_SIZE),
+    page: int = Form(1),
     db: Session = Depends(get_db),
 ):
     """File every listed operation whose suggestion is at least `min_confidence` sure."""
@@ -499,7 +635,7 @@ def bulk_validate(
     return _content_response(
         request,
         db,
-        _filters(search, suggestion_filter, account, category, group, limit),
+        _filters(search, suggestion_filter, account, category, group, limit, page),
         _dedupe_rule_suggestions(rule_suggestions),
         {"kind": "filed_sure", "count": len(processed_ids), "threshold": min_confidence}
         if processed_ids
@@ -517,6 +653,7 @@ def bulk_reject(
     category: str = Form(""),
     group: str = Form(""),
     limit: int = Form(PAGE_SIZE),
+    page: int = Form(1),
     db: Session = Depends(get_db),
 ):
     """Send back to La Savane every listed operation whose suggestion is under `max_confidence`."""
@@ -529,7 +666,7 @@ def bulk_reject(
     return _content_response(
         request,
         db,
-        _filters(search, suggestion_filter, account, category, group, limit),
+        _filters(search, suggestion_filter, account, category, group, limit, page),
         last={"kind": "rejected", "count": len(processed)} if processed else None,
     )
 
@@ -546,6 +683,7 @@ def bulk_apply(
     category: str = Form(""),
     group: str = Form(""),
     limit: int = Form(PAGE_SIZE),
+    page: int = Form(1),
     db: Session = Depends(get_db),
 ):
     """Apply to the selection: the chosen category (or each operation's own suggestion),
@@ -556,7 +694,7 @@ def bulk_apply(
         if apply_payment_method in crud.get_payment_methods_dict(db)
         else None
     )
-    filters = _filters(search, suggestion_filter, account, category, group, limit)
+    filters = _filters(search, suggestion_filter, account, category, group, limit, page)
     ids = selected_ids or []
     if not ids:
         return _content_response(request, db, filters)
