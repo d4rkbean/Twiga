@@ -151,8 +151,14 @@ def shop(demo):
         sure = add("CB ZEBRAMARKET 02/02", None, False, 3)
         doubtful = add("CB ZEBRABOOKS 03/02", None, False, 2)
         db.commit()
+        from backend.routers import backlog
+
+        backlog._cache["items"] = None  # the screen keeps its suggestions between requests
         ids = {"sure": sure.id, "doubtful": doubtful.id, "sure_cat": sure_cat.id, "other_cat": other_cat.id, "parent": parent.id}
     yield ids
+    from backend.routers import backlog
+
+    backlog._cache["items"] = None
     with SessionLocal() as db:
         db.query(Transaction).filter(Transaction.id.in_(created)).delete(synchronize_session=False)
         db.query(RuleSuggestion).filter(RuleSuggestion.category_id.in_([ids["sure_cat"], ids["other_cat"]])).delete(
