@@ -87,6 +87,11 @@ and the app behaves as before. Set them in `.env`, then
 - `BIND_ADDRESS`: the host address the port listens on. `127.0.0.1` keeps the
   app reachable from this machine only (when a reverse proxy runs on the same
   host). Empty: every address, as before.
+- `COOKIE_SECURE`: `auto` (default) marks the session cookie `Secure` when the
+  request arrives over HTTPS, directly or through a reverse proxy that sends
+  `X-Forwarded-Proto: https`; HTTPS responses also carry
+  `Strict-Transport-Security`. `true` forces `Secure` (the session then only
+  works over HTTPS), `false` never sets it.
 
 ## Backing up your data
 

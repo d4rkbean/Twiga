@@ -175,7 +175,8 @@ Then open `http://twiga.local:8181`.
 ## HTTPS reverse proxy (optional)
 
 For HTTPS with a local certificate, install Nginx Proxy Manager or Caddy on
-Proxmox (or in another LXC) in front of port `8181`. If the proxy serves Twiga
-over HTTPS, remember to set the session cookie to `Secure` (currently only
-`httponly` + `SameSite=Lax`, which suits local HTTP; see
-`backend/routers/auth.py`).
+Proxmox (or in another LXC) in front of port `8181`. When the proxy sends
+`X-Forwarded-Proto: https` (Nginx Proxy Manager and Caddy do), the session
+cookie is marked `Secure` automatically (`COOKIE_SECURE=auto`, see the
+README). If the proxy changes the `Host` header, see `TRUSTED_ORIGINS` in the
+README, and `BIND_ADDRESS=127.0.0.1` when the proxy runs on the same host.
