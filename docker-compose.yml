@@ -37,6 +37,7 @@ services:
       # Optional security settings, empty by default (see .env.example).
       TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-auto}
       # Living style guide at /design-system. Off by default: the route
       # returns 404 unless this variable is true.
       SHOW_DESIGN_SYSTEM: ${SHOW_DESIGN_SYSTEM:-false}
