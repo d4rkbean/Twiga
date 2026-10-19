@@ -3397,6 +3397,34 @@ def count_pending_rule_suggestions(db: Session) -> int:
     ) or 0
 
 
+def count_transactions_matching_keyword(db: Session, keyword: str) -> int:
+    """How many operations a keyword catches: the same criterion as a rule (the raw
+    label contains it, case aside). Used to show a rule's reach before it is saved."""
+    keyword = (keyword or "").strip()
+    if not keyword:
+        return 0
+    pattern = f"%{_escape_like(keyword)}%"
+    return db.execute(
+        select(func.count()).select_from(Transaction).where(Transaction.raw_label.ilike(pattern, escape="\\"))
+    ).scalar_one()
+
+
+def create_rules_from_suggestions(db: Session) -> int:
+    """Turns every pending suggestion into a rule ("Tout créer"); returns how many were made.
+
+    A suggestion whose keyword already has a rule is only cleared (create_rule
+    removes the suggestion of a keyword it just realised).
+    """
+    created = 0
+    for suggestion in list_pending_rule_suggestions(db):
+        category = db.get(Category, suggestion.category_id)
+        if category is None:
+            continue
+        create_rule(db, suggestion.keyword, category)
+        created += 1
+    return created
+
+
 def dismiss_rule_suggestion(db: Session, suggestion_id: int) -> None:
     suggestion = db.get(RuleSuggestion, suggestion_id)
     if suggestion is not None:

@@ -94,6 +94,7 @@ PAGES = [
     Page("/checks/list", htmx=True),
     Page("/rules"),
     Page("/rules/list", htmx=True),
+    Page("/rules/head", htmx=True),
     Page("/rules/{rule_id}/row", htmx=True),
     Page("/rules/{rule_id}/edit", htmx=True),
     # Reports

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud
+from backend import answers, crud
 from backend.database import get_db
 from backend.models import Category, Rule
 from backend.receipt_families import RECEIPT_FAMILIES
@@ -25,6 +25,16 @@ def _list_context(db: Session) -> dict:
     }
 
 
+def _answer_context(db: Session) -> dict:
+    """The other way's sentence and, for each proposal, how many operations of the
+    history it would have caught ("Présent dans 4 opérations"). Classic ignores both."""
+    suggestions = crud.list_pending_rule_suggestions(db)
+    return {
+        "answer": answers.rules_answer(len(suggestions), len(crud.get_rules_with_usage(db))),
+        "suggestion_usage": {s.id: crud.count_transactions_matching_keyword(db, s.keyword) for s in suggestions},
+    }
+
+
 def _form_context(db: Session) -> dict:
     return {"parent_categories": crud.get_top_level_categories(db), "receipt_families": RECEIPT_FAMILIES}
 
@@ -33,19 +43,41 @@ def _form_context(db: Session) -> dict:
 def dismiss_suggestion(request: Request, suggestion_id: int, db: Session = Depends(get_db)):
     """Refus mémorisé : la proposition ne reviendra plus (voir RuleSuggestion)."""
     crud.dismiss_rule_suggestion(db, suggestion_id)
-    context = {"request": request, **_list_context(db)}
+    context = {"request": request, **_list_context(db), **_answer_context(db)}
     return templates.TemplateResponse("rules/_content.html", context)
 
 
 @router.get("", response_class=HTMLResponse)
 def rules_page(request: Request, db: Session = Depends(get_db)):
-    context = {"request": request, **_list_context(db), **_form_context(db)}
+    context = {"request": request, **_list_context(db), **_form_context(db), **_answer_context(db)}
     return templates.TemplateResponse("rules/index.html", context)
+
+
+@router.get("/head", response_class=HTMLResponse)
+def rules_head(request: Request, db: Session = Depends(get_db)):
+    """The sentence and the actions of the other way's page, refreshed after a gesture."""
+    context = {"request": request, **_list_context(db), **_answer_context(db)}
+    return templates.TemplateResponse("other_way/rules/_head.html", context)
+
+
+@router.post("/create-all", response_class=HTMLResponse)
+def create_all_suggestions(request: Request, db: Session = Depends(get_db)):
+    """"Tout créer": every pending proposal becomes a rule."""
+    crud.create_rules_from_suggestions(db)
+    context = {"request": request, **_list_context(db), **_answer_context(db)}
+    return templates.TemplateResponse("rules/_content.html", context)
+
+
+@router.post("/count", response_class=HTMLResponse)
+def count_matches(request: Request, keyword: str = Form(""), db: Session = Depends(get_db)):
+    """How many operations a keyword would catch, while it is being typed."""
+    context = {"request": request, "keyword": keyword.strip(), "matches": crud.count_transactions_matching_keyword(db, keyword)}
+    return templates.TemplateResponse("other_way/rules/_count.html", context)
 
 
 @router.get("/list", response_class=HTMLResponse)
 def rules_list(request: Request, db: Session = Depends(get_db)):
-    context = {"request": request, **_list_context(db)}
+    context = {"request": request, **_list_context(db), **_answer_context(db)}
     return templates.TemplateResponse("rules/_content.html", context)
 
 
@@ -69,7 +101,7 @@ def create_rule(
             payment_method=payment_method or None,
             receipt_family=receipt_family or None,
         )
-    context = {"request": request, **_list_context(db)}
+    context = {"request": request, **_list_context(db), **_answer_context(db)}
     return templates.TemplateResponse("rules/_content.html", context)
 
 
@@ -140,7 +172,7 @@ def update_rule(
     # Ré-affiche toute la liste (pas juste la ligne) : changer le mot-clé
     # peut changer le compte d'utilisation de la règle, donc potentiellement
     # sa place dans le tri "plus utilisées d'abord".
-    context = {"request": request, **_list_context(db)}
+    context = {"request": request, **_list_context(db), **_answer_context(db)}
     return templates.TemplateResponse("rules/_content.html", context)
 
 
@@ -150,7 +182,7 @@ def delete_rule(request: Request, rule_id: int, db: Session = Depends(get_db)):
     if rule is None:
         raise HTTPException(status_code=404, detail=_t("Règle introuvable"))
     crud.delete_rule(db, rule)
-    context = {"request": request, **_list_context(db)}
+    context = {"request": request, **_list_context(db), **_answer_context(db)}
     return templates.TemplateResponse("rules/_content.html", context)
 
 
