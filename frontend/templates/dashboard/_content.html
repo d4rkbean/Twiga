@@ -51,9 +51,10 @@
   {% set expense_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(-expense_total) }}</strong>{% endset %}
   {% set result_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(result_total, plus=true) }}</strong>{% endset %}
   <p class="text-lg leading-snug text-primary lg:text-[22px] lg:max-w-4xl">
-    {% trans period=period_label, income=income_html, expense=expense_html, result=result_html %}{{ period }} : le foyer a reçu {{ income }} et dépensé {{ expense }}, soit un résultat de {{ result }}.{% endtrans %}
+    {% trans lead=period_lead, income=income_html, expense=expense_html, result=result_html %}{{ lead }} le foyer a reçu {{ income }} et dépensé {{ expense }}&nbsp;: il reste {{ result }}.{% endtrans %}
     {% if pending_count %}
-    {% trans count=pending_count, v="s" if pending_count > 1 else "", v2="ent" if pending_count > 1 else "" %}À ce jour, <strong class="font-bold">{{ count }} opération{{ v }}</strong> attend{{ v2 }} encore dans La Savane.{% endtrans %}
+    {% set pending_html %}<span class="amount-blur tabular-nums whitespace-nowrap">{{ pending_total | eur }}</span>{% endset %}
+    {% trans count=pending_count, amount=pending_html, v="s" if pending_count > 1 else "", v2="ent" if pending_count > 1 else "" %}À ce jour, <strong class="font-bold">{{ count }}&nbsp;opération{{ v }}</strong> ({{ amount }}) attend{{ v2 }} encore dans La Savane.{% endtrans %}
     {% endif %}
   </p>
 
@@ -76,19 +77,22 @@
       </button>
     </div>
     <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
-      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('trending-up', size=14) }} {{ _("Recettes") }}</p>
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('arrow-narrow-left', size=14) }} {{ _("Recettes") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(income_total, plus=true) }}</p>
+      <p class="text-xs text-secondary">{{ _("recettes décalées") if shift_income else _("sur la période") }}</p>
     </div>
     <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
       <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('trending-down', size=14) }} {{ _("Dépenses") }}</p>
-      <p class="amount-blur text-xl font-bold tabular-nums text-primary">{{ signed(-expense_total) }}</p>
+      <p class="amount-blur text-xl font-bold tabular-nums {{ 'text-danger' if expense_total else 'text-primary' }}">{{ signed(-expense_total) }}</p>
+      <p class="text-xs text-secondary">{% if pending_period_total %}{% trans amount=pending_period_total | eur %}dont <span class="amount-blur">{{ amount }}</span> à trier{% endtrans %}{% else %}{{ _("sur la période") }}{% endif %}</p>
     </div>
     <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
-      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('scale', size=14) }} {{ _("Résultat") }}</p>
+      <p class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('currency-euro', size=14) }} {{ _("Résultat") }}</p>
       <p class="amount-blur text-xl font-bold tabular-nums {{ 'text-success' if result_total > 0 else ('text-danger' if result_total < 0 else 'text-primary') }}">{{ signed(result_total, plus=true) }}</p>
       {% if result_total != 0 %}
       <p class="text-xs font-medium {{ 'text-success' if result_total > 0 else 'text-danger' }}">{{ _("excédent") if result_total > 0 else _("déficit") }}</p>
       {% endif %}
+      <p class="text-xs text-secondary">{{ _("recettes − dépenses") }}</p>
     </div>
     {# Taux d'épargne dérivé de income_total/result_total déjà en contexte :
        aucune requête supplémentaire. #}
@@ -187,7 +191,6 @@
         <h2 id="trend-title" class="text-section-title">{{ _("Flux sur 12 mois") }}</h2>
         <a href="/reports" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Rapports") }} {{ icon('arrow-right', size=16) }}</a>
       </div>
-      <p class="text-xs text-secondary -mt-2">{% trans period_label=period_label %}12 mois jusqu'à {{ period_label }}{% endtrans %}</p>
       <div role="group" aria-label="{{ _("Mode d'affichage du graphique") }}" class="flex gap-2">
         {% for mode, label in (("expense", _("Dépenses")), ("income", _("Recettes")), ("both", _("Les deux"))) %}
         <button
@@ -198,9 +201,17 @@
         >{{ label }}</button>
         {% endfor %}
       </div>
-      <div class="h-64 lg:h-[300px] mt-1">
+      {# Le mois lu sur la courbe : les puces sous le graphique le choisissent,
+         la phrase dit ses recettes et ses dépenses. #}
+      <p id="trend-readout" aria-live="polite" class="text-sm text-secondary"></p>
+      <div class="h-56 lg:h-[260px]">
         <canvas id="trend-line-chart" role="img" aria-label="{{ _("Recettes et dépenses sur les douze derniers mois") }}"></canvas>
       </div>
+      <div id="trend-months" role="group" aria-label="{{ _("Choisir un mois") }}" class="grid grid-cols-12 -mt-1"></div>
+      <p class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-secondary">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-chart-2"></span>{{ trend_income_label }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-chart-1"></span>{{ _("Dépenses") }}</span>
+      </p>
     </section>
 
     {# Enveloppes : chaque budget du mois civil en cours (suit le compte choisi),
@@ -215,20 +226,21 @@
         <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Mon mois") }} {{ icon('arrow-right', size=16) }}</a>
       </div>
       {% if envelopes %}
-      {% for item in envelopes %}
+      {% for item in envelopes[:4] %}
       {% set spent_pct = item.percentage | round | int %}
       {% set projected_pct = item.projected_percentage | round | int %}
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-3">
           <span class="flex-shrink-0 w-9 h-9 rounded-full bg-sunken flex items-center justify-center text-secondary">{{ item.category.icon or icon('tag', size=18) }}</span>
           <span class="flex-1 min-w-0 font-semibold text-primary truncate">{{ item.category.name | category_display }}</span>
-          <span class="amount-blur text-sm tabular-nums flex-shrink-0 text-primary">{{ item.spent | eur }} <span class="text-secondary">/ {{ item.budget | eur }}</span></span>
+          <span class="amount-blur text-sm tabular-nums flex-shrink-0 text-primary">{{ signed(-item.spent) }} <span class="text-secondary">/ {{ item.budget | eur }}</span></span>
         </div>
-        <div class="progress-base flex" role="img" aria-label="{% trans percentage=spent_pct %}{{ percentage }} % consommé{% endtrans %}">
+        <div class="progress-base flex relative overflow-visible" role="img" aria-label="{% trans percentage=spent_pct %}{{ percentage }} % consommé{% endtrans %}">
           <div class="progress-fill {{ gauge_fill(item.percentage) }}" style="width: {{ item.bar_width }}%;"></div>
           {% if item.pending_width %}
           <div class="h-full bg-border-strong" style="width: {{ item.pending_width }}%;"></div>
           {% endif %}
+          <span aria-hidden="true" class="absolute -top-0.5 -bottom-0.5 w-0.5 rounded-full bg-primary" style="left: {{ month_pace }}%;"></span>
         </div>
         <p class="flex flex-wrap justify-between gap-x-3 text-xs">
           <span class="text-secondary tabular-nums">
@@ -243,6 +255,14 @@
         </p>
       </div>
       {% endfor %}
+      {% if envelopes | length > 4 %}
+      <a href="/cap/mid" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{% trans count=envelopes | length - 4, v="s" if envelopes | length - 4 > 1 else "" %}Voir les {{ count }} autre{{ v }} enveloppe{{ v }}{% endtrans %} {{ icon('arrow-right', size=16) }}</a>
+      {% endif %}
+      <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-secondary">
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-success"></span>{{ _("Dépensé") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-border-strong"></span>{{ _("Encore dans La Savane") }}</span>
+        <span class="inline-flex items-center gap-1.5"><span class="w-0.5 h-3 rounded-full bg-primary"></span>{% trans date=pace_date, percentage=month_pace %}Rythme au {{ date }} ({{ percentage }} %){% endtrans %}</span>
+      </p>
       {% else %}
       <p class="text-sm text-secondary">{{ _("Aucun budget n'est fixé pour ce mois.") }}</p>
       <a href="/budgets" class="min-h-[50px] inline-flex items-center gap-1 text-sm font-medium text-primary">{{ _("Fixer les budgets") }} {{ icon('arrow-right', size=16) }}</a>
@@ -252,25 +272,6 @@
     {# Les deux répartitions côte à côte : on lit ce qui est entré avant ce
        qui est sorti. Une rangée de 50 px par catégorie, cliquable pour ouvrir
        le détail des opérations. #}
-    <section aria-labelledby="income-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
-      <h2 id="income-title" class="text-section-title">{% trans period_label=period_label %}Recettes par catégorie — {{ period_label }}{% endtrans %}</h2>
-      {% if income_spending %}
-      <div class="flex flex-col gap-3">
-        <div class="relative w-[180px] h-[180px] mx-auto flex-shrink-0">
-          <canvas id="income-donut-chart" role="img" aria-label="{{ _("Répartition des recettes par catégorie") }}"></canvas>
-          <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
-            <span id="income-donut-label" class="text-xs text-secondary truncate max-w-full">{{ _("Total recettes") }}</span>
-            <span id="income-donut-total" class="amount-blur text-base font-bold tabular-nums text-primary"></span>
-            <span id="income-donut-percent" class="text-xs text-secondary"></span>
-          </div>
-        </div>
-        <div id="income-list" class="flex flex-col lg:max-h-[300px] lg:overflow-y-auto"></div>
-      </div>
-      {% else %}
-      <p class="text-sm text-secondary text-center py-8">{{ _("Aucune recette sur cette période.") }}</p>
-      {% endif %}
-    </section>
-
     <section aria-labelledby="expense-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <h2 id="expense-title" class="text-section-title">{% trans period_label=period_label %}Dépenses par catégorie — {{ period_label }}{% endtrans %}</h2>
       {% if category_spending %}
@@ -287,6 +288,25 @@
       </div>
       {% else %}
       <p class="text-sm text-secondary text-center py-8">{{ _("Aucune dépense sur cette période.") }}</p>
+      {% endif %}
+    </section>
+
+    <section aria-labelledby="income-title" class="lg:col-span-6 bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
+      <h2 id="income-title" class="text-section-title">{% trans period_label=period_label %}Recettes par catégorie — {{ period_label }}{% endtrans %}</h2>
+      {% if income_spending %}
+      <div class="flex flex-col gap-3">
+        <div class="relative w-[180px] h-[180px] mx-auto flex-shrink-0">
+          <canvas id="income-donut-chart" role="img" aria-label="{{ _("Répartition des recettes par catégorie") }}"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
+            <span id="income-donut-label" class="text-xs text-secondary truncate max-w-full">{{ _("Total recettes") }}</span>
+            <span id="income-donut-total" class="amount-blur text-base font-bold tabular-nums text-primary"></span>
+            <span id="income-donut-percent" class="text-xs text-secondary"></span>
+          </div>
+        </div>
+        <div id="income-list" class="flex flex-col lg:max-h-[300px] lg:overflow-y-auto"></div>
+      </div>
+      {% else %}
+      <p class="text-sm text-secondary text-center py-8">{{ _("Aucune recette sur cette période.") }}</p>
       {% endif %}
     </section>
 
@@ -359,6 +379,10 @@
     var incomeValues = {{ income_values | tojson | safe }};
     var incomeCategoryIds = {{ income_category_ids | tojson | safe }};
     var trendLabels = {{ trend_labels | tojson | safe }};
+    var trendShortLabels = {{ trend_short_labels | tojson | safe }};
+    var periodIncome = {{ income_total | float | tojson | safe }};
+    var periodExpense = {{ expense_total | float | tojson | safe }};
+    var periodIsMonth = {{ is_calendar_month | tojson | safe }};
     var trendExpenseValues = {{ trend_expense_values | tojson | safe }};
     var trendIncomeValues = {{ trend_income_values | tojson | safe }};
     var trendIncomeLabel = {{ trend_income_label | tojson | safe }};
@@ -778,11 +802,9 @@
 
     var trendCanvas = document.getElementById("trend-line-chart");
     if (trendCanvas) {
-      // Deux séries, deux teintes de la palette de données : ni le vert ni le
-      // rouge des verdicts (une courbe n'est pas un verdict), ni l'ambre.
       var colorExpenseSeries = palette[0];
       var colorIncomeSeries = palette[1];
-      var seriesStyle = { fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, pointHitRadius: 14 };
+      var seriesStyle = { fill: true, tension: 0.35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 0, pointHitRadius: 14 };
       var expenseDataset = Object.assign({
         label: {{ _("Dépenses") | tojson }},
         data: trendExpenseValues,
@@ -797,49 +819,97 @@
       }, seriesStyle);
 
       var numberLocale = document.documentElement.dataset.numberLocale || "fr-FR";
+      var lastMonth = trendLabels.length - 1;
+      // Le mois lu : le dernier quand la période est un mois civil, aucun sinon
+      // (la phrase donne alors les totaux de la période).
+      var selectedMonth = periodIsMonth ? lastMonth : null;
+      var readout = document.getElementById("trend-readout");
+      var monthChips = [];
+
+      var signedAmount = function (value, plus) {
+        var text = currencyFormatter.format(Math.abs(value));
+        if (value < 0 || (value === 0 && !plus)) return "−" + text;
+        return (plus ? "+" : "") + text;
+      };
+
+      var renderReadout = function () {
+        if (!readout) return;
+        var label = selectedMonth === null ? periodLabel : trendLabels[selectedMonth];
+        var income = selectedMonth === null ? periodIncome : Number(trendIncomeValues[selectedMonth]);
+        var expense = selectedMonth === null ? periodExpense : Number(trendExpenseValues[selectedMonth]);
+        readout.textContent = "";
+        var make = function (text, blur) {
+          var span = document.createElement("span");
+          span.textContent = text;
+          if (blur) span.className = "amount-blur tabular-nums";
+          return span;
+        };
+        readout.appendChild(make(label + " : " + {{ _("recettes") | tojson }} + " "));
+        readout.appendChild(make(signedAmount(income, true), true));
+        readout.appendChild(make(", " + {{ _("dépenses") | tojson }} + " "));
+        readout.appendChild(make(signedAmount(-expense, false), true));
+      };
+
+      // Trait vertical et pastilles sur le mois lu.
+      var selectedMonthPlugin = {
+        id: "selectedMonth",
+        afterDatasetsDraw: function (chart) {
+          if (selectedMonth === null) return;
+          var ctx = chart.ctx;
+          var meta0 = chart.getDatasetMeta(0);
+          if (!meta0 || !meta0.data[selectedMonth]) return;
+          var x = meta0.data[selectedMonth].x;
+          ctx.save();
+          ctx.strokeStyle = colorBorder;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, chart.chartArea.top);
+          ctx.lineTo(x, chart.chartArea.bottom);
+          ctx.stroke();
+          chart.data.datasets.forEach(function (dataset, index) {
+            var point = chart.getDatasetMeta(index).data[selectedMonth];
+            if (!point) return;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = cssColor("--color-container", "#ffffff");
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = dataset.borderColor;
+            ctx.stroke();
+          });
+          ctx.restore();
+        },
+      };
+
+      // Les puces de mois occupent la largeur du tracé : on les cale sur la
+      // zone du graphique à chaque mise en page.
+      var chipsBar = document.getElementById("trend-months");
+      var alignChips = function (chart) {
+        if (!chipsBar || !chart.chartArea) return;
+        chipsBar.style.marginLeft = chart.chartArea.left + "px";
+        chipsBar.style.width = chart.chartArea.right - chart.chartArea.left + "px";
+      };
+
       var trendChart = createChart(trendCanvas, {
         type: "line",
         data: { labels: trendLabels, datasets: [expenseDataset, incomeDataset] },
+        plugins: [
+          selectedMonthPlugin,
+          { id: "alignChips", afterLayout: alignChips },
+        ],
         options: {
           maintainAspectRatio: false,
+          animation: { duration: 400 },
           interaction: { mode: "index", intersect: false },
-          plugins: {
-            legend: {
-              position: "bottom",
-              labels: {
-                usePointStyle: true,
-                pointStyle: "rectRounded",
-                boxWidth: 10,
-                boxHeight: 10,
-                padding: 16,
-                // Pastille pleine de la couleur de la courbe (par défaut : le
-                // fond translucide de l'aire, presque invisible).
-                generateLabels: function (chart) {
-                  var items = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                  items.forEach(function (item) {
-                    item.fillStyle = item.strokeStyle;
-                    item.lineWidth = 0;
-                  });
-                  return items;
-                },
-              },
-            },
+          onClick: function (event, elements) {
+            if (elements.length) selectMonth(elements[0].index);
           },
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
           scales: {
-            x: {
-              grid: { display: false },
-              ticks: {
-                maxRotation: 0,
-                // « Novembre 2025 » devient « Nov. » : douze mois tiennent sur
-                // une ligne sans pivoter ; l'infobulle garde le libellé entier.
-                callback: function (value) {
-                  var name = String(this.getLabelForValue(value)).split(" ")[0];
-                  return name.length > 4 ? name.slice(0, 3) + "." : name;
-                },
-              },
-            },
+            x: { grid: { display: false }, offset: true, ticks: { display: false } },
             y: {
               beginAtZero: true,
+              border: { display: false },
               ticks: {
                 callback: function (value) {
                   return value >= 1000 ? (value / 1000).toLocaleString(numberLocale) + " k" : value;
@@ -849,6 +919,41 @@
           },
         },
       });
+
+      var selectMonth = function (index) {
+        selectedMonth = selectedMonth === index ? null : index;
+        monthChips.forEach(function (chip, i) {
+          chip.setAttribute("aria-pressed", i === selectedMonth ? "true" : "false");
+        });
+        renderReadout();
+        trendChart.update("none");
+      };
+
+      if (chipsBar) {
+        chipsBar.innerHTML = "";
+        trendShortLabels.forEach(function (short, index) {
+          var chip = document.createElement("button");
+          chip.type = "button";
+          var letter = document.createElement("span");
+          letter.className = "sm:hidden";
+          letter.textContent = short.charAt(0);
+          var full = document.createElement("span");
+          full.className = "hidden sm:inline";
+          full.textContent = short;
+          chip.appendChild(letter);
+          chip.appendChild(full);
+          chip.setAttribute("aria-label", trendLabels[index]);
+          chip.setAttribute("aria-pressed", index === selectedMonth ? "true" : "false");
+          chip.className = "min-h-[50px] px-0.5 rounded-lg text-xs text-secondary truncate aria-pressed:bg-accent-soft aria-pressed:text-accent-ink aria-pressed:font-semibold";
+          chip.addEventListener("click", function () {
+            selectMonth(index);
+          });
+          chipsBar.appendChild(chip);
+          monthChips.push(chip);
+        });
+        alignChips(trendChart);
+      }
+      renderReadout();
 
       var trendModes = { expense: [expenseDataset], income: [incomeDataset], both: [expenseDataset, incomeDataset] };
 

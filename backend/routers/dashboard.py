@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -10,6 +11,9 @@ from backend.database import get_db
 from backend.dates import (
     month_names,
     format_date_long,
+    MONTH_ABBR_EN,
+    MONTH_ABBR_FR,
+    format_date_short,
     month_label,
     month_range,
     shift_month,
@@ -17,7 +21,7 @@ from backend.dates import (
 )
 from backend.formatting import format_amount
 from backend.templating import templates
-from backend.i18n import gettext as _t, lazy_gettext
+from backend.i18n import current_language, gettext as _t, lazy_gettext
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -94,6 +98,25 @@ def _resolve_period(
     return key, today - timedelta(days=days - 1), today, label, False
 
 
+def _period_lead(period_key: str, period_start: date, period_end: date, today: date) -> str:
+    """Opening words of the summary sentence ("En septembre," ...)."""
+    if period_key in ("mois", "mois-dernier") or (
+        period_key == "perso" and (period_start, period_end) == month_range(period_start.year, period_start.month)
+    ):
+        name = month_names()[period_start.month - 1]
+        if current_language() != "en":
+            name = name.lower()
+        return _t("En %(month)s,") % {"month": name}
+    if period_key == "90j":
+        return _t("Sur les 90 derniers jours,")
+    if period_key == "1an":
+        return _t("Sur les 12 derniers mois,")
+    return _t("Du %(start)s au %(end)s,") % {
+        "start": format_date_long(period_start),
+        "end": format_date_long(period_end),
+    }
+
+
 def _build_period_context(
     db: Session,
     period_key: str,
@@ -164,6 +187,8 @@ def _build_period_context(
         db, income_query_start, months[-1][1], account_id
     )
     trend_labels = [label for _, _, label in months]
+    abbreviations = MONTH_ABBR_EN if current_language() == "en" else MONTH_ABBR_FR
+    trend_short_labels = [abbreviations[start.month - 1].capitalize() for start, _, _ in months]
     trend_expense_values = [
         monthly_expense_totals.get(start, Decimal("0.00")) for start, _, _ in months
     ]
@@ -213,6 +238,7 @@ def _build_period_context(
         "income_values": [amount for _, _, amount in income_spending],
         "income_category_ids": income_category_ids,
         "trend_labels": trend_labels,
+        "trend_short_labels": trend_short_labels,
         "trend_expense_values": trend_expense_values,
         "trend_income_values": trend_income_values,
         "trend_income_label": trend_income_label,
@@ -223,6 +249,12 @@ def _build_period_context(
         "total_balance": crud.get_total_balance(db),
         "accounts_count": len(crud.list_accounts(db)),
         "pending_count": crud.count_pending_transactions(db),
+        "pending_total": crud.get_pending_expense_total(db),
+        "pending_period_total": crud.get_pending_expense_total(db, period_start, period_end, account_id),
+        "period_lead": _period_lead(period_key, period_start, period_end, today),
+        # How far through the month we are: the "pace" tick on each envelope.
+        "month_pace": round(today.day / monthrange(today.year, today.month)[1] * 100),
+        "pace_date": format_date_short(today),
         "today_long": format_date_long(today),
         **_build_month_overview(db, today, raw_shift_income),
     }
@@ -343,6 +375,13 @@ def _build_project_summaries(db: Session, today: date) -> tuple[list[dict], int]
                 "project": project,
                 "percentage_display": round(percentage),
                 "bar_width": max(0, min(round(percentage), 100)),
+                "deadline_label": (
+                    (lambda name: f"{name if current_language() == 'en' else name.lower()} {project.target_date.year}")(
+                        month_names()[project.target_date.month - 1]
+                    )
+                    if project.target_date
+                    else None
+                ),
                 "monthly_effort": crud.compute_monthly_effort(
                     project.target_amount, project.current_amount, project.target_date, today
                 ),
@@ -391,6 +430,8 @@ def dashboard(
         "project_summaries": project_summaries,
         "project_summaries_total": project_summaries_total,
         "show_le_cap_banner": today.day == 1 and crud.get_cap_entry_for_month(db, current_month_start) is None,
+        "cap_banner_month": month_names()[today.month - 1].lower() if current_language() != "en" else month_names()[today.month - 1],
+        "cap_banner_previous_month": month_names()[shift_month(current_month_start, -1).month - 1].lower() if current_language() != "en" else month_names()[shift_month(current_month_start, -1).month - 1],
         "current_month_key": today.strftime("%Y-%m"),
         **content,
     }
