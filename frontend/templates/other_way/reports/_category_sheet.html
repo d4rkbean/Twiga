@@ -15,7 +15,7 @@
     <button
       type="button"
       hx-get="/reports/category-sheet?{{ sheet_qs }}&category_id={{ cat }}&category_name={{ parent_name | urlencode }}"
-      hx-target="#report-sheet"
+      hx-target="closest [data-sheet]"
       hx-swap="innerHTML"
       class="min-h-[50px] px-2 text-sm font-medium text-accent-ink underline"
     >{{ _("Retour") }}</button>
@@ -39,7 +39,7 @@
     <button
       type="button"
       hx-get="/reports/category-sheet?{{ sheet_qs }}&category_id={{ cat }}&exact_category_id={{ exact }}&category_name={{ subcategory.name | urlencode }}"
-      hx-target="#report-sheet"
+      hx-target="closest [data-sheet]"
       hx-swap="innerHTML"
       aria-label="{{ _("Voir les opérations de %(name)s", name=subcategory.name) }}"
       class="flex min-h-[50px] items-center gap-3 border-b border-border text-left"

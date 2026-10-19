@@ -37,8 +37,8 @@
       <div class="flex items-start gap-3 lg:gap-5">
         <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
         <div class="min-w-0 flex flex-col gap-2">
-          <h1 id="answer" class="font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ answer.headline }}</h1>
-          <p id="answer-sub" class="max-w-[70ch] text-sm text-secondary lg:text-base">{{ answer.sub }}</p>
+          <h1 id="answer" class="amount-blur font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ answer.headline }}</h1>
+          <p id="answer-sub" class="amount-blur max-w-[70ch] text-sm text-secondary lg:text-base">{{ answer.sub }}</p>
         </div>
       </div>
 
@@ -82,7 +82,7 @@
         x-data="{ periode: '{{ period_key }}', get mensuel() { return ['mois', 'mois-dernier'].includes(this.periode) } }"
         @change="if (($event.target.name === 'period' && $event.target.value !== 'perso') || $event.target.name === 'account_id') panel = null"
       >
-        <input type="hidden" name="tri" id="panorama-tri" x-ref="tri" value="{{ '1' if include_pending else '0' }}" />
+        <input type="hidden" name="tri" id="panorama-tri" value="{{ '1' if include_pending else '0' }}" />
         <div class="flex flex-wrap gap-2">
           <button type="button" id="panorama-period-pill" :aria-expanded="panel === 'period' ? 'true' : 'false'" aria-haspopup="dialog" aria-controls="panorama-period-panel" aria-label="{{ _("Période : %(period)s. Changer", period=period_pill) }}" @click="panel = panel === 'period' ? null : 'period'" :class="panel === 'period' ? 'bg-accent-soft border-accent-ink' : 'bg-container border-border-strong'" class="min-h-[50px] inline-flex items-center gap-2 rounded-full border px-4 text-sm font-medium text-primary">
             {{ icon('calendar', size=18) }}<span>{{ period_pill }}</span>{{ icon('chevron-down', size=16) }}
@@ -181,7 +181,7 @@
       </div>
 
       {% if envelope_rows %}
-      <button type="button" role="switch" aria-checked="{{ 'true' if include_pending else 'false' }}" {% if not pending_count_account %}disabled{% endif %} @click="$refs.tri.value = $refs.tri.value === '1' ? '0' : '1'; $refs.tri.dispatchEvent(new Event('change', { bubbles: true }))" class="flex min-h-[50px] w-full items-center gap-3 text-left text-sm text-primary disabled:opacity-60">
+      <button type="button" role="switch" aria-checked="{{ 'true' if include_pending else 'false' }}" {% if not pending_count_account %}disabled{% endif %} @click="window.twigaToggleTri()" class="flex min-h-[50px] w-full items-center gap-3 text-left text-sm text-primary disabled:opacity-60">
         <span aria-hidden="true" class="switch"></span>
         <span>{{ ngettext("Compter l'opération à ranger", "Compter les %(n)s opérations à ranger", pending_count_account, n=pending_count_account) if pending_count_account else _("Aucune opération à ranger") }}</span>
       </button>
