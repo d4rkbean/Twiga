@@ -110,7 +110,7 @@
           {% set existing = budgets.get(category.id) %}
           <div class="flex items-center justify-between gap-3 min-h-[56px] border-t border-border">
             <div class="flex flex-col min-w-0">
-              <label for="amount-{{ category.id }}" class="text-sm font-medium text-primary truncate">{{ category.icon or icon('tag', size=16) }} {{ category.name | category_display }}</label>
+              <label for="amount-{{ category.id }}" class="text-sm font-medium text-primary [overflow-wrap:anywhere] lg:truncate">{{ category.icon or icon('tag', size=16) }} {{ category.name | category_display }}</label>
               <span
                 class="text-xs text-secondary tabular-nums"
                 x-show="available"
@@ -131,7 +131,7 @@
                   x-effect="document.activeElement === $el || ($el.value = fmt2(amounts[{{ category.id }}]))"
                   @input="amounts[{{ category.id }}] = num($event.target.value)"
                   @blur="$el.value = fmt2(amounts[{{ category.id }}])"
-                  class="h-[50px] w-[92px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums font-semibold hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
+                  class="h-[50px] w-[76px] sm:w-[92px] px-2 rounded-xl border border-transparent bg-transparent text-right tabular-nums font-semibold hover:border-border-strong focus:border-accent-ink focus:outline-none focus-visible:outline-2 focus-visible:outline-accent-ink"
                 />&euro;
               </span>
               <button type="button" @click="bump({{ category.id }}, 1)" aria-label="{{ _("Augmenter") }}" class="w-[50px] h-[50px] rounded-xl border border-border-strong bg-container text-primary flex items-center justify-center">{{ icon('plus') }}</button>
