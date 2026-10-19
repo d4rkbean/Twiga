@@ -59,7 +59,7 @@
   >
     <span class="w-4 flex-shrink-0 text-secondary">{% if row.has_children %}{{ icon('chevron-right', size=16) }}{% endif %}</span>
     <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {{ row.category_id | category_color }}"></span>
-    <span class="flex-1 min-w-0 text-sm font-medium text-primary truncate">{{ row.name }}</span>
+    <span class="flex-1 min-w-0 text-sm font-medium text-primary [overflow-wrap:anywhere] lg:truncate">{{ row.name }}</span>
     <span class="amount-blur text-sm font-semibold tabular-nums text-primary whitespace-nowrap">{{ signed(-row.amount if kind == "expense" else row.amount, plus=true) }}</span>
     <span class="w-9 lg:w-14 text-right text-xs tabular-nums text-secondary whitespace-nowrap">{{ row.percent_of_total }} %</span>
   </button>
@@ -96,7 +96,7 @@
       hx-target="#report-tx-list-{{ kind }}"
       hx-swap="outerHTML"
     >
-      <span class="flex-1 min-w-0 text-sm truncate {{ 'text-primary' if sub.amount else 'text-secondary' }}">{{ sub.icon or icon('tag', size=14) }} {{ sub.name }}</span>
+      <span class="flex-1 min-w-0 text-sm [overflow-wrap:anywhere] lg:truncate {{ 'text-primary' if sub.amount else 'text-secondary' }}">{{ sub.icon or icon('tag', size=14) }} {{ sub.name }}</span>
       <span class="amount-blur text-sm font-semibold tabular-nums text-primary whitespace-nowrap">{{ signed(-sub.amount if kind == "expense" else sub.amount, plus=true) }}</span>
     </button>
     <button

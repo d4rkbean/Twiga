@@ -9,7 +9,7 @@
 
 {% block content %}
 {% set role_labels = {"admin": _("Administrateur"), "editor": _("Éditeur"), "viewer": _("Lecture seule")} %}
-<main class="flex flex-col gap-4 px-4 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+<main class="flex flex-col gap-4 px-4 pb-8 lg:px-8 lg:py-6">
   {{ page_header(
     _("Utilisateurs"),
     subtitle=_("Les personnes du foyer qui se connectent à Twiga, et ce que chacune peut faire."),

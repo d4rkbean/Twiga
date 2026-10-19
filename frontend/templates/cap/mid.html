@@ -7,7 +7,7 @@
 {% block title %}{{ _("Mon mois — Twiga") }}{% endblock %}
 
 {% block content %}
-<main class="flex flex-col gap-5 px-4 pt-2 pb-8 max-w-lg mx-auto lg:max-w-none lg:mx-0 lg:px-8 lg:py-6">
+<main class="flex flex-col gap-5 px-4 pt-2 pb-8 lg:px-8 lg:py-6">
   {# Cette page est une DESTINATION de la navigation (« Mon mois », voir
      _sidebar.html) et non une étape intermédiaire du rituel : d'où le titre,
      et le pied qui mène au détail par catégorie et au rituel. #}
@@ -124,9 +124,9 @@
           {% for ligne in pillar.detail.categories %}
           {% set projected = ligne.projected | round | int %}
           {% set line_word = _("dépassé") if projected > 100 else (_("au plafond") if projected >= 100 else (_("à surveiller") if projected >= 75 else "")) %}
-          <div class="flex items-center justify-between gap-3 min-h-[66px] py-2 border-t border-border text-sm">
-            <span class="text-primary font-medium truncate">{{ ligne.category.icon or "" }} {{ ligne.category.name | category_display }}</span>
-            <span class="flex flex-col items-end flex-shrink-0 tabular-nums {{ 'text-danger' if projected > 100 else ('text-warning' if projected >= 75 else 'text-primary') }}">
+          <div class="flex flex-col items-start gap-0.5 min-h-[66px] justify-center py-2 border-t border-border text-sm lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+            <span class="text-primary font-medium lg:truncate">{{ ligne.category.icon or "" }} {{ ligne.category.name | category_display }}</span>
+            <span class="flex flex-col items-start flex-shrink-0 tabular-nums lg:items-end {{ 'text-danger' if projected > 100 else ('text-warning' if projected >= 75 else 'text-primary') }}">
               <span><span class="amount-blur">{{ ligne.spent | eur }} / {{ ligne.budget | eur }}</span> — {{ projected }} %{% if line_word %} · <span class="font-semibold">{{ line_word }}</span>{% endif %}</span>
               {% if ligne.pending %}<span class="text-xs text-secondary">{% trans amount=ligne.pending | eur %}dont <span class="amount-blur">{{ amount }}</span> à trier{% endtrans %}</span>{% endif %}
             </span>

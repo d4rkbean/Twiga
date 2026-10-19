@@ -45,7 +45,7 @@
    title, filters over the full width, then the list with the detail panel
    next to it (the <dialog> at the bottom, displayed as a panel). #}
 <main
-  class="flex flex-col gap-[var(--space-block)] max-w-lg mx-auto px-4 pb-6 overflow-x-clip lg:max-w-none lg:mx-0 lg:px-8 lg:overflow-x-visible"
+  class="flex flex-col gap-[var(--space-block)] px-4 pb-6 overflow-x-clip lg:px-8 lg:overflow-x-visible"
   x-data="opsBoard({{ board | tojson | forceescape }})"
 >
   <header class="flex items-start justify-between gap-3 pt-2">
@@ -88,7 +88,7 @@
 
     {# Search, the four tabs, "+ more criteria", "New operation". #}
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
-      <div class="relative lg:max-w-[420px] lg:flex-1">
+      <div class="relative lg:min-w-0 lg:flex-1">
         <span class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-secondary">{{ icon('search', size=18) }}</span>
         <input
           type="text"
@@ -141,11 +141,11 @@
     {% endfor %}
     {% if amin_options.append(("other", _("Autre montant…"))) %}{% endif %}
     {% if amax_options.append(("other", _("Autre montant…"))) %}{% endif %}
-    <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-nowrap lg:items-start">
-      <div class="lg:min-w-0 lg:flex-[0_1_200px]">{{ date_field("f_date_from", date_from, prefix=_("Du :"), empty=_("toutes"), aria=_("Du")) }}</div>
-      <div class="lg:min-w-0 lg:flex-[0_1_200px]">{{ date_field("f_date_to", date_to, prefix=_("Au :"), empty=_("toutes"), aria=_("Au")) }}</div>
+    <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap lg:items-start">
+      <div class="lg:min-w-0 lg:flex-[1_1_180px]">{{ date_field("f_date_from", date_from, prefix=_("Du :"), empty=_("toutes"), aria=_("Du")) }}</div>
+      <div class="lg:min-w-0 lg:flex-[1_1_180px]">{{ date_field("f_date_to", date_to, prefix=_("Au :"), empty=_("toutes"), aria=_("Au")) }}</div>
       {% for field, options, label in [("amin", amin_options, _("Montant min")), ("amax", amax_options, _("Montant max"))] %}
-      <div class="flex min-w-0 gap-2" :class="{{ field }}Other ? 'lg:flex-[0_1_240px]' : 'lg:flex-[0_1_160px]'">
+      <div class="flex min-w-0 gap-2" :class="{{ field }}Other ? 'lg:flex-[2_1_290px]' : 'lg:flex-[1_1_170px]'">
         <input type="hidden" name="f_amount_{{ 'min' if field == 'amin' else 'max' }}" :value="{{ field }}" />
         <div class="min-w-0 flex-1">{{ dropdown(none, options, model=field ~ "Pick", popover=true, aria=label) }}</div>
         <input
@@ -162,10 +162,10 @@
         />
       </div>
       {% endfor %}
-      <div class="col-span-2 lg:col-span-1 lg:min-w-0 lg:flex-[0_1_220px]">
+      <div class="col-span-2 lg:col-span-1 lg:min-w-0 lg:flex-[1_1_230px]">
         {{ dropdown(none, category_options, model="category", change="setCategory(category)", popover=true, aria=_("Catégorie")) }}
       </div>
-      <div class="col-span-2 lg:col-span-1 lg:min-w-0 lg:flex-[0_1_220px]" x-show="subs.length > 0" style="display: none;" x-data="{ open: false }" @click.outside="open = false">
+      <div class="col-span-2 lg:col-span-1 lg:min-w-0 lg:flex-[1_1_230px]" x-show="subs.length > 0" style="display: none;" x-data="{ open: false }" @click.outside="open = false">
         <div class="relative">
           <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="listbox" aria-label="{{ _("Sous-catégorie") }}" class="input-base flex items-center justify-between gap-2 text-left">
             <span class="truncate" x-text="subLabel">{{ _("Toutes les sous-catégories") }}</span>{{ icon('chevron-down', size=18) }}
@@ -181,10 +181,10 @@
     </div>
 
     <div class="grid grid-cols-2 gap-2.5 lg:flex lg:flex-wrap" x-show="adv" style="display: none;">
-      <div class="lg:w-[220px]">{{ dropdown(none, account_options, model="account", change="submit()", popover=true, aria=_("Compte")) }}</div>
-      <div class="lg:w-[240px]">{{ dropdown(none, pm_options, model="pay", change="submit()", popover=true, aria=_("Mode de paiement")) }}</div>
-      <div class="lg:w-[200px]">{{ dropdown(none, type_options, model="type", change="submit()", popover=true, aria=_("Type")) }}</div>
-      <div class="col-span-2 lg:col-span-1 lg:w-[260px]">{{ dropdown(none, sort_options, model="sort", change="submit()", popover=true, aria=_("Tri")) }}</div>
+      <div class="lg:min-w-0 lg:flex-[1_1_200px]">{{ dropdown(none, account_options, model="account", change="submit()", popover=true, aria=_("Compte")) }}</div>
+      <div class="lg:min-w-0 lg:flex-[1_1_200px]">{{ dropdown(none, pm_options, model="pay", change="submit()", popover=true, aria=_("Mode de paiement")) }}</div>
+      <div class="lg:min-w-0 lg:flex-[1_1_200px]">{{ dropdown(none, type_options, model="type", change="submit()", popover=true, aria=_("Type")) }}</div>
+      <div class="col-span-2 lg:col-span-1 lg:min-w-0 lg:flex-[1_1_200px]">{{ dropdown(none, sort_options, model="sort", change="submit()", popover=true, aria=_("Tri")) }}</div>
     </div>
   </form>
 

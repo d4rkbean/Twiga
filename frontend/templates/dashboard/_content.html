@@ -50,7 +50,7 @@
   {% set income_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(income_total, plus=true) }}</strong>{% endset %}
   {% set expense_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(-expense_total) }}</strong>{% endset %}
   {% set result_html %}<strong class="amount-blur font-bold tabular-nums whitespace-nowrap">{{ signed(result_total, plus=true) }}</strong>{% endset %}
-  <p class="text-lg leading-snug text-primary lg:text-[22px] lg:max-w-4xl">
+  <p class="text-lg leading-snug text-primary lg:text-[22px] lg:max-w-[70ch]">
     {% trans lead=period_lead, income=income_html, expense=expense_html, result=result_html %}{{ lead }} le foyer a reçu {{ income }} et dépensé {{ expense }}&nbsp;: il reste {{ result }}.{% endtrans %}
     {% if pending_count %}
     {% set pending_html %}<span class="amount-blur tabular-nums whitespace-nowrap">{{ pending_total | eur }}</span>{% endset %}
@@ -108,7 +108,7 @@
       <span class="flex items-center gap-1.5 text-xs font-medium text-secondary">{{ icon('inbox', size=14) }} {{ _("À trier") }}</span>
       <span class="text-xl font-bold tabular-nums text-primary">{{ pending_count }}</span>
       <span class="text-xs text-secondary">{% trans v="s" if pending_count > 1 else "" %}opération{{ v }} en attente{% endtrans %}</span>
-      <span class="flex items-center gap-1 text-xs font-semibold text-primary">{{ _("Traiter →") }}</span>
+      <span class="flex items-center gap-1 text-xs font-semibold text-primary">{{ _("Ranger maintenant →") }}</span>
     </a>
     {% else %}
     <div class="bg-container p-[var(--space-card)] flex flex-col gap-0.5">
@@ -315,7 +315,7 @@
     <section aria-labelledby="flow-title" class="lg:hidden bg-container rounded-xl border border-border shadow-sm p-[var(--space-card)] flex flex-col gap-[var(--space-list)]">
       <h2 id="flow-title" class="text-section-title">{% trans period_label=period_label %}Flux financier — {{ period_label }}{% endtrans %}</h2>
       {% if category_spending and income_spending %}
-      <div class="h-80">
+      <div style="height: {{ [320, (category_spending | length) * 36 + 40] | max }}px;">
         <canvas id="cashflow-sankey-chart"></canvas>
       </div>
       {% else %}

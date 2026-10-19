@@ -1,0 +1,50 @@
+{#- « Sous-catégorie de … » : « 1 » is the category itself, then its sub-categories
+    (same numbers as the keyboard shortcuts). -#}
+<div class="category-suggestion flex flex-col gap-3">
+  <button
+    type="button"
+    id="inbox-back-to-categories-btn"
+    class="btn btn-ghost -ml-2 gap-2 self-start px-3.5 pl-2 font-medium text-secondary"
+    hx-get="/transactions/{{ transaction.id }}/categories"
+    hx-target=".category-suggestion"
+    hx-swap="outerHTML"
+  >
+    {{ icon('arrow-narrow-left') }} {{ _("Retour aux catégories") }}
+    <kbd class="kbd-hint hidden lg:inline-flex" aria-hidden="true">{{ _("Échap") }}</kbd>
+  </button>
+  <h3 class="flex flex-wrap items-center gap-2 font-display text-base font-extrabold tracking-tight text-primary">
+    {{ _("Sous-catégorie de") }}
+    <span class="inline-flex items-center gap-1.5">
+      <span class="inline-block h-2.5 w-2.5 rounded-full" style="background-color: {{ category.id | category_color }}" aria-hidden="true"></span>
+      {{ category.name }}
+    </span> :
+  </h3>
+  <div class="grid grid-cols-2 gap-2">
+    <button
+      type="button"
+      class="shortcut-category-btn btn btn-secondary min-w-0 justify-start gap-2 border-border-strong px-2.5 text-left"
+      hx-post="/transactions/{{ transaction.id }}/categorize/{{ category.id }}"
+      hx-include="#simplified-label, #nav-history, #nav-qdone"
+      hx-target=".category-suggestion"
+      hx-swap="outerHTML"
+    >
+      <span class="hidden h-5 w-5 flex-none items-center justify-center rounded-full bg-sunken text-xs font-semibold text-secondary lg:flex" aria-hidden="true">1</span>
+      <span class="min-w-0 flex-1 truncate">{% trans name=category.name %}{{ name }} (général){% endtrans %}</span>
+    </button>
+    {% for subcategory in subcategories %}
+    <button
+      type="button"
+      class="shortcut-category-btn btn btn-secondary min-w-0 justify-start gap-2 border-border-strong px-2.5 text-left"
+      hx-post="/transactions/{{ transaction.id }}/categorize/{{ subcategory.id }}"
+      hx-include="#simplified-label, #nav-history, #nav-qdone"
+      hx-target=".category-suggestion"
+      hx-swap="outerHTML"
+    >
+      {% if loop.index + 1 <= 9 %}
+      <span class="hidden h-5 w-5 flex-none items-center justify-center rounded-full bg-sunken text-xs font-semibold text-secondary lg:flex" aria-hidden="true">{{ loop.index + 1 }}</span>
+      {% endif %}
+      <span class="min-w-0 flex-1 truncate">{{ subcategory.name }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>
