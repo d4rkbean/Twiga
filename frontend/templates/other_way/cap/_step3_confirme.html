@@ -1,0 +1,44 @@
+{% from "_macros/brand.html" import mascot, mascot_line %}
+{% from "_macros/signed_amount.html" import signed %}
+{#- Le cap est fixé : le rituel se referme sur un récapitulatif et les trois suites
+    possibles (Panorama, Mon mois, reprendre le cap). L'aplat ambre est « Aller au
+    Panorama ». -#}
+<div class="flex flex-col gap-5 lg:gap-8" id="cap-flow-root">
+  {# Mobile : la barre du rituel, qui remplace celle de la coque. #}
+  <div class="print:hidden lg:hidden fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-container px-1">
+    <a href="/dashboard" aria-label="{{ _("Quitter le rituel") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary">{{ icon('x') }}</a>
+    <p class="min-w-0 flex-1 truncate font-display text-xl font-extrabold tracking-tight text-primary">{{ cap_title }}</p>
+    <button type="button" aria-label="{{ _("Basculer le mode confidentialité") }}" @click="privacy = !privacy; localStorage.setItem('privacy', privacy)" class="flex h-[50px] w-[50px] flex-none items-center justify-center text-primary"><span x-show="!privacy">{{ icon("eye") }}</span><span x-show="privacy" style="display: none;">{{ icon("eye-off") }}</span></button>
+  </div>
+  <section aria-label="{{ _("Le cap est fixé") }}" aria-live="polite" class="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
+    <div class="flex flex-none items-center gap-4 lg:flex-col lg:items-start">
+      {{ mascot("cap", size=104) }}
+    </div>
+    <div class="flex min-w-0 flex-1 flex-col gap-5">
+      <div class="flex flex-col gap-2">
+        <h1 id="answer" class="font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ mascot_line("cap") }}</h1>
+        <p id="answer-sub" class="max-w-[70ch] text-sm text-secondary lg:text-base">{{ _("%(month)s est cadré. Tu peux suivre l'avancement dans Mon mois.", month=current_month_name) }}</p>
+      </div>
+
+      <dl class="flex flex-col rounded-xl border border-border bg-container px-[var(--space-card)] py-2 shadow-sm">
+        <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Ressources du mois") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_income | eur }}</dd></div>
+        <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Essentiel") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_essentiel | eur }}</dd></div>
+        <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Choix") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_choix | eur }}</dd></div>
+        <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Imprévus") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ entry.planned_imprevu | eur }}</dd></div>
+        {% if plan.withdrawal %}
+        <div class="flex min-h-[50px] items-center justify-between gap-3 border-b border-border"><dt class="text-sm text-secondary">{{ _("Prélèvement sur épargne") }}</dt><dd class="amount-blur font-semibold tabular-nums text-primary">{{ plan.withdrawal | eur }}</dd></div>
+        {% endif %}
+        <div class="flex min-h-[50px] items-center justify-between gap-3 {{ 'border-b border-border' if entry.intention else '' }}"><dt class="text-sm font-semibold text-primary">{{ _("Épargne visée") }}</dt><dd class="amount-blur font-display text-xl font-extrabold tabular-nums {{ 'text-success' if plan.savings >= 0 else 'text-danger' }}">{{ signed(plan.savings, plus=true) }}</dd></div>
+        {% if entry.intention %}
+        <div class="flex min-h-[50px] items-center justify-between gap-3"><dt class="text-sm text-secondary">{{ _("Intention") }}</dt><dd class="text-right text-primary italic">« {{ entry.intention }} »</dd></div>
+        {% endif %}
+      </dl>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <a href="/dashboard" class="btn btn-primary">{{ _("Aller au Panorama") }} {{ icon('arrow-right', size=18) }}</a>
+        <a href="/cap/mid" class="btn btn-secondary">{{ _("Voir Mon mois") }}</a>
+        <button type="button" hx-get="/cap/reopen" hx-target="#cap-wizard" hx-swap="innerHTML" class="btn btn-secondary">{{ _("Reprendre le cap") }}</button>
+      </div>
+    </div>
+  </section>
+</div>

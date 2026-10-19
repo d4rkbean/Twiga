@@ -1,0 +1,453 @@
+{% from "_macros/brand.html" import mascot %}
+{% from "_macros/signed_amount.html" import signed %}
+{% from "other_way/_plan_kit.html" import gauge %}
+{#- Les neuf questions des Rapports. Les neuf phrases sont écrites par le serveur ;
+    changer de question n'ajoute aucun aller-retour : tout est déjà dans la page.
+    Quatre réglages la recomposent (période, compte, décalage des recettes) : la
+    période par liens (page entière), le compte et le décalage par le formulaire
+    #reports-account-filter, qui relance /reports/content. -#}
+{% set type_choices = [("mois", _("Mois")), ("trimestre", _("Trimestre")), ("semestre", _("Semestre")), ("annee", _("Année")), ("personnalise", _("Personnalisé"))] %}
+{% set tail = ("&account_id=" ~ account_id if account_id else "") ~ ("&shift_income=1" if shift_income else "") %}
+{% set criteria_count = (1 if account_id else 0) + (1 if shift_income else 0) %}
+{% set account_name = (accounts | selectattr("id", "equalto", account_id) | list | first).name if account_id else _("Tous les comptes") %}
+{% set category_colors = 8 %}
+
+<div id="reports-data" hidden data-shift="{{ 'true' if shift_income else 'false' }}"></div>
+
+<div class="flex flex-col gap-4 lg:gap-6">
+
+  {# --- La phrase de la question choisie, et l'impression / l'export --- #}
+  <header class="print:hidden flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+    <section aria-label="{{ _("La réponse de Twiga") }}" class="flex items-start gap-3 lg:gap-5">
+      <span class="flex-none pt-1.5">{{ mascot(size=52, cls="h-auto w-[52px] lg:w-16") }}</span>
+      <div class="min-w-0 flex flex-col gap-2">
+        {% for key, label in report_questions %}
+        <div x-show="q === '{{ key }}'" {% if key != question %}style="display: none;"{% endif %} class="flex flex-col gap-2" aria-live="polite">
+          <h1 {% if key == question %}id="answer"{% endif %} class="amount-blur font-display text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-primary lg:text-[2.125rem]">{{ report_sentences[key][0] }}</h1>
+          <p class="amount-blur max-w-[70ch] text-sm text-secondary lg:text-base">{{ report_sentences[key][1] }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    <div class="max-lg:hidden flex flex-none gap-2">
+      <button type="button" @click="window.print()" class="btn btn-secondary">{{ icon('printer', size=18) }} {{ _("Imprimer") }}</button>
+      <a x-data href="/reports/export.csv?{{ report_qs }}" @click="$el.href = '/reports/export.csv?' + new URLSearchParams(new FormData(document.getElementById('reports-account-filter'))).toString()" class="btn btn-secondary">{{ icon('download', size=18) }} {{ _("Exporter en CSV") }}</a>
+    </div>
+  </header>
+
+  {# --- La période, le compte et le décalage --- #}
+  <form
+    id="reports-account-filter"
+    hx-get="/reports/content"
+    hx-trigger="change"
+    hx-target="#reports-content"
+    hx-swap="innerHTML"
+    class="print:hidden flex flex-col gap-3"
+  >
+    <input type="hidden" name="period_type" value="{{ period.period_type }}" />
+    <input type="hidden" name="month" value="{{ period.month }}" />
+    <input type="hidden" name="quarter" value="{{ period.quarter }}" />
+    <input type="hidden" name="semester" value="{{ period.semester }}" />
+    <input type="hidden" name="year" value="{{ period.year }}" />
+    <input type="hidden" name="q" :value="q" />
+
+    <div x-show="psheet" style="display: none;" @click="psheet = false" class="lg:hidden fixed inset-0 z-[9000] bg-scrim" aria-hidden="true"></div>
+    <div :class="psheet ? 'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[9001] max-lg:max-h-[85vh] max-lg:overflow-y-auto max-lg:rounded-t-xl max-lg:bg-container max-lg:p-4 max-lg:shadow-lg' : 'max-lg:hidden'" class="flex flex-col gap-3 lg:gap-4">
+      <div class="flex items-center justify-between gap-3 lg:hidden"><h2 class="text-section-title">{{ _("Période et compte") }}</h2><button type="button" @click="psheet = false" class="min-h-[50px] px-2 text-sm font-medium text-accent-ink underline">{{ _("Fermer") }}</button></div>
+
+      <div class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-5 lg:gap-y-3">
+        <nav aria-label="{{ _("Type de période") }}" class="flex flex-wrap gap-1 rounded-xl bg-accent-soft p-1">
+          {% for code, label in type_choices %}
+          <a
+            :href="'/reports?period_type={{ code }}{{ tail }}&q=' + q"
+            {% if period.period_type == code %}aria-current="page"{% endif %}
+            class="inline-flex min-h-[50px] items-center rounded-lg px-4 text-sm {{ 'bg-container font-semibold text-accent-ink shadow-sm' if period.period_type == code else 'font-medium text-primary hover:bg-container' }}"
+          >{{ label }}</a>
+          {% endfor %}
+        </nav>
+
+        <div class="flex items-center gap-2" aria-label="{{ _("Période") }}">
+          <a :href="'/reports?{{ period.prev_params | urlencode }}{{ tail }}&q=' + q" aria-label="{{ _("Période précédente") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center rounded-xl border border-border-strong bg-container text-primary rotate-180">{{ icon('chevron-right') }}</a>
+          <span class="min-w-0 flex-1 px-3 text-center text-sm font-semibold text-primary lg:min-w-44" aria-live="polite">{{ period_bar_label }}</span>
+          <a :href="'/reports?{{ period.next_params | urlencode }}{{ tail }}&q=' + q" aria-label="{{ _("Période suivante") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center rounded-xl border border-border-strong bg-container text-primary">{{ icon('chevron-right') }}</a>
+        </div>
+
+        {% if period.period_type == "personnalise" %}
+        <div class="flex flex-wrap gap-3">
+          <label class="flex items-center gap-2 text-sm text-secondary">{{ _("Du") }}<input type="date" name="date_from" value="{{ period.date_from }}" class="input-base" aria-label="{{ _("Du") }}" /></label>
+          <label class="flex items-center gap-2 text-sm text-secondary">{{ _("Au") }}<input type="date" name="date_to" value="{{ period.date_to }}" class="input-base" aria-label="{{ _("Au") }}" /></label>
+        </div>
+        {% else %}
+        <input type="hidden" name="date_from" value="" />
+        <input type="hidden" name="date_to" value="" />
+        {% endif %}
+
+        <div class="flex items-center gap-3">
+          <button type="button" @click="crit = !crit" :aria-expanded="crit ? 'true' : 'false'" class="inline-flex min-h-[50px] items-center gap-2 rounded-xl border border-border-strong bg-container px-4 text-sm font-medium text-primary">
+            {{ _("Plus de critères") }}
+            {% if criteria_count %}<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-soft px-1 text-xs font-semibold text-accent-ink">{{ criteria_count }}</span>{% endif %}
+            <span class="transition-transform" :class="crit ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span>
+          </button>
+          <span class="text-sm text-secondary">{{ account_name }}{% if shift_income %} · {{ _("recettes décalées") }}{% endif %}</span>
+        </div>
+
+        <button type="button" @click="q = 'score'; psheet = false" class="min-h-[50px] text-sm font-semibold text-accent-ink underline lg:ml-auto">{{ _("Score Twiga %(score)s / 100", score=twiga_score.score) }}</button>
+      </div>
+
+      <section x-show="crit" style="display: none;" aria-label="{{ _("Plus de critères") }}" class="flex flex-col gap-4 rounded-xl border border-border bg-container p-4 lg:flex-row lg:items-start lg:gap-10">
+        <div class="flex flex-col gap-2">
+          <p class="text-sm font-semibold text-primary">{{ _("Compte") }}</p>
+          <div role="group" aria-label="{{ _("Compte") }}" class="flex flex-wrap gap-2">
+            <label class="min-h-[50px] inline-flex cursor-pointer items-center gap-2 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary has-[:checked]:border-accent-ink has-[:checked]:bg-accent-soft has-[:checked]:font-semibold has-[:checked]:text-accent-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent-ink">
+              <input type="radio" name="account_id" value="" class="sr-only" {% if not account_id %}checked{% endif %} />{{ _("Tous les comptes") }}
+            </label>
+            {% for account in accounts %}
+            <label class="min-h-[50px] inline-flex cursor-pointer items-center gap-2 rounded-full border border-border-strong bg-container px-4 text-sm font-medium text-primary has-[:checked]:border-accent-ink has-[:checked]:bg-accent-soft has-[:checked]:font-semibold has-[:checked]:text-accent-ink has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent-ink">
+              <input type="radio" name="account_id" value="{{ account.id }}" class="sr-only" {% if account.id == account_id %}checked{% endif %} />
+              <span aria-hidden="true" class="h-2.5 w-2.5 rounded-full" style="background-color: {{ account | account_color }}"></span>{{ account.name }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <label class="flex min-h-[50px] cursor-pointer items-start gap-3">
+          <input type="checkbox" name="shift_income" value="1" class="peer sr-only" {% if shift_income %}checked{% endif %} @change="window.twigaRememberReportShift($event.target.checked)" />
+          <span aria-hidden="true" class="switch mt-0.5"></span>
+          <span class="flex flex-col gap-0.5">
+            <span class="text-sm font-medium text-primary">{{ _("Décaler les recettes") }}</span>
+            <span class="text-xs text-secondary">{{ _("Le salaire reçu fin du mois précédent finance les dépenses du mois courant. Actif en vue Mois et en vue Année.") }}</span>
+            {% if mois_shift_active %}<span class="text-xs text-secondary">{{ _("Dépenses : %(expenses)s | Recettes : %(incomes)s", expenses=period.label, incomes=income_period_label) }}</span>{% endif %}
+          </span>
+        </label>
+      </section>
+    </div>
+  </form>
+
+  {# --- Les questions et le panneau --- #}
+  <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,3.2fr)] lg:items-start lg:gap-8">
+
+    <div class="print:hidden flex flex-col gap-2">
+      <button type="button" @click="qopen = !qopen" :aria-expanded="qopen ? 'true' : 'false'" class="flex min-h-[62px] w-full items-center justify-between gap-3 rounded-xl border border-accent-ink bg-accent-soft px-4 text-left lg:hidden">
+        <span class="flex flex-col"><span class="text-xs text-secondary">{{ _("Ta question") }}</span>{% for key, label in report_questions %}<span x-show="q === '{{ key }}'" {% if key != question %}style="display: none;"{% endif %} class="text-sm font-semibold text-accent-ink">{{ label }}</span>{% endfor %}</span>
+        <span class="text-secondary transition-transform" :class="qopen ? 'rotate-180' : ''">{{ icon('chevron-down', size=18) }}</span>
+      </button>
+      <p class="hidden text-xs font-medium text-secondary lg:block">{{ _("Ta question") }}</p>
+      <div role="group" aria-label="{{ _("Choisir une question") }}" :class="qopen ? '' : 'max-lg:hidden'" class="flex flex-col gap-2">
+        {% for key, label in report_questions %}
+        <button type="button" @click="q = '{{ key }}'; qopen = false" :aria-pressed="q === '{{ key }}' ? 'true' : 'false'" class="min-h-[50px] rounded-xl border border-border-strong bg-container px-4 text-left text-sm font-medium text-primary aria-pressed:border-accent-ink aria-pressed:bg-accent-soft aria-pressed:font-semibold aria-pressed:text-accent-ink">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start">
+      <section class="flex min-w-0 flex-1 flex-col gap-4 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm" aria-live="polite">
+        {% for key, label in report_questions %}
+        <h2 x-show="q === '{{ key }}'" {% if key != question %}style="display: none;"{% endif %} class="font-display text-lg font-extrabold tracking-tight text-primary">{{ report_titles[key] }}</h2>
+        {% endfor %}
+
+        {% if not has_data %}
+        <div x-show="q !== 'shop'" class="flex flex-col items-center gap-3 py-6 text-center">
+          {{ mascot("waiting", size=72, label=true) }}
+          <p class="text-replique">{{ _("Twiga ne trouve rien sur cette période.") }}</p>
+          <p class="text-sm text-secondary">{{ _("Essaie une autre période, ou importe des opérations depuis Paramètres.") }}</p>
+          <a href="/imports/new" class="btn btn-secondary">{{ icon('file-import', size=18) }} {{ _("Importer des opérations") }}</a>
+        </div>
+        {% endif %}
+
+        {# 1. Où est parti l'argent ?  2. D'où vient l'argent ? : les catégories, un clic ouvre la feuille. #}
+        {% for key, rows, total, positive, empty, total_label in (
+          ("dep", expense_share_rows, expense_total, false, _("Aucune dépense sur cette période."), _("Total dépenses")),
+          ("rec", income_share_rows, income_total, true, _("Aucune recette sur cette période."), _("Total recettes")),
+        ) %}
+        {% if has_data %}
+        <div x-show="q === '{{ key }}'" {% if key != question %}style="display: none;"{% endif %} class="flex flex-col">
+          {% if rows %}
+          {% for row in rows %}
+          {% set cat_param = "none" if row.category_id is none else row.category_id %}
+          <button
+            type="button"
+            data-sheet-row
+            aria-pressed="false"
+            aria-label="{{ _("Voir le détail de %(name)s", name=row.name) }}"
+            hx-get="/reports/category-sheet?{{ report_qs }}&type={{ 'income' if positive else 'expense' }}&category_id={{ cat_param }}&category_name={{ row.name | urlencode }}"
+            hx-target="#report-sheet"
+            hx-swap="innerHTML"
+            class="grid min-h-[var(--row-list)] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 border-t border-border py-2 text-left first:border-t-0 aria-pressed:bg-accent-soft lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)_auto_auto_auto]"
+          >
+            <span class="flex min-w-0 flex-col">
+              <span class="truncate text-sm font-semibold text-primary">{{ row.name }}</span>
+              <span class="amount-blur text-xs leading-snug text-secondary">
+                {% if row.budget %}<span class="font-semibold {{ row.budget.text }}">{{ row.budget.word }}</span> · {{ _("%(percent)s %% de %(amount)s", percent=row.budget.percent, amount=row.budget.amount | eur) }}
+                {% elif row.pending %}{{ ngettext("%(n)s opération à ranger", "%(n)s opérations à ranger", pending_count, n=pending_count) }}
+                {% elif not positive %}{{ _("Sans budget") }}{% endif %}
+              </span>
+            </span>
+            <span class="max-lg:col-span-2 max-lg:row-start-2 lg:row-start-auto"><span class="block h-2.5 overflow-hidden rounded-full bg-sunken"><span class="block h-full rounded-full" style="width: {{ [row.percent_of_total, 1] | max }}%; background: {{ 'var(--color-secondary)' if row.pending else 'var(--color-chart-' ~ ((loop.index0 % 8) + 1) ~ ')' }}"></span></span></span>
+            <span class="amount-blur text-right text-sm font-semibold tabular-nums text-primary max-lg:col-start-2 max-lg:row-start-1">{{ signed(row.amount if positive else -row.amount, plus=positive) }}</span>
+            <span class="hidden w-14 text-right text-xs tabular-nums text-secondary lg:block">{{ row.percent_of_total }}&nbsp;%</span>
+            <span class="hidden text-secondary lg:block">{{ icon('chevron-right', size=16) }}</span>
+          </button>
+          {% endfor %}
+          <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t-2 border-border pt-3">
+            <span class="flex flex-col"><span class="text-sm font-semibold text-primary">{{ total_label }}</span>{% if not positive and pending_expense_total %}<span class="amount-blur text-xs text-secondary">{{ _("dont %(amount)s encore à trier", amount=pending_expense_total | eur) }}</span>{% endif %}</span>
+            {% if not positive and pending_count %}<a href="/transactions/inbox" class="inline-flex min-h-[50px] items-center gap-1 text-sm font-medium text-accent-ink underline">{{ ngettext("Ranger l'opération à trier", "Ranger les %(n)s opérations à trier", pending_count, n=pending_count) }} {{ icon('arrow-right', size=16) }}</a>{% endif %}
+            <span class="amount-blur text-base font-bold tabular-nums text-primary">{{ signed(-total if not positive else total, plus=positive) }}</span>
+          </div>
+          {% else %}
+          <p class="py-8 text-center text-sm text-secondary">{{ empty }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        {# 3. Est-ce que le foyer épargne ? #}
+        {% if has_data %}
+        <div x-show="q === 'bal'" {% if question != 'bal' %}style="display: none;"{% endif %} x-data="{ sel: {{ columns | length - 1 }}, table: false }" class="flex flex-col gap-4">
+          <p class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-secondary"><span>{{ _("Résultat du mois (recettes moins dépenses)") }}</span><span class="amount-blur">{{ _("Moyenne : %(amount)s", amount=twelve_average | eur) }}</span></p>
+          <div role="group" aria-label="{{ _("Résultat de chaque mois, touche un mois pour le détail") }}" class="grid grid-cols-12 gap-1">
+            {% for col in columns %}
+            <button type="button" @click="sel = {{ loop.index0 }}" :aria-pressed="sel === {{ loop.index0 }} ? 'true' : 'false'" aria-label="{{ col.label }} : {{ _("résultat %(amount)s", amount=col.net | eur) }}" class="group flex min-h-[50px] flex-col items-stretch rounded-lg px-0.5 aria-pressed:bg-accent-soft">
+              <span class="flex h-28 items-end justify-center"><span class="block w-full max-w-5 rounded-t {{ 'bg-success' if col.net >= 0 else 'bg-danger' }}" style="height: {{ [col.height, 2] | max }}%; opacity: 0.85"></span></span>
+              <span class="pt-1 text-center text-xs text-secondary tabular-nums group-aria-pressed:font-semibold group-aria-pressed:text-accent-ink"><span class="sm:hidden">{{ col.label[:1] }}</span><span class="hidden sm:inline">{{ col.label.split(" ")[0][:3] }}</span></span>
+            </button>
+            {% endfor %}
+          </div>
+          {% for col in columns %}
+          <p x-show="sel === {{ loop.index0 }}" {% if not loop.last %}style="display: none;"{% endif %} aria-live="polite" class="amount-blur flex flex-wrap items-baseline gap-x-5 gap-y-1 rounded-xl bg-sunken px-4 py-3 text-sm text-primary">
+            <strong class="font-semibold">{{ col.label }}</strong>
+            <span>{{ _("Recettes") }} <span class="font-semibold tabular-nums">{{ signed(col.income, plus=true) }}</span></span>
+            <span>{{ _("Dépenses") }} <span class="font-semibold tabular-nums">{{ signed(-col.expense) }}</span></span>
+            <span>{{ _("Résultat") }} <span class="font-semibold tabular-nums {{ 'text-success' if col.net >= 0 else 'text-danger' }}">{{ signed(col.net, plus=true) }}</span></span>
+            <span>{{ _("Épargne") }} <span class="font-semibold tabular-nums">{% if col.rate is none %}—{% else %}{{ col.rate }}&nbsp;%{% endif %}</span></span>
+          </p>
+          {% endfor %}
+
+          <div class="flex flex-col gap-1 border-t border-border pt-4">
+            <h3 class="text-sm font-semibold text-primary">{{ _("Résultat cumulé sur 12 mois") }}</h3>
+            <p class="amount-blur text-sm text-secondary">{{ _("Ce que le foyer a mis de côté mois après mois : %(amount)s à ce jour.", amount=cumulative_total | eur) }}</p>
+            <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="h-24 w-full" role="img" aria-label="{{ _("Résultat cumulé sur douze mois") }}"><path d="{{ cumulative_path }}" fill="none" stroke="var(--color-chart-2)" stroke-width="2" vector-effect="non-scaling-stroke" /></svg>
+          </div>
+
+          <div class="rounded-xl border border-border">
+            <button type="button" @click="table = !table" :aria-expanded="table ? 'true' : 'false'" class="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 text-left">
+              <span class="flex flex-col lg:flex-row lg:items-baseline lg:gap-3"><span class="text-sm font-semibold text-primary" x-text="table ? '{{ _("Masquer le tableau") | jsq }}' : '{{ _("Voir le tableau") | jsq }}'">{{ _("Voir le tableau") }}</span><span class="text-xs text-secondary">{{ _("Détail mensuel de la période") }}</span></span>
+              <span class="text-secondary transition-transform" :class="table ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span>
+            </button>
+            <div x-show="table" style="display: none;" class="overflow-x-auto px-4 pb-4">
+              {% if monthly_breakdown %}
+              <table class="w-full min-w-[460px] text-sm">
+                <thead><tr class="text-xs text-secondary"><th class="pb-2 text-left font-medium">{{ _("Mois") }}</th><th class="pb-2 text-right font-medium">{{ _("Recettes") }}{% if monthly_shift_active %} (M-1){% endif %}</th><th class="pb-2 text-right font-medium">{{ _("Dépenses") }}</th><th class="pb-2 text-right font-medium">{{ _("Net") }}</th><th class="pb-2 text-right font-medium">{{ _("Taux épargne") }}</th></tr></thead>
+                <tbody>
+                  {% for m in monthly_breakdown %}
+                  <tr class="border-t border-border"><td class="py-2.5 text-primary">{{ m.label }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ signed(m.income, plus=true) }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ signed(-m.expense) }}</td><td class="amount-blur py-2.5 text-right font-semibold tabular-nums">{{ signed(m.net, plus=true) }}</td><td class="py-2.5 text-right tabular-nums">{{ ((m.net / m.income * 100) | round | int | string | replace("-", "−")) if m.income else 0 }}&nbsp;%</td></tr>
+                  {% endfor %}
+                  <tr class="border-t-2 border-border font-semibold"><td class="py-2.5">{{ _("Total") }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ signed(income_total, plus=true) }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ signed(-expense_total) }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ signed(result_total, plus=true) }}</td><td class="py-2.5 text-right tabular-nums">{{ savings_rate | string | replace("-", "−") }}&nbsp;%</td></tr>
+                </tbody>
+              </table>
+              <dl class="mt-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
+                <div><dt class="text-xs text-secondary">{{ _("Moy. Recettes") }}</dt><dd class="amount-blur font-semibold tabular-nums">{{ signed(monthly_avg_income, plus=true) }}</dd></div>
+                <div><dt class="text-xs text-secondary">{{ _("Moy. Dépenses") }}</dt><dd class="amount-blur font-semibold tabular-nums">{{ signed(-monthly_avg_expense) }}</dd></div>
+                <div><dt class="text-xs text-secondary">{{ _("Moy. Épargne") }}</dt><dd class="amount-blur font-semibold tabular-nums">{{ signed(monthly_avg_net, plus=true) }}</dd></div>
+                <div><dt class="text-xs text-secondary">{{ _("Taux d'épargne (période)") }}</dt><dd class="font-semibold tabular-nums">{{ savings_rate | string | replace("-", "−") }}&nbsp;%</dd></div>
+              </dl>
+              {% else %}
+              <p class="py-4 text-center text-sm text-secondary">{{ _("Aucune donnée sur les mois de cette période.") }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {# 4. Les budgets ont-ils tenu ? #}
+        <div x-show="q === 'bud'" {% if question != 'bud' %}style="display: none;"{% endif %} class="flex flex-col gap-4">
+          {% if budget_view.has %}
+          <p class="text-sm text-secondary">{{ _("Budgets tenus : %(held)s sur %(count)s", held=budget_view.held, count=budget_view.count) }}{% if budget_performance_pct is not none %} · {{ _("Budget Performance : %(percent)s %% consommé", percent=budget_performance_pct) }}{% endif %}</p>
+          {% for line in budget_lines %}
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-baseline justify-between gap-3"><span class="min-w-0 truncate text-sm font-semibold text-primary">{{ line.category.name | category_display }}</span><span class="flex-none text-xs"><span class="font-semibold {{ line.verdict.text }}">{{ line.verdict.word }}</span> · <span class="tabular-nums text-secondary">{{ line.percentage_display }}&nbsp;%</span></span></div>
+            {{ gauge(line.bar_width, 0, line.verdict.fill, line.category.name ~ " : " ~ line.percentage_display ~ " %") }}
+            <p class="amount-blur text-xs tabular-nums text-secondary">{{ line.spent | eur }} / {{ line.budget | eur }}{% if period_months > 1 %} · {{ _("moyenne %(spent)s / mois (budget %(budget)s / mois)", spent=(line.spent / period_months) | eur, budget=(line.budget / period_months) | eur) }}{% endif %}</p>
+          </div>
+          {% endfor %}
+          <p class="flex items-center justify-between gap-3 border-t border-border pt-3 text-sm font-semibold text-primary"><span>{{ _("Total économisé sur la période") }}</span><span class="amount-blur tabular-nums">{{ signed(budget_saved, plus=true) }}</span></p>
+          {% else %}
+          <p class="py-8 text-center text-sm text-secondary">{{ _("Aucun budget défini pour cette période.") }}</p>
+          {% endif %}
+        </div>
+
+        {# 5. Que vaut le foyer ? #}
+        <div x-show="q === 'pat'" {% if question != 'pat' %}style="display: none;"{% endif %} class="flex flex-col gap-4">
+          {% if patrimoine.ok %}
+          <p class="amount-blur flex flex-wrap items-baseline gap-x-3 gap-y-1"><span class="font-display text-[1.75rem] font-extrabold tabular-nums text-primary">{{ patrimoine.last | eur }}</span><span class="text-sm font-semibold tabular-nums {{ 'text-success' if patrimoine.delta >= 0 else 'text-danger' }}">{{ signed(patrimoine.delta, plus=true) }} <span class="font-normal text-secondary">{{ _("en hausse") if patrimoine.delta >= 0 else _("en baisse") }}</span></span></p>
+          <div class="h-56 lg:h-72"><canvas
+            id="report-networth-chart"
+            role="img"
+            aria-label="{{ _("Évolution du patrimoine par compte") }}"
+            data-networth="{{ {
+              'labels': net_worth_points | map(attribute='date') | map('string') | list,
+              'totals': net_worth_points | map(attribute='total') | list,
+              'accountIds': net_worth_accounts | map(attribute='id') | list,
+              'accountNames': net_worth_accounts | map(attribute='name') | list,
+              'byAccount': net_worth_points | map(attribute='accounts') | list,
+              'totalLabel': _('Total patrimoine'),
+            } | tojson | forceescape }}"
+          ></canvas></div>
+          <p class="amount-blur flex flex-wrap gap-x-5 gap-y-1 text-sm text-secondary"><span>{{ _("Plus haut :") }} <span class="font-semibold tabular-nums text-primary">{{ patrimoine.high | eur }}</span></span><span>{{ _("Plus bas :") }} <span class="font-semibold tabular-nums text-primary">{{ patrimoine.low | eur }}</span></span></p>
+          {% else %}
+          <p class="py-4 text-center text-sm text-secondary">{{ _("Pas assez de données pour tracer le patrimoine sur cette période.") }}</p>
+          {% endif %}
+          <h3 class="border-t border-border pt-4 text-sm font-semibold text-primary">{{ _("Soldes aujourd'hui") }}</h3>
+          <ul class="flex flex-col">
+            {% for acct, balance in account_balances %}
+            <li class="flex min-h-[50px] items-center gap-3 border-t border-border first:border-t-0"><span aria-hidden="true" class="h-2.5 w-2.5 flex-none rounded-full" style="background-color: {{ acct | account_color }}"></span><span class="min-w-0 flex-1 truncate text-sm text-primary">{{ acct.name }} <span class="text-xs text-secondary">{{ get_account_type_label(acct.type) }}</span></span><span class="amount-blur text-sm font-semibold tabular-nums text-primary">{{ signed(balance) }}</span></li>
+            {% endfor %}
+            <li class="flex min-h-[50px] items-center justify-between gap-3 border-t border-border font-semibold text-primary"><span>{{ _("Total") }}</span><span class="amount-blur tabular-nums">{{ signed(accounts_total) }}</span></li>
+          </ul>
+        </div>
+
+        {# 6. Le cap a-t-il tenu ? #}
+        <div x-show="q === 'cap'" {% if question != 'cap' %}style="display: none;"{% endif %} class="flex flex-col gap-4">
+          {% if cap_view.ok %}
+          {% for bar in cap_view.bars %}
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-baseline justify-between gap-3"><span class="text-sm font-semibold text-primary">{{ bar.name }} <span class="font-semibold {{ bar.verdict.text }}">{{ bar.verdict.word }}</span></span><span class="amount-blur text-xs tabular-nums text-secondary">{{ bar.actual | eur }} / {{ bar.planned | eur }}</span></div>
+            {{ gauge(bar.bar_width, 0, bar.verdict.fill, bar.name ~ " : " ~ (bar.ratio | round | int) ~ " %") }}
+          </div>
+          {% endfor %}
+          <p class="text-sm text-secondary">{{ _("Taux d'épargne (période) :") }} <span class="font-semibold tabular-nums text-primary">{{ savings_rate | string | replace("-", "−") }}&nbsp;%</span></p>
+          {% if cap_entry.intention %}<blockquote class="text-lg italic text-primary">« {{ cap_entry.intention }} »</blockquote>{% endif %}
+          <h3 class="flex items-baseline justify-between gap-3 border-t border-border pt-4 text-sm font-semibold text-primary"><span>{{ _("Imprévus de %(month)s", month=cap_view.month) }}</span>{% if cap_unexpected %}<span class="amount-blur tabular-nums">{{ signed(-cap_unexpected_total) }}</span>{% endif %}</h3>
+          {% for tx in cap_unexpected %}
+          <p class="flex justify-between gap-3 text-sm text-secondary"><span class="min-w-0 truncate">{{ tx.date | short_date }} {{ tx.label or _("(sans libellé)") }}</span><span class="amount-blur flex-none tabular-nums">{{ signed(tx.amount) }}</span></p>
+          {% else %}
+          <p class="text-sm text-secondary">{{ _("Aucun imprévu ce mois-ci.") }}</p>
+          {% endfor %}
+          {% else %}
+          <p class="py-4 text-center text-sm text-secondary">{{ _("Aucun cap fixé pour %(month)s.", month=cap_view.month) }} <a href="/cap" class="inline-flex min-h-[50px] items-center gap-1 font-medium text-accent-ink underline">{{ _("Fixer le cap") }}</a></p>
+          {% endif %}
+          {% if cap_history %}
+          <h3 class="border-t border-border pt-4 text-sm font-semibold text-primary">{{ _("Les mois passés") }}</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[480px] text-xs">
+              <thead><tr class="text-secondary"><th class="py-2 text-left font-medium">{{ _("Mois") }}</th><th class="py-2 text-right font-medium">{{ _("Revenus") }}</th><th class="py-2 text-right font-medium">{{ _("Essentiel") }}</th><th class="py-2 text-right font-medium">{{ _("Choix") }}</th><th class="py-2 text-right font-medium">{{ _("Imprévus") }}</th><th class="py-2 text-right font-medium">{{ _("Épargne") }}</th><th class="py-2 pl-3 text-left font-medium">{{ _("Intention") }}</th></tr></thead>
+              <tbody>
+                {% for h in cap_history %}
+                <tr class="border-t border-border"><td class="whitespace-nowrap py-2.5 text-primary">{{ h.month.strftime("%m/%Y") }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ h.planned_income | eur }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ h.planned_essentiel | eur }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ h.planned_choix | eur }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ h.planned_imprevu | eur }}</td><td class="amount-blur py-2.5 text-right tabular-nums">{{ signed(h.planned_income - h.planned_essentiel - h.planned_choix - h.planned_imprevu) }}</td><td class="truncate py-2.5 pl-3 text-secondary">{{ h.intention or "" }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {# 7. Que coûtent les courses ? #}
+        <div x-show="q === 'shop'" {% if question != 'shop' %}style="display: none;"{% endif %} x-data="{ table: false }" class="flex flex-col gap-4">
+          {% if shop_view.empty %}
+          <p class="text-sm text-secondary">{{ _("Aucun détail de ticket sur les 12 derniers mois. Importe la facture PDF d'une course depuis le détail de l'opération pour alimenter ce rapport.") }}</p>
+          <a href="/transactions/list" class="btn btn-secondary self-start">{{ _("Ouvrir les opérations") }}</a>
+          {% else %}
+          <p class="text-sm text-secondary">{{ _("Basé sur les %(n)s courses dont le ticket a été importé, avant remises, bons d'achat et titres-restaurant.", n=receipt_report.coverage.detailed) }}</p>
+          <div role="img" aria-label="{{ _("Montant détaillé des courses, mois par mois") }}" class="grid grid-cols-12 gap-1">
+            {% for amount in receipt_report.monthly_totals %}
+            <div class="flex flex-col items-stretch" title="{{ receipt_report.months[loop.index0] }} : {{ amount | eur }}">
+              <span class="flex h-24 items-end justify-center"><span class="block w-full max-w-5 rounded-t bg-chart-1" style="height: {{ [(amount | abs / shop_view.max_month * 100) | round(1), 1 if amount else 0] | max }}%"></span></span>
+              <span class="pt-1 text-center text-xs text-secondary"><span class="sm:hidden">{{ receipt_report.months[loop.index0][:1] }}</span><span class="hidden sm:inline">{{ receipt_report.months[loop.index0][:3] }}</span></span>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-3 pb-1 text-xs text-secondary"><span class="flex-1">{{ _("Rayon") }}</span><span class="w-24 text-right">{{ _("Total") }}</span><span class="w-20 text-right">{{ _("Moy.") }}</span></div>
+            {% for row in receipt_report.family_rows %}
+            <div class="flex min-h-[50px] items-center gap-3 border-t border-border">
+              <span class="flex min-w-0 flex-1 flex-col gap-1"><span class="flex items-center gap-2 text-sm text-primary">{{ row.icon }} {{ row.label }}{% if row.trend is not none %}<span class="text-secondary">{{ icon('trending-up', size=14) if row.trend > 0 else icon('trending-down', size=14) }}</span>{% endif %}</span><span class="block h-2 overflow-hidden rounded-full bg-sunken"><span class="block h-full rounded-full bg-chart-{{ (loop.index0 % 8) + 1 }}" style="width: {{ (row.total | abs / shop_view.max_family * 100) | round(1) }}%"></span></span></span>
+              <span class="amount-blur w-24 text-right text-sm font-semibold tabular-nums text-primary">{{ row.total | abs | eur }}</span>
+              <span class="amount-blur w-20 text-right text-xs tabular-nums text-secondary">{{ row.average | abs | eur }}</span>
+            </div>
+            {% endfor %}
+            <div class="flex items-center gap-3 border-t-2 border-border pt-3 text-sm font-semibold text-primary"><span class="flex-1">{{ _("Total détaillé") }}</span><span class="amount-blur w-24 text-right tabular-nums">{{ receipt_report.grand_total | abs | eur }}</span><span class="amount-blur w-20 text-right text-xs tabular-nums text-secondary">{{ (receipt_report.grand_total / 12) | abs | eur }}</span></div>
+          </div>
+          <div class="rounded-xl border border-border">
+            <button type="button" @click="table = !table" :aria-expanded="table ? 'true' : 'false'" class="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 text-left"><span class="text-sm font-semibold text-primary" x-text="table ? '{{ _("Masquer le détail mois par mois") | jsq }}' : '{{ _("Voir le détail mois par mois") | jsq }}'">{{ _("Voir le détail mois par mois") }}</span><span class="text-secondary transition-transform" :class="table ? 'rotate-180' : ''">{{ icon('chevron-down', size=16) }}</span></button>
+            <div x-show="table" style="display: none;" class="overflow-x-auto px-4 pb-4">
+              <table class="w-full min-w-[480px] text-xs">
+                <thead><tr class="border-b border-border text-secondary"><th class="py-2 pr-2 text-left font-medium">{{ _("Rayon") }}</th>{% for month in receipt_report.months %}<th class="whitespace-nowrap px-1 py-2 text-right font-medium">{{ month }}</th>{% endfor %}<th class="py-2 pl-2 text-right font-medium">{{ _("Total") }}</th><th class="py-2 pl-2 text-right font-medium">{{ _("Moy.") }}</th></tr></thead>
+                <tbody>
+                  {% for row in receipt_report.family_rows %}
+                  <tr class="border-b border-border"><td class="whitespace-nowrap py-2.5 pr-2 text-primary">{{ row.icon }} {{ row.label }}</td>{% for amount in row.monthly %}<td class="amount-blur px-1 py-2.5 text-right tabular-nums {{ 'text-primary' if amount > 0 else 'text-secondary' }}">{{ amount | eur if amount > 0 else "—" }}</td>{% endfor %}<td class="amount-blur whitespace-nowrap py-2.5 pl-2 text-right font-semibold tabular-nums text-primary">{{ row.total | eur }}</td><td class="amount-blur whitespace-nowrap py-2.5 pl-2 text-right tabular-nums text-secondary">{{ row.average | eur }}</td></tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot><tr class="font-bold text-primary"><td class="py-2.5 pr-2">{{ _("Total détaillé") }}</td>{% for amount in receipt_report.monthly_totals %}<td class="amount-blur px-1 py-2.5 text-right tabular-nums">{{ amount | eur if amount > 0 else "—" }}</td>{% endfor %}<td class="amount-blur py-2.5 pl-2 text-right tabular-nums">{{ receipt_report.grand_total | eur }}</td><td></td></tr></tfoot>
+              </table>
+            </div>
+          </div>
+          <p class="text-xs text-secondary">{{ _("Ce rapport mesure ce qui est acheté, pas ce qui est payé.") }}</p>
+          {% endif %}
+        </div>
+
+        {# 8. Qu'est-ce qui a changé ? #}
+        {% if has_data %}
+        <div x-show="q === 'chg'" {% if question != 'chg' %}style="display: none;"{% endif %} class="flex flex-col gap-5">
+          <p class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-secondary"><span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="h-2.5 w-2.5 rounded-sm bg-chart-8"></span>{{ comparison.prev_label }}</span><span class="inline-flex items-center gap-1.5"><span aria-hidden="true" class="h-2.5 w-2.5 rounded-sm bg-chart-1"></span>{{ comparison.cur_label }}</span></p>
+          {% for row in comparison.rows %}
+          {% set change = row.change %}
+          {% set up = change is not none and change >= 0 %}
+          <div class="flex flex-col gap-2">
+            <div class="flex items-baseline justify-between gap-3"><span class="text-sm font-semibold text-primary">{{ row.label }}</span>
+              {% if change is none %}<span class="text-xs text-secondary">{{ _("Pas de référence sur la période précédente") }}</span>
+              {% else %}<span class="text-xs font-semibold {{ 'text-secondary' if change == 0 else ('text-success' if up == row.up_is_good else 'text-danger') }}">{{ ("+" if up else "") ~ (change | string | replace("-", "−")) }}&nbsp;% · {{ _("en hausse") if up else _("en baisse") }}</span>{% endif %}
+            </div>
+            <div class="flex items-center gap-3"><span class="w-24 flex-none text-xs text-secondary">{{ _("Avant") }}</span><div class="progress-base h-2.5"><div class="progress-fill bg-chart-8" style="width: {{ row.prev_width }}%"></div></div><span class="amount-blur w-28 flex-none text-right text-xs tabular-nums text-secondary">{{ row.prev | eur }}</span></div>
+            <div class="flex items-center gap-3"><span class="w-24 flex-none text-xs text-primary">{{ _("Maintenant") }}</span><div class="progress-base h-2.5"><div class="progress-fill bg-chart-1" style="width: {{ row.cur_width }}%"></div></div><span class="amount-blur w-28 flex-none text-right text-sm font-semibold tabular-nums text-primary">{{ row.cur | eur }}</span></div>
+          </div>
+          {% endfor %}
+          <div class="flex flex-col gap-1 border-t border-border pt-4">
+            <div class="flex items-baseline justify-between gap-3"><span class="text-sm font-semibold text-primary">{{ _("Budget Performance") }}</span>
+              {% if budget_performance_change is not none %}<span class="text-xs font-semibold {{ 'text-secondary' if budget_performance_change == 0 else ('text-danger' if budget_performance_change > 0 else 'text-success') }}">{{ ("+" if budget_performance_change > 0 else "") ~ (budget_performance_change | string | replace("-", "−")) }}&nbsp;{{ _("pt") }} · {{ _("en hausse") if budget_performance_change > 0 else _("en baisse") }}</span>{% endif %}
+            </div>
+            <p class="text-sm text-primary">{% if budget_performance_pct is none %}{{ _("Aucun budget défini") }}{% else %}{{ _("%(percent)s %% consommé", percent=budget_performance_pct) }}{% endif %}</p>
+            {% if budget_view.has %}<p class="text-xs text-secondary">{{ _("Budgets tenus : %(held)s sur %(count)s", held=budget_view.held, count=budget_view.count) }}</p>{% endif %}
+          </div>
+        </div>
+
+        {# 9. Comment je me débrouille ? Le score Twiga #}
+        <div x-show="q === 'score'" {% if question != 'score' %}style="display: none;"{% endif %} class="flex flex-col gap-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
+            <span class="font-display text-[3rem] font-extrabold leading-none tabular-nums text-primary">{{ twiga_score.score }}<span class="text-xl font-bold text-secondary"> / 100</span></span>
+            <div class="flex flex-1 flex-col gap-2">
+              <div class="progress-base h-3 print-score-track" role="img" aria-label="{{ _("Score Twiga :") }} {{ twiga_score.score }} / 100"><div id="twiga-score-bar" class="progress-fill bg-primary" style="width: {{ twiga_score.score }}%"></div></div>
+              <p class="text-sm text-primary">{{ twiga_score.message }}</p>
+            </div>
+          </div>
+          {% for part in score_parts %}
+          <div class="flex flex-col gap-1 lg:grid lg:grid-cols-[9rem_minmax(0,1fr)_3.5rem] lg:items-center lg:gap-4">
+            <span class="text-sm font-semibold text-primary">{{ part.label }}</span>
+            <div class="progress-base h-2.5"><div class="progress-fill bg-primary" style="width: {{ (part.points / part.max * 100) | round }}%"></div></div>
+            <span class="text-right text-sm font-semibold tabular-nums text-primary">{{ part.points }}/{{ part.max }}</span>
+            <span class="amount-blur text-xs text-secondary lg:col-start-2">{{ part.why }}</span>
+          </div>
+          {% endfor %}
+          <p class="text-xs text-secondary">{{ _("Budgets %(budget_points)s/40 · Résultat %(result_points)s/30 · Catégorisation %(categorized_points)s/20 · Projets %(project_points)s/10", budget_points=twiga_score.budget_points, result_points=twiga_score.result_points, categorized_points=twiga_score.categorized_points, project_points=twiga_score.project_points) }}</p>
+        </div>
+        {% endif %}
+      </section>
+
+      {# La feuille d'une catégorie : une ligne des deux premières questions la remplit. #}
+      <aside id="report-sheet" data-sheet x-show="q === 'dep' || q === 'rec'" class="empty:hidden print:hidden lg:sticky lg:top-20 lg:w-[38%] lg:flex-none"></aside>
+    </div>
+  </div>
+
+  {# Mobile : imprimer et exporter, sous le panneau. #}
+  <div class="print:hidden grid grid-cols-2 gap-3 lg:hidden">
+    <button type="button" @click="window.print()" class="btn btn-secondary">{{ icon('printer', size=18) }} {{ _("Imprimer") }}</button>
+    <a x-data href="/reports/export.csv?{{ report_qs }}" @click="$el.href = '/reports/export.csv?' + new URLSearchParams(new FormData(document.getElementById('reports-account-filter'))).toString()" class="btn btn-secondary">{{ icon('download', size=18) }} {{ _("Exporter en CSV") }}</a>
+  </div>
+
+  {# Mobile : la barre de période, fixe au-dessus de la navigation. #}
+  <div class="print:hidden fixed inset-x-0 bottom-[59px] z-20 flex items-center gap-2 border-t border-border bg-container px-3 py-2 lg:hidden">
+    <a :href="'/reports?{{ period.prev_params | urlencode }}{{ tail }}&q=' + q" aria-label="{{ _("Période précédente") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center rounded-xl border border-border-strong bg-container text-primary rotate-180">{{ icon('chevron-right') }}</a>
+    <button type="button" @click="psheet = true" aria-haspopup="dialog" class="flex min-h-[50px] min-w-0 flex-1 flex-col items-center justify-center rounded-xl border border-accent-ink bg-accent-soft px-3"><span class="max-w-full truncate text-sm font-semibold text-primary">{{ period_bar_label }}</span><span class="max-w-full truncate text-xs text-secondary">{{ account_name }}</span></button>
+    <a :href="'/reports?{{ period.next_params | urlencode }}{{ tail }}&q=' + q" aria-label="{{ _("Période suivante") }}" class="flex h-[50px] w-[50px] flex-none items-center justify-center rounded-xl border border-border-strong bg-container text-primary">{{ icon('chevron-right') }}</a>
+  </div>
+
+  {# En-tête d'impression #}
+  <div class="hidden print:block print-report-header"><h1 class="text-xl">{{ _("TWIGA — Rapport %(period)s", period=period_bar_label) }}</h1></div>
+</div>

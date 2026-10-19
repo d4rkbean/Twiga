@@ -1,0 +1,44 @@
+{% from "_macros/signed_amount.html" import signed %}
+{#- Les opérations derrière une ligne d'un anneau du Panorama : un panneau sous les
+    deux répartitions (et non une boîte de dialogue), avec la sortie vers la liste
+    complète, ou vers La Savane quand ces dépenses n'ont pas encore de catégorie. -#}
+<section aria-label="{{ _("Opérations de la catégorie") }}" class="flex flex-col gap-3 rounded-xl border border-border bg-container p-[var(--space-card)] shadow-sm">
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+    <h2 class="min-w-0 flex-1 text-section-title">{{ category_name }} — {{ period_label }}</h2>
+    <span class="text-sm tabular-nums text-secondary">{{ ngettext("%(n)s opération", "%(n)s opérations", transactions | length, n=transactions | length) }}</span>
+    <a href="{{ operations_href }}" class="inline-flex min-h-[50px] items-center text-sm font-medium text-accent-ink underline">{{ _("Voir dans Opérations") }}</a>
+    <button type="button" data-close-detail class="inline-flex min-h-[50px] items-center px-2 text-sm font-medium text-secondary underline">{{ _("Fermer") }}</button>
+  </div>
+
+  {% if is_pending and not is_income %}
+  <p class="text-sm text-secondary">{{ _("Ces dépenses n'ont pas encore de catégorie : elles se rangent d'un geste dans La Savane.") }}</p>
+  <a href="/transactions/inbox" class="btn btn-secondary self-start">{{ _("Ranger dans La Savane") }}</a>
+  {% endif %}
+
+  {% if transactions %}
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[420px] text-sm">
+      <thead>
+        <tr class="text-left text-xs text-secondary">
+          <th class="pb-2 pr-2 font-medium">{{ _("Date") }}</th>
+          <th class="pb-2 pr-2 font-medium">{{ _("Libellé") }}</th>
+          <th class="pb-2 pr-2 font-medium">{{ _("Compte") }}</th>
+          <th class="pb-2 text-right font-medium">{{ _("Montant") }}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-border">
+        {% for tx in transactions %}
+        <tr class="min-h-[44px]">
+          <td class="whitespace-nowrap py-3 pr-2 tabular-nums text-secondary">{{ tx.date | short_date }}</td>
+          <td class="py-3 pr-2 text-primary">{{ tx.label or _("(sans libellé)") }}</td>
+          <td class="py-3 pr-2 text-secondary"><span class="inline-flex items-center gap-2"><span aria-hidden="true" class="h-2 w-2 rounded-full" style="background-color: {{ tx.account | account_color }}"></span>{{ tx.account.name }}</span></td>
+          <td class="amount-blur whitespace-nowrap py-3 text-right font-semibold tabular-nums {{ 'text-success' if tx.amount > 0 else 'text-primary' }}">{{ signed(tx.amount, plus=true) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif not is_pending %}
+  <p class="py-4 text-center text-sm text-secondary">{{ _("Aucune opération sur cette période.") }}</p>
+  {% endif %}
+</section>

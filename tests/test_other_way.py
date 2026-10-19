@@ -159,8 +159,9 @@ def test_the_top_bar_has_four_destinations_and_what_goes_with_them(clients, othe
         ("/transactions/inbox", ["La Savane"]),
         ("/dashboard", ["Panorama"]),
         ("/cap", ["Le Cap"]),
-        ("/cap/mid", ["Le Cap"]),
-        ("/budgets", ["Le Cap"]),
+        # Mon mois and Budgets are the dashboard's neighbours (the sheets of lot 5B).
+        ("/cap/mid", ["Panorama"]),
+        ("/budgets", ["Panorama"]),
         ("/transactions/list", ["Plus"]),
         ("/settings", ["Plus"]),
         ("/profile", ["Plus"]),

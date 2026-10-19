@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "other_way/_plan_kit.html" import neighbours %}
+
+{#- « Budgets » de L'autre voie : on y RÈGLE le plan du mois, catégorie par
+    catégorie. Une page enfant de Mon mois : retour en tête (ordinateur) ou dans
+    la barre du haut (mobile). « Enregistrer » est l'unique aplat ambre ; sur
+    mobile il se pose en bas, au-dessus de la barre de navigation. -#}
+{% set shell_page_title = _("Ajuster le plan") %}
+{% set shell_subtitle = period_label %}
+{% set shell_back = "/cap/mid" %}
+{% block title %}{{ _("Budgets — Twiga") }}{% endblock %}
+{% block shell_head %}{{ super() }}
+  <script src="{{ static_url('/static/js/budgets-plan.js') }}" defer></script>
+{% endblock %}
+{% block body_chrome %}pt-[64px] pb-[140px] lg:pb-0{% endblock %}
+
+{% block content %}
+{{ neighbours(_("Panorama, écrans voisins"), [
+  {"href": "/dashboard", "label": _("Panorama"), "current": false},
+  {"href": "/cap/mid", "label": _("Mon mois"), "current": true},
+]) }}
+<main class="flex flex-col gap-4 px-4 pt-4 pb-6 lg:px-10 lg:pt-6 lg:pb-10">
+  <a href="/cap/mid" class="hidden lg:inline-flex min-h-[50px] items-center gap-1.5 self-start text-sm font-medium text-accent-ink underline">{{ icon('arrow-left', size=16) }} {{ _("Mon mois") }}</a>
+
+  <div id="budgets-content">
+    {% include "budgets/_content.html" %}
+  </div>
+</main>
+{% endblock %}
