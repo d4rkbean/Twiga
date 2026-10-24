@@ -1,4 +1,3 @@
-import csv
 import io
 from datetime import datetime
 
@@ -24,6 +23,7 @@ from backend.models import (
     RuleSuggestion,
     Transaction,
 )
+from backend import csv_safety
 
 
 def _serialize_account(account: Account) -> dict:
@@ -303,7 +303,7 @@ def build_transactions_csv(db: Session, **filters) -> str:
     transactions = crud.list_all_transactions(db, **filters)
 
     buffer = io.StringIO()
-    writer = csv.writer(buffer, delimiter=";")
+    writer = csv_safety.writer(buffer, delimiter=";")
     writer.writerow(
         ["date", "libelle_simplifie", "libelle_brut", "montant", "categorie", "sous_categorie", "compte"]
     )

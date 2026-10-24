@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
-from backend import crud, receipts_storage
+from backend import crud, receipts_storage, uploads
 from backend.database import get_db
 from backend.models import ReceiptItem, Transaction
 from backend.receipt_families import RECEIPT_FAMILIES, group_items_by_family
@@ -18,6 +18,9 @@ from backend.i18n import gettext as _t
 # routes contenant "delete" restent réservées à l'admin par la même règle
 # générique que partout ailleurs dans l'app.
 router = APIRouter(prefix="/transactions/receipts", tags=["receipts"])
+
+# Same limit as the statement imports.
+MAX_RECEIPT_BYTES = 5 * uploads.MEGABYTE
 
 
 def _parse_amount(raw: str | None) -> Decimal:
@@ -81,7 +84,14 @@ async def upload_receipt(
     # lignes, déjà couverte par "+ Ajouter une ligne".
     raw_text = None
     if (file.filename or "").lower().endswith(".pdf"):
-        content = await file.read()
+        content = await uploads.read_limited(file, MAX_RECEIPT_BYTES)
+        if content is None:
+            # The section stays as it is: the message is put just above it.
+            return HTMLResponse(
+                f'<p class="text-sm text-danger py-2">{_t("Fichier trop volumineux (5 Mo maximum).")}</p>',
+                status_code=413,
+                headers={"HX-Retarget": f"#receipt-section-{transaction.id}", "HX-Reswap": "beforebegin"},
+            )
         try:
             raw_text = receipts_storage.extract_pdf_text(content)
         except Exception:

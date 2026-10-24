@@ -13,6 +13,8 @@ from backend.auth_middleware import AuthMiddleware
 from backend.locale_middleware import LocaleMiddleware
 from backend.database import SessionLocal, get_db
 from backend.security_headers import SecurityHeadersMiddleware
+from backend.request_guard import RequestGuardMiddleware
+from backend import access_log, import_storage, password_change
 from backend.routers import (
     accounts,
     auth as auth_router,
@@ -40,7 +42,9 @@ from backend.i18n import current_language, gettext as _t, ngettext
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-app = FastAPI(title="Twiga")
+# No /docs, /redoc nor /openapi.json: open to every role (to anyone without
+# authentication), loaded from a CDN, and no API here is meant for other clients.
+app = FastAPI(title="Twiga", docs_url=None, redoc_url=None, openapi_url=None)
 
 # Starlette exécute les middlewares dans l'ordre INVERSE de add_middleware
 # (le dernier ajouté est le plus externe) : SecurityHeadersMiddleware doit
@@ -50,12 +54,20 @@ app = FastAPI(title="Twiga")
 # LocaleMiddleware d'abord : elle doit s'exécuter APRÈS AuthMiddleware (ordre
 # inverse de l'ajout) pour lire request.state.user.
 app.add_middleware(LocaleMiddleware)
+# Inside AuthMiddleware (added before it): reads request.state.user.
+app.add_middleware(password_change.PasswordChangeMiddleware)
 if auth.AUTH_ENABLED:
     # AuthMiddleware gère elle-même son cookie de session signé (voir
     # backend/auth.py) : pas besoin de SessionMiddleware ni de se soucier
     # d'un quelconque ordre d'empilement entre deux middlewares.
     app.add_middleware(AuthMiddleware)
+# Outside AuthMiddleware: a form sent by another site is refused before
+# anything else, signed in or not, and with authentication off as well.
+app.add_middleware(RequestGuardMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_event_handler("startup", password_change.warn_about_default_passwords)
+app.add_event_handler("startup", import_storage.purge_stale_uploads)
+access_log.install()
 
 
 @app.on_event("startup")
@@ -111,6 +123,7 @@ app.include_router(checks.router)
 app.include_router(reports.router)
 app.include_router(users_router.router)
 app.include_router(profile.router)
+app.include_router(password_change.router)
 
 
 @app.get("/")
@@ -273,6 +286,10 @@ def change_password(
     confirm_password: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    if auth.password_too_long(new_password):
+        return HTMLResponse(
+            '<p class="text-sm text-danger py-2">{}</p>'.format(str(auth.PASSWORD_TOO_LONG)), status_code=400
+        )
     # Change le mot de passe de l'utilisateur CONNECTÉ (n'importe quel rôle
     # peut changer le sien — voir auth._SELF_SERVICE_PATHS) ; réinitialiser
     # le mot de passe d'un AUTRE utilisateur passe par Paramètres >

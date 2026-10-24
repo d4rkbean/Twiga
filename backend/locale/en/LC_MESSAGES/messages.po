@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  Twiga\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 10:05+0000\n"
+"POT-Creation-Date: 2026-10-24 23:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -1405,6 +1405,9 @@ msgstr "Administrator"
 msgid "Administrateur, Éditeur ou Lecture seule : un rappel de ce que permet chaque rôle avant d'en choisir un."
 msgstr "Administrator, Editor or Read-only: a reminder of what each role allows before you pick one."
 
+msgid "Adresse du serveur non autorisée."
+msgstr "Server address not allowed."
+
 msgid "Affichage"
 msgstr "Display"
 
@@ -2383,6 +2386,9 @@ msgid "Cette règle touche %(shown)s opération de ton historique."
 msgid_plural "Cette règle touche %(shown)s opérations de ton historique."
 msgstr[0] "This rule catches %(shown)s operation in your history."
 msgstr[1] "This rule catches %(shown)s operations in your history."
+
+msgid "Change d'abord ton mot de passe dans Mon profil."
+msgstr "Change your password in My profile first."
 
 msgid "Change le compte concerné, les colonnes ou le format de date : le récapitulatif se recalcule aussitôt."
 msgstr "Change the account, the columns or the date format: the recap is recalculated at once."
@@ -3619,6 +3625,10 @@ msgstr "QIF, CSV or OFX file · 5 MB maximum"
 msgid "Fichier de sauvegarde JSON"
 msgstr "JSON backup file"
 
+#, python-format
+msgid "Fichier trop volumineux (%(size)s Mo maximum)."
+msgstr "File too large (%(size)s MB maximum)."
+
 msgid "Fichier trop volumineux (5 Mo maximum)."
 msgstr "File too large (5 MB maximum)."
 
@@ -4524,6 +4534,9 @@ msgstr "The amount still to file, how it splits by category and payment method, 
 
 msgid "Le mot de passe doit faire au moins 8 caractères."
 msgstr "The password must be at least 8 characters long."
+
+msgid "Le mot de passe est trop long : 72 caractères au plus (moins avec des accents ou des emoji)."
+msgstr "The password is too long: 72 characters at most (fewer with accents or emoji)."
 
 msgid "Le nom affiché apparaît dans Twiga, l'identifiant sert à te connecter."
 msgstr "The display name shows up in Twiga, the username is what you sign in with."
@@ -7163,6 +7176,9 @@ msgstr "Your display"
 
 msgid "Ton compte"
 msgstr "Your account"
+
+msgid "Ton mot de passe est encore celui par défaut. Choisis-en un nouveau ci-dessous pour continuer."
+msgstr "Your password is still the default one. Choose a new one below to continue."
 
 msgid "Ton nom et ton identifiant"
 msgstr "Your name and your username"

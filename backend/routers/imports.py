@@ -11,13 +11,15 @@ from backend import answers, crud, import_recap, import_storage
 from backend.database import get_db
 from backend.models import Account, Rule
 from backend.templating import templates
+from backend import uploads
 from imports import csv_parser, ofx_parser, qif_parser
 from imports.common import ImportParseError, ParsedTransaction, split_duplicates
 from backend.i18n import current_language, gettext as _t
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
-# Same limit as announced on the drop zone ("5 Mo maximum").
+# Same limit as announced on the drop zone ("5 Mo maximum"). Statements are
+# read in chunks and refused beyond this size.
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 _SUPPORTED_FORMATS = {".csv": "csv", ".ofx": "ofx", ".qfx": "ofx", ".qif": "qif"}
 _ALLOWED_FORMAT_VALUES = set(_SUPPORTED_FORMATS.values())
@@ -228,8 +230,8 @@ async def preview(
     db: Session = Depends(get_db),
 ):
     fmt = _detect_format(file.filename or "")
-    raw_bytes = await file.read()
-    if len(raw_bytes) > MAX_UPLOAD_BYTES:
+    raw_bytes = await uploads.read_limited(file, MAX_UPLOAD_BYTES)
+    if raw_bytes is None:
         return _error(request, _t("Fichier trop volumineux (5 Mo maximum)."))
     if fmt != "qif" and account_id is None:
         return _error(

@@ -63,9 +63,46 @@ no effect: change the password from the app (*Settings → Security → Change t
 once logged in; as an admin, *Settings → Security → Users* resets another
 account's password).
 
-**Change this password on your first login**, especially before exposing the
-app beyond your local network (`AUTH_ENABLED=true`, the default, protects
+**Change this password on your first login**: as long as an account signs in
+with `changeme`, every page leads to *My profile* until a new password is
+saved there, and the start logs a warning while `AUTH_PASSWORD` is `changeme`.
+Do it especially before exposing the app beyond your local network (`AUTH_ENABLED=true`, the default, protects
 every page with a signed session cookie valid for 30 days).
+
+## Security settings (all optional)
+
+Nothing to set for a normal install: every variable below is empty by default
+and the app behaves as before. Set them in `.env`, then
+`docker compose up -d`.
+
+- **Forms sent by another site are refused** (with or without
+  authentication): a POST whose `Origin` (or `Referer`) is not the address
+  Twiga is reached at gets a 403. Behind a reverse proxy, the address is the
+  `Host` header the proxy forwards, or `X-Forwarded-Host` when the proxy sets
+  it. If your proxy changes `Host` and sets neither, list the public address
+  in `TRUSTED_ORIGINS` (comma-separated, e.g.
+  `TRUSTED_ORIGINS=https://twiga.example.com`); the refusal is logged with the
+  address to add.
+- `ALLOWED_HOSTS`: the host names Twiga answers to, comma-separated (e.g.
+  `ALLOWED_HOSTS=twiga.local,192.168.1.20`). Any other host name gets a 400,
+  which blocks DNS rebinding attacks from a web page. Empty: every host name.
+- `BIND_ADDRESS`: the host address the port listens on. `127.0.0.1` keeps the
+  app reachable from this machine only (when a reverse proxy runs on the same
+  host). Empty: every address, as before.
+- `COOKIE_SECURE`: `auto` (default) marks the session cookie `Secure` when the
+  request arrives over HTTPS, directly or through a reverse proxy that sends
+  `X-Forwarded-Proto: https`; HTTPS responses also carry
+  `Strict-Transport-Security`. `true` forces `Secure` (the session then only
+  works over HTTPS), `false` never sets it.
+- `TRUSTED_PROXIES`: addresses of your reverse proxies (comma-separated, e.g.
+  `TRUSTED_PROXIES=172.18.0.1`). Failed sign-ins are limited per client address
+  and username (5 per 15 minutes) and per username from all addresses (20 per
+  15 minutes); behind a proxy, list it here so that the client address is read
+  from `X-Forwarded-For`. Empty: the address of the direct connection.
+- `RESTORE_MAX_MB`: the largest JSON backup the restore accepts, 50 MB by
+  default (several hundred thousand operations). Statements to import and
+  receipt PDFs are limited to 5 MB; a statement waiting in the import wizard is
+  kept readable by the app only and removed after 24 hours.
 
 ## Backing up your data
 

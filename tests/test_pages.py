@@ -33,6 +33,7 @@ PAGES = [
     Page("/design-system"),
     Page("/settings"),
     Page("/profile"),
+    Page("/profile/password"),
     Page("/payment-methods"),
     Page("/payment-methods/head", htmx=True),
     # Inbox (La Savane) and operations

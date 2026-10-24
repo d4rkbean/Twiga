@@ -1,4 +1,3 @@
-import csv
 import io
 import math
 from dataclasses import dataclass
@@ -13,6 +12,7 @@ from sqlalchemy.orm import Session
 from backend import answers, crud, report_view
 from backend.budget_month import period_containing, period_of_month
 from backend.database import get_db
+from backend import csv_safety
 from backend.dates import (
     month_label,
     month_range,
@@ -859,7 +859,7 @@ def export_report_transactions_csv(
     )
 
     buffer = io.StringIO()
-    writer = csv.writer(buffer, delimiter=";")
+    writer = csv_safety.writer(buffer, delimiter=";")
     writer.writerow(["Date", _t("Libellé"), _t("Catégorie"), _t("Compte"), _t("Montant")])
     for tx in transactions:
         category_name = (
@@ -897,7 +897,7 @@ def export_report_csv(
     period = context["period"]
 
     buffer = io.StringIO()
-    writer = csv.writer(buffer, delimiter=";")
+    writer = csv_safety.writer(buffer, delimiter=";")
     writer.writerow([_t("Rapport Twiga"), context["period_bar_label"]])
     writer.writerow([])
     writer.writerow([_t("Recettes"), format_amount_for_export(context["income_total"])])

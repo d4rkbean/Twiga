@@ -1,3 +1,4 @@
+import os
 import time
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -22,22 +23,65 @@ router = APIRouter(tags=["auth"])
 # de tester en boucle sur un compte connu depuis des IP différentes.
 _MAX_ATTEMPTS = 5
 _LOCKOUT_SECONDS = 15 * 60
+# Every address together, per username: an attacker spreading the attempts on
+# a known account over many addresses is stopped as well. A success from one
+# address does not clear this counter.
+_MAX_ATTEMPTS_PER_USERNAME = 20
+# Bounded memory: expired entries are dropped, then the oldest ones.
+_MAX_TRACKED = 10_000
 _failed_attempts: dict[tuple[str, str], list[float]] = {}
+_failed_by_username: dict[str, list[float]] = {}
+
+# Reverse proxies whose X-Forwarded-For is believed (comma-separated
+# addresses). Empty: the address of the direct connection, as before.
+TRUSTED_PROXIES = {value.strip() for value in os.environ.get("TRUSTED_PROXIES", "").split(",") if value.strip()}
 
 
 def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
+    direct = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("x-forwarded-for")
+    if direct not in TRUSTED_PROXIES or not forwarded:
+        return direct
+    # The last address not added by one of our own proxies is the client.
+    hops = [hop.strip() for hop in forwarded.split(",") if hop.strip()]
+    for hop in reversed(hops):
+        if hop not in TRUSTED_PROXIES:
+            return hop
+    return hops[0] if hops else direct
+
+
+def _recent(store: dict, key, now: float) -> list[float]:
+    attempts = [t for t in store.get(key, []) if now - t < _LOCKOUT_SECONDS]
+    if attempts:
+        store[key] = attempts
+    else:
+        store.pop(key, None)
+    return attempts
+
+
+def _add(store: dict, key, now: float) -> None:
+    attempts = _recent(store, key, now)
+    store.pop(key, None)
+    if len(store) >= _MAX_TRACKED:
+        for stale in [k for k, times in store.items() if now - times[-1] >= _LOCKOUT_SECONDS]:
+            del store[stale]
+        while len(store) >= _MAX_TRACKED:
+            del store[next(iter(store))]  # least recently failed first
+    store[key] = attempts + [now]
 
 
 def _is_locked_out(key: tuple[str, str]) -> bool:
     now = time.monotonic()
-    attempts = [t for t in _failed_attempts.get(key, []) if now - t < _LOCKOUT_SECONDS]
-    _failed_attempts[key] = attempts
-    return len(attempts) >= _MAX_ATTEMPTS
+    return (
+        len(_recent(_failed_attempts, key, now)) >= _MAX_ATTEMPTS
+        or len(_recent(_failed_by_username, key[1], now)) >= _MAX_ATTEMPTS_PER_USERNAME
+    )
 
 
 def _record_failed_attempt(key: tuple[str, str]) -> None:
-    _failed_attempts.setdefault(key, []).append(time.monotonic())
+    now = time.monotonic()
+    _add(_failed_attempts, key, now)
+    _add(_failed_by_username, key[1], now)
 
 
 def _clear_failed_attempts(key: tuple[str, str]) -> None:

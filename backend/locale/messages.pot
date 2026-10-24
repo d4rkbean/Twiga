@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-19 10:05+0000\n"
+"POT-Creation-Date: 2026-10-24 23:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1472,6 +1472,9 @@ msgid ""
 "chaque rôle avant d'en choisir un."
 msgstr ""
 
+msgid "Adresse du serveur non autorisée."
+msgstr ""
+
 msgid "Affichage"
 msgstr ""
 
@@ -2523,6 +2526,9 @@ msgid "Cette règle touche %(shown)s opération de ton historique."
 msgid_plural "Cette règle touche %(shown)s opérations de ton historique."
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "Change d'abord ton mot de passe dans Mon profil."
+msgstr ""
 
 msgid ""
 "Change le compte concerné, les colonnes ou le format de date : le "
@@ -3894,6 +3900,10 @@ msgstr ""
 msgid "Fichier de sauvegarde JSON"
 msgstr ""
 
+#, python-format
+msgid "Fichier trop volumineux (%(size)s Mo maximum)."
+msgstr ""
+
 msgid "Fichier trop volumineux (5 Mo maximum)."
 msgstr ""
 
@@ -4899,6 +4909,11 @@ msgid ""
 msgstr ""
 
 msgid "Le mot de passe doit faire au moins 8 caractères."
+msgstr ""
+
+msgid ""
+"Le mot de passe est trop long : 72 caractères au plus (moins avec des "
+"accents ou des emoji)."
 msgstr ""
 
 msgid "Le nom affiché apparaît dans Twiga, l'identifiant sert à te connecter."
@@ -7751,6 +7766,11 @@ msgid "Ton affichage"
 msgstr ""
 
 msgid "Ton compte"
+msgstr ""
+
+msgid ""
+"Ton mot de passe est encore celui par défaut. Choisis-en un nouveau ci-"
+"dessous pour continuer."
 msgstr ""
 
 msgid "Ton nom et ton identifiant"
