@@ -59,14 +59,17 @@
   <script>
     (function () {
       var input = document.getElementById("import-file-input");
-      var next = document.getElementById("import-next");
-      var noFile = document.getElementById("import-file-empty");
-      var details = document.getElementById("import-file-details");
       function accountName() {
         var checked = document.querySelector("#import-step1-form input[name=account_id]:checked");
         return checked ? checked.dataset.name : "";
       }
       function refresh() {
+        // Le bouton « Continuer » et le récapitulatif sont rendus APRÈS ce
+        // script au premier chargement de la page : on les cherche à chaque
+        // appel, pas une fois pour toutes, sinon ils restent null.
+        var next = document.getElementById("import-next");
+        var noFile = document.getElementById("import-file-empty");
+        var details = document.getElementById("import-file-details");
         var file = input.files && input.files[0];
         var isQif = file ? /\.qif$/i.test(file.name) : /\.qif$/i.test(input.value || "");
         var field = document.getElementById("import-account-field");
