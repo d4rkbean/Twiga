@@ -17,10 +17,12 @@ def quick_search(request: Request, q: str = "", db: Session = Depends(get_db)):
         # se protège aussi côté serveur (accès direct à l'URL, etc.).
         return HTMLResponse(content="")
 
+    transactions = crud.search_transactions_quick(db, query)
     context = {
         "request": request,
         "query": query,
-        "transactions": crud.search_transactions_quick(db, query),
+        "transactions": transactions,
+        "receipt_item_counts": crud.get_receipt_item_counts(db, [t.id for t in transactions]),
         "categories": crud.search_categories_quick(db, query),
         "projects": crud.search_projects_quick(db, query),
     }
