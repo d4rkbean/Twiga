@@ -7,7 +7,7 @@
       href="/transactions/list?f_search={{ tx.label | urlencode }}"
       class="flex items-center justify-between gap-3 px-2 py-2 rounded-lg hover:bg-sunken min-h-[50px]"
     >
-      <span class="text-sm text-primary truncate">{{ tx.label }}</span>
+      <span class="text-sm text-primary truncate">{{ tx.label }}{% if receipt_item_counts.get(tx.id) %} <span class="text-xs text-secondary">{{ icon('receipt', size=13) }} {{ receipt_item_counts[tx.id] }}</span>{% endif %}</span>
       <span class="amount-blur text-xs text-secondary tabular-nums whitespace-nowrap flex-shrink-0">
         {{ tx.amount | eur }} · {{ tx.date | fr_date }}
       </span>

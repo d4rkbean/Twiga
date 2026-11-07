@@ -342,7 +342,7 @@
       {# How many operations per page: the value sits in #f_page_size (hidden
          field of the filters form), remembered in localStorage. #}
       <div class="lg:max-w-[240px]">
-        {{ dropdown(none, [("25", _("Afficher : 25 par page")), ("50", _("Afficher : 50 par page")), ("100", _("Afficher : 100 par page"))], model="size", change="$nextTick(() => window.onPageSizeChange(size))", popover=true, aria=_("Afficher")) }}
+        {{ dropdown(none, [("25", _("Afficher : 25 par page")), ("50", _("Afficher : 50 par page")), ("100", _("Afficher : 100 par page"))], model="size", change="$nextTick(() => window.onPageSizeChange(size))", popover=true, up=true, aria=_("Afficher")) }}
       </div>
     </div>
   </section>

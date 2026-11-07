@@ -80,7 +80,7 @@
     id="transactions-filters"
     x-ref="form"
     hx-get="/transactions/list/content"
-    hx-trigger="submit"
+    hx-trigger="submit, receipts-changed from:body"
     hx-target="#transactions-content"
     hx-swap="innerHTML"
     @menu-change="submit()"

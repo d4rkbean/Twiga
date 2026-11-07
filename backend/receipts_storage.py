@@ -162,7 +162,130 @@ _REVERSED_RECEIPT_LINE_RE = re.compile(
 _QTY_TIMES_PRICE_RE = re.compile(r"^\d+(?:[.,]\d+)?\s*[xX]\s*\d{1,4}[,.]\d{2}\s*(?:€|EUR)?$")
 
 
+# --- Facture Drive Intermarché (PDF "FACTURE N°...") ----------------------
+# Chaque article = un libellé (sur 1 à 3 lignes) puis UNE ligne de chiffres
+# "qté commandée  qté livrée  TVA %  HT €  TTC €  Total TTC €" (les quantités
+# peuvent être en kg). Les rayons sont des en-têtes "NOM (N)" sans le mot
+# "produits". Les remises sont des lignes "[PROMO] Vous avez bénéficié de X €
+# de remise immédiate", avec "-X €" sur la même ligne ou, quand le montant
+# est absent, le montant NET de l'article repris après la ligne de chiffres.
+_DRIVE_NUMBERS_RE = re.compile(
+    r"^(?:(?P<label>.*?)\s+)?(?P<q1>\d+(?:,\d+)?(?:kg)?)\s+(?P<q2>\d+(?:,\d+)?(?:kg)?)\s+\d{1,2}(?:,\d+)?\s*%\s+"
+    r"\d+,\d{2}\s*€\s+\d+,\d{2}\s*€\s+(?P<amount>\d+,\d{2})\s*€$"
+)
+_DRIVE_PROMO_RE = re.compile(
+    r"^\[PROMO\].*?(?P<value>\d+,\d{2})\s*€\s+de remise immédiate(?:\s+-\s*(?P<neg>\d+,\d{2})\s*€)?\s*$"
+)
+_DRIVE_GROUP_RE = re.compile(r"^(?P<name>[^\d(][^()]*?)\s*\(\d+\)$")
+_DRIVE_NET_RE = re.compile(r"^(?P<amount>\d+,\d{2})\s*€$")
+_DRIVE_FOOTNOTE_START_RE = re.compile(r"^Page \d+ sur", re.IGNORECASE)
+
+_DRIVE_GROUPS: dict[str, str | None] = {
+    "PROMOTIONS": None,
+    "CHARCUTERIE": "charcuterie_traiteur",
+    "ENTRETIEN ET NETTOYAGE": "entretien_nettoyage",
+    "EPICERIE SALEE": "epicerie_salee",
+    "EPICERIE SUCREE": "epicerie_sucree",
+    "FROMAGES, CREMERIE ET OEUFS": "laitiers_oeufs",
+    "YAOURTS ET DESSERTS": "laitiers_oeufs",
+    "SURGELES": "surgeles",
+    "FRUITS ET LEGUMES": "fruits_legumes",
+    "BOUCHERIE": "viandes_poissons",
+    "POISSONNERIE": "viandes_poissons",
+    "BOULANGERIE ET PATISSERIE": "pains_patisseries",
+    "BOISSONS": "boissons",
+    "HYGIENE ET BEAUTE": "hygiene_beaute",
+    "ANIMALERIE": "animalerie",
+}
+
+
+def _dec(raw: str) -> Decimal:
+    return Decimal(raw.replace(",", "."))
+
+
+def _is_drive_invoice(text: str) -> bool:
+    return any(_DRIVE_NUMBERS_RE.match(line.strip()) for line in text.splitlines())
+
+
+def _parse_drive_invoice(text: str) -> list[dict]:
+    items: list[dict] = []
+    family: str | None = None
+    label_parts: list[str] = []
+    pending_promo = Decimal("0")
+    last_item: dict | None = None
+    in_footnote = False
+    started = False
+
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        if in_footnote:
+            # Pied de page répété à chaque page : jusqu'à sa dernière ligne.
+            if _normalize(line).endswith("COMMANDE."):
+                in_footnote = False
+            continue
+        if _DRIVE_FOOTNOTE_START_RE.match(line):
+            in_footnote = True
+            continue
+
+        normalized = _normalize(line)
+        if normalized.startswith("TOTAL REMISES IMMEDIATES"):
+            break
+
+        group = _DRIVE_GROUP_RE.match(normalized)
+        if group and group.group("name").strip() in _DRIVE_GROUPS:
+            family = _DRIVE_GROUPS[group.group("name").strip()]
+            started = True
+            label_parts = []
+            continue
+        if not started:
+            # Tout ce qui précède le tableau (en-tête, magasin, livraison...).
+            continue
+
+        promo = _DRIVE_PROMO_RE.match(line)
+        if promo:
+            if promo.group("neg") and last_item is not None and not label_parts:
+                # Remise affichée APRÈS l'article (ou le lot d'articles) concerné.
+                last_item["amount"] -= _dec(promo.group("neg"))
+            else:
+                # Remise affichée AVANT les chiffres de l'article en cours.
+                pending_promo = _dec(promo.group("value"))
+            continue
+
+        numbers = _DRIVE_NUMBERS_RE.match(line)
+        if numbers:
+            if numbers.group("label"):
+                label_parts.append(numbers.group("label"))
+            label = " ".join(
+                p for p in label_parts if not p.startswith("[Produit à poids variable")
+            ).strip(" .:-*")
+            label_parts = []
+            if not label:
+                continue
+            amount = _dec(numbers.group("amount")) - pending_promo
+            pending_promo = Decimal("0")
+            last_item = {"label": label, "amount": amount, "family": family}
+            items.append(last_item)
+            continue
+
+        net = _DRIVE_NET_RE.match(line)
+        if net and last_item is not None and not label_parts:
+            # Montant net repris après la ligne de chiffres : déjà soustrait.
+            continue
+
+        if normalized.startswith(("LIBELLE PRODUIT", "QUANTITE", "LIVREE", "COMMANDEE", "TVA PRIX")):
+            continue
+        if normalized in {"PRODUITS (34)"} or re.match(r"^PRODUITS \(\d+\)$", normalized):
+            continue
+        label_parts.append(line)
+
+    return [i for i in items if i["amount"] > 0]
+
+
 def parse_receipt_lines(text: str) -> list[dict]:
+    if _is_drive_invoice(text):
+        return _parse_drive_invoice(text)
     items: list[dict] = []
     current_family: str | None = None
 

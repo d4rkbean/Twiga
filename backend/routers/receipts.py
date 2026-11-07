@@ -57,7 +57,11 @@ def _render_section(
         # transmettre un extrait pour ajuster l'heuristique.
         "raw_extracted_text": raw_extracted_text,
     }
-    return templates.TemplateResponse("transactions/_receipt.html", context)
+    # La liste des opérations est hors de ce fragment : l'événement lui fait
+    # recharger ses lignes (badge ticket, voir transactions/index.html).
+    return templates.TemplateResponse(
+        "transactions/_receipt.html", context, headers={"HX-Trigger": "receipts-changed"}
+    )
 
 
 @router.get("/{transaction_id}/section", response_class=HTMLResponse)

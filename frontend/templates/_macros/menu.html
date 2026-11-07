@@ -15,12 +15,14 @@
 
     popover=true   the list floats over the page (filter bars) instead of
                    pushing what follows (side panels, forms).
+    up=true        with popover: opens above the field, for a dropdown at the
+                   bottom of a card with overflow-hidden (it would be clipped).
     compact=true   no field chrome: a plain 50 px button (used inside bars).
 
   Options are (value, label) pairs; values are strings. The first one is
   normally the "all / none" choice, with the value "".
 #}
-{% macro dropdown(name, options, selected="", model=None, change="", popover=false, aria=None, cls="", input_id=None) -%}
+{% macro dropdown(name, options, selected="", model=None, change="", popover=false, aria=None, cls="", input_id=None, up=false) -%}
 {%- set var = model or "value" -%}
 {%- set labels = {} -%}
 {%- for value, label in options %}{% if labels.update({value | string: label}) %}{% endif %}{% endfor -%}
@@ -46,7 +48,7 @@
     x-show="open"
     style="display: none;"
     role="listbox"
-    class="{% if popover %}absolute inset-x-0 top-full z-30 mt-1 max-h-[320px] overflow-y-auto shadow-lg{% else %}mt-1{% endif %} overflow-hidden rounded-xl border border-border bg-container"
+    class="{% if popover %}absolute inset-x-0 {% if up %}bottom-full mb-1{% else %}top-full mt-1{% endif %} z-30 max-h-[320px] overflow-y-auto shadow-lg{% else %}mt-1{% endif %} overflow-hidden rounded-xl border border-border bg-container"
   >
     {% for value, label in options %}
     <button
