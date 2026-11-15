@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
+from starlette.concurrency import run_in_threadpool
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
@@ -21,6 +22,8 @@ router = APIRouter(prefix="/transactions/receipts", tags=["receipts"])
 
 # Same limit as the statement imports.
 MAX_RECEIPT_BYTES = 5 * uploads.MEGABYTE
+# Une photo de téléphone pèse plus qu'une facture PDF.
+MAX_RECEIPT_IMAGE_BYTES = 15 * uploads.MEGABYTE
 
 
 def _parse_amount(raw: str | None) -> Decimal:
@@ -82,22 +85,31 @@ async def upload_receipt(
     # Le fichier n'est jamais conservé : lu en mémoire le temps d'en
     # extraire le texte, puis jeté avec la fin de la requête — seules les
     # lignes qui en sont tirées sont enregistrées (voir receipts_storage).
-    # Uniquement pour un PDF : une photo n'a pas de calque de texte à
-    # extraire sans OCR (délibérément hors scope, voir la discussion
-    # produit) — son seul usage possible ici serait la saisie manuelle des
-    # lignes, déjà couverte par "+ Ajouter une ligne".
+    # PDF : texte extrait directement (pypdf). Photo : OCR Tesseract local,
+    # moins fiable — le texte brut reste affiché pour vérification.
     raw_text = None
-    if (file.filename or "").lower().endswith(".pdf"):
-        content = await uploads.read_limited(file, MAX_RECEIPT_BYTES)
+    name = (file.filename or "").lower()
+    is_pdf = name.endswith(".pdf")
+    is_image = (file.content_type or "").startswith("image/") or name.endswith(
+        (".jpg", ".jpeg", ".png", ".webp")
+    )
+    if is_pdf or is_image:
+        content = await uploads.read_limited(
+            file, MAX_RECEIPT_BYTES if is_pdf else MAX_RECEIPT_IMAGE_BYTES
+        )
         if content is None:
             # The section stays as it is: the message is put just above it.
+            limit = 5 if is_pdf else 15
             return HTMLResponse(
-                f'<p class="text-sm text-danger py-2">{_t("Fichier trop volumineux (5 Mo maximum).")}</p>',
+                f'<p class="text-sm text-danger py-2">{_t("Fichier trop volumineux (%(size)s Mo maximum).") % {"size": limit}}</p>',
                 status_code=413,
                 headers={"HX-Retarget": f"#receipt-section-{transaction.id}", "HX-Reswap": "beforebegin"},
             )
         try:
-            raw_text = receipts_storage.extract_pdf_text(content)
+            if is_pdf:
+                raw_text = receipts_storage.extract_pdf_text(content)
+            else:
+                raw_text = await run_in_threadpool(receipts_storage.extract_image_text, content)
         except Exception:
             raw_text = ""
         suggested = receipts_storage.parse_receipt_lines(raw_text)

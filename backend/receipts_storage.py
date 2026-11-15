@@ -20,6 +20,62 @@ def extract_pdf_text(content: bytes) -> str:
     return "\n".join(page.extract_text() or "" for page in reader.pages)
 
 
+def _ocr_variants(content: bytes):
+    """Versions pré-traitées d'une photo, de la plus douce à la plus agressive.
+
+    Papier carbone / thermique pâle : l'encre est bleutée et peu contrastée.
+    Le canal ROUGE la fait ressortir (le bleu y absorbe), puis on retranche
+    le fond flou pour gommer ombres et plis, et on binarise.
+    """
+    from PIL import Image, ImageChops, ImageFilter, ImageOps
+
+    image = ImageOps.exif_transpose(Image.open(BytesIO(content))).convert("RGB")
+    width = image.size[0]
+    if width < 1600:  # trop petit : Tesseract lit mal sous ~25 px de haut/lettre
+        ratio = 1800 / width
+        image = image.resize((1800, round(image.size[1] * ratio)), Image.LANCZOS)
+    else:
+        image.thumbnail((2200, 2200))
+
+    gray = ImageOps.autocontrast(image.convert("L"))
+    yield gray
+
+    red = image.split()[0]
+    background = red.filter(ImageFilter.GaussianBlur(25))
+    # fond - encre = « quantité d'encre » ; inversé pour retrouver du noir sur blanc.
+    flat = ImageOps.invert(ImageChops.subtract(background, red))
+    flat = ImageOps.autocontrast(flat, cutoff=1)
+    yield flat
+    yield flat.point(lambda v: 255 if v > 150 else 0)
+
+
+def extract_image_text(content: bytes) -> str:
+    """OCR local (Tesseract, aucune API tierce) d'une photo de ticket de caisse.
+
+    Plusieurs pré-traitements sont essayés et on garde la lecture qui donne
+    le plus de lignes d'articles exploitables. `--psm 6` : bloc de texte
+    uniforme, le plus adapté à un ticket en colonne.
+    """
+    import pytesseract
+
+    texts = [
+        pytesseract.image_to_string(v, lang="fra", config="--psm 6")
+        for v in _ocr_variants(content)
+    ]
+    # Totaux lus sur TOUTES les variantes : un « 26,13 » mal lu sur l'une est
+    # corrigé par le « 28,13 » des autres.
+    totals = set().union(*(receipt_total_candidates(t) for t in texts))
+    best_text, best_score = "", None
+    for text in texts:
+        items = parse_receipt_lines(text)
+        total = sum((i["amount"] for i in items), Decimal("0"))
+        # 1) la somme retombe sur un total imprimé ; 2) plus d'articles ; 3) plus de texte.
+        score = (total in totals, len(items), len(text))
+        if best_score is None or score > best_score:
+            best_text, best_score = text, score
+    return best_text
+
+
 def _normalize(text: str) -> str:
     # Majuscules, accents retirés, tirets ramenés à des espaces ("Sous-total"
     # -> "SOUS TOTAL", pour matcher le même préfixe que "Sous total" ou
@@ -76,7 +132,10 @@ _NON_PRODUCT_PREFIXES = (
     "MES ECONOMIES",
     "SOLDE AVOIRS",
     "REGLEMENT",
-    "CARTE BANCAIRE",
+    "CARTE",
+    "A PAYER",
+    "MONTANT",
+    "MERCI",
     "CHEQUE",
     "ESPECES",
     "DETAIL DE VOTRE COMMANDE",
@@ -283,14 +342,97 @@ def _parse_drive_invoice(text: str) -> list[dict]:
     return [i for i in items if i["amount"] > 0]
 
 
+# --- Ticket « colonnes » (Lidl : Article | P.U.EUR | Qté | EUR) -------------
+# Chaque article : libellé, prix unitaire, quantité, montant, code TVA ("A T").
+# Un article au poids n'a que le montant, et sa ligne suivante
+# ("0,202 kg x 7,95 EUR/kg") est une explication, pas un article. Une remise
+# ("Prix en baisse  -0,10") se déduit de l'article juste au-dessus. L'OCR
+# abîme souvent le MONTANT (« 1,9 », « 2,/5 ») alors que P.U. et Qté sont
+# plus nets : on recalcule P.U. x Qté plutôt que de se fier au montant lu.
+_COLUMNS_HEADER_RE = re.compile(r"P[.,]?\s?U[.,]?\s?EUR|\bQt[eé]\b|TICKET DE VENTE", re.IGNORECASE)
+# Signature d'une ligne d'article « P.U.  Qté  montant » : sert à reconnaître
+# le format même quand l'OCR a abîmé l'en-tête (« P,U,EUR », « Ticket de vente »
+# illisible...).
+_COLUMNS_ROW_RE = re.compile(r"\d+[,.]\d{2}\s+\d{1,2}\s+\d+[,.]?\d{0,2}")
+
+
+def _is_columns_ticket(text: str) -> bool:
+    return bool(_COLUMNS_HEADER_RE.search(text)) or len(_COLUMNS_ROW_RE.findall(text)) >= 3
+_COLUMNS_DISCOUNT_RE = re.compile(r"^(?P<label>[^\d\-].*?)\s+-\s?(?P<amount>\d+[.,]\d{2})\s*$")
+_COLUMNS_END_RE = re.compile(r"^NOMBRE DE LIGNES", re.IGNORECASE)
+_TOTAL_LINE_PREFIXES = ("A PAYER", "TOTAL ELIGIBLE", "CARTE", "TOTAL TTC", "TOTAL A PAYER")
+
+
+def _parse_columns_ticket(text: str) -> list[dict]:
+    items: list[dict] = []
+    # Sans en-tête lisible, on part du début : les lignes d'avant (enseigne,
+    # adresse) n'ont pas de prix décimal en milieu de ligne et sont ignorées.
+    started = not _COLUMNS_HEADER_RE.search(text)
+    for raw in text.splitlines():
+        line = raw.strip(" |_.:;'\"")
+        if not line:
+            continue
+        if not started:
+            started = bool(_COLUMNS_HEADER_RE.search(line))
+            continue
+        normalized_line = _normalize(line)
+        if _COLUMNS_END_RE.match(normalized_line) or normalized_line.startswith(_TOTAL_LINE_PREFIXES):
+            break
+        if re.search(r"\bkg\s*[xX]\b|EUR\s*/\s*kg", line, re.IGNORECASE):
+            continue
+        discount = _COLUMNS_DISCOUNT_RE.match(line)
+        if discount and items:
+            items[-1]["amount"] -= Decimal(discount.group("amount").replace(",", "."))
+            continue
+        # Le libellé s'arrête au premier montant décimal ; tout ce qui suit
+        # (qté, montant, code TVA plus ou moins déformé par l'OCR) est lu en
+        # tolérance, y compris du bruit du genre « LE AT ».
+        first = re.search(r"\s(\d+[,.]\d{1,2})(?!\d)", line)
+        if not first:
+            continue
+        label = line[: first.start()].strip(" |_.:-*")
+        if len(label) < 2 or label[0].isdigit():
+            continue
+        rest = line[first.start():]
+        decimals = re.findall(r"\d+[,.]\d{1,2}(?!\d)", rest)
+        values = [Decimal(d.replace(",", ".")) for d in decimals]
+        unit = values[0]
+        qty_match = re.match(r"\s*\d+[,.]\d{1,2}\s+(\d{1,2})(?!\d|[,.])", rest)
+        qty = int(qty_match.group(1)) if qty_match else 1
+        if len(values) == 1 or qty == 1:
+            amount = unit * qty  # poids / quantité 1 : le prix lu en tête est le plus net
+        else:
+            amount = values[-1]  # qté > 1 : le montant imprimé (« 1,9 » -> 1,90)
+        if amount > 0:
+            items.append({"label": label, "amount": amount, "family": None})
+    return [i for i in items if i["amount"] > 0]
+
+
+def receipt_total_candidates(text: str) -> set[Decimal]:
+    """Montants lus sur les lignes « À payer » / « Carte »… : sert à valider
+    une lecture OCR (la somme des articles doit retomber dessus)."""
+    found: set[Decimal] = set()
+    for raw in text.splitlines():
+        line = raw.strip(" |_.:;")
+        if _normalize(line).startswith(_TOTAL_LINE_PREFIXES):
+            for d in re.findall(r"\d+[,.]\d{2}(?!\d)", line):
+                found.add(Decimal(d.replace(",", ".")))
+    return found
+
+
 def parse_receipt_lines(text: str) -> list[dict]:
+    if _is_columns_ticket(text):
+        columns = _parse_columns_ticket(text)
+        if columns:
+            return columns
     if _is_drive_invoice(text):
         return _parse_drive_invoice(text)
     items: list[dict] = []
     current_family: str | None = None
 
     for raw_line in text.splitlines():
-        line = raw_line.strip()
+        # "|" parasite en bord de ligne : trait de tableau lu par l'OCR.
+        line = raw_line.strip(" |")
         if not line:
             continue
         normalized = _normalize(line)

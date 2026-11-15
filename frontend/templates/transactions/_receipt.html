@@ -6,7 +6,7 @@
   <h3 class="flex items-center gap-2 text-base font-semibold text-primary">{{ icon('receipt') }}{{ _("Détail du ticket") }}</h3>
 
   <div class="flex flex-col gap-2">
-    <p class="text-sm text-secondary">{{ _("Facture PDF de l'appli du magasin : les lignes sont proposées seules, rayon compris, à vérifier. Ticket papier : ajoute les lignes à la main.") }}</p>
+    <p class="text-sm text-secondary">{{ _("Facture PDF de l'appli du magasin : les lignes sont proposées seules, rayon compris, à vérifier. Ticket papier : photographie-le à plat et bien éclairé — la lecture d'une photo est moins fiable qu'un PDF, vérifie chaque ligne.") }}</p>
     {# The file is sent as soon as it is chosen (hx-trigger on the field itself:
        on the <form> it did not catch the "change" of the nested field). The
        field is the invisible half of a 50 px button. #}
@@ -17,6 +17,22 @@
         name="file"
         accept=".pdf"
         required
+        hx-post="/transactions/receipts/{{ transaction.id }}/upload"
+        hx-target="#receipt-section-{{ transaction.id }}"
+        hx-swap="outerHTML"
+        hx-encoding="multipart/form-data"
+        hx-trigger="change"
+        hx-indicator="#receipt-reading-{{ transaction.id }}"
+        class="sr-only"
+      />
+    </label>
+    <label class="btn btn-secondary w-full cursor-pointer border-border-strong">
+      {{ icon('camera') }} {{ _("Photographier un ticket") }}
+      <input
+        type="file"
+        name="file"
+        accept="image/*"
+        capture="environment"
         hx-post="/transactions/receipts/{{ transaction.id }}/upload"
         hx-target="#receipt-section-{{ transaction.id }}"
         hx-swap="outerHTML"

@@ -9,3 +9,5 @@ python-multipart==0.0.32
 bcrypt==4.2.1
 itsdangerous==2.2.0
 pypdf==6.19.0
+pytesseract==0.3.13
+Pillow==11.3.0
