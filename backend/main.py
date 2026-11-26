@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 from sqlalchemy.orm import Session
 
 from backend import auth, budget_month, crud, settings_hub
@@ -65,6 +66,8 @@ if auth.AUTH_ENABLED:
 # anything else, signed in or not, and with authentication off as well.
 app.add_middleware(RequestGuardMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+# Le plus externe : compresse HTML, JSON, JS et CSS (chart.js pèse 208 Ko).
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.add_event_handler("startup", password_change.warn_about_default_passwords)
 app.add_event_handler("startup", import_storage.purge_stale_uploads)
 access_log.install()
@@ -101,7 +104,23 @@ def service_worker():
     )
 
 
-app.mount("/static", StaticFiles(directory=BASE_DIR / "frontend" / "static"), name="static")
+class VersionedStaticFiles(StaticFiles):
+    """Cache navigateur d'un an, uniquement pour les URLs versionnées.
+
+    base.html référence les assets via static_url() (« ?v=<démarrage> ») : l'URL
+    change à chaque redéploiement, donc « immutable » est sûr. Les fichiers
+    appelés sans « ?v= » (manifest, icônes, favicon) gardent le comportement par
+    défaut (revalidation), pour ne jamais rester figés.
+    """
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200 and b"v=" in scope.get("query_string", b""):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
+app.mount("/static", VersionedStaticFiles(directory=BASE_DIR / "frontend" / "static"), name="static")
 
 app.include_router(auth_router.router)
 app.include_router(transactions.router)
