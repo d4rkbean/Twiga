@@ -8857,3 +8857,5 @@ msgstr "≥ 90 %%"
 #~ msgid "Nom, mot de passe et sortie."
 #~ msgstr "Name, password and sign-out."
 
+msgid "Proposition introuvable"
+msgstr "Suggestion not found"

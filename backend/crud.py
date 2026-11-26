@@ -3596,14 +3596,18 @@ def get_rules_with_usage(db: Session) -> list[dict]:
         .scalars()
         .all()
     )
+    # Un seul balayage des libellés, puis un comptage en mémoire : une
+    # requête ILIKE '%...%' par règle ne peut pas utiliser d'index et
+    # rescannait toute la table transactions à chaque fois (82 règles = 82
+    # balayages).
+    labels = [
+        (raw or "").lower()
+        for raw in db.execute(select(Transaction.raw_label)).scalars().all()
+    ]
     results = []
     for rule in rules:
-        pattern = f"%{_escape_like(rule.keyword)}%"
-        usage_count = db.execute(
-            select(func.count())
-            .select_from(Transaction)
-            .where(Transaction.raw_label.ilike(pattern, escape="\\"))
-        ).scalar_one()
+        keyword = rule.keyword.lower()
+        usage_count = sum(1 for label in labels if keyword in label) if keyword else len(labels)
         results.append({"rule": rule, "usage_count": usage_count})
     results.sort(key=lambda item: item["usage_count"], reverse=True)
     return results
@@ -4167,6 +4171,49 @@ def _stored_recurring_aliases(db: Session) -> dict[str, str]:
     return aliases
 
 
+@lru_cache(maxsize=4)
+def _cluster_cleaned_recurring_labels(distinct_cleaned: tuple[str, ...]) -> dict[str, int]:
+    """Fusion floue des libellés nettoyés (voir l'étape 3 de detect_recurring_patterns).
+
+    Fonction pure de l'ENSEMBLE des libellés : le résultat est mémorisé, donc
+    recalculé uniquement quand cet ensemble change (import, nouveau libellé),
+    pas à chaque affichage de la page. C'est la partie quadratique — chaque
+    libellé est comparé aux précédents — qui coûtait plusieurs secondes.
+    Ne pas modifier le dict renvoyé : il est partagé.
+    """
+    cleaned_cluster: dict[str, int] = {}
+    matchers: dict[str, difflib.SequenceMatcher] = {}
+    next_cluster_id = 0
+    for cleaned in distinct_cleaned:
+        matched_cluster = None
+        for existing_cleaned, cluster_id in cleaned_cluster.items():
+            # Un matcher par libellé déjà classé, réutilisé d'une comparaison
+            # à l'autre : difflib analyse la 2e séquence à la construction
+            # (coûteux), alors que set_seq1() ne fait presque rien. Même
+            # orientation (cleaned, existing) qu'avant : résultat identique.
+            matcher = matchers.get(existing_cleaned)
+            if matcher is None:
+                matcher = matchers[existing_cleaned] = difflib.SequenceMatcher(
+                    None, "", existing_cleaned
+                )
+            matcher.set_seq1(cleaned)
+            # real_quick_ratio() et quick_ratio() sont des MAJORANTS de
+            # ratio() à coût quasi nul : si la majorante est déjà <= 0.5,
+            # ratio() l'est aussi, donc le résultat est identique. Sans ce
+            # filtre, la comparaison de chaque libellé à tous les précédents
+            # (quadratique) coûtait plusieurs dizaines de secondes.
+            if matcher.real_quick_ratio() <= 0.5 or matcher.quick_ratio() <= 0.5:
+                continue
+            if matcher.ratio() > 0.5:
+                matched_cluster = cluster_id
+                break
+        if matched_cluster is None:
+            matched_cluster = next_cluster_id
+            next_cluster_id += 1
+        cleaned_cluster[cleaned] = matched_cluster
+    return cleaned_cluster
+
+
 def detect_recurring_patterns(db: Session, today: date | None = None) -> list[dict]:
     today = today or date.today()
 
@@ -4212,19 +4259,7 @@ def detect_recurring_patterns(db: Session, today: date | None = None) -> list[di
     # stricte que 0.8 en rejetait beaucoup à tort. Comparer le texte déjà
     # NETTOYÉ (pas le libellé brut) est ce qui rend un seuil aussi bas sûr :
     # le bruit qui aurait fait chuter la similarité a déjà été retiré.
-    distinct_cleaned = sorted(set(cleaned_by_key.values()))
-    cleaned_cluster: dict[str, int] = {}
-    next_cluster_id = 0
-    for cleaned in distinct_cleaned:
-        matched_cluster = None
-        for existing_cleaned, cluster_id in cleaned_cluster.items():
-            if difflib.SequenceMatcher(None, cleaned, existing_cleaned).ratio() > 0.5:
-                matched_cluster = cluster_id
-                break
-        if matched_cluster is None:
-            matched_cluster = next_cluster_id
-            next_cluster_id += 1
-        cleaned_cluster[cleaned] = matched_cluster
+    cleaned_cluster = _cluster_cleaned_recurring_labels(tuple(sorted(set(cleaned_by_key.values()))))
 
     merged: dict[int, list[Transaction]] = {}
     merged_labels: dict[int, list[str]] = {}
