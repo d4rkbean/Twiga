@@ -77,6 +77,15 @@ class Category(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    # Miroir de la migration d1a7f3c92b54 : toute modification ici passe par
+    # une nouvelle migration (les index servent aux agrégats par période,
+    # compte et catégorie du Panorama, des Budgets et des Rapports).
+    __table_args__ = (
+        Index("ix_transactions_date", "date"),
+        Index("ix_transactions_account_date", "account_id", "date"),
+        Index("ix_transactions_category_date", "category_id", "date"),
+        Index("ix_transactions_validated", "validated"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[date] = mapped_column(Date)

@@ -1,0 +1,52 @@
+/* Barre de chargement et état « en cours » des zones HTMX — voir
+   static/js/loading-bar.js. CSS dédié (comme tour.css) : pas de recompilation
+   de tailwind.min.css nécessaire. */
+#loading-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+#loading-bar.is-active { opacity: 1; }
+#loading-bar.is-done { opacity: 0; transition-delay: 0.1s; }
+#loading-bar .loading-bar__fill {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease-out;
+  background: linear-gradient(90deg, var(--color-accent), #b8863f, var(--color-accent));
+  background-size: 200% 100%;
+  box-shadow: 0 0 8px var(--color-accent);
+  animation: loading-bar-flow 1.2s linear infinite;
+}
+@keyframes loading-bar-flow { to { background-position: -200% 0; } }
+
+/* Zone en cours de rechargement : estompée, avec un reflet qui la traverse. */
+[aria-busy="true"] {
+  opacity: 0.55;
+  transition: opacity 0.2s ease 0.15s;
+  position: relative;
+  pointer-events: none;
+}
+[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--color-accent) 22%, transparent) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: busy-shimmer 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes busy-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loading-bar .loading-bar__fill { animation: none; transition: none; }
+  [aria-busy="true"]::after { animation: none; display: none; }
+}

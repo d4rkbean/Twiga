@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend import answers, crud
 from backend.database import get_db
-from backend.models import Category, Rule
+from backend.models import Category, Rule, RuleSuggestion
 from backend.receipt_families import RECEIPT_FAMILIES
 from backend.templating import templates
 from backend.i18n import gettext as _t
@@ -37,6 +37,72 @@ def _answer_context(db: Session) -> dict:
 
 def _form_context(db: Session) -> dict:
     return {"parent_categories": crud.get_top_level_categories(db), "receipt_families": RECEIPT_FAMILIES}
+
+
+@router.get("/suggestions/{suggestion_id}/row", response_class=HTMLResponse)
+def suggestion_row(request: Request, suggestion_id: int, db: Session = Depends(get_db)):
+    suggestion = db.get(RuleSuggestion, suggestion_id)
+    if suggestion is None:
+        raise HTTPException(status_code=404, detail=_t("Proposition introuvable"))
+    return templates.TemplateResponse("rules/_suggestion.html", {"request": request, "suggestion": suggestion})
+
+
+@router.get("/suggestions/{suggestion_id}/edit", response_class=HTMLResponse)
+def edit_suggestion_form(request: Request, suggestion_id: int, db: Session = Depends(get_db)):
+    """Formulaire pour ajuster une proposition avant d'en faire une règle."""
+    suggestion = db.get(RuleSuggestion, suggestion_id)
+    if suggestion is None:
+        raise HTTPException(status_code=404, detail=_t("Proposition introuvable"))
+    current_parent = crud.resolve_top_level_category(suggestion.category)
+    subcategories = crud.get_child_categories(db, current_parent.id) if current_parent else []
+    context = {
+        "request": request,
+        "suggestion": suggestion,
+        "parent_categories": crud.get_top_level_categories(db),
+        "current_parent_id": current_parent.id if current_parent else None,
+        "parent": current_parent,
+        "subcategories": subcategories,
+        "selected_category_id": suggestion.category_id,
+        "payment_methods": crud.get_payment_methods_dict(db),
+        "receipt_families": RECEIPT_FAMILIES,
+    }
+    return templates.TemplateResponse("rules/_suggestion_edit.html", context)
+
+
+@router.post("/suggestions/{suggestion_id}/validate", response_class=HTMLResponse)
+def validate_suggestion(
+    request: Request,
+    suggestion_id: int,
+    keyword: str = Form(...),
+    category_id: str = Form(...),
+    payment_method: str = Form(""),
+    receipt_family: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """Crée la règle à partir de la proposition, éventuellement modifiée."""
+    suggestion = db.get(RuleSuggestion, suggestion_id)
+    if suggestion is None:
+        raise HTTPException(status_code=404, detail=_t("Proposition introuvable"))
+    category = db.get(Category, int(category_id)) if category_id else None
+    if category is None:
+        raise HTTPException(status_code=404, detail=_t("Catégorie introuvable"))
+    if keyword.strip():
+        crud.create_rule(
+            db,
+            keyword.strip(),
+            category,
+            payment_method=payment_method or None,
+            receipt_family=receipt_family or None,
+        )
+        # create_rule ne retire que les propositions du NOUVEAU mot-clé : si
+        # il a été modifié, l'originale doit être close elle aussi, sinon
+        # elle resterait en attente alors qu'on l'a traitée.
+        suggestion = db.get(RuleSuggestion, suggestion_id)
+        if suggestion is not None:
+            suggestion.dismissed = True
+            db.commit()
+    context = {"request": request, **_list_context(db)}
+    return templates.TemplateResponse("rules/_content.html", context)
 
 
 @router.post("/suggestions/{suggestion_id}/dismiss", response_class=HTMLResponse)
